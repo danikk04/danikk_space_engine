@@ -1,0 +1,15 @@
+default.pages=latin;cirillic
+
+latin.start_offset=1 42
+latin.row_char_count=10
+latin.char_offset=86 140
+latin.char_size=84 86
+latin.margin=30%
+latin.char_code_range=32 127
+
+cirillic.start_offset=1 42
+cirillic.row_char_count=10
+cirillic.char_offset=86 140
+cirillic.char_size=84 86
+cirillic.margin=30%
+cirillic.char_code_range=1040 1103
