@@ -1,9 +1,4 @@
 #include <manager.h>
-#include <component/asteroid.h>
-#include <component/camera.h>
-#include <component/ball_collider.h>
-#include <component/voxel_map.h>
-#include <component/world_object.h>
 
 namespace sotiria_project
 {
@@ -27,10 +22,6 @@ namespace sotiria_project
 
 	void Manager::init()
 	{
-		component_class_storage.addClass<AsteroidComponent>();
-		component_class_storage.addClass<CameraComponent>();
-		component_class_storage.addClass<BallColliderComponent>();
-		component_class_storage.addClass<VoxelMapComponent>();
-		component_class_storage.addClass<WorldObjectComponent>();
+
 	}
 }

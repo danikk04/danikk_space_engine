@@ -3,8 +3,6 @@
 #include <danikk_engine/input.h>
 #include <default.h>
 #include <manager.h>
-#include <component/component.h>
-#include <component/asteroid.h>
 #include <component/world_object.h>
 
 namespace sotiria_project
@@ -18,14 +16,7 @@ namespace sotiria_project
 
 	void addAsteroid()
 	{
-		Object asteroid;
-		/*ComponentStorage asteroid_components;
-		asteroid_components.addComponent();
-		component_class_storage.addComponent(AsteroidComponent::id);
-		component_class_storage.getClassById(WorldObjectComponent::id);
-		component_class_storage.getClassById(AsteroidComponent::id);
-		asteroid.setComponents(component_class_storage);
-		game_manager.map_root.childs.push();*/
+
 	}
 
 	void KeyBindCollection::init()

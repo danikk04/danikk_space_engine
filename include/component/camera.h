@@ -1,7 +1,6 @@
 #pragma once
 
 #include <default.h>
-#include <component/component.h>
 #include <component/world_object.h>
 #include <danikk_framework/matrix.h>
 #include <danikk_framework/glm.h>

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <default.h>
-#include <component/component.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -19,7 +18,6 @@ namespace sotiria_project
 		}
 	public:
 		byte* components_memory;
-		ComponentStorage components;
 		DynamicArray<Object> childs;
 
 		Object()
@@ -29,7 +27,6 @@ namespace sotiria_project
 
 		void tick(Object& parent)
 		{
-			components.tick(*this, parent);
 			for(Object& el : childs)
 			{
 				el.tick(*this);
@@ -38,7 +35,6 @@ namespace sotiria_project
 
 		void frame(Object& parent)
 		{
-			components.frame(*this, parent);
 			for(Object& el : childs)
 			{
 				el.frame(*this);
