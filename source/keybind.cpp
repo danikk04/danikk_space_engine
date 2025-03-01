@@ -3,7 +3,6 @@
 #include <danikk_engine/input.h>
 #include <default.h>
 #include <manager.h>
-#include <component/world_object.h>
 
 namespace sotiria_project
 {

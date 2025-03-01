@@ -1,6 +1,6 @@
 #include<uniforms.glslh>
-#include<uniform_textures.glslh>
 #include<frag.glslh>
+#include<2d.glslh>
 
 void main()
 {

@@ -1,7 +1,6 @@
-#include<vertex.glslh>
 #include<uniforms.glslh>
-#include<uv.glslh>
-#include<pos.glslh>
+#include<vert.glslh>
+#include<2d.glslh>
 
 void main()
 {

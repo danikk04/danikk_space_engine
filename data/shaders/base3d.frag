@@ -1,6 +1,7 @@
-#include<frag_3d.glsl>
+#include<uniforms.glslh>
+#include<frag.glslh>
 
 void main()
 {
-   color = texture(diffuse_texture, frag_uv);
+
 }

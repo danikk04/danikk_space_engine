@@ -6,17 +6,17 @@ namespace sotiria_project
 
 	void Manager::tick()
 	{
-		for(Object& o : map_root.childs)
+		for(Object* o : map_root.childs)
 		{
-			o.tick(map_root);
+			o->tick(map_root);
 		}
 	}
 
 	void Manager::frame()
 	{
-		for(Object& o : map_root.childs)
+		for(Object* o : map_root.childs)
 		{
-			o.frame(map_root);
+			o->frame(map_root);
 		}
 	}
 

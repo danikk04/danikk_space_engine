@@ -2,7 +2,7 @@
 
 #include <default.h>
 
-#include <object.h>
+#include <objects/object.h>
 
 namespace sotiria_project
 {

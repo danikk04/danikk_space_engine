@@ -11,8 +11,5 @@ using namespace danikk_framework;
 
 namespace sotiria_project
 {
-	class GameComponentContainer;
 	class Object;
-	class ComponentInserter;
-	class ObjectClassTemplate;
 }
