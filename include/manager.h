@@ -2,14 +2,17 @@
 
 #include <default.h>
 
-#include <objects/object.h>
+#include <object/object.h>
+#include <object/world.h>
+#include <controller/controller.h>
 
-namespace sotiria_project
+namespace game
 {
 	class Manager
 	{
 	public:
-		Object map_root;
+		WorldObject map_root;
+		DynamicArray<Controller*> controller_array;
 
 		void tick();
 

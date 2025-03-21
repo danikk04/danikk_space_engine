@@ -1,16 +1,17 @@
 #include <asset.h>
 
-namespace sotiria_project
+namespace game
 {
 	StaticAssetCollection static_asset_collection;
 
 	void StaticAssetCollection::load()
 	{
-    	base_shader.load("base2d");
-    	container_sprite = Texture("container").createSprite(0.5f, 0.5f, 0.5f, 0.5f);
+    	base2d_shader.load("base2d");
+    	base3d_shader.load("base3d");
+    	container_texture = Texture("container");
     	base_font.load("archive", FontTypes::rasterized);
 
-    	setDefaultGUIShader(base_shader);
+    	setDefaultGUIShader(base2d_shader);
     	setDefaultFont(base_font);
 	}
 }

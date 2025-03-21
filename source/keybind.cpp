@@ -4,7 +4,7 @@
 #include <default.h>
 #include <manager.h>
 
-namespace sotiria_project
+namespace game
 {
 	KeyBindCollection key_binds;
 
@@ -13,15 +13,9 @@ namespace sotiria_project
 		danikk_engine::exit();
 	}
 
-	void addAsteroid()
-	{
-
-	}
-
 	void KeyBindCollection::init()
 	{
 		base_keybinds.bind(keyboard_buttons::escape, closeGame);
-		base_keybinds.bind(keyboard_buttons::t, addAsteroid);
 	}
 
 	void KeyBindCollection::frame()

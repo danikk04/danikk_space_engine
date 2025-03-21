@@ -5,7 +5,7 @@
 #include <danikk_engine/style.h>
 #include "default.h"
 
-namespace sotiria_project
+namespace game
 {
 	class GUI
 	{

@@ -1,25 +1,31 @@
 #pragma once
 
 #include <default.h>
-#include <objects/object.h>
+#include <object/object.h>
 #include <danikk_engine/mesh.h>
 
-namespace sotiria_project
+namespace game
 {
-	class MeshedObject : virtual WorldObject
+	class MeshedObject : public virtual WorldObject
 	{
-		Mesh mesh;
+	public:
+		Mesh* mesh;
 		Texture texture;
 		vec4 color = vec4(1.0f);
 
-		void frame(Object& parent) override
+		MeshedObject() : WorldObject()
+		{
+
+		}
+
+		void frame() override
 		{
 			setWorldMatrix(world_matrix);
 			setDrawColor(color);
 			uint texture_handle = !texture.isNull() ? texture.container->texture_data.handle : 0;
 			bindTexture(texture_handle, 0);
-			mesh.draw();
-			Object::frame(parent);
+			mesh->draw();
+			Object::frame();
 		}
 	};
 }

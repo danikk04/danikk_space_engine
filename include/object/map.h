@@ -1,9 +1,9 @@
 #pragma once
 
 #include <default.h>
-#include <objects/object.h>
+#include <object/object.h>
 
-namespace sotiria_project
+namespace game
 {
 	struct Voxel
 	{

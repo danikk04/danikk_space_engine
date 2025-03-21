@@ -6,10 +6,11 @@
 
 #include <danikk_engine/danikk_engine.h>
 
-using namespace danikk_engine;
-using namespace danikk_framework;
-
-namespace sotiria_project
+namespace game
 {
+
+	using namespace danikk_engine;
+	using namespace danikk_framework;
+
 	class Object;
 }

@@ -3,5 +3,5 @@
 
 void main()
 {
-
+	out_color = color * texture(diffuse_texture, frag_uv);
 }

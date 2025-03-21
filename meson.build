@@ -1,5 +1,5 @@
 project(
-	'sotiria_project', 
+	'game', 
 	'cpp',
     default_options: [
         'cpp_std=c++20',
@@ -16,7 +16,7 @@ include = [
 subdir('source')
 
 executable(
-    'sotiria_project', 
+    'game', 
     sources,
     dependencies : danikk_engine_proj.get_variable('deps'),
     include_directories : include,

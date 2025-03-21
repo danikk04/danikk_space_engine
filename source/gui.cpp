@@ -1,7 +1,7 @@
 #include <gui.h>
 #include <asset.h>
 
-namespace sotiria_project
+namespace game
 {
 	GUI gui;
 
@@ -19,7 +19,6 @@ namespace sotiria_project
 
 	void GUI::frame()
 	{
-		static_asset_collection.base_shader.use();
     	format(fps_label.text, "FPS:%", fps_counter.getValue());
 	}
 }

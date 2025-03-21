@@ -7,13 +7,15 @@
 #include <danikk_engine/style.h>
 #include "default.h"
 
-namespace sotiria_project
+namespace game
 {
 	struct StaticAssetCollection
 	{
-		Shader base_shader;
+		Shader base2d_shader;
+		Shader base3d_shader;
 		Font base_font;
-		Sprite container_sprite;
+		Texture container_texture;
+		Texture error_texture;
 
 		void load();
 	};

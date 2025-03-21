@@ -6,7 +6,7 @@
 
 namespace danikk_engine_game
 {
-	using namespace sotiria_project;
+	using namespace game;
 
     void pre_begin()
     {
@@ -21,6 +21,7 @@ namespace danikk_engine_game
     	gui.compose();
     	static_asset_collection.load();
     	game_manager.init();
+    	static_asset_collection.base2d_shader.use();
     }
 
     void frame()
