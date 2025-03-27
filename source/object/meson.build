@@ -1,3 +1,3 @@
 sources += files(
-	'block.cpp',
+	'camera.cpp',
 )
