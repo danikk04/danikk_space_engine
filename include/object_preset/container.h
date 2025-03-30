@@ -6,6 +6,7 @@
 #include <object/physic.h>
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_engine/built_in_meshes.h>
+#include <danikk_engine/texture.h>
 #include <asset.h>
 
 namespace game
@@ -16,7 +17,7 @@ namespace game
 		Container() : WorldObject(), MeshedObject(), PhysicObject()
 		{
 			mesh = &cube_mesh;
-			texture = static_asset_collection.container_texture;
+			texture = Texture("container");
 		}
 
 		void frame() override
@@ -28,7 +29,6 @@ namespace game
 		{
 			WorldObject::tick();
 			PhysicObject::tick();
-			//world_matrix = mat4(1.0f);
 		}
 	};
 }

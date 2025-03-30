@@ -8,7 +8,6 @@
 
 namespace game
 {
-
 	using namespace danikk_engine;
 	using namespace danikk_framework;
 

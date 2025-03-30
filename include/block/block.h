@@ -1,45 +1,34 @@
 #pragma once
 
 #include <default.h>
-#include <danikk_engine/sprite.h>
 
 namespace game
 {
-	class Block
+	namespace block
 	{
-		public:
-		const char* system_name;
-		const String* translated_name;
-		Sprite base_texture;
+		class Block
+		{
+			public:
+			const char* system_name;
+			const String* translated_name;
 
-		Block() = default;
+			Block() = default;
 
-		Block(const char* system_name, Sprite& base_texture);
-	};
+			Block(const char* system_name);
 
-	class AirBlock : public Block
-	{
-		static size_t id;
-	public:
-		AirBlock() : Block("air", white_sprite){}
-	};
+			virtual void tick();
 
-	class AbstractContainerBlock : public Block
-	{
-		static size_t id;
-	public:
-		AbstractContainerBlock(const char* system_name, const Sprite& base_texture)
-			: Block("air", white_sprite){}
-	};
+			static size_t variablesSize();
+		};
 
-	class WoodenContainerBlock : public AbstractContainerBlock
-	{
-		static size_t id;
+		extern DynamicArray<Block*> block_types;
 
-		WoodenContainerBlock() : AbstractContainerBlock("air", white_sprite){}
-	};
+		#define define_block_constructor(TYPE, PARENT) TYPE(const char* system_name) : PARENT(system_name)
 
-	extern DynamicArray<Block*> block_types;
+		#define add_block_type(TYPE, SYSTEM_NAME) TYPE::id = generateId(); block_types.push(new TYPE(SYSTEM_NAME));//createSprite
 
-	void initBasicBlockTypes();
+		void initBlockTypes();
+
+		uint generateId();
+	}
 }

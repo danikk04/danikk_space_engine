@@ -22,8 +22,7 @@ namespace game
 		{
 			setWorldMatrix(world_matrix);
 			setDrawColor(color);
-			uint texture_handle = !texture.isNull() ? texture.container->texture_data.handle : 0;
-			bindTexture(texture_handle, 0);
+			texture.bind();
 			mesh->draw();
 			Object::frame();
 		}

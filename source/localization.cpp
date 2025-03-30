@@ -6,13 +6,15 @@ using namespace danikk_framework;
 
 namespace game
 {
-
 	danikk_framework::Localization localization;
 
 	void initLocaliztion()
 	{
-		_("air",								"Air",						"Воздух");
-		_("loght_armor",						"Light armor",				"Лёгкая броня");
-		_("wooden_container",					"Wooden container",			"Деревянный ящик");
+		_("block/air",								"Air",						"Воздух");
+		_("block/vacuum",							"Vacuum",					"Вакуум");
+		_("block/loght_armor",						"Light armor",				"Лёгкая броня");
+		_("block/wooden_container",					"Wooden container",			"Деревянный ящик");
+		_("block/solid",							"Solid material",			"Твёрдый материал");
+		_("block/fluid",							"Fluid",					"Жидкость");
 	}
 }
