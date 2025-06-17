@@ -1,10 +1,11 @@
 #include <manager.h>
 #include <object/camera.h>
-#include <object/meshed.h>
-#include <object_preset/container.h>
-#include <danikk_engine/built_in_meshes.h>
+#include <preset/container.h>
+#include <object/block_map.h>
+#include <preset/block/base.h>
 #include <danikk_framework/danikk_framework.h>
 #include <controller/player.h>
+#include <block/container.h>
 #include <asset.h>
 
 namespace game
@@ -29,6 +30,7 @@ namespace game
 	void Manager::frame()
 	{
 		static_asset_collection.base3d_shader.use();
+		main_camera->setViewMatrix();
 		object_stack.push(&map_root);
 		for(Object* o : map_root.childs)
 		{
@@ -41,15 +43,17 @@ namespace game
 	{
 		map_root.world_matrix = mat4(1.0f);
 
-		Camera* cam = new Camera();
-		cam->pos = vec3(3.0f, 3.0f, 3.0f);
-		map_root.childs.push(cam);
+		main_camera = new Camera();
+		main_camera->pos = vec3(3.0f, 3.0f, 3.0f);
+		map_root.childs.push(main_camera);
 
-		Container* obj = new Container();
-		map_root.childs.push(obj);
+		BlockMapObject* block_map = new BlockMapObject();
+		map_root.childs.push(block_map);
+		fillRegion(*block_map, uvec3(), block::WoodenContainer::id);
+		logInfo((size_t)block_map->filledBlockCount());
 
 		Controller* player_controller = new PlayerController();
-		player_controller->controllable_object = cam;
+		player_controller->controllable_object = main_camera;
 		controller_array.push(player_controller);
 	}
 }

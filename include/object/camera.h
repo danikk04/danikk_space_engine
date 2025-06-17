@@ -8,6 +8,7 @@ namespace game
 {
 	class Camera : public WorldObject
 	{
-        void frame() override;
+	public:
+        void setViewMatrix();
 	};
 }

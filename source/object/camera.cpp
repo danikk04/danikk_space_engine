@@ -5,11 +5,11 @@
 
 namespace game
 {
-	void Camera::frame()
+	void Camera::setViewMatrix()
 	{
 		mat4 view = glm::lookAt(pos, pos + getFront(), vec3(0, 1, 0));
 		mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.0001f, 10000.0f);
-		setViewMatrix(view);
+		danikk_engine::setViewMatrix(view);
 		setProjectionMatrix(projection);
 		Object::frame();
 	}

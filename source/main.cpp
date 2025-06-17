@@ -23,8 +23,8 @@ namespace danikk_engine_game
     	gui.compose();
     	static_asset_collection.load();
     	game::initLocaliztion();
-    	game_manager.init();
     	game::block::initBlockTypes();
+    	game_manager.init();
     	static_asset_collection.base2d_shader.use();
     }
 

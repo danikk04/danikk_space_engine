@@ -4,6 +4,7 @@
 
 #include <object/object.h>
 #include <object/world.h>
+#include <object/camera.h>
 #include <controller/controller.h>
 
 namespace game
@@ -13,6 +14,7 @@ namespace game
 	public:
 		WorldObject map_root;
 		DynamicArray<Controller*> controller_array;
+		Camera* main_camera = NULL;
 
 		void tick();
 

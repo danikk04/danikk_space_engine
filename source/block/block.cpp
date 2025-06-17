@@ -12,6 +12,7 @@
 
 namespace game
 {
+	DynamicArray<block::Block*> block_table;
 	namespace block
 	{
 		static String block_formatter = "";
@@ -37,8 +38,6 @@ namespace game
 		{
 
 		}
-
-		DynamicArray<Block*> block_types;
 
 		uint generateId()
 		{
