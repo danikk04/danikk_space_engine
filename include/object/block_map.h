@@ -35,6 +35,8 @@ namespace game
 			Mesh mesh;
 			Texture texture;
 
+			BlockGroup() = default;
+
 			~BlockGroup()
 			{
 				if(!mesh.isNull())
@@ -47,7 +49,7 @@ namespace game
 	public:
 		block_collection_flags flags;
 
-		BlockMapChunk();
+		BlockMapChunk() = default;
 
 		void regenerateMesh();
 

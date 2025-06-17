@@ -23,7 +23,7 @@ namespace game
 
 	void BlockMapChunk::regenerateMesh()
 	{
-		block_groups.resize(0);
+		block_groups.clear();
 
 		index_t used_block_group_index = 0;
 
