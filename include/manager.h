@@ -7,7 +7,7 @@
 #include <object/camera.h>
 #include <controller/controller.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	class Manager
 	{

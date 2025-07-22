@@ -4,7 +4,7 @@
 #include <object/object.h>
 #include <danikk_engine/mesh.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	class MeshedObject : public virtual WorldObject
 	{

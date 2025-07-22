@@ -3,7 +3,7 @@
 #include <danikk_engine/texture_methods.h>
 #include <danikk_engine/danikk_engine.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	void Camera::setViewMatrix()
 	{

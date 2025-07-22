@@ -2,7 +2,7 @@
 
 #include <default.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	namespace block
 	{

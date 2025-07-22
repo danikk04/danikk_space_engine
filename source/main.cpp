@@ -8,7 +8,7 @@
 
 namespace danikk_engine_game
 {
-	using namespace game;
+	using namespace danikk_space_engine;
 
     void pre_begin()
     {
@@ -22,8 +22,8 @@ namespace danikk_engine_game
     	gui.define();
     	gui.compose();
     	static_asset_collection.load();
-    	game::initLocaliztion();
-    	game::block::initBlockTypes();
+    	danikk_space_engine::initLocaliztion();
+    	danikk_space_engine::block::initBlockTypes();
     	game_manager.init();
     	static_asset_collection.base2d_shader.use();
     }

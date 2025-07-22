@@ -1,6 +1,6 @@
 #include <object/world.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	void WorldObject::tick()
 	{

@@ -2,7 +2,7 @@
 
 #include <object/world.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	class PhysicObject : virtual public WorldObject
 	{

@@ -8,7 +8,7 @@
 #include <block/container.h>
 #include <asset.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	Manager game_manager;
 	thread_local Array<Object*, 16> object_stack;

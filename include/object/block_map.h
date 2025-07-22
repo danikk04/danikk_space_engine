@@ -8,7 +8,7 @@
 #include <danikk_framework/dictionary.h>
 #include <block/block.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	struct BlockData
 	{

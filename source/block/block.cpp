@@ -10,7 +10,7 @@
 
 #include <asset.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	DynamicArray<block::Block*> block_table;
 	namespace block

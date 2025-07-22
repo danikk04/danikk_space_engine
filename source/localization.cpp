@@ -4,7 +4,7 @@
 
 using namespace danikk_framework;
 
-namespace game
+namespace danikk_space_engine
 {
 	danikk_framework::Localization localization;
 

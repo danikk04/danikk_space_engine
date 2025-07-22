@@ -1,7 +1,7 @@
 #include <preset/block/inserter.h>
 #include <danikk_framework/glm.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	void BlockInserter::insertBlock(uvec3 pos, const BlockData& block)
 	{

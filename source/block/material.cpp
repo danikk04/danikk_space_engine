@@ -6,7 +6,7 @@
 #include <block/block.h>
 #include <block/material.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	namespace block
 	{

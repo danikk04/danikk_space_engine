@@ -10,7 +10,7 @@
 #include <default.h>
 #include <manager.h>
 
-namespace game
+namespace danikk_space_engine
 {
 
 }

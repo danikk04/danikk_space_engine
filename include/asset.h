@@ -8,7 +8,7 @@
 #include <danikk_engine/style.h>
 #include "default.h"
 
-namespace game
+namespace danikk_space_engine
 {
 	struct StaticAssetCollection
 	{

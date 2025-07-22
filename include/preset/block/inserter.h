@@ -3,7 +3,7 @@
 #include <default.h>
 #include <object/block_map.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	class BlockInserter
 	{

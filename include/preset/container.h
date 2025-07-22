@@ -9,7 +9,7 @@
 #include <danikk_engine/texture.h>
 #include <asset.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	class Container : public MeshedObject, public PhysicObject
 	{

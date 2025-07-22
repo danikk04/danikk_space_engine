@@ -3,7 +3,7 @@
 #include <default.h>
 #include <danikk_engine/sprite.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	namespace block
 	{

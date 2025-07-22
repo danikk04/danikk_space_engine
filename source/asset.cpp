@@ -1,7 +1,7 @@
 #include <asset.h>
 #include <danikk_framework/string_buffer.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	StaticAssetCollection static_asset_collection;
 	BlockAtlas block_atlas;

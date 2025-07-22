@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace game
+namespace danikk_space_engine
 {
 	extern thread_local Array<Object*, 16> object_stack;
 

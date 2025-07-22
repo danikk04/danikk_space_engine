@@ -3,7 +3,7 @@
 #include <default.h>
 #include <object/object.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	class Controller
 	{

@@ -2,7 +2,7 @@
 
 #include <object/object.h>
 
-namespace game
+namespace danikk_space_engine
 {
 
 	class WorldObject : public Object

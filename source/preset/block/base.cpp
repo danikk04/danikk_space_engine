@@ -2,7 +2,7 @@
 #include <preset/block/inserter.h>
 #include <block/container.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	void addFrameCube(BlockMapObject& target, uvec3 pos, uint id)
 	{

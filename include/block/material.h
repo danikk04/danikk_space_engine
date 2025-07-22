@@ -3,7 +3,7 @@
 #include <default.h>
 #include <block/block.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	namespace block
 	{
@@ -20,6 +20,8 @@ namespace game
 		class NotVacuum : public Block
 		{
 		public:
+			vec2 uv_size;
+			vec2 uv_offset;
 			uint atlas_index;
 
 			static size_t variablesSize();

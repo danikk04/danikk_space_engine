@@ -2,7 +2,7 @@
 
 #include <danikk_framework/localization.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	using danikk_framework::Localization;
 
@@ -10,5 +10,5 @@ namespace game
 
 	void initLocaliztion();
 
-#define localization game::localization
+#define localization danikk_space_engine::localization
 }

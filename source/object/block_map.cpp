@@ -3,27 +3,22 @@
 #include <danikk_framework/glm.h>
 #include <block/block.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	block::Block* BlockData::getBlockType()
 	{
 		return block_table[id];
 	}
 
-	const vec3 block_directions[6]
+	struct BlockDirection
 	{
-		uvec3(1, 0, 0),
-		uvec3(0, 1, 0),
-		uvec3(0, 0, 1),
 
-		uvec3(-1, 0, 0),
-		uvec3(0, -1, 0),
-		uvec3(0, 0, -1),
 	};
 
 	void BlockMapChunk::regenerateMesh()
 	{
 		block_groups.clear();
+		block_groups.resize(1);
 
 		index_t used_block_group_index = 0;
 
@@ -35,14 +30,15 @@ namespace game
 			{
 				continue;
 			}
-			for(const vec3& directory : block_directions)
+			for(const vec3& directions : block_directions)
 			{
-				uvec3 offseted = uvec3((vec3)pos + directory);
+				uvec3 offseted = uvec3((vec3)pos + directions);
+				uint32 block_id = data[offseted].id;
 				if(	offseted.x == axis_size || offseted.y == axis_size || offseted.z == axis_size ||
 					offseted.x == 0 || offseted.y == 0 || offseted.z == 0 ||
-					data[offseted].id == 0)
+					block_id)
 				{
-					dynamic_mesh.addSquare(vec3(pos) + directory / 2.0f, directory);
+					dynamic_mesh.addSquare(vec3(pos) + directions / 2.0f, directions);
 				}
 			}
 		}

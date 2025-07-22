@@ -3,7 +3,7 @@
 #include <default.h>
 #include <danikk_engine/key_bind.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	class KeyBindCollection
 	{

@@ -6,7 +6,7 @@
 
 #include <danikk_engine/danikk_engine.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	using namespace danikk_engine;
 	using namespace danikk_framework;

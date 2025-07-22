@@ -4,7 +4,7 @@
 #include <object/object.h>
 #include <object/world.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	struct CollisionInfo
 	{

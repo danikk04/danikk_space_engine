@@ -3,7 +3,7 @@
 #include <default.h>
 #include <object/block_map.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	void addFrameCube(BlockMapObject& target, uvec3 pos);//куб, у которого есть только грани
 

@@ -1,7 +1,7 @@
 #include <gui.h>
 #include <asset.h>
 
-namespace game
+namespace danikk_space_engine
 {
 	GUI gui;
 
