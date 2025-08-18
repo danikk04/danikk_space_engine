@@ -4,7 +4,7 @@
 namespace danikk_space_engine
 {
 	StaticAssetCollection static_asset_collection;
-	BlockAtlas block_atlas;
+	//BlockAtlas block_atlas;
 
 	void StaticAssetCollection::load()
 	{
@@ -16,7 +16,7 @@ namespace danikk_space_engine
     	setDefaultFont(base_font);
 	}
 
-	Texture& BlockAtlas::getAtlas(uint index)
+	/*Texture& BlockAtlas::getAtlas(uint index)
 	{
 		if(array.size() < index)
 		{
@@ -37,5 +37,5 @@ namespace danikk_space_engine
 	{
 		Texture& texture = getAtlas(atlas_index);
 		return texture.createSpriteByIndex(in_atlas_index, texture_axis_size, texture_axis_count);
-	}
+	}*/
 }

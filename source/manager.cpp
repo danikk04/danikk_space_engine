@@ -4,6 +4,7 @@
 #include <object/block_map.h>
 #include <preset/block/base.h>
 #include <danikk_framework/danikk_framework.h>
+#include <danikk_framework/tensor.h>
 #include <controller/player.h>
 #include <block/container.h>
 #include <asset.h>
@@ -44,16 +45,33 @@ namespace danikk_space_engine
 		map_root.world_matrix = mat4(1.0f);
 
 		main_camera = new Camera();
-		main_camera->pos = vec3(3.0f, 3.0f, 3.0f);
+		main_camera->pos = vec3(0.0f, 0.0f, 0.0f);
 		map_root.childs.push(main_camera);
-
-		BlockMapObject* block_map = new BlockMapObject();
-		map_root.childs.push(block_map);
-		fillRegion(*block_map, uvec3(), block::WoodenContainer::id);
-		logInfo((size_t)block_map->filledBlockCount());
 
 		Controller* player_controller = new PlayerController();
 		player_controller->controllable_object = main_camera;
 		controller_array.push(player_controller);
+
+		BlockMapObject* block_map = new BlockMapObject();
+		map_root.childs.push(block_map);
+
+
+		for(uvec3 pos : TensorIterable<uvec3(2,2,2)>())
+		{
+			ivec3 global_pos = (ivec3)pos - ivec3(1,1,1);
+			BlockMapRegion& region = (*block_map)[global_pos];
+			fillRegionCorners(region, block::WoodenContainer::id);
+		}
+		logInfo((size_t)block_map->filledBlockCount());
+	}
+
+
+	void Manager::testScenario()
+	{
+	}
+
+	void Manager::occupationGameScenario()
+	{
+
 	}
 }

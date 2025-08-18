@@ -44,12 +44,9 @@ namespace danikk_space_engine
 		target.regenerateMesh();
 	}
 
-	void fillRegion(BlockMapObject& target, uvec3 pos, uint id)
+	void fillRegion(BlockMapRegion& target, uint id)
 	{
-		uvec3 region_index = BlockMapObject::globalPosToRegionIndex(pos);
-		BlockMapRegion& region = target[region_index];
-
-		for(BlockMapChunk& chunk : region)
+		for(BlockMapChunk& chunk : target)
 		{
 			chunk.begin();
 			chunk.end();
@@ -58,6 +55,32 @@ namespace danikk_space_engine
 				data.id = id;
 			}
 		}
+		target.checkExits();
+		target.regenerateMesh();
+	}
+
+	void fillRegionCorners(BlockMapRegion& target, uint id)
+	{
+		uint32 offset = BlockMapRegion::block_axis_size - 1;
+		uvec3 fill_poses[8]
+		{
+			uvec3(0,0,0),
+			uvec3(0,offset,0),
+			uvec3(0,0,offset),
+			uvec3(0,offset,offset),
+			uvec3(offset,0,0),
+			uvec3(offset,offset,0),
+			uvec3(offset,0,offset),
+			uvec3(offset,offset,offset),
+		};
+
+		for(const uvec3& pos : fill_poses)
+		{
+			uvec3 chunk_index = BlockMapRegion::regionPosToChunkIndex(pos);
+			uvec3 chunk_pos = BlockMapRegion::regionPosToChunkPos(pos);
+			target[chunk_index][chunk_pos].id = id;
+		}
+
 		target.checkExits();
 		target.regenerateMesh();
 	}

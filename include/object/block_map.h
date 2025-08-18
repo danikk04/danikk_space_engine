@@ -23,6 +23,40 @@ namespace danikk_space_engine
 		bool32 is_active = false;//есть ли хотя-бы один работающие механизм в чанке или идёт ли теплообмен между блоками.
 	};
 
+	class BlockMapChunk;
+
+	struct BlockMeshGroup
+	{
+		Mesh mesh;
+		Texture texture = Texture("container");
+		uint32 block_id = -1;
+
+		BlockMeshGroup() = default;
+
+		~BlockMeshGroup()
+		{
+			if(!mesh.isNull())
+			{
+				mesh.clear();
+			}
+		}
+
+		void regenerateMesh(BlockMapChunk& chunk);
+
+		void frame();
+	};
+
+	class BlockMeshGroupCollection
+	{
+		DynamicArray<BlockMeshGroup> data;//потом нужно будет переделать так, чтобы память для групп блоков хранилась регионе одним куском
+
+		bool containsBlockId(uint32 id);
+	public:
+		void regenerateMesh(BlockMapChunk& chunk);
+
+		void frame();
+	};
+
 	class BlockMapChunk
 	{
 	public:
@@ -30,22 +64,7 @@ namespace danikk_space_engine
 		static constexpr uvec3 size = uvec3(axis_size);
 	private:
 		FixedTensor<BlockData, size> data;
-		struct BlockGroup
-		{
-			Mesh mesh;
-			Texture texture;
-
-			BlockGroup() = default;
-
-			~BlockGroup()
-			{
-				if(!mesh.isNull())
-				{
-					mesh.clear();
-				}
-			}
-		};
-		DynamicArray<BlockGroup> block_groups;//потом нужно будет переделать так, чтобы память для групп блоков хранилась регионе одним куском
+		BlockMeshGroupCollection mesh_groups;
 	public:
 		block_collection_flags flags;
 
@@ -66,6 +85,8 @@ namespace danikk_space_engine
 		void checkExits();
 
 		uint filledBlockCount();
+
+		TensorIterable<BlockMapChunk::size> iteratePos();
 	};
 
 	class BlockMapRegion
@@ -73,6 +94,9 @@ namespace danikk_space_engine
 	public:
 		static constexpr size_t axis_size = 2;
 		static constexpr uvec3 size = uvec3(axis_size);
+
+		static constexpr size_t block_axis_size = BlockMapChunk::axis_size * axis_size;
+		//static constexpr size_t block_size = BlockMapChunk::size * size;
 	private:
 		FixedTensor<BlockMapChunk, size> data;
 	public:
@@ -103,7 +127,7 @@ namespace danikk_space_engine
 	{
 		struct data_t
 		{
-			uvec3 pos;
+			ivec3 pos;
 			BlockMapRegion region;
 		};
 		DynamicArray<data_t> data;
@@ -112,13 +136,13 @@ namespace danikk_space_engine
 
 		void frame() override;
 
-		BlockMapRegion& operator[](const uvec3&);
+		BlockMapRegion& operator[](const ivec3&);
 
-		BlockData& getBlock(const uvec3&);
+		BlockData& getBlock(const ivec3&);
 
-		static uvec3 globalPosToRegionIndex(uvec3 pos);
+		static uvec3 globalPosToRegionIndex(ivec3 pos);
 
-		static uvec3 globalPosToRegionPos(uvec3 pos);
+		static uvec3 globalPosToRegionPos(ivec3 pos);
 
 		void regenerateMesh();
 

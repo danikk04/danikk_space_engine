@@ -21,6 +21,10 @@ namespace danikk_space_engine
 		void frame();
 
 		void init();
+
+		void testScenario();
+
+		void occupationGameScenario();
 	};
 
 	extern Manager game_manager;

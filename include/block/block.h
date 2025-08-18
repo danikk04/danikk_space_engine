@@ -18,6 +18,8 @@ namespace danikk_space_engine
 
 			virtual void tick();
 
+			//virtual void insertMesh(DynamicMesh& mesh, uvec3 offset);
+
 			static size_t variablesSize();
 		};
 

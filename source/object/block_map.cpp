@@ -10,39 +10,90 @@ namespace danikk_space_engine
 		return block_table[id];
 	}
 
-	struct BlockDirection
+	const vec3 block_directions[6]
 	{
+		vec3(1, 0, 0),
+		vec3(0, 1, 0),
+		vec3(0, 0, 1),
 
+		vec3(-1, 0, 0),
+		vec3(0, -1, 0),
+		vec3(0, 0, -1),
 	};
 
-	void BlockMapChunk::regenerateMesh()
+	bool BlockMeshGroupCollection::containsBlockId(uint32 id)
 	{
-		block_groups.clear();
-		block_groups.resize(1);
+		for(BlockMeshGroup& element : data)
+		{
+			if(element.block_id == id)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 
-		index_t used_block_group_index = 0;
-
+	void BlockMeshGroup::regenerateMesh(BlockMapChunk& chunk)
+	{
 		DynamicMesh dynamic_mesh;
 
-		for(uvec3 pos : data.iteratePos())
+		for(const uvec3& pos : chunk.iteratePos())
 		{
-			if(data[pos].id == 0)
+			uint32 block_id = chunk[pos].id;
+			if(block_id == 0 || block_id != this->block_id)
 			{
 				continue;
 			}
-			for(const vec3& directions : block_directions)
+			for(const vec3& direction : block_directions)
 			{
-				uvec3 offseted = uvec3((vec3)pos + directions);
-				uint32 block_id = data[offseted].id;
-				if(	offseted.x == axis_size || offseted.y == axis_size || offseted.z == axis_size ||
-					offseted.x == 0 || offseted.y == 0 || offseted.z == 0 ||
-					block_id)
-				{
-					dynamic_mesh.addSquare(vec3(pos) + directions / 2.0f, directions);
-				}
+				vec3 offseted = vec3(pos) + vec3(0.5f) + direction / 2.0f;
+
+				dynamic_mesh.addSquare(offseted, direction);
 			}
 		}
-		block_groups[0].mesh = dynamic_mesh.toMesh();
+		mesh = dynamic_mesh.toMesh();
+	}
+
+	void BlockMeshGroup::frame()
+	{
+		texture.bind();
+		mesh.draw();
+	}
+
+	void BlockMeshGroupCollection::regenerateMesh(BlockMapChunk& chunk)
+	{
+		data.clear();
+
+		for(BlockData& block : chunk)
+		{
+			bool block_group_exits = false;
+			for(BlockMeshGroup& group : data)
+			{
+				if(group.block_id == block.id)
+				{
+					block_group_exits = true;
+				}
+			}
+			if(!block_group_exits)
+			{
+				data.pushCtor();
+				data.last().block_id = block.id;
+				data.last().regenerateMesh(chunk);
+			}
+		}
+	}
+
+	void BlockMeshGroupCollection::frame()
+	{
+		for(BlockMeshGroup& group : data)
+		{
+			group.frame();
+		}
+	}
+
+	void BlockMapChunk::regenerateMesh()
+	{
+		mesh_groups.regenerateMesh(*this);
 	}
 
 	void BlockMapChunk::tick()
@@ -55,7 +106,7 @@ namespace danikk_space_engine
 
 	void BlockMapChunk::frame()
 	{
-		block_groups[0].mesh.draw();
+		mesh_groups.frame();
 	}
 
 	void BlockMapChunk::checkExits()
@@ -86,6 +137,11 @@ namespace danikk_space_engine
 			}
 		}
 		return result;
+	}
+
+	TensorIterable<BlockMapChunk::size> BlockMapChunk::iteratePos()
+	{
+		return data.iteratePos();
 	}
 
 	BlockData& BlockMapChunk::operator[](const uvec3& pos)
@@ -191,7 +247,7 @@ namespace danikk_space_engine
 		return uvec3(pos.x % BlockMapChunk::size.x, pos.y % BlockMapChunk::size.y, pos.z % BlockMapChunk::size.z);
 	}
 
-	BlockMapRegion& BlockMapObject::operator[](const uvec3& pos)
+	BlockMapRegion& BlockMapObject::operator[](const ivec3& pos)
 	{
 		for(data_t& element : data)
 		{
@@ -205,7 +261,7 @@ namespace danikk_space_engine
 		return new_region.region;
 	}
 
-	BlockData& BlockMapObject::getBlock(const uvec3& pos)
+	BlockData& BlockMapObject::getBlock(const ivec3& pos)
 	{
 		uvec3 in_region_pos = globalPosToRegionPos(pos);
 		uvec3 region_index = globalPosToRegionIndex(pos);
@@ -214,12 +270,12 @@ namespace danikk_space_engine
 		return (*this)[region_index][chunk_index][in_chunk_pos];
 	}
 
-	uvec3 BlockMapObject::globalPosToRegionIndex(uvec3 pos)
+	uvec3 BlockMapObject::globalPosToRegionIndex(ivec3 pos)
 	{
 		return uvec3(pos.x / BlockMapRegion::size.x, pos.y / BlockMapRegion::size.y, pos.z / BlockMapRegion::size.z);
 	}
 
-	uvec3 BlockMapObject::globalPosToRegionPos(uvec3 pos)
+	uvec3 BlockMapObject::globalPosToRegionPos(ivec3 pos)
 	{
 		return uvec3(pos.x % BlockMapRegion::size.x, pos.y % BlockMapRegion::size.y, pos.z % BlockMapRegion::size.z);
 	}
@@ -234,10 +290,14 @@ namespace danikk_space_engine
 
 	void BlockMapObject::frame()
 	{
+		setWorldMatrix(mat4(1.0f));
+		setDrawColor(vec4(1.0f));
+
 		for(data_t& element : data)
 		{
 			element.region.frame();
 		}
+
 	}
 
 	void BlockMapObject::regenerateMesh()

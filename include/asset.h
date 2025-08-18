@@ -19,7 +19,7 @@ namespace danikk_space_engine
 		void load();
 	};
 
-	class BlockAtlas
+	/*class BlockAtlas
 	{
 		DynamicArray<Texture> array;
 	public:
@@ -30,9 +30,9 @@ namespace danikk_space_engine
 		Texture& getAtlas(uint index);
 
 		Sprite getTextureFromAtlas(uint atlas_index, uint in_atlas_index);
-	};
+	};*/
 
-	extern BlockAtlas block_atlas;
+	//extern BlockAtlas block_atlas;
 	extern StaticAssetCollection static_asset_collection;
 }
 
