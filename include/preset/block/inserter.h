@@ -8,10 +8,10 @@ namespace danikk_space_engine
 	class BlockInserter
 	{
 		BlockMapObject& target;
-		uvec3 offset;
+		pos_type offset;
 	public:
-		BlockInserter(BlockMapObject& target, uvec3 offset) : target(target), offset(offset){}
+		BlockInserter(BlockMapObject& target, pos_type offset) : target(target), offset(offset){}
 
-		void insertBlock(uvec3 pos, const BlockData& block);
+		void insertBlock(pos_type pos, const BlockSlot& block);
 	};
 }

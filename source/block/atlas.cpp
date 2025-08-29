@@ -1,5 +1,3 @@
-#pragma once
-
 #include <block/atlas.h>
 
 namespace danikk_space_engine

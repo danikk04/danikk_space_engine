@@ -1,25 +1,31 @@
+#include <default.h>
+
 #include <object/block_map.h>
 #include <danikk_engine/dynamic_mesh.h>
 #include <danikk_framework/glm.h>
 #include <block/block.h>
+#include <block/data.h>
 
 namespace danikk_space_engine
 {
-	block::Block* BlockData::getBlockType()
+	thread_local BlockMapChunk* current_chunk;
+	thread_local BlockMapRegion* current_region;
+	thread_local BlockMapObject* current_map;
+
+	thread_local pos_type current_chunk_pos;
+	thread_local pos_type current_block_pos;
+
+	thread_local BlockSlot* current_block;
+
+	Block* BlockBaseHeader::getBlockType()
 	{
 		return block_table[id];
 	}
 
-	const vec3 block_directions[6]
+	vec3 getBLockOffset()
 	{
-		vec3(1, 0, 0),
-		vec3(0, 1, 0),
-		vec3(0, 0, 1),
-
-		vec3(-1, 0, 0),
-		vec3(0, -1, 0),
-		vec3(0, 0, -1),
-	};
+		return vec3(current_region->pos) * (float)BlockMapRegion::block_axis_size + vec3(current_chunk_pos) * (float)BlockMapChunk::axis_size;
+	}
 
 	bool BlockMeshGroupCollection::containsBlockId(uint32 id)
 	{
@@ -33,22 +39,32 @@ namespace danikk_space_engine
 		return false;
 	}
 
-	void BlockMeshGroup::regenerateMesh(BlockMapChunk& chunk)
+	void BlockMeshGroup::regenerateMesh()
 	{
 		DynamicMesh dynamic_mesh;
 
-		for(const uvec3& pos : chunk.iteratePos())
+		for(const pos_type& pos : current_chunk->iteratePos())
 		{
-			uint32 block_id = chunk[pos].id;
+			uint32 block_id = (*current_chunk)[pos].getId();
 			if(block_id == 0 || block_id != this->block_id)
 			{
 				continue;
 			}
-			for(const vec3& direction : block_directions)
+			for(const pos_type& direction : block_directions)
 			{
-				vec3 offseted = vec3(pos) + vec3(0.5f) + direction / 2.0f;
+				uvec3 directed_pos = pos_type(pos + direction);
+				if(current_chunk->isValidIndex(directed_pos))
+				{
+					uint32 directed_block_id = (*current_chunk)[directed_pos].getId();
+					if(directed_block_id != 0)
+					{
+						continue;
+					}
+				}
 
-				dynamic_mesh.addSquare(offseted, direction);
+				vec3 offseted = vec3(pos) + vec3(0.5f) + vec3(direction) / 2.0f + getBLockOffset();
+
+				dynamic_mesh.addSquare(offseted, vec3(direction));
 			}
 		}
 		mesh = dynamic_mesh.toMesh();
@@ -60,16 +76,16 @@ namespace danikk_space_engine
 		mesh.draw();
 	}
 
-	void BlockMeshGroupCollection::regenerateMesh(BlockMapChunk& chunk)
+	void BlockMeshGroupCollection::regenerateMesh()
 	{
 		data.clear();
 
-		for(BlockData& block : chunk)
+		for(BlockSlot& block : *current_chunk)
 		{
 			bool block_group_exits = false;
 			for(BlockMeshGroup& group : data)
 			{
-				if(group.block_id == block.id)
+				if(group.block_id == block.getId())
 				{
 					block_group_exits = true;
 				}
@@ -77,8 +93,8 @@ namespace danikk_space_engine
 			if(!block_group_exits)
 			{
 				data.pushCtor();
-				data.last().block_id = block.id;
-				data.last().regenerateMesh(chunk);
+				data.last().block_id = block.getId();
+				data.last().regenerateMesh();
 			}
 		}
 	}
@@ -93,14 +109,21 @@ namespace danikk_space_engine
 
 	void BlockMapChunk::regenerateMesh()
 	{
-		mesh_groups.regenerateMesh(*this);
+		mesh_groups.regenerateMesh();
 	}
 
 	void BlockMapChunk::tick()
 	{
-		for(uvec3 pos : data.iteratePos())
+		for(pos_type pos : data.iteratePos())
 		{
-			data[pos].getBlockType()->tick();
+			BlockSlot& block = data[pos];
+			if(!block.isHeaderExits())
+			{
+				continue;
+			}
+			BlockBaseHeader& header = block.getHeader();
+			current_block_pos = pos;
+			header.getBlockType()->tick();
 		}
 	}
 
@@ -111,9 +134,9 @@ namespace danikk_space_engine
 
 	void BlockMapChunk::checkExits()
 	{
-		for(BlockData& block : *this)
+		for(BlockSlot& block : *this)
 		{
-			if(block.id != 0)
+			if(block.getId() != 0)
 			{
 				flags.is_exits = true;
 				return;
@@ -129,9 +152,9 @@ namespace danikk_space_engine
 			return 0;
 		}
 		uint result = 0;
-		for(BlockData& block : *this)
+		for(BlockSlot& block : *this)
 		{
-			if(block.id != 0)
+			if(block.getId() != 0)
 			{
 				result++;
 			}
@@ -144,28 +167,29 @@ namespace danikk_space_engine
 		return data.iteratePos();
 	}
 
-	BlockData& BlockMapChunk::operator[](const uvec3& pos)
+	BlockSlot& BlockMapChunk::operator[](const pos_type& pos)
 	{
 		return data[pos];
 	}
 
-	BlockData* BlockMapChunk::begin()
+	BlockSlot* BlockMapChunk::begin()
 	{
 		return data.begin();
 	}
 
-	BlockData* BlockMapChunk::end()
+	BlockSlot* BlockMapChunk::end()
 	{
 		return data.end();
 	}
 
 	void BlockMapRegion::tick()
 	{
-		for(uvec3 pos : data.iteratePos())
+		for(pos_type pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
-			if(element.flags.is_exits)
+			if(element.flags.is_active)
 			{
+				current_chunk_pos = pos;
 				element.tick();
 			}
 		}
@@ -173,7 +197,7 @@ namespace danikk_space_engine
 
 	void BlockMapRegion::frame()
 	{
-		for(uvec3 pos : data.iteratePos())
+		for(pos_type pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
 			if(element.flags.is_exits)
@@ -185,12 +209,16 @@ namespace danikk_space_engine
 
 	void BlockMapRegion::regenerateMesh()
 	{
-		for(uvec3 pos : data.iteratePos())
+		current_region = this;
+		for(pos_type pos : data.iteratePos())
 		{
-			BlockMapChunk& element = data[pos];
-			if(element.flags.is_exits)
+			BlockMapChunk& chunk = data[pos];
+			current_chunk_pos = pos;
+			current_chunk = &chunk;
+			if(chunk.flags.is_exits)
 			{
-				data[pos].regenerateMesh();
+				current_chunk = &chunk;
+				chunk.regenerateMesh();
 			}
 		}
 	}
@@ -208,6 +236,11 @@ namespace danikk_space_engine
 		}
 	}
 
+	void BlockMapRegion::setAsCurrent()
+	{
+		current_region = this;
+	}
+
 	uint BlockMapRegion::filledBlockCount()
 	{
 		if(!flags.is_exits)
@@ -215,14 +248,19 @@ namespace danikk_space_engine
 			return 0;
 		}
 		uint result = 0;
-		for(uvec3 pos : data.iteratePos())
+		for(BlockMapChunk& chunk : data)
 		{
-			result += data[pos].filledBlockCount();
+			result += chunk.filledBlockCount();
 		}
 		return result;
 	}
 
-	BlockMapChunk& BlockMapRegion::operator[](const uvec3& pos)
+	RegionAllocator& BlockMapRegion::getAllocator()
+	{
+		return allocator;
+	}
+
+	BlockMapChunk& BlockMapRegion::operator[](const pos_type& pos)
 	{
 		return data[pos];
 	}
@@ -237,94 +275,111 @@ namespace danikk_space_engine
 		return data.end();
 	}
 
-	uvec3 BlockMapRegion::regionPosToChunkIndex(uvec3 pos)
+	pos_type BlockMapRegion::regionPosToChunkIndex(pos_type pos)
 	{
-		return uvec3(pos.x / BlockMapChunk::size.x, pos.y / BlockMapChunk::size.y, pos.z / BlockMapChunk::size.z);
+		return pos_type(pos.x / BlockMapChunk::size.x, pos.y / BlockMapChunk::size.y, pos.z / BlockMapChunk::size.z);
 	}
 
-	uvec3 BlockMapRegion::regionPosToChunkPos(uvec3 pos)
+	pos_type BlockMapRegion::regionPosToChunkPos(pos_type pos)
 	{
-		return uvec3(pos.x % BlockMapChunk::size.x, pos.y % BlockMapChunk::size.y, pos.z % BlockMapChunk::size.z);
+		return pos_type(pos.x % BlockMapChunk::size.x, pos.y % BlockMapChunk::size.y, pos.z % BlockMapChunk::size.z);
 	}
 
-	BlockMapRegion& BlockMapObject::operator[](const ivec3& pos)
+	BlockMapRegion& BlockMapObject::operator[](const pos_type& pos)
 	{
-		for(data_t& element : data)
+		for(BlockMapRegion& element : data)
 		{
 			if(element.pos == pos)
 			{
-				return element.region;
+				return element;
 			}
 		}
-		data_t& new_region = data.pushCtor();
+		BlockMapRegion& new_region = data.pushCtor();
 		new_region.pos = pos;
-		return new_region.region;
+		return new_region;
 	}
 
-	BlockData& BlockMapObject::getBlock(const ivec3& pos)
+	BlockMapRegion* BlockMapObject::get(const pos_type& pos)
 	{
-		uvec3 in_region_pos = globalPosToRegionPos(pos);
-		uvec3 region_index = globalPosToRegionIndex(pos);
-		uvec3 chunk_index = BlockMapRegion::regionPosToChunkIndex(in_region_pos);
-		uvec3 in_chunk_pos = BlockMapRegion::regionPosToChunkPos(in_region_pos);
+		for(BlockMapRegion& element : data)
+		{
+			if(element.pos == pos)
+			{
+				return &element;
+			}
+		}
+		return NULL;
+	}
+
+	BlockSlot& BlockMapObject::getBlock(const pos_type& pos)
+	{
+		pos_type in_region_pos = globalPosToRegionPos(pos);
+		pos_type region_index = globalPosToRegionIndex(pos);
+		pos_type chunk_index = BlockMapRegion::regionPosToChunkIndex(in_region_pos);
+		pos_type in_chunk_pos = BlockMapRegion::regionPosToChunkPos(in_region_pos);
 		return (*this)[region_index][chunk_index][in_chunk_pos];
 	}
 
-	uvec3 BlockMapObject::globalPosToRegionIndex(ivec3 pos)
+	pos_type BlockMapObject::globalPosToRegionIndex(pos_type pos)
 	{
-		return uvec3(pos.x / BlockMapRegion::size.x, pos.y / BlockMapRegion::size.y, pos.z / BlockMapRegion::size.z);
+		return pos_type(pos.x / BlockMapRegion::size.x, pos.y / BlockMapRegion::size.y, pos.z / BlockMapRegion::size.z);
 	}
 
-	uvec3 BlockMapObject::globalPosToRegionPos(ivec3 pos)
+	pos_type BlockMapObject::globalPosToRegionPos(pos_type pos)
 	{
-		return uvec3(pos.x % BlockMapRegion::size.x, pos.y % BlockMapRegion::size.y, pos.z % BlockMapRegion::size.z);
+		return pos_type(pos.x % BlockMapRegion::size.x, pos.y % BlockMapRegion::size.y, pos.z % BlockMapRegion::size.z);
 	}
 
 	void BlockMapObject::tick()
 	{
-		for(data_t& element : data)
+		current_map = this;
+		for(BlockMapRegion& element : data)
 		{
-			element.region.tick();
+			if(element.flags.is_active)
+			{
+				element.tick();
+			}
 		}
 	}
 
 	void BlockMapObject::frame()
 	{
+		current_map = this;
 		setWorldMatrix(mat4(1.0f));
 		setDrawColor(vec4(1.0f));
 
-		for(data_t& element : data)
+		for(BlockMapRegion& element : data)
 		{
-			element.region.frame();
+			element.frame();
 		}
-
 	}
 
 	void BlockMapObject::regenerateMesh()
 	{
-		for(data_t& element : data)
+		for(BlockMapRegion& element : data)
 		{
-			if(element.region.flags.is_exits)
+			if(element.flags.is_exits)
 			{
-				element.region.regenerateMesh();
+				current_region = &element;
+				element.regenerateMesh();
 			}
 		}
 	}
 
 	void BlockMapObject::checkExits()
 	{
-		for(data_t& element : data)
+		for(BlockMapRegion& element : data)
 		{
-			element.region.checkExits();
+			element.checkExits();
 		}
 	}
 
 	uint BlockMapObject::filledBlockCount()
 	{
 		uint result = 0;
-		for(data_t& element : data)
+		for(BlockMapRegion& element : data)
 		{
-			result += element.region.filledBlockCount();
+			result += element.filledBlockCount();
 		}
 		return result;
 	}

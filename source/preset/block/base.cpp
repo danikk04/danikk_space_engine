@@ -4,81 +4,42 @@
 
 namespace danikk_space_engine
 {
-	void addFrameCube(BlockMapObject& target, uvec3 pos, uint id)
-	{
-		constexpr static size_t cube_size = 16;
-
-		BlockInserter inserter = BlockInserter(target, pos);
-
-		BlockData block;
-		block.id = id;
-
-		for(uint iterable_axis = 0; iterable_axis < 3; iterable_axis++)
-		{
-			uint not_iterable_axis[2];
-
-			switch(iterable_axis)
-			{
-				case 0: not_iterable_axis[0] = 1; not_iterable_axis[1] = 2; break;
-				case 1: not_iterable_axis[0] = 0; not_iterable_axis[1] = 2; break;
-				case 2: not_iterable_axis[0] = 1; not_iterable_axis[1] = 0; break;
-			}
-
-			for(uint iterable_axis_pos = 0; iterable_axis_pos < cube_size; iterable_axis_pos++)
-			{
-				uvec3 block_place_pos;
-				block_place_pos[iterable_axis] = iterable_axis_pos;
-
-				for(uint place_side1 = 0; place_side1 < 2; place_side1++)
-				{
-					for(uint place_side2 = 0; place_side2 < 2; place_side2++)
-					{
-						block_place_pos[not_iterable_axis[0]] = place_side1 ? 0 : cube_size - 1;
-						block_place_pos[not_iterable_axis[1]] = place_side2 ? 0 : cube_size - 1;
-						inserter.insertBlock(block_place_pos, block);
-					}
-				}
-			}
-		}
-		target.checkExits();
-		target.regenerateMesh();
-	}
-
-	void fillRegion(BlockMapRegion& target, uint id)
+	void fillRegion(BlockMapRegion& target, const BlockSlot& block)
 	{
 		for(BlockMapChunk& chunk : target)
 		{
 			chunk.begin();
 			chunk.end();
-			for(BlockData& data : chunk)
+			for(BlockSlot& data : chunk)
 			{
-				data.id = id;
+				data = block;
 			}
 		}
 		target.checkExits();
 		target.regenerateMesh();
 	}
 
-	void fillRegionCorners(BlockMapRegion& target, uint id)
+	void fillRegionCorners(BlockMapRegion& target, const BlockSlot& block)
 	{
 		uint32 offset = BlockMapRegion::block_axis_size - 1;
 		uvec3 fill_poses[8]
 		{
-			uvec3(0,0,0),
-			uvec3(0,offset,0),
-			uvec3(0,0,offset),
-			uvec3(0,offset,offset),
-			uvec3(offset,0,0),
-			uvec3(offset,offset,0),
-			uvec3(offset,0,offset),
-			uvec3(offset,offset,offset),
+			uvec3(0,		0,		0),
+			uvec3(0,		offset,	0),
+			uvec3(0,		0,		offset),
+			uvec3(0,		offset,	offset),
+			uvec3(offset,	0,		0),
+			uvec3(offset,	offset,	0),
+			uvec3(offset,	0,		offset),
+			uvec3(offset,	offset,	offset),
 		};
 
 		for(const uvec3& pos : fill_poses)
 		{
 			uvec3 chunk_index = BlockMapRegion::regionPosToChunkIndex(pos);
 			uvec3 chunk_pos = BlockMapRegion::regionPosToChunkPos(pos);
-			target[chunk_index][chunk_pos].id = id;
+			BlockSlot& target_slot = target[chunk_index][chunk_pos];
+			block.data.copyTo(target_slot.data);
 		}
 
 		target.checkExits();

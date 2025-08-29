@@ -3,6 +3,7 @@
 #include <danikk_framework/glm.h>
 
 #include <object/world.h>
+#include <object/entity/particle/flame.h>
 #include <preset/container.h>
 #include <object/camera.h>
 #include <controller/player.h>
@@ -53,7 +54,7 @@ namespace danikk_space_engine
 		{
 			if(getKeyboardState(keyboard_buttons::f) == button_states::press)
 			{
-				Container* obj = new Container();
+				FlameParticle* obj = new FlameParticle();
 				obj->pos = controllable_as_world->pos;
 				obj->rotation = controllable_as_world->rotation;
 				obj->speed = controllable_as_camera->getFront() * getTargetFrameDelay();

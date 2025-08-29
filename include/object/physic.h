@@ -13,6 +13,7 @@ namespace danikk_space_engine
 
 		void tick() override
 		{
+			WorldObject::tick();
 			pos += speed;
 			rotation += rotation_speed;
 		}

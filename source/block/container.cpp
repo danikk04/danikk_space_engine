@@ -8,19 +8,5 @@
 
 namespace danikk_space_engine
 {
-	namespace block
-	{
-		size_t WoodenContainer::id;
-
-		size_t AbstractContainer::variablesSize()
-		{
-			return 0 + Block::variablesSize();
-		}
-
-		size_t WoodenContainer::variablesSize()
-		{
-			return 0 + AbstractContainer::variablesSize();
-		}
-
-	}
+	size_t WoodenContainer::id;
 }

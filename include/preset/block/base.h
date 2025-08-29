@@ -5,9 +5,7 @@
 
 namespace danikk_space_engine
 {
-	void addFrameCube(BlockMapRegion& target, uint id);//куб, у которого есть только грани
+	void fillRegion(BlockMapRegion& target, const BlockSlot& block);
 
-	void fillRegion(BlockMapRegion& target, uint id);
-
-	void fillRegionCorners(BlockMapRegion& target, uint id);
+	void fillRegionCorners(BlockMapRegion& target, const BlockSlot& block);
 }

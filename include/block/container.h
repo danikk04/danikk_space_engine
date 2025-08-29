@@ -6,25 +6,17 @@
 
 namespace danikk_space_engine
 {
-	namespace block
+	class AbstractContainer : public Solid
 	{
-		class AbstractContainer : public Solid
-		{
-		public:
-			define_block_constructor(AbstractContainer, Solid){}
+	public:
+		define_block_constructor(AbstractContainer, Solid){}
+	};
 
-			size_t variablesSize();
-		};
+	class WoodenContainer : public AbstractContainer
+	{
+	public:
+		static size_t id;
 
-		class WoodenContainer : public AbstractContainer
-		{
-		public:
-			static size_t id;
-
-			define_block_constructor(WoodenContainer, AbstractContainer){}
-
-
-			size_t variablesSize();
-		};
-	}
+		define_block_constructor(WoodenContainer, AbstractContainer){}
+	};
 }

@@ -6,6 +6,7 @@
 #include <danikk_engine/sprite.h>
 #include <danikk_engine/shader.h>
 #include <danikk_engine/style.h>
+#include <danikk_engine/mesh.h>
 #include "default.h"
 
 namespace danikk_space_engine
@@ -15,6 +16,7 @@ namespace danikk_space_engine
 		Shader base2d_shader;
 		Shader base3d_shader;
 		Font base_font;
+		Mesh low_poly_sphere_mesh;
 
 		void load();
 	};

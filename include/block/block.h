@@ -1,36 +1,36 @@
 #pragma once
 
 #include <default.h>
+#include <block/data.h>
 
 namespace danikk_space_engine
 {
-	namespace block
+	class Block
 	{
-		class Block
-		{
-			public:
-			const char* system_name;
-			const String* translated_name;
+		public:
+		const char* system_name;
+		const String* translated_name;
 
-			Block() = default;
+		Block() = default;
 
-			Block(const char* system_name);
+		Block(const char* system_name);
 
-			virtual void tick();
+		void tick();
 
-			//virtual void insertMesh(DynamicMesh& mesh, uvec3 offset);
+		void randomIteraction(BlockSlot* other);
 
-			static size_t variablesSize();
-		};
+		//virtual void insertMesh(DynamicMesh& mesh, uvec3 offset);
 
-		#define define_block_constructor(TYPE, PARENT) TYPE(const char* system_name) : PARENT(system_name)
+		static size_t variablesSize();
+	};
 
-		#define add_block_type(TYPE, SYSTEM_NAME) TYPE::id = generateId(); block_table.push(new TYPE(SYSTEM_NAME));//createSprite
+	#define define_block_constructor(TYPE, PARENT) TYPE(const char* system_name) : PARENT(system_name)
 
-		void initBlockTypes();
+	#define add_block_type(TYPE, SYSTEM_NAME) TYPE::id = generateId(); block_table.push(new TYPE(SYSTEM_NAME));//createSprite
 
-		uint generateId();
-	}
+	void initBlockTypes();
 
-	extern DynamicArray<block::Block*> block_table;
+	uint generateId();
+
+	extern DynamicArray<Block*> block_table;
 }

@@ -7,23 +7,28 @@
 #include <danikk_framework/tensor.h>
 #include <danikk_framework/dictionary.h>
 #include <block/block.h>
+#include <block/data.h>
+#include <block/allocator.h>
 
 namespace danikk_space_engine
 {
-	struct BlockData
+	inline const pos_type block_directions[6]
 	{
-		uint32 id = 0;
+		vec3(1, 0, 0),
+		vec3(0, 1, 0),
+		vec3(0, 0, 1),
 
-		block::Block* getBlockType();
+		vec3(-1, 0, 0),
+		vec3(0, -1, 0),
+		vec3(0, 0, -1),
 	};
+	vec3 getBlockOffset();
 
 	struct block_collection_flags//флаги как для чанков, так и для регионов
 	{
 		bool32 is_exits = false;//есть ли хотя-бы один не вакуумный блок в этом чанке
 		bool32 is_active = false;//есть ли хотя-бы один работающие механизм в чанке или идёт ли теплообмен между блоками.
 	};
-
-	class BlockMapChunk;
 
 	struct BlockMeshGroup
 	{
@@ -41,7 +46,7 @@ namespace danikk_space_engine
 			}
 		}
 
-		void regenerateMesh(BlockMapChunk& chunk);
+		void regenerateMesh();
 
 		void frame();
 	};
@@ -52,7 +57,9 @@ namespace danikk_space_engine
 
 		bool containsBlockId(uint32 id);
 	public:
-		void regenerateMesh(BlockMapChunk& chunk);
+		BlockMeshGroupCollection() = default;
+
+		void regenerateMesh();
 
 		void frame();
 	};
@@ -61,9 +68,9 @@ namespace danikk_space_engine
 	{
 	public:
 		static constexpr size_t axis_size = 16;
-		static constexpr uvec3 size = uvec3(axis_size);
+		static constexpr pos_type size = pos_type(axis_size);
 	private:
-		FixedTensor<BlockData, size> data;
+		FixedTensor<BlockSlot, size> data;
 		BlockMeshGroupCollection mesh_groups;
 	public:
 		block_collection_flags flags;
@@ -76,13 +83,15 @@ namespace danikk_space_engine
 
 		void frame();
 
-		BlockData& operator[](const uvec3&);
+		BlockSlot& operator[](const pos_type&);
 
-		BlockData* begin();
+		BlockSlot* begin();
 
-		BlockData* end();
+		BlockSlot* end();
 
 		void checkExits();
+
+		inline bool isValidIndex(const pos_type& index) { return data.isValidIndex(index); };
 
 		uint filledBlockCount();
 
@@ -93,56 +102,61 @@ namespace danikk_space_engine
 	{
 	public:
 		static constexpr size_t axis_size = 2;
-		static constexpr uvec3 size = uvec3(axis_size);
+		static constexpr pos_type size = pos_type(axis_size);
 
 		static constexpr size_t block_axis_size = BlockMapChunk::axis_size * axis_size;
 		//static constexpr size_t block_size = BlockMapChunk::size * size;
 	private:
+		RegionAllocator allocator;
 		FixedTensor<BlockMapChunk, size> data;
 	public:
+		pos_type pos;
 		block_collection_flags flags;
 
 		void tick();
 
 		void frame();
 
-		BlockMapChunk& operator[](const uvec3&);
+		BlockMapChunk& operator[](const pos_type&);
 
 		BlockMapChunk* begin();
 
 		BlockMapChunk* end();
 
-		static uvec3 regionPosToChunkIndex(uvec3 pos);
+		static pos_type regionPosToChunkIndex(pos_type pos);
 
-		static uvec3 regionPosToChunkPos(uvec3 pos);
+		static pos_type regionPosToChunkPos(pos_type pos);
 
 		void regenerateMesh();
 
 		void checkExits();
 
+		inline bool isValidIndex(const pos_type& index) { return data.isValidIndex(index); };
+
+		void setAsCurrent();
+
 		uint filledBlockCount();
+
+		RegionAllocator& getAllocator();
 	};
 
 	class BlockMapObject : public virtual PhysicObject
 	{
-		struct data_t
-		{
-			ivec3 pos;
-			BlockMapRegion region;
-		};
-		DynamicArray<data_t> data;
+		DynamicArray<BlockMapRegion> data;
 	public:
 		void tick() override;
 
 		void frame() override;
 
-		BlockMapRegion& operator[](const ivec3&);
+		BlockMapRegion& operator[](const pos_type&);
 
-		BlockData& getBlock(const ivec3&);
+		BlockMapRegion* get(const pos_type&);
 
-		static uvec3 globalPosToRegionIndex(ivec3 pos);
+		BlockSlot& getBlock(const pos_type&);
 
-		static uvec3 globalPosToRegionPos(ivec3 pos);
+		static pos_type globalPosToRegionIndex(pos_type pos);
+
+		static pos_type globalPosToRegionPos(pos_type pos);
 
 		void regenerateMesh();
 
@@ -150,4 +164,11 @@ namespace danikk_space_engine
 
 		uint filledBlockCount();
 	};
+
+	extern thread_local BlockMapChunk* current_chunk;
+	extern thread_local BlockMapRegion* current_region;
+	extern thread_local BlockMapObject* current_map;
+
+	extern thread_local pos_type current_chunk_pos;
+	extern thread_local pos_type current_block_pos;
 }

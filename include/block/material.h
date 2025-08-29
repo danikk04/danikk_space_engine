@@ -5,50 +5,47 @@
 
 namespace danikk_space_engine
 {
-	namespace block
+	class Vacuum : public Block
 	{
-		class Vacuum : public Block
-		{
-		public:
-			static size_t id;
+	public:
+		static size_t id;
 
-			define_block_constructor(Vacuum, Block){}
+		define_block_constructor(Vacuum, Block){}
+	};
 
-			static size_t variablesSize();
-		};
+	class NotVacuum : public Block
+	{
+	public:
+		vec2 uv_size;
+		vec2 uv_offset;
+		uint atlas_index;
 
-		class NotVacuum : public Block
-		{
-		public:
-			vec2 uv_size;
-			vec2 uv_offset;
-			uint atlas_index;
+		define_block_constructor(NotVacuum, Block){}
+	};
 
-			static size_t variablesSize();
+	class Solid : public NotVacuum
+	{
+	public:
+		static size_t id;
 
-			define_block_constructor(NotVacuum, Block){}
-		};
+		define_block_constructor(Solid, NotVacuum){}
+	};
 
-		class Solid : public NotVacuum
-		{
-		public:
-			static size_t id;
+	class SolidRaw : public Solid
+	{
+	public:
+		static size_t id;
 
-			define_block_constructor(Solid, NotVacuum){}
+		define_block_constructor(SolidRaw, Solid){}
+	};
 
-			static size_t variablesSize();
-		};
+	class Fluid : public NotVacuum
+	{
+	public:
+		static size_t id;
 
-		class Fluid : public NotVacuum
-		{
-		public:
-			static size_t id;
+		define_block_constructor(Fluid, NotVacuum){}
+	};
 
-			define_block_constructor(Fluid, NotVacuum){}
-
-			static size_t variablesSize();
-		};
-
-		void InitMaterialTypes();
-	}
+	void InitMaterialTypes();
 }

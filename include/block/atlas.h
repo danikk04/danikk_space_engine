@@ -1,6 +1,7 @@
 #pragma once
 
 #include <default.h>
+#include <danikk_engine/texture.h>
 
 namespace danikk_space_engine
 {

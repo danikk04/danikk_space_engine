@@ -7,6 +7,7 @@
 #include <danikk_framework/tensor.h>
 #include <controller/player.h>
 #include <block/container.h>
+#include <block/data.h>
 #include <asset.h>
 
 namespace danikk_space_engine
@@ -52,26 +53,25 @@ namespace danikk_space_engine
 		player_controller->controllable_object = main_camera;
 		controller_array.push(player_controller);
 
-		BlockMapObject* block_map = new BlockMapObject();
-		map_root.childs.push(block_map);
-
-
-		for(uvec3 pos : TensorIterable<uvec3(2,2,2)>())
-		{
-			ivec3 global_pos = (ivec3)pos - ivec3(1,1,1);
-			BlockMapRegion& region = (*block_map)[global_pos];
-			fillRegionCorners(region, block::WoodenContainer::id);
-		}
-		logInfo((size_t)block_map->filledBlockCount());
+		testScenario();
 	}
 
 
 	void Manager::testScenario()
 	{
-	}
+		BlockMapObject* block_map = new BlockMapObject();
+		map_root.childs.push(block_map);
 
-	void Manager::occupationGameScenario()
-	{
-
+		for(uvec3 pos : TensorIterable<uvec3(2,2,2)>())
+		{
+			ivec3 global_pos = (ivec3)pos - ivec3(1,1,1);
+			BlockMapRegion& region = (*block_map)[global_pos];
+			region.setAsCurrent();
+			BlockSlot block;
+			BlockBaseHeader& header = block.createHeader();
+			header.id = SolidRaw::id;
+			//block.data.resize
+			fillRegionCorners(region, block);
+		}
 	}
 }

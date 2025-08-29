@@ -12,4 +12,10 @@ namespace danikk_space_engine
 	using namespace danikk_framework;
 
 	class Object;
+
+	class BlockMapChunk;
+	class BlockMapRegion;
+	class Block;
+
+	typedef ivec3 pos_type;
 }
