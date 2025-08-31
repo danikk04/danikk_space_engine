@@ -1,2 +1,0 @@
-# sotiria_project
-game!

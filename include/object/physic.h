@@ -2,6 +2,8 @@
 
 #include <object/world.h>
 
+#include <danikk_engine/danikk_engine.h>
+
 namespace danikk_space_engine
 {
 	class PhysicObject : virtual public WorldObject
@@ -9,13 +11,14 @@ namespace danikk_space_engine
 	public:
 		vec3 speed;
 		vec3 rotation_speed;
-		float mass;
+		float mass = 0;
+		float temperature = 0;
 
 		void tick() override
 		{
 			WorldObject::tick();
-			pos += speed;
-			rotation += rotation_speed;
+			pos += speed * getTargetFrameDelay();
+			rotation += rotation_speed * getTargetFrameDelay();
 		}
 	};
 }
