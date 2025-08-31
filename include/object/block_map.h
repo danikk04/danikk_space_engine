@@ -27,14 +27,16 @@ namespace danikk_space_engine
 	struct block_collection_flags//флаги как для чанков, так и для регионов
 	{
 		bool32 is_exits = false;//есть ли хотя-бы один не вакуумный блок в этом чанке
-		bool32 is_active = false;//есть ли хотя-бы один работающие механизм в чанке или идёт ли теплообмен между блоками.
+		bool16 is_active = false;//есть ли хотя-бы один работающие механизм в чанке или идёт ли теплообмен между блоками.
+		bool16 is_mesh_changed = false;
 	};
 
 	struct BlockMeshGroup
 	{
 		Mesh mesh;
-		Texture texture = Texture("container");
+		Texture texture;
 		uint32 block_id = -1;
+		uint32 material_id = -1;
 
 		BlockMeshGroup() = default;
 
@@ -42,7 +44,7 @@ namespace danikk_space_engine
 		{
 			if(!mesh.isNull())
 			{
-				mesh.clear();
+				mesh.free();
 			}
 		}
 
@@ -93,7 +95,7 @@ namespace danikk_space_engine
 
 		inline bool isValidIndex(const pos_type& index) { return data.isValidIndex(index); };
 
-		uint filledBlockCount();
+		size_t filledBlockCount();
 
 		TensorIterable<BlockMapChunk::size> iteratePos();
 	};
@@ -133,7 +135,9 @@ namespace danikk_space_engine
 
 		inline bool isValidIndex(const pos_type& index) { return data.isValidIndex(index); };
 
-		void setAsCurrent();
+		int32 randCoord();
+
+		pos_type randPos();
 
 		uint filledBlockCount();
 
@@ -152,7 +156,7 @@ namespace danikk_space_engine
 
 		BlockMapRegion* get(const pos_type&);
 
-		BlockSlot& getBlock(const pos_type&);
+		BlockSlot* getBlock(const pos_type&);
 
 		static pos_type globalPosToRegionIndex(pos_type pos);
 

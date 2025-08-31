@@ -10,6 +10,7 @@ namespace danikk_space_engine
 	class GUI
 	{
 		Label fps_label;
+		Label debug_info_label;
 	public:
 		void define();
 

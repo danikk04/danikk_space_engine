@@ -5,11 +5,8 @@
 
 namespace danikk_space_engine
 {
-	class Controller
+	class Controller : public Object
 	{
 	public:
-		Object* controllable_object = NULL;
-
-		virtual void control() = 0;
 	};
 }

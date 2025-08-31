@@ -9,5 +9,6 @@ namespace danikk_space_engine
 {
 	class Entity : public PhysicObject
 	{
+
 	};
 }

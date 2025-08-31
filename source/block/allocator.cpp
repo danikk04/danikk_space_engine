@@ -29,7 +29,7 @@ namespace danikk_space_engine
 
 	void RegionMemoryBlock::copyTo(RegionMemoryBlock& other, RegionAllocator& allocator) const
 	{
-		other.resize(this-> m_size, allocator);
+		other.resize(this->m_size, allocator);
 		memcpy(other.ptr(allocator), ptr(allocator), this->m_size);
 	}
 
@@ -60,16 +60,39 @@ namespace danikk_space_engine
 		}
 	}
 
+	RegionMemoryBlock RegionAllocator::popNewBlock(uint32 size)
+	{
+		for(RegionMemoryBlock& free_block : free_blocks)
+		{
+			if(free_block.size() >= size && free_block.size() <= size + kib(1))
+			{
+				RegionMemoryBlock result = free_block;
+				free_block = free_blocks.last();
+				free_blocks.resize(free_blocks.size() - 1);
+				return result;
+			}
+		}
+		RegionMemoryBlock result;
+		result.offset = used;
+		result.m_size = size;
+		used += size;
+		return result;
+	}
+
 	void RegionAllocator::resize(RegionMemoryBlock& block, uint32 new_size)
 	{
+		if(new_size == 0)
+		{
+			free_blocks.push(block);
+			block.m_size = 0;
+			block.offset = 0;
+			return;
+		}
 		reserve(new_size - block.m_size);
 
 		memcpy(data + used, data + block.offset, block.m_size);
-		block.free(*this);
-
-		block.offset = used;
-		block.m_size = new_size;
-		used += new_size;
+		free_blocks.push(block);
+		block = popNewBlock(new_size);
 	}
 
 	RegionAllocator& getCurrentAllocator()

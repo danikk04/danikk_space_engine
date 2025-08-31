@@ -46,6 +46,8 @@ namespace danikk_space_engine
 	public:
 		void reserve(uint32 size);
 
+		RegionMemoryBlock popNewBlock(uint32 size);
+
 		void resize(RegionMemoryBlock& block, uint32 new_size);
 	};
 

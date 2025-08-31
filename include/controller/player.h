@@ -8,6 +8,6 @@ namespace danikk_space_engine
 	class PlayerController : public Controller
 	{
 	public:
-		 void control() final;
+		 void tick() override;
 	};
 }

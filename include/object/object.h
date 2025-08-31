@@ -14,13 +14,22 @@ namespace danikk_space_engine
 	{
 	public:
 		DynamicArray<Object*> childs;
+		bool32 exits = true;
 
 		virtual void tick()
 		{
 			object_stack.push(this);
-			for(Object* el : childs)
+			for(index_t i = 0; i < childs.size(); i++)
 			{
-				el->tick();
+				Object* child = childs[i];
+				if(child->exits)
+				{
+					child->tick();
+				}
+				else
+				{
+
+				}
 			}
 			object_stack.pop();
 		}
@@ -28,9 +37,17 @@ namespace danikk_space_engine
 		virtual void frame()
 		{
 			object_stack.push(this);
-			for(Object* el : childs)
+			for(index_t i = 0; i < childs.size(); i++)
 			{
-				el->frame();
+				Object* child = childs[i];
+				if(child->exits)
+				{
+					child->frame();
+				}
+				else
+				{
+
+				}
 			}
 			object_stack.pop();
 		}

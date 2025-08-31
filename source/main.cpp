@@ -3,6 +3,7 @@
 #include <asset.h>
 #include <default.h>
 #include <manager.h>
+#include <material.h>
 #include <localization.h>
 #include <block/block.h>
 
@@ -19,11 +20,13 @@ namespace danikk_engine_game
     {
 		setWindowTitle("Sotiria Project");
 		key_binds.init();
+    	static_asset_collection.load();
     	gui.define();
     	gui.compose();
-    	static_asset_collection.load();
     	danikk_space_engine::initLocaliztion();
     	danikk_space_engine::initBlockTypes();
+    	danikk_space_engine::initMaterials();
+
     	game_manager.init();
     	static_asset_collection.base2d_shader.use();
     }

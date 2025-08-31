@@ -3,7 +3,8 @@
 #include <danikk_framework/glm.h>
 
 #include <object/world.h>
-#include <object/entity/particle/flame.h>
+#include <object/entity/particle/plasma.h>
+#include <object/entity/particle/destroyer.h>
 #include <preset/container.h>
 #include <object/camera.h>
 #include <controller/player.h>
@@ -13,9 +14,10 @@
 
 namespace danikk_space_engine
 {
-	 void PlayerController::control()
-	 {
-		WorldObject* controllable_as_world = dynamic_cast<WorldObject*>(Controller::controllable_object);
+	void PlayerController::tick()
+	{
+		Object::tick();
+		WorldObject* controllable_as_world = dynamic_cast<WorldObject*>(object_stack.peek());
 		assert(controllable_as_world != NULL);
 		vec2 cursor_delta = getCursorDelta() * getMouseSensivity();
 		controllable_as_world->rotation.x += cursor_delta.x;
@@ -49,18 +51,44 @@ namespace danikk_space_engine
 		direction *= speed;
 		controllable_as_world->pos += direction;
 
-		WorldObject* controllable_as_camera = dynamic_cast<Camera*>(Controller::controllable_object);
+		Camera* controllable_as_camera = dynamic_cast<Camera*>(object_stack.peek());
 		if(controllable_as_camera != NULL)
 		{
-			if(getKeyboardState(keyboard_buttons::f) == button_states::press)
+			if(getKeyboardState(keyboard_buttons::left_alt) == button_states::hold)
 			{
-				FlameParticle* obj = new FlameParticle();
-				obj->pos = controllable_as_world->pos;
-				obj->rotation = controllable_as_world->rotation;
-				obj->speed = controllable_as_camera->getFront() * getTargetFrameDelay();
+				Particle* obj = NULL;
+				if(getKeyboardState(keyboard_buttons::f) == button_states::hold)
+				{
+					obj = new PlasmaBullet();
+				}
+				else if(getKeyboardState(keyboard_buttons::g) == button_states::hold)
+				{
+					obj = new DestroyerBullet();
+				}
+				if(obj != NULL)
+				{
+					vec3 randomized_rotation = controllable_as_world->rotation + vec3(randVec2(), 0.0f) * 0.3f;
+					obj->speed = getFront(randomized_rotation) * 5.0f;
+					obj->pos = controllable_as_world->pos + obj->speed / vec3(4.0f);
+					obj->rotation = randomized_rotation;
 
-				game_manager.map_root.childs.push(obj);
+					getParentOfParent()->childs.push(obj);
+				}
+			}
+
+			if(getKeyboardState(keyboard_buttons::f9) == button_states::hold)
+			{
+				for(size_t i = 0; i < 120; i ++)
+				{
+					PlasmaBullet* obj = new PlasmaBullet();
+					vec3 randomized_rotation = vec3(randVec2(), 0.0f) * pi;
+					obj->speed = getFront(randomized_rotation) * 5.0f;
+					obj->pos = controllable_as_world->pos + obj->speed / vec3(4.0f);
+					obj->rotation = randomized_rotation;
+
+					getParentOfParent()->childs.push(obj);
+				}
 			}
 		}
-	 }
+	}
 }

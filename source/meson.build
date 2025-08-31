@@ -4,6 +4,7 @@ sources = files(
 	'keybind.cpp', 
 	'main.cpp', 
 	'manager.cpp', 
+	'material.cpp', 
 	'localization.cpp', 
 )
 

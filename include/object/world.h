@@ -21,4 +21,13 @@ namespace danikk_space_engine
 
 		vec3 getFront();
 	};
+
+	inline vec3 getFront(const vec3& rotation)
+	{
+		return vec3(
+			(float)cos(rotation.y) * (float)cos(rotation.x),
+			(float)sin(rotation.y),
+			(float)cos(rotation.y) * (float)sin(rotation.x)
+		);
+	}
 }

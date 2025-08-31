@@ -5,6 +5,7 @@
 #include <danikk_framework/glm.h>
 #include <block/block.h>
 #include <block/data.h>
+#include <material.h>
 
 namespace danikk_space_engine
 {
@@ -41,7 +42,9 @@ namespace danikk_space_engine
 
 	void BlockMeshGroup::regenerateMesh()
 	{
-		DynamicMesh dynamic_mesh;
+		DynamicMesh<DefaultVertex> dynamic_mesh;
+
+		dynamic_mesh.vertexesReserve(2048);
 
 		for(const pos_type& pos : current_chunk->iteratePos())
 		{
@@ -67,7 +70,8 @@ namespace danikk_space_engine
 				dynamic_mesh.addSquare(offseted, vec3(direction));
 			}
 		}
-		mesh = dynamic_mesh.toMesh();
+		dynamic_mesh.setDataToMesh(mesh);
+		DefaultVertex::setAttributes();
 	}
 
 	void BlockMeshGroup::frame()
@@ -78,23 +82,36 @@ namespace danikk_space_engine
 
 	void BlockMeshGroupCollection::regenerateMesh()
 	{
+		/*for(BlockMeshGroup& group : data)
+		{
+			group.mesh.free();
+			group.texture.free();
+		}*/
 		data.clear();
 
 		for(BlockSlot& block : *current_chunk)
 		{
+			if(!block.isHeaderExits())
+			{
+				continue;
+			}
 			bool block_group_exits = false;
 			for(BlockMeshGroup& group : data)
 			{
 				if(group.block_id == block.getId())
 				{
 					block_group_exits = true;
+					break;
 				}
 			}
 			if(!block_group_exits)
 			{
-				data.pushCtor();
-				data.last().block_id = block.getId();
-				data.last().regenerateMesh();
+				BlockMeshGroup& group = data.pushCtor();
+				BlockBaseHeader& header = block.getHeader();
+
+				group.block_id = header.id;
+				group.texture = getMaterialTexture(header.main_material_id);
+				group.regenerateMesh();
 			}
 		}
 	}
@@ -110,6 +127,7 @@ namespace danikk_space_engine
 	void BlockMapChunk::regenerateMesh()
 	{
 		mesh_groups.regenerateMesh();
+		logInfo(filledBlockCount());
 	}
 
 	void BlockMapChunk::tick()
@@ -129,6 +147,11 @@ namespace danikk_space_engine
 
 	void BlockMapChunk::frame()
 	{
+		if(flags.is_mesh_changed)
+		{
+			regenerateMesh();
+			flags.is_mesh_changed = false;
+		}
 		mesh_groups.frame();
 	}
 
@@ -145,7 +168,7 @@ namespace danikk_space_engine
 		flags.is_exits = false;
 	}
 
-	uint BlockMapChunk::filledBlockCount()
+	size_t BlockMapChunk::filledBlockCount()
 	{
 		if(!flags.is_exits)
 		{
@@ -184,6 +207,7 @@ namespace danikk_space_engine
 
 	void BlockMapRegion::tick()
 	{
+		current_region = this;
 		for(pos_type pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
@@ -193,10 +217,12 @@ namespace danikk_space_engine
 				element.tick();
 			}
 		}
+		current_region = NULL;
 	}
 
 	void BlockMapRegion::frame()
 	{
+		current_region = this;
 		for(pos_type pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
@@ -205,6 +231,7 @@ namespace danikk_space_engine
 				element.frame();
 			}
 		}
+		current_region = NULL;
 	}
 
 	void BlockMapRegion::regenerateMesh()
@@ -221,10 +248,12 @@ namespace danikk_space_engine
 				chunk.regenerateMesh();
 			}
 		}
+		current_region = NULL;
 	}
 
 	void BlockMapRegion::checkExits()
 	{
+		current_region = this;
 		flags.is_exits = false;
 		for(BlockMapChunk& chunk : *this)
 		{
@@ -234,11 +263,17 @@ namespace danikk_space_engine
 				flags.is_exits = true;
 			}
 		}
+		current_region = NULL;
 	}
 
-	void BlockMapRegion::setAsCurrent()
+	int32 BlockMapRegion::randCoord()
 	{
-		current_region = this;
+		return default_random.number<uint32>(0, BlockMapRegion::block_axis_size);
+	}
+
+	pos_type BlockMapRegion::randPos()
+	{
+		return pos_type(randCoord(), randCoord(), randCoord());
 	}
 
 	uint BlockMapRegion::filledBlockCount()
@@ -311,27 +346,44 @@ namespace danikk_space_engine
 		return NULL;
 	}
 
-	BlockSlot& BlockMapObject::getBlock(const pos_type& pos)
+	BlockSlot* BlockMapObject::getBlock(const pos_type& pos)
 	{
 		pos_type in_region_pos = globalPosToRegionPos(pos);
 		pos_type region_index = globalPosToRegionIndex(pos);
 		pos_type chunk_index = BlockMapRegion::regionPosToChunkIndex(in_region_pos);
 		pos_type in_chunk_pos = BlockMapRegion::regionPosToChunkPos(in_region_pos);
-		return (*this)[region_index][chunk_index][in_chunk_pos];
+		BlockMapRegion* region = get(region_index);
+		current_region = region;
+		if(region == NULL)
+		{
+			return NULL;
+		}
+		else
+		{
+			return &(*region)[chunk_index][in_chunk_pos];
+		}
 	}
 
 	pos_type BlockMapObject::globalPosToRegionIndex(pos_type pos)
 	{
-		return pos_type(pos.x / BlockMapRegion::size.x, pos.y / BlockMapRegion::size.y, pos.z / BlockMapRegion::size.z);
+		return pos_type(pos.x / BlockMapRegion::block_axis_size, pos.y / BlockMapRegion::block_axis_size, pos.z / BlockMapRegion::block_axis_size);
 	}
 
 	pos_type BlockMapObject::globalPosToRegionPos(pos_type pos)
 	{
-		return pos_type(pos.x % BlockMapRegion::size.x, pos.y % BlockMapRegion::size.y, pos.z % BlockMapRegion::size.z);
+		if(pos.x < 0) pos.x--;
+		if(pos.y < 0) pos.y--;
+		if(pos.z < 0) pos.z--;
+		pos_type result = pos_type(
+				mod(pos.x, (int)BlockMapRegion::block_axis_size),
+				mod(pos.y, (int)BlockMapRegion::block_axis_size),
+				mod(pos.z, (int)BlockMapRegion::block_axis_size));
+		return result;
 	}
 
 	void BlockMapObject::tick()
 	{
+		PhysicObject::tick();
 		current_map = this;
 		for(BlockMapRegion& element : data)
 		{
@@ -344,6 +396,7 @@ namespace danikk_space_engine
 
 	void BlockMapObject::frame()
 	{
+		Object::frame();
 		current_map = this;
 		setWorldMatrix(mat4(1.0f));
 		setDrawColor(vec4(1.0f));

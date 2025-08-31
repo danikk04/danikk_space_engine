@@ -7,12 +7,13 @@ namespace danikk_space_engine
 {
 	struct BlockBaseHeader
 	{
-		uint32 id;
+		uint32 id = 0;
 
-		uint32 temperature;
 
-		uint32 main_material_id;
-		uint32 main_material_mass;
+		uint32 main_material_id = 0;
+
+		float main_material_mass = 0;
+		float temperature = 0;
 
 		uint32 child_blocks_count;
 

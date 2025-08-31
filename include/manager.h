@@ -5,6 +5,7 @@
 #include <object/object.h>
 #include <object/world.h>
 #include <object/camera.h>
+#include <block/allocator.h>
 #include <controller/controller.h>
 
 namespace danikk_space_engine
@@ -13,7 +14,6 @@ namespace danikk_space_engine
 	{
 	public:
 		WorldObject map_root;
-		DynamicArray<Controller*> controller_array;
 		Camera* main_camera = NULL;
 
 		void tick();
@@ -21,11 +21,12 @@ namespace danikk_space_engine
 		void frame();
 
 		void init();
-
-		void testScenario();
-
-		void occupationGameScenario();
 	};
 
+	Object* getParent();
+
+	Object* getParentOfParent();
+
 	extern Manager game_manager;
+	extern RegionAllocator entity_allocator;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <default.h>
+#include <danikk_engine/texture.h>
 
 namespace danikk_space_engine
 {
@@ -9,14 +10,15 @@ namespace danikk_space_engine
 		const char* name;
 		Texture main_texture;
 
-		Material(const char* name) : name(name){}
+		Material(const char* name)
+		{
+			this->name = name;
+		}
 	};
 
-	DynamicArray<Material> material_list
-	{
-		Material("sandstone"),
-		Material("granite")
-	};
+	uint32 getMaterialID(const char* name);
+
+	Texture& getMaterialTexture(uint material_id);
 
 	void initMaterials();
 }
