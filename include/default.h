@@ -17,5 +17,9 @@ namespace danikk_space_engine
 	class BlockMapRegion;
 	class Block;
 
+	class GlobalChunkScope;
+	class GlobalRegionScope;
+	class GlobalMapScope;
+
 	typedef ivec3 pos_type;
 }

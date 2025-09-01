@@ -15,7 +15,13 @@ namespace danikk_space_engine
 		float main_material_mass = 0;
 		float temperature = 0;
 
-		uint32 child_blocks_count;
+		struct flags_t
+		{
+			bool16 is_must_copy;//по умолчанию может генерировать карту, где будет куча блоков
+		};
+
+		uint16 child_blocks_count;
+		flags_t flags;
 
 		Block* getBlockType();
 	};
@@ -32,7 +38,17 @@ namespace danikk_space_engine
 		BlockBaseHeader& getHeader()
 		{
 			assert(data.size() > 0);
-			return *(BlockBaseHeader*)data.ptr();
+			BlockBaseHeader* header = (BlockBaseHeader*)data.ptr();
+			if(header->flags.is_must_copy)
+			{
+				size_t prev_size = data.size();
+				data.nullify();
+				data.resize(prev_size);
+				BlockBaseHeader* new_header = (BlockBaseHeader*)data.ptr();
+				memcpy((void*)new_header, (void*)header, prev_size);
+				return *new_header;
+			}
+			return *header;
 		}
 
 		BlockBaseHeader& createHeader()

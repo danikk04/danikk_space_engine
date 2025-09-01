@@ -5,7 +5,7 @@
 namespace danikk_space_engine
 {
 
-	class WorldObject : public Object
+	class WorldObject : public virtual Object
 	{
 	public:
 		vec3 pos;

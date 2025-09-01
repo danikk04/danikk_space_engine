@@ -24,8 +24,6 @@ namespace danikk_space_engine
 	Manager game_manager;
 	RegionAllocator entity_allocator;
 
-	thread_local Array<Object*, 16> object_stack;
-
 	void Manager::tick()
 	{
 		object_stack.push(&map_root);
@@ -53,28 +51,27 @@ namespace danikk_space_engine
 		map_root.world_matrix = mat4(1.0f);
 
 		BlockMapObject* block_map = new BlockMapObject();
+		GlobalMapScope scope(*block_map);
 		map_root.childs.push(block_map);
 
 		for(uvec3 pos : TensorIterable<uvec3(2,2,2)>())
 		{
 			ivec3 global_pos = (ivec3)pos - ivec3(1,1,1);
-			BlockMapRegion& region = (*block_map)[global_pos];
+			GlobalRegionScope scope((*block_map)[global_pos]);
 			BlockSlot block;
-			current_region = &region;
 			BlockBaseHeader& header = block.createHeader();
 			header.id = SolidRaw::id;
 			header.main_material_id = getMaterialID("granite");
 			header.main_material_mass = 1.0f;
-			fillRegionCorners(region, block);
-			fillRegionLine(region,block, pos_type(0,0,0), pos_type(31,31,31));
-			//fillRegionLine(region,block, pos_type(31,0,0), pos_type(0,31,31));
+			//fillRegionLine(block, pos_type(0,0,0), pos_type(31,31,31));
+			fillRegion(block);
 			for(size_t i = 0; i < 32; i++)
 			{
 				//fillRandomRegionLine(region,block, false);
 			}
 
-			region.checkExits();
-			region.regenerateMesh();
+			getCurrentRegion().checkExits();
+			getCurrentRegion().regenerateMesh();
 		}
 
 		main_camera = new Camera();

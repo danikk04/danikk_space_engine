@@ -6,7 +6,7 @@
 
 namespace danikk_space_engine
 {
-	class PhysicObject : virtual public WorldObject
+	class PhysicObject : public virtual WorldObject
 	{
 	public:
 		vec3 speed;

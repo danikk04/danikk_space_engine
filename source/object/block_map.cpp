@@ -9,12 +9,30 @@
 
 namespace danikk_space_engine
 {
-	thread_local BlockMapChunk* current_chunk;
-	thread_local BlockMapRegion* current_region;
-	thread_local BlockMapObject* current_map;
+	namespace global_scope
+	{
+		thread_local BlockMapChunk* current_chunk;
+		thread_local BlockMapRegion* current_region;
+		thread_local BlockMapObject* current_map;
+	}
 
 	thread_local pos_type current_chunk_pos;
 	thread_local pos_type current_block_pos;
+
+	BlockMapChunk& getCurrentChunk()
+	{
+		return *global_scope::current_chunk;
+	}
+
+	BlockMapRegion& getCurrentRegion()
+	{
+		return *global_scope::current_region;
+	}
+
+	BlockMapObject& getCurrentMap()
+	{
+		return *global_scope::current_map;
+	}
 
 	thread_local BlockSlot* current_block;
 
@@ -23,9 +41,9 @@ namespace danikk_space_engine
 		return block_table[id];
 	}
 
-	vec3 getBLockOffset()
+	pos_type getBLockOffset()
 	{
-		return vec3(current_region->pos) * (float)BlockMapRegion::block_axis_size + vec3(current_chunk_pos) * (float)BlockMapChunk::axis_size;
+		return getCurrentRegion().pos * (int)BlockMapRegion::block_axis_size + current_chunk_pos * (int)BlockMapChunk::axis_size;
 	}
 
 	bool BlockMeshGroupCollection::containsBlockId(uint32 id)
@@ -46,26 +64,32 @@ namespace danikk_space_engine
 
 		dynamic_mesh.vertexesReserve(2048);
 
-		for(const pos_type& pos : current_chunk->iteratePos())
+		for(const pos_type& pos : getCurrentChunk().iteratePos())
 		{
-			uint32 block_id = (*current_chunk)[pos].getId();
+			uint32 block_id = getCurrentChunk()[pos].getId();
 			if(block_id == 0 || block_id != this->block_id)
 			{
 				continue;
 			}
 			for(const pos_type& direction : block_directions)
 			{
-				uvec3 directed_pos = pos_type(pos + direction);
-				if(current_chunk->isValidIndex(directed_pos))
+				pos_type directed_pos = pos_type(pos + direction);
+				BlockSlot* block;
+				pos_type block_global_offset = getBLockOffset();
+				if(getCurrentChunk().isValidIndex(directed_pos))
 				{
-					uint32 directed_block_id = (*current_chunk)[directed_pos].getId();
-					if(directed_block_id != 0)
-					{
-						continue;
-					}
+					block = &getCurrentChunk()[directed_pos];
+				}
+				else
+				{
+					block = getCurrentMap().getBlock(block_global_offset + directed_pos);
+				}
+				if(block == NULL || block->getId() != 0)
+				{
+					continue;
 				}
 
-				vec3 offseted = vec3(pos) + vec3(0.5f) + vec3(direction) / 2.0f + getBLockOffset();
+				vec3 offseted = vec3(pos) + vec3(0.5f) + vec3(direction) / 2.0f + vec3(block_global_offset);
 
 				dynamic_mesh.addSquare(offseted, vec3(direction));
 			}
@@ -89,7 +113,7 @@ namespace danikk_space_engine
 		}*/
 		data.clear();
 
-		for(BlockSlot& block : *current_chunk)
+		for(BlockSlot& block : getCurrentChunk())
 		{
 			if(!block.isHeaderExits())
 			{
@@ -132,6 +156,7 @@ namespace danikk_space_engine
 
 	void BlockMapChunk::tick()
 	{
+		GlobalChunkScope scope(*this);
 		for(pos_type pos : data.iteratePos())
 		{
 			BlockSlot& block = data[pos];
@@ -147,6 +172,7 @@ namespace danikk_space_engine
 
 	void BlockMapChunk::frame()
 	{
+		GlobalChunkScope scope(*this);
 		if(flags.is_mesh_changed)
 		{
 			regenerateMesh();
@@ -207,7 +233,7 @@ namespace danikk_space_engine
 
 	void BlockMapRegion::tick()
 	{
-		current_region = this;
+		GlobalRegionScope scope(*this);
 		for(pos_type pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
@@ -217,12 +243,11 @@ namespace danikk_space_engine
 				element.tick();
 			}
 		}
-		current_region = NULL;
 	}
 
 	void BlockMapRegion::frame()
 	{
-		current_region = this;
+		GlobalRegionScope scope(*this);
 		for(pos_type pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
@@ -231,29 +256,26 @@ namespace danikk_space_engine
 				element.frame();
 			}
 		}
-		current_region = NULL;
 	}
 
 	void BlockMapRegion::regenerateMesh()
 	{
-		current_region = this;
+		GlobalRegionScope scope(*this);
 		for(pos_type pos : data.iteratePos())
 		{
 			BlockMapChunk& chunk = data[pos];
 			current_chunk_pos = pos;
-			current_chunk = &chunk;
+			GlobalChunkScope scope(chunk);
 			if(chunk.flags.is_exits)
 			{
-				current_chunk = &chunk;
 				chunk.regenerateMesh();
 			}
 		}
-		current_region = NULL;
 	}
 
 	void BlockMapRegion::checkExits()
 	{
-		current_region = this;
+		GlobalRegionScope scope(*this);
 		flags.is_exits = false;
 		for(BlockMapChunk& chunk : *this)
 		{
@@ -263,7 +285,6 @@ namespace danikk_space_engine
 				flags.is_exits = true;
 			}
 		}
-		current_region = NULL;
 	}
 
 	int32 BlockMapRegion::randCoord()
@@ -350,17 +371,35 @@ namespace danikk_space_engine
 	{
 		pos_type in_region_pos = globalPosToRegionPos(pos);
 		pos_type region_index = globalPosToRegionIndex(pos);
-		pos_type chunk_index = BlockMapRegion::regionPosToChunkIndex(in_region_pos);
-		pos_type in_chunk_pos = BlockMapRegion::regionPosToChunkPos(in_region_pos);
-		BlockMapRegion* region = get(region_index);
-		current_region = region;
-		if(region == NULL)
+		GlobalRegionScope scope(*get(region_index));
+		if(&getCurrentRegion() == NULL)
 		{
 			return NULL;
 		}
 		else
 		{
-			return &(*region)[chunk_index][in_chunk_pos];
+			pos_type chunk_index = BlockMapRegion::regionPosToChunkIndex(in_region_pos);
+			pos_type in_chunk_pos = BlockMapRegion::regionPosToChunkPos(in_region_pos);
+			GlobalChunkScope scope(getCurrentRegion()[chunk_index]);
+			return &getCurrentChunk()[in_chunk_pos];
+		}
+	}
+
+	BlockSlot* BlockMapObject::getBlock(const pos_type& pos, GlobalRegionScope& scope1, GlobalChunkScope& scope2)
+	{
+		pos_type in_region_pos = globalPosToRegionPos(pos);
+		pos_type region_index = globalPosToRegionIndex(pos);
+		new (&scope1) GlobalRegionScope(*get(region_index));
+		if(&getCurrentRegion() == NULL)
+		{
+			return NULL;
+		}
+		else
+		{
+			pos_type chunk_index = BlockMapRegion::regionPosToChunkIndex(in_region_pos);
+			pos_type in_chunk_pos = BlockMapRegion::regionPosToChunkPos(in_region_pos);
+			new (&scope2) GlobalChunkScope(getCurrentRegion()[chunk_index]);
+			return &getCurrentChunk()[in_chunk_pos];
 		}
 	}
 
@@ -383,8 +422,8 @@ namespace danikk_space_engine
 
 	void BlockMapObject::tick()
 	{
+		GlobalMapScope scope(*this);
 		PhysicObject::tick();
-		current_map = this;
 		for(BlockMapRegion& element : data)
 		{
 			if(element.flags.is_active)
@@ -396,8 +435,8 @@ namespace danikk_space_engine
 
 	void BlockMapObject::frame()
 	{
+		GlobalMapScope scope(*this);
 		Object::frame();
-		current_map = this;
 		setWorldMatrix(mat4(1.0f));
 		setDrawColor(vec4(1.0f));
 
@@ -413,7 +452,7 @@ namespace danikk_space_engine
 		{
 			if(element.flags.is_exits)
 			{
-				current_region = &element;
+				GlobalRegionScope scope(element);
 				element.regenerateMesh();
 			}
 		}

@@ -5,13 +5,13 @@
 
 namespace danikk_space_engine
 {
-	void fillRegion(BlockMapRegion& target, const BlockSlot& block);
+	void fillRegion(const BlockSlot& block);
 
-	void fillRegionCorners(BlockMapRegion& target, const BlockSlot& block);
+	void fillRegionCorners(const BlockSlot& block);
 
-	void fillRegionLine(BlockMapRegion& target, const BlockSlot& block, const pos_type& start, const pos_type& end);
+	void fillRegionLine(const BlockSlot& block, const pos_type& start, const pos_type& end);
 
-	void fillRandomRegionLine(BlockMapRegion& target, const BlockSlot& block, bool can_diagonal = true);
+	void fillRandomRegionLine(const BlockSlot& block, bool can_diagonal = true);
 
-	void fillYRegionLevel(lockMapRegion& target, const BlockSlot& block)
+	void fillYRegionLevel(const BlockSlot& block, int y);
 }

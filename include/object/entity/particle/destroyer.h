@@ -9,9 +9,13 @@ namespace danikk_space_engine
 	{
 		void collision(BlockSlot& block) override
 		{
+			assert(block.getId() != 0);
 			block.getHeader().id = 0;
 			block.data.resize(0);
-			current_chunk->flags.is_mesh_changed = true;
+			assert(block.getId() == 0);
+			getCurrentChunk().flags.is_mesh_changed = true;
+			getCurrentChunk().flags.is_active = true;
+			getCurrentChunk().flags.is_active = true;
 		}
 
 		void frame() override

@@ -22,7 +22,8 @@ namespace danikk_space_engine
 		vec3(0, -1, 0),
 		vec3(0, 0, -1),
 	};
-	vec3 getBlockOffset();
+
+	pos_type getBlockOffset();
 
 	struct block_collection_flags//флаги как для чанков, так и для регионов
 	{
@@ -158,6 +159,8 @@ namespace danikk_space_engine
 
 		BlockSlot* getBlock(const pos_type&);
 
+		BlockSlot* getBlock(const pos_type&, GlobalRegionScope& scope1, GlobalChunkScope& scope2);
+
 		static pos_type globalPosToRegionIndex(pos_type pos);
 
 		static pos_type globalPosToRegionPos(pos_type pos);
@@ -169,9 +172,104 @@ namespace danikk_space_engine
 		uint filledBlockCount();
 	};
 
-	extern thread_local BlockMapChunk* current_chunk;
-	extern thread_local BlockMapRegion* current_region;
-	extern thread_local BlockMapObject* current_map;
+	namespace global_scope
+	{
+		extern thread_local BlockMapChunk* current_chunk;
+		extern thread_local BlockMapRegion* current_region;
+		extern thread_local BlockMapObject* current_map;
+	}
+
+	class GlobalChunkScope
+	{
+		bool32 has_prev = false;
+		bool32 is_exits = false;
+	public:
+		GlobalChunkScope() = default;
+
+		GlobalChunkScope(BlockMapChunk& value)
+		{
+			if(global_scope::current_chunk != NULL)
+			{
+				has_prev = true;
+			}
+			else
+			{
+				global_scope::current_chunk = &value;
+			}
+			is_exits = true;
+		}
+
+		~GlobalChunkScope()
+		{
+			if(!has_prev && is_exits)
+			{
+				global_scope::current_chunk = NULL;
+			}
+		}
+	};
+
+	class GlobalRegionScope
+	{
+		bool32 has_prev = false;
+		bool32 is_exits = false;
+	public:
+		GlobalRegionScope() = default;
+
+		GlobalRegionScope(BlockMapRegion& value)
+		{
+			if(global_scope::current_region != NULL)
+			{
+				has_prev = true;
+			}
+			else
+			{
+				global_scope::current_region = &value;
+			}
+			is_exits = true;
+		}
+
+		~GlobalRegionScope()
+		{
+			if(!has_prev && is_exits)
+			{
+				global_scope::current_region = NULL;
+			}
+		}
+	};
+
+	class GlobalMapScope
+	{
+		bool32 has_prev = false;
+		bool32 is_exits = false;
+	public:
+		GlobalMapScope() = default;
+
+		GlobalMapScope(BlockMapObject& value)
+		{
+			if(global_scope::current_map != NULL)
+			{
+				has_prev = true;
+			}
+			else
+			{
+
+				global_scope::current_map = &value;
+			}
+			is_exits = true;
+		}
+
+		~GlobalMapScope()
+		{
+			if(!has_prev && is_exits)
+			{
+				global_scope::current_map = NULL;
+			}
+		}
+	};
+
+	BlockMapChunk& getCurrentChunk();
+	BlockMapRegion& getCurrentRegion();
+	BlockMapObject& getCurrentMap();
 
 	extern thread_local pos_type current_chunk_pos;
 	extern thread_local pos_type current_block_pos;

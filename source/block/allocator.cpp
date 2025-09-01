@@ -17,6 +17,11 @@ namespace danikk_space_engine
 		}
 	}
 
+	void RegionMemoryBlock::nullify(RegionAllocator& allocator)
+	{
+		offset = m_size = 0;
+	}
+
 	byte* RegionMemoryBlock::ptr(RegionAllocator& allocator)
 	{
 		return allocator.data + offset;
@@ -97,6 +102,6 @@ namespace danikk_space_engine
 
 	RegionAllocator& getCurrentAllocator()
 	{
-		return current_region->getAllocator();
+		return getCurrentRegion().getAllocator();
 	}
 }

@@ -23,6 +23,8 @@ namespace danikk_space_engine
 
 		void free(RegionAllocator& allocator = getCurrentAllocator());
 
+		void nullify(RegionAllocator& allocator = getCurrentAllocator());
+
 		byte* ptr(RegionAllocator& allocator = getCurrentAllocator());
 
 		const byte* ptr(RegionAllocator& allocator = getCurrentAllocator()) const;
