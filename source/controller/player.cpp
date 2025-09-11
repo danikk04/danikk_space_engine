@@ -30,6 +30,10 @@ namespace danikk_space_engine
 		{
 			speed *= 10;
 		}
+		if(getKeyboardState(keyboard_buttons::left_control))
+		{
+			speed *= 10;
+		}
 
 		vec3 direction = vec3(0.0f);
 		if(getKeyboardState(keyboard_buttons::w))

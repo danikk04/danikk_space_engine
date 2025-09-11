@@ -7,15 +7,16 @@ namespace danikk_space_engine
 {
 	class DestroyerBullet : public Particle
 	{
-		void collision(BlockSlot& block) override
+		void collision() override
 		{
-			assert(block.getId() != 0);
-			block.getHeader().id = 0;
-			block.data.resize(0);
-			assert(block.getId() == 0);
-			getCurrentChunk().flags.is_mesh_changed = true;
-			getCurrentChunk().flags.is_active = true;
-			getCurrentChunk().flags.is_active = true;
+			assert(current_block_context->block->getId() != 0);
+			current_block_context->block->getHeader().id = 0;
+			current_block_context->block->data.resize(0);
+			assert(current_block_context->block->getId() == 0);
+			BlockMapChunk* current_chunk = current_block_context->chunk;
+			block_collection_flags* chunk_flags = &current_chunk->flags;
+			chunk_flags->is_mesh_changed = true;
+			chunk_flags->is_active = true;
 		}
 
 		void frame() override
@@ -27,6 +28,9 @@ namespace danikk_space_engine
 			static_asset_collection.low_poly_sphere_mesh.draw();
 		}
 	public:
+		static constexpr const char* name = "destroyer";
+		static size_t id;
+
 		DestroyerBullet()
 		{
 			size = vec3(0.1f, 0.03f, 0.03f);

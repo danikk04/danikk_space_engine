@@ -2,6 +2,7 @@
 
 #include <default.h>
 #include <danikk_framework/glm.h>
+#include <block/allocator.h>
 #include <danikk_framework/array.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -12,13 +13,26 @@ namespace danikk_space_engine
 
 	class Object
 	{
+		bool32 exits = true;
 	public:
 		DynamicArray<Object*> childs;
-
-		bool32 exits = true;
 
 		virtual void tick();
 
 		virtual void frame();
+
+		virtual void atDispose();
+
+		void dispose();
 	};
+
+	template<class type> type* createObject()
+	{
+		return new Object();
+	}
+
+	template<class type> void* voidCreateObject()
+	{
+		return new Object();
+	}
 }

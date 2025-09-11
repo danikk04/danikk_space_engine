@@ -11,6 +11,7 @@ namespace danikk_space_engine
 		{
 			if(!childs[i]->exits)
 			{
+				//delete childs[i];
 				childs[i] = childs.pop();
 			}
 		}
@@ -32,11 +33,18 @@ namespace danikk_space_engine
 			{
 				child->frame();
 			}
-			else
-			{
-
-			}
 		}
 		object_stack.pop();
+	}
+
+	void Object::atDispose()
+	{
+
+	}
+
+	void Object::dispose()
+	{
+		atDispose();
+		exits = false;
 	}
 }

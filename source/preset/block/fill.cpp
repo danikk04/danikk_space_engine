@@ -1,13 +1,15 @@
-#include <preset/block/base.h>
+#include <preset/block/fill.h>
 #include <preset/block/inserter.h>
 #include <block/container.h>
 #include <danikk_framework/glm.h>
+#include <block/context.h>
+#include <block/pos.h>
 
 namespace danikk_space_engine
 {
 	void fillRegion(const BlockSlot& block)
 	{
-		for(BlockMapChunk& chunk : getCurrentRegion())
+		for(BlockMapChunk& chunk : *current_block_context->region)
 		{
 			chunk.begin();
 			chunk.end();
@@ -35,10 +37,26 @@ namespace danikk_space_engine
 
 		for(const pos_type& pos : fill_poses)
 		{
-			pos_type chunk_index = BlockMapRegion::regionPosToChunkIndex(pos);
-			pos_type chunk_pos = BlockMapRegion::regionPosToChunkPos(pos);
-			BlockSlot& target_slot = getCurrentRegion()[chunk_index][chunk_pos];
+			pos_type chunk_index = PosConvetrer::regionPosToChunkPos(pos);
+			pos_type chunk_pos = PosConvetrer::regionPosToBlockPos(pos);
+			BlockSlot& target_slot = (*current_block_context->region)[chunk_index][chunk_pos];
 			target_slot = block;
+		}
+	}
+
+	void fillRegionCenters(const BlockSlot& block, int radius)
+	{
+		//НЕ ТАК
+		DynamicTensorPosIterator iter(uvec3(0), uvec3(radius * 2));
+		DynamicTensorPosIterator end(uvec3(radius * 2), uvec3(radius * 2));
+
+		while(iter != end)
+		{
+			pos_type chunk_index = PosConvetrer::regionPosToChunkPos(*iter);
+			pos_type chunk_pos = PosConvetrer::regionPosToBlockPos(*iter);
+			BlockSlot& target_slot = (*current_block_context->region)[chunk_index][chunk_pos];
+			target_slot = block;
+			++iter;
 		}
 	}
 
@@ -51,11 +69,11 @@ namespace danikk_space_engine
 		for(size_t iter_count = size_t(glm::length(vec3(vector_delta))) + 2; iter_count > 0; iter_count--)
 		{
 			pos_type pos = current_pos;
-			pos_type chunk_index = BlockMapRegion::regionPosToChunkIndex(pos);
-			pos_type chunk_pos = BlockMapRegion::regionPosToChunkPos(pos);
-			BlockSlot& target_slot = getCurrentRegion()[chunk_index][chunk_pos];
-			assert((void*)getCurrentRegion().begin() <= (void*)&target_slot);
-			assert((void*)getCurrentRegion().end() >= (void*)&target_slot);
+			pos_type chunk_index = PosConvetrer::regionPosToChunkPos(pos);
+			pos_type chunk_pos = PosConvetrer::regionPosToBlockPos(pos);
+			BlockSlot& target_slot = (*current_block_context->region)[chunk_index][chunk_pos];
+			assert((void*)current_block_context->region->begin() <= (void*)&target_slot);
+			assert((void*)current_block_context->region->end() >= (void*)&target_slot);
 			target_slot = block;
 
 			current_pos += delta;
@@ -64,8 +82,8 @@ namespace danikk_space_engine
 
 	void fillRandomRegionLine(const BlockSlot& block, bool can_diagonal)
 	{
-		pos_type start = getCurrentRegion().randPos();
-		pos_type end = getCurrentRegion().randPos();
+		pos_type start = (*current_block_context->region).randPos();
+		pos_type end = (*current_block_context->region).randPos();
 		if(!can_diagonal)
 		{
 			int32 rand_index = start.x % 3;

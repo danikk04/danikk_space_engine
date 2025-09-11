@@ -7,9 +7,9 @@ namespace danikk_space_engine
 {
 	class PlasmaBullet : public Particle
 	{
-		void collision(BlockSlot& block) override
+		void collision() override
 		{
-			BlockBaseHeader& header = block.getHeader();
+			BlockBaseHeader& header = current_block_context->block->getHeader();
 			header.temperature += mass * temperature / header.main_material_mass;
 		}
 
@@ -22,12 +22,16 @@ namespace danikk_space_engine
 			static_asset_collection.low_poly_sphere_mesh.draw();
 		}
 	public:
+		static constexpr const char* name = "plasma";
+		static size_t id;
+
 		PlasmaBullet()
 		{
 			size = vec3(0.1f, 0.03f, 0.03f);
 			mass = 0.001f;
 			rotation_speed = vec3(0.0f);
 			temperature = 1000.0f;
+			tick_to_live = 500;
 		}
 	};
 }

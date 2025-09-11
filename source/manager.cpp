@@ -8,10 +8,11 @@
 
 #include <object/camera.h>
 #include <preset/container.h>
-#include <preset/block/base.h>
+#include <preset/block/fill.h>
 
 #include <object/block_map.h>
 #include <object/camera.h>
+#include <block/context.h>
 
 #include <controller/player.h>
 
@@ -22,7 +23,7 @@
 namespace danikk_space_engine
 {
 	Manager game_manager;
-	RegionAllocator entity_allocator;
+	MonolithAllocator entity_allocator;
 
 	void Manager::tick()
 	{
@@ -51,31 +52,32 @@ namespace danikk_space_engine
 		map_root.world_matrix = mat4(1.0f);
 
 		BlockMapObject* block_map = new BlockMapObject();
-		GlobalMapScope scope(*block_map);
+		BlockContext context;
+		current_block_context = &context;
+		current_block_context->map = block_map;
 		map_root.childs.push(block_map);
 
 		for(uvec3 pos : TensorIterable<uvec3(2,2,2)>())
 		{
-			ivec3 global_pos = (ivec3)pos - ivec3(1,1,1);
-			GlobalRegionScope scope((*block_map)[global_pos]);
+			pos_type global_pos = (pos_type)pos;
+			current_block_context->region = &(*block_map)[global_pos];
 			BlockSlot block;
 			BlockBaseHeader& header = block.createHeader();
 			header.id = SolidRaw::id;
 			header.main_material_id = getMaterialID("granite");
 			header.main_material_mass = 1.0f;
+			//fillRegionCorners(block);
+			//fillRegionCenters(block);
 			//fillRegionLine(block, pos_type(0,0,0), pos_type(31,31,31));
+			//fillRegionLine(block, pos_type(31,0,0), pos_type(0,31,31));
 			fillRegion(block);
-			for(size_t i = 0; i < 32; i++)
-			{
-				//fillRandomRegionLine(region,block, false);
-			}
 
-			getCurrentRegion().checkExits();
-			getCurrentRegion().regenerateMesh();
+			current_block_context->region->checkExits();
+			current_block_context->region->regenerateMesh();
 		}
 
 		main_camera = new Camera();
-		main_camera->pos = vec3(0.0f, 0.0f, 0.0f);
+		main_camera->pos = vec3(16.0f, 16.0f, 16.0f);
 		block_map->childs.push(main_camera);
 
 		Controller* player_controller = new PlayerController();

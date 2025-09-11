@@ -16,6 +16,7 @@ namespace danikk_space_engine
     	setDefaultFont(base_font);
 
     	low_poly_sphere_mesh = Mesh(NULL, "sphere");
+		bold_chunk_border_mesh = Mesh(NULL, "bold_chunk_border");
 	}
 
 	/*Texture& BlockAtlas::getAtlas(uint index)

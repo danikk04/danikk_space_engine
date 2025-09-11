@@ -22,4 +22,14 @@ namespace danikk_space_engine
 	{
 		base_keybinds.checkBindingPress();
 	}
+
+	void KeyBindCollection::bind(const KeyBindKeys& keys, key_bind_event_t event)
+	{
+		base_keybinds.bind(keys, event);
+	}
+
+	void KeyBindCollection::bind(const KeyBindKeys& keys, key_bind_args_event_t event, void* arg_ptr)
+	{
+		base_keybinds.bind(keys, event, arg_ptr);
+	}
 }

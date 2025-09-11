@@ -13,13 +13,14 @@ namespace danikk_space_engine
 
 	class Object;
 
+	class BlockSlot;
 	class BlockMapChunk;
 	class BlockMapRegion;
+	class BlockMapObject;
 	class Block;
 
-	class GlobalChunkScope;
-	class GlobalRegionScope;
-	class GlobalMapScope;
+#define swap NONE
+//#define new NONE
 
 	typedef ivec3 pos_type;
 }

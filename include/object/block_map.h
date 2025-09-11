@@ -3,6 +3,7 @@
 #include <default.h>
 #include <object/physic.h>
 #include <block/block.h>
+#include <block/context.h>
 #include <danikk_engine/mesh.h>
 #include <danikk_framework/tensor.h>
 #include <danikk_framework/dictionary.h>
@@ -12,6 +13,12 @@
 
 namespace danikk_space_engine
 {
+	struct PosIndexPair
+	{
+		pos_type index;
+		pos_type pos;
+	};
+
 	inline const pos_type block_directions[6]
 	{
 		vec3(1, 0, 0),
@@ -86,7 +93,9 @@ namespace danikk_space_engine
 
 		void frame();
 
-		BlockSlot& operator[](const pos_type&);
+		BlockSlot& operator[](const pos_type& pos);
+
+		BlockContext findGet(const pos_type& pos);
 
 		BlockSlot* begin();
 
@@ -108,11 +117,13 @@ namespace danikk_space_engine
 		static constexpr pos_type size = pos_type(axis_size);
 
 		static constexpr size_t block_axis_size = BlockMapChunk::axis_size * axis_size;
+		static constexpr pos_type block_size = pos_type(block_axis_size);
 		//static constexpr size_t block_size = BlockMapChunk::size * size;
 	private:
-		RegionAllocator allocator;
+		MonolithAllocator allocator;
 		FixedTensor<BlockMapChunk, size> data;
 	public:
+		//ЗАМЕТКА для нормальной поддержки отрицательных координат pos_type должен поддерживать отрицательный ноль
 		pos_type pos;
 		block_collection_flags flags;
 
@@ -126,10 +137,6 @@ namespace danikk_space_engine
 
 		BlockMapChunk* end();
 
-		static pos_type regionPosToChunkIndex(pos_type pos);
-
-		static pos_type regionPosToChunkPos(pos_type pos);
-
 		void regenerateMesh();
 
 		void checkExits();
@@ -142,7 +149,7 @@ namespace danikk_space_engine
 
 		uint filledBlockCount();
 
-		RegionAllocator& getAllocator();
+		MonolithAllocator& getAllocator();
 	};
 
 	class BlockMapObject : public virtual PhysicObject
@@ -153,17 +160,13 @@ namespace danikk_space_engine
 
 		void frame() override;
 
+		void borderFrame();
+
 		BlockMapRegion& operator[](const pos_type&);
 
 		BlockMapRegion* get(const pos_type&);
 
-		BlockSlot* getBlock(const pos_type&);
-
-		BlockSlot* getBlock(const pos_type&, GlobalRegionScope& scope1, GlobalChunkScope& scope2);
-
-		static pos_type globalPosToRegionIndex(pos_type pos);
-
-		static pos_type globalPosToRegionPos(pos_type pos);
+		BlockContext getBlock(const pos_type&);
 
 		void regenerateMesh();
 
@@ -171,106 +174,4 @@ namespace danikk_space_engine
 
 		uint filledBlockCount();
 	};
-
-	namespace global_scope
-	{
-		extern thread_local BlockMapChunk* current_chunk;
-		extern thread_local BlockMapRegion* current_region;
-		extern thread_local BlockMapObject* current_map;
-	}
-
-	class GlobalChunkScope
-	{
-		bool32 has_prev = false;
-		bool32 is_exits = false;
-	public:
-		GlobalChunkScope() = default;
-
-		GlobalChunkScope(BlockMapChunk& value)
-		{
-			if(global_scope::current_chunk != NULL)
-			{
-				has_prev = true;
-			}
-			else
-			{
-				global_scope::current_chunk = &value;
-			}
-			is_exits = true;
-		}
-
-		~GlobalChunkScope()
-		{
-			if(!has_prev && is_exits)
-			{
-				global_scope::current_chunk = NULL;
-			}
-		}
-	};
-
-	class GlobalRegionScope
-	{
-		bool32 has_prev = false;
-		bool32 is_exits = false;
-	public:
-		GlobalRegionScope() = default;
-
-		GlobalRegionScope(BlockMapRegion& value)
-		{
-			if(global_scope::current_region != NULL)
-			{
-				has_prev = true;
-			}
-			else
-			{
-				global_scope::current_region = &value;
-			}
-			is_exits = true;
-		}
-
-		~GlobalRegionScope()
-		{
-			if(!has_prev && is_exits)
-			{
-				global_scope::current_region = NULL;
-			}
-		}
-	};
-
-	class GlobalMapScope
-	{
-		bool32 has_prev = false;
-		bool32 is_exits = false;
-	public:
-		GlobalMapScope() = default;
-
-		GlobalMapScope(BlockMapObject& value)
-		{
-			if(global_scope::current_map != NULL)
-			{
-				has_prev = true;
-			}
-			else
-			{
-
-				global_scope::current_map = &value;
-			}
-			is_exits = true;
-		}
-
-		~GlobalMapScope()
-		{
-			if(!has_prev && is_exits)
-			{
-				global_scope::current_map = NULL;
-			}
-		}
-	};
-
-	BlockMapChunk& getCurrentChunk();
-	BlockMapRegion& getCurrentRegion();
-	BlockMapObject& getCurrentMap();
-
-	extern thread_local pos_type current_chunk_pos;
-	extern thread_local pos_type current_block_pos;
 }

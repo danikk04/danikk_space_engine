@@ -5,36 +5,36 @@
 
 namespace danikk_space_engine
 {
-	class RegionAllocator;
+	class MonolithAllocator;
 
-	RegionAllocator& getCurrentAllocator();
+	MonolithAllocator& getCurrentAllocator();
 
-	class RegionMemoryBlock
+	class MonolithMemoryBlock
 	{
 	private:
 		uint32 offset = 0;
 		uint32 m_size = 0;
 
-		friend class RegionAllocator;
+		friend class MonolithAllocator;
 	public:
-		RegionMemoryBlock() = default;
+		MonolithMemoryBlock() = default;
 
-		void resize(uint32 new_size, RegionAllocator& allocator = getCurrentAllocator());
+		void resize(uint32 new_size, MonolithAllocator& allocator = getCurrentAllocator());
 
-		void free(RegionAllocator& allocator = getCurrentAllocator());
+		void free(MonolithAllocator& allocator = getCurrentAllocator());
 
-		void nullify(RegionAllocator& allocator = getCurrentAllocator());
+		void nullify(MonolithAllocator& allocator = getCurrentAllocator());
 
-		byte* ptr(RegionAllocator& allocator = getCurrentAllocator());
+		byte* ptr(MonolithAllocator& allocator = getCurrentAllocator());
 
-		const byte* ptr(RegionAllocator& allocator = getCurrentAllocator()) const;
+		const byte* ptr(MonolithAllocator& allocator = getCurrentAllocator()) const;
 
-		void copyTo(RegionMemoryBlock& other, RegionAllocator& allocator = getCurrentAllocator()) const;
+		void copyTo(MonolithMemoryBlock& other, MonolithAllocator& allocator = getCurrentAllocator()) const;
 
 		uint32 size();
 	};
 
-	class RegionAllocator//Все данные хранит в одном большом куске, все данные выделяются только для одного региона
+	class MonolithAllocator//Все данные хранит в одном большом куске
 	{
 	private:
 		byte* data;
@@ -42,15 +42,14 @@ namespace danikk_space_engine
 		uint32 used = 0;
 		uint32 capacity = 0;
 
-		DynamicArray<RegionMemoryBlock> free_blocks;
+		DynamicArray<MonolithMemoryBlock> free_blocks;
 
-		friend class RegionMemoryBlock;
+		friend class MonolithMemoryBlock;
 	public:
 		void reserve(uint32 size);
 
-		RegionMemoryBlock popNewBlock(uint32 size);
+		MonolithMemoryBlock popNewBlock(uint32 size);
 
-		void resize(RegionMemoryBlock& block, uint32 new_size);
+		void resize(MonolithMemoryBlock& block, uint32 new_size);
 	};
-
 }

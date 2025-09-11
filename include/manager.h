@@ -28,5 +28,5 @@ namespace danikk_space_engine
 	Object* getParentOfParent();
 
 	extern Manager game_manager;
-	extern RegionAllocator entity_allocator;
+	extern MonolithAllocator entity_allocator;
 }

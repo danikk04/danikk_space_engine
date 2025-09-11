@@ -9,6 +9,8 @@ namespace danikk_space_engine
 
 	void fillRegionCorners(const BlockSlot& block);
 
+	void fillRegionCenters(const BlockSlot& block, int radius = 1);
+
 	void fillRegionLine(const BlockSlot& block, const pos_type& start, const pos_type& end);
 
 	void fillRandomRegionLine(const BlockSlot& block, bool can_diagonal = true);

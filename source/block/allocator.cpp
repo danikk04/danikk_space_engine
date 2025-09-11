@@ -1,14 +1,15 @@
 #include <block/allocator.h>
 #include <object/block_map.h>
+#include <block/context.h>
 
 namespace danikk_space_engine
 {
-	void RegionMemoryBlock::resize(uint32 new_size, RegionAllocator& allocator)
+	void MonolithMemoryBlock::resize(uint32 new_size, MonolithAllocator& allocator)
 	{
 		allocator.resize(*this, new_size);
 	}
 
-	void RegionMemoryBlock::free(RegionAllocator& allocator)
+	void MonolithMemoryBlock::free(MonolithAllocator& allocator)
 	{
 		if(m_size != 0)
 		{
@@ -17,34 +18,34 @@ namespace danikk_space_engine
 		}
 	}
 
-	void RegionMemoryBlock::nullify(RegionAllocator& allocator)
+	void MonolithMemoryBlock::nullify(MonolithAllocator& allocator)
 	{
 		offset = m_size = 0;
 	}
 
-	byte* RegionMemoryBlock::ptr(RegionAllocator& allocator)
+	byte* MonolithMemoryBlock::ptr(MonolithAllocator& allocator)
 	{
 		return allocator.data + offset;
 	}
 
-	const byte* RegionMemoryBlock::ptr(RegionAllocator& allocator) const
+	const byte* MonolithMemoryBlock::ptr(MonolithAllocator& allocator) const
 	{
 		return allocator.data + offset;
 	}
 
-	void RegionMemoryBlock::copyTo(RegionMemoryBlock& other, RegionAllocator& allocator) const
+	void MonolithMemoryBlock::copyTo(MonolithMemoryBlock& other, MonolithAllocator& allocator) const
 	{
 		other.resize(this->m_size, allocator);
 		memcpy(other.ptr(allocator), ptr(allocator), this->m_size);
 	}
 
-	uint32 RegionMemoryBlock::size()
+	uint32 MonolithMemoryBlock::size()
 	{
 		return m_size;
 	}
 
 
-	void RegionAllocator::reserve(uint32 size)
+	void MonolithAllocator::reserve(uint32 size)
 	{
 		if (capacity == 0)
 		{
@@ -65,26 +66,26 @@ namespace danikk_space_engine
 		}
 	}
 
-	RegionMemoryBlock RegionAllocator::popNewBlock(uint32 size)
+	MonolithMemoryBlock MonolithAllocator::popNewBlock(uint32 size)
 	{
-		for(RegionMemoryBlock& free_block : free_blocks)
+		for(MonolithMemoryBlock& free_block : free_blocks)
 		{
 			if(free_block.size() >= size && free_block.size() <= size + kib(1))
 			{
-				RegionMemoryBlock result = free_block;
+				MonolithMemoryBlock result = free_block;
 				free_block = free_blocks.last();
 				free_blocks.resize(free_blocks.size() - 1);
 				return result;
 			}
 		}
-		RegionMemoryBlock result;
+		MonolithMemoryBlock result;
 		result.offset = used;
 		result.m_size = size;
 		used += size;
 		return result;
 	}
 
-	void RegionAllocator::resize(RegionMemoryBlock& block, uint32 new_size)
+	void MonolithAllocator::resize(MonolithMemoryBlock& block, uint32 new_size)
 	{
 		if(new_size == 0)
 		{
@@ -100,8 +101,8 @@ namespace danikk_space_engine
 		block = popNewBlock(new_size);
 	}
 
-	RegionAllocator& getCurrentAllocator()
+	MonolithAllocator& getCurrentAllocator()
 	{
-		return getCurrentRegion().getAllocator();
+		return current_block_context->region->getAllocator();
 	}
 }

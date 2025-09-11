@@ -1,3 +1,3 @@
 sources += files(
-	'fill.cpp',
+	'particle.cpp',
 )

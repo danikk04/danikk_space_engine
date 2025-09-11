@@ -2,6 +2,8 @@
 #include <object/entity/entity.h>
 #include <object/block_map.h>
 #include <object/timed.h>
+#include <block/context.h>
+
 #include <block/data.h>
 #include <manager.h>
 
@@ -9,39 +11,61 @@ namespace danikk_space_engine
 {
 	class Particle : public virtual PhysicObject, public virtual TimedObject
 	{
-		virtual void collision(BlockSlot& block){};
+		virtual void collision(){};
 
 		void tick() override
 		{
+			if(pos.x < 0 || pos.y < 0 || pos.z < 0)
+			{
+				dispose();
+				return;
+			}
 			PhysicObject::tick();
 			TimedObject::tick();
-			BlockMapObject* parent_as_block_map = dynamic_cast<BlockMapObject*>(getParent());
-			assert(parent_as_block_map != NULL);
-
-			pos_type block_pos = pos;
-			GlobalRegionScope scope1;
-			GlobalChunkScope scope2;
-			BlockSlot* block = parent_as_block_map->getBlock(block_pos, scope1, scope2);
-
-			if(block != NULL)
+			if(speed != vec3(0.0f))
 			{
-				if(block->isHeaderExits())
+				BlockContext block_context = getBlockAt();
+				BlockContextUser user(&block_context);
+
+				if(current_block_context->block != NULL)
 				{
-					speed = vec3(0.0f);
-					collision(*block);
-					//exits = false;
+					if(current_block_context->block->isHeaderExits())
+					{
+						collision();
+						speed = vec3(0.0f);
+						//dispose();
+					}
 				}
-
-			}
-			else
-			{
-				exits = false;
+				else
+				{
+					dispose();
+				}
 			}
 		}
 	public:
+		BlockContext getBlockAt()
+		{
+			BlockMapObject* parent_as_block_map = dynamic_cast<BlockMapObject*>(getParent());
+			assert(parent_as_block_map != NULL);
+
+			return parent_as_block_map->getBlock(pos);
+		}
+
 		Particle()
 		{
 			tick_to_live = 120;
 		}
 	};
+
+	struct particle_type
+	{
+		const char* particle_name;
+		void* (*constructor)();
+
+		particle_type() = default;
+
+		particle_type(const char* particle_name, void* (*constructor)()) : particle_name(particle_name), constructor(constructor){}
+	};
+
+
 }

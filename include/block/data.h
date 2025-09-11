@@ -28,10 +28,16 @@ namespace danikk_space_engine
 
 	struct BlockSlot
 	{
-		RegionMemoryBlock data;
+		MonolithMemoryBlock data;
 
 		bool isHeaderExits()
 		{
+			if(data.size() >= kib(8))
+			{
+				logError("find too huge block!!!");
+				return false;
+			}
+			///assert(data.size() < kib(8));
 			return data.size() >= sizeof(BlockBaseHeader);
 		}
 
@@ -69,6 +75,7 @@ namespace danikk_space_engine
 
 		uint32 getId()
 		{
+			assert(data.size() < kib(8));
 			if (data.size() == 0)
 			{
 				return 0;

@@ -13,7 +13,7 @@ namespace danikk_space_engine
 		{
 			if(tick_to_live == 0)
 			{
-				exits = false;
+				dispose();
 			}
 			else
 			{
