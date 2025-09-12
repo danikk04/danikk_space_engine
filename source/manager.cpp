@@ -59,8 +59,8 @@ namespace danikk_space_engine
 
 		for(uvec3 pos : TensorIterable<uvec3(2,2,2)>())
 		{
-			pos_type global_pos = (pos_type)pos;
-			current_block_context->region = &(*block_map)[global_pos];
+			ivec3 region_pos = (ivec3)pos;
+			current_block_context->region = &(*block_map)[region_pos];
 			BlockSlot block;
 			BlockBaseHeader& header = block.createHeader();
 			header.id = SolidRaw::id;

@@ -4,6 +4,7 @@
 //#include <block/data.h>
 #include <default.h>
 #include <danikk_framework/array.h>
+#include <block/pos.h>
 
 namespace danikk_space_engine
 {
@@ -14,10 +15,7 @@ namespace danikk_space_engine
 		BlockMapRegion* region = NULL;
 		BlockMapObject* map = NULL;
 
-		pos_type chunk_pos;
-		pos_type block_pos;
-
-		pos_type getGlobalBlockOffset();
+		global_pos_type pos;
 	};
 
 	extern thread_local Array<BlockContext*, 8> current_context_stack;

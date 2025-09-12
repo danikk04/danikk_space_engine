@@ -3,54 +3,81 @@
 
 namespace danikk_space_engine
 {
-	pos_type PosConvetrer::globalPosToRegionPos(pos_type pos)
+	struct pos_bit_data
 	{
-		return pos / BlockMapRegion::block_size;
+		int size;
+		int offset;
+		int bitmask;
+
+		pos_bit_data(int size, int offset, int bitmask) : size(size), offset(offset), bitmask(bitmask){}
+
+		void setData(ivec3& target, const ivec3& data)
+		{
+			ivec3 offseted_data = ivec3(data.x << offset, data.y << offset, data.z << offset);
+			target = ivec3(target.x & !bitmask, target.x & !bitmask, target.z & !bitmask);//затираем нулями
+			target = ivec3(target.x | offseted_data.x, target.y | offseted_data.y, target.z | offseted_data.z);
+		}
+
+		ivec3 getData(ivec3 value)
+		{
+			ivec3 result = ivec3(value.x & bitmask, value.y & bitmask, value.z & bitmask);
+			result = ivec3(result.x >> offset, result.y >> offset, result.z >> offset);
+			return result;
+		}
+	};
+
+	pos_bit_data block_pos_bits(4, 0, 			0b00000000000000000000000000001111);
+	pos_bit_data chunk_pos_bits(1, 4, 			0b00000000000000000000000000010000);
+	pos_bit_data region_pos_bits(27, 5,			0b11111111111111111111111111100000);
+	pos_bit_data chunk_block_pos_bits(5, 0,		0b00000000000000000000000000011111);
+
+	ivec3 global_pos_type::getGlobalPos() const
+	{
+		return data;
 	}
 
-	pos_type PosConvetrer::globalPosToInChunkPos(pos_type pos)
+	void global_pos_type::setGlobalPos(ivec3 value)
 	{
-		return mod(pos, BlockMapRegion::block_size);
+		data = value;
 	}
 
-	pos_type PosConvetrer::chunkPosToRegionOffset(pos_type pos)
+	ivec3 global_pos_type::getRegionPos() const
 	{
-		return pos / BlockMapRegion::size;
+		return region_pos_bits.getData(data);
 	}
 
-	pos_type PosConvetrer::validateChunkPos(pos_type block_pos)
+	void global_pos_type::setRegionPos(ivec3 value)
 	{
-		return mod(block_pos, BlockMapRegion::size);
+		region_pos_bits.setData(data, value);
 	}
 
-	pos_type PosConvetrer::regionPosToChunkPos(pos_type pos)
+	ivec3 global_pos_type::getChunkPos() const
 	{
-		return pos_type(pos.x / BlockMapChunk::size.x, pos.y / BlockMapChunk::size.y, pos.z / BlockMapChunk::size.z);
+		return chunk_pos_bits.getData(data);
 	}
 
-	pos_type PosConvetrer::regionPosToBlockPos(pos_type pos)
+	void global_pos_type::setChunkPos(ivec3 value)
 	{
-		return pos_type(pos.x % BlockMapChunk::size.x, pos.y % BlockMapChunk::size.y, pos.z % BlockMapChunk::size.z);
+		chunk_pos_bits.setData(data, value);
 	}
 
-	pos_type PosConvetrer::blockPosToChunkOffset(pos_type block_pos)
+	ivec3 global_pos_type::getBlockPos() const
 	{
-		pos_type chunk_offset = block_pos / BlockMapChunk::size;
-		return chunk_offset;
+		return block_pos_bits.getData(data);
 	}
 
-	pos_type PosConvetrer::validateBlockPos(pos_type block_pos)
+	void global_pos_type::setBlockPos(ivec3 value)
 	{
-		return mod(block_pos, BlockMapChunk::size);
+		block_pos_bits.setData(data, value);
 	}
 
-	vec3 PosConvetrer::chunkPosToChunkCenterCoord(pos_type chunk_pos)
+	ivec3 global_pos_type::getChunkBlockPos() const
 	{
-		return current_block_context->region->pos * BlockMapRegion::block_size + chunk_pos * BlockMapChunk::size;
+		return chunk_block_pos_bits.getData(data);
 	}
 
-	pos_type PosConvetrer::worldPosToGlobalCoord(vec3 pos)
+	void global_pos_type::setChunkBlockPos(ivec3 value)
 	{
-		return pos;
+		chunk_block_pos_bits.setData(data, value);
 	}
 }

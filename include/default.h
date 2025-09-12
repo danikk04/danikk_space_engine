@@ -21,6 +21,4 @@ namespace danikk_space_engine
 
 #define swap NONE
 //#define new NONE
-
-	typedef ivec3 pos_type;
 }

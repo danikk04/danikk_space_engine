@@ -3,6 +3,7 @@
 #include <object/block_map.h>
 #include <object/timed.h>
 #include <block/context.h>
+#include <block/pos.h>
 
 #include <block/data.h>
 #include <manager.h>
@@ -48,7 +49,9 @@ namespace danikk_space_engine
 			BlockMapObject* parent_as_block_map = dynamic_cast<BlockMapObject*>(getParent());
 			assert(parent_as_block_map != NULL);
 
-			return parent_as_block_map->getBlock(pos);
+			global_pos_type global_pos;
+			global_pos.setGlobalPos(pos);
+			return parent_as_block_map->get(global_pos);
 		}
 
 		Particle()

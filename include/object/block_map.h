@@ -10,27 +10,22 @@
 #include <block/block.h>
 #include <block/data.h>
 #include <block/allocator.h>
+#include <block/pos.h>
 
 namespace danikk_space_engine
 {
-	struct PosIndexPair
+	inline const ivec3 block_directions[6]
 	{
-		pos_type index;
-		pos_type pos;
+		ivec3(1, 0, 0),
+		ivec3(0, 1, 0),
+		ivec3(0, 0, 1),
+
+		ivec3(-1, 0, 0),
+		ivec3(0, -1, 0),
+		ivec3(0, 0, -1),
 	};
 
-	inline const pos_type block_directions[6]
-	{
-		vec3(1, 0, 0),
-		vec3(0, 1, 0),
-		vec3(0, 0, 1),
-
-		vec3(-1, 0, 0),
-		vec3(0, -1, 0),
-		vec3(0, 0, -1),
-	};
-
-	pos_type getBlockOffset();
+	global_pos_type getBlockOffset();
 
 	struct block_collection_flags//флаги как для чанков, так и для регионов
 	{
@@ -78,7 +73,7 @@ namespace danikk_space_engine
 	{
 	public:
 		static constexpr size_t axis_size = 16;
-		static constexpr pos_type size = pos_type(axis_size);
+		static constexpr ivec3 size = ivec3(axis_size);
 	private:
 		FixedTensor<BlockSlot, size> data;
 		BlockMeshGroupCollection mesh_groups;
@@ -93,9 +88,9 @@ namespace danikk_space_engine
 
 		void frame();
 
-		BlockSlot& operator[](const pos_type& pos);
+		BlockSlot& operator[](const ivec3& block_pos);
 
-		BlockContext findGet(const pos_type& pos);
+		BlockContext findGet(const ivec3& block_pos);
 
 		BlockSlot* begin();
 
@@ -103,7 +98,7 @@ namespace danikk_space_engine
 
 		void checkExits();
 
-		inline bool isValidIndex(const pos_type& index) { return data.isValidIndex(index); };
+		inline bool isValidIndex(const ivec3& index) { return data.isValidIndex(index); };
 
 		size_t filledBlockCount();
 
@@ -114,24 +109,24 @@ namespace danikk_space_engine
 	{
 	public:
 		static constexpr size_t axis_size = 2;
-		static constexpr pos_type size = pos_type(axis_size);
+		static constexpr ivec3 size = ivec3(axis_size);
 
 		static constexpr size_t block_axis_size = BlockMapChunk::axis_size * axis_size;
-		static constexpr pos_type block_size = pos_type(block_axis_size);
+		static constexpr ivec3 block_size = ivec3(block_axis_size);
 		//static constexpr size_t block_size = BlockMapChunk::size * size;
 	private:
 		MonolithAllocator allocator;
 		FixedTensor<BlockMapChunk, size> data;
 	public:
 		//ЗАМЕТКА для нормальной поддержки отрицательных координат pos_type должен поддерживать отрицательный ноль
-		pos_type pos;
+		ivec3 pos;
 		block_collection_flags flags;
 
 		void tick();
 
 		void frame();
 
-		BlockMapChunk& operator[](const pos_type&);
+		BlockMapChunk& operator[](const ivec3& chunk_pos);
 
 		BlockMapChunk* begin();
 
@@ -141,11 +136,11 @@ namespace danikk_space_engine
 
 		void checkExits();
 
-		inline bool isValidIndex(const pos_type& index) { return data.isValidIndex(index); };
+		inline bool isValidIndex(const ivec3& index) { return data.isValidIndex(index); };
 
 		int32 randCoord();
 
-		pos_type randPos();
+		ivec3 randPos();
 
 		uint filledBlockCount();
 
@@ -162,11 +157,11 @@ namespace danikk_space_engine
 
 		void borderFrame();
 
-		BlockMapRegion& operator[](const pos_type&);
+		BlockMapRegion& operator[](const ivec3& region_pos);
 
-		BlockMapRegion* get(const pos_type&);
+		BlockMapRegion* get(const ivec3& region_pos);
 
-		BlockContext getBlock(const pos_type&);
+		BlockContext get(const global_pos_type& global_pos);
 
 		void regenerateMesh();
 
