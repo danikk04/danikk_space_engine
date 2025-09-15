@@ -9,14 +9,7 @@ namespace danikk_space_engine
 	{
 		void collision() override
 		{
-			assert(current_block_context->block->getId() != 0);
-			current_block_context->block->getHeader().id = 0;
-			current_block_context->block->data.resize(0);
-			assert(current_block_context->block->getId() == 0);
-			BlockMapChunk* current_chunk = current_block_context->chunk;
-			block_collection_flags* chunk_flags = &current_chunk->flags;
-			chunk_flags->is_mesh_changed = true;
-			chunk_flags->is_active = true;
+			current_block_context->map->destroyBlock();
 		}
 
 		void frame() override

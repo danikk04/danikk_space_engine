@@ -14,6 +14,7 @@ namespace danikk_space_engine
 	public:
 		ivec3 getGlobalPos() const;
 		void setGlobalPos(ivec3 value);
+		void addGlobalPos(ivec3 value);
 
 		ivec3 getRegionPos() const;
 		void setRegionPos(ivec3 value);

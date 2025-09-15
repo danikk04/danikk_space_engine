@@ -163,6 +163,8 @@ namespace danikk_space_engine
 
 		BlockContext get(const global_pos_type& global_pos);
 
+		void destroyBlock();
+
 		void regenerateMesh();
 
 		void checkExits();

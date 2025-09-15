@@ -187,7 +187,7 @@ namespace danikk_space_engine
 
 	BlockContext BlockMapChunk::findGet(const ivec3& block_pos)
 	{
-		BlockContext context = *current_context_stack.last();
+		BlockContext context = *current_block_context;
 		BlockContextUser user(&context);
 
 		if(block_pos.x < 0 || block_pos.y < 0 || block_pos.z < 0)
@@ -196,14 +196,16 @@ namespace danikk_space_engine
 			return context;
 		}
 
-		//В рамках чанка
+		/*//В рамках чанка
 		if(isValidIndex(block_pos))
 		{
 			context.block = &data[block_pos];
 			return context;
-		}
+		}*/
 
-		context.block = NULL;
+		//в рамках мира
+		context.pos.addGlobalPos(block_pos);
+		context = context.map->get(context.pos);
 		return context;
 	}
 
@@ -368,6 +370,23 @@ namespace danikk_space_engine
 			current_block_context = saved_context;
 			return result;
 		}
+	}
+
+	void BlockMapObject::destroyBlock()
+	{
+		assert(current_block_context->block->getId() != 0);
+		current_block_context->block->getHeader().id = 0;
+		current_block_context->block->data.resize(0);
+		assert(current_block_context->block->getId() == 0);
+		BlockMapChunk* current_chunk = current_block_context->chunk;
+		block_collection_flags* chunk_flags = &current_chunk->flags;
+		chunk_flags->is_mesh_changed = true;
+		chunk_flags->is_active = true;
+
+		/*for(ivec3 pos : TensorIterable<uvec3(2,2,2)>())
+		{
+
+		}*/
 	}
 
 	void BlockMapObject::tick()
