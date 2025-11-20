@@ -118,7 +118,7 @@ namespace danikk_space_engine
 		MonolithAllocator allocator;
 		FixedTensor<BlockMapChunk, size> data;
 	public:
-		//ЗАМЕТКА для нормальной поддержки отрицательных координат pos_type должен поддерживать отрицательный ноль
+		//ЗАМЕТКА для нормальной поддержки отрицательных координат pos_type должен поддерживать отрицательный ноль, в будущем нужно будет добавить поддержку. Возможно нужно в pos_type использовать float.
 		ivec3 pos;
 		block_collection_flags flags;
 
