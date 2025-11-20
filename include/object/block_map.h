@@ -31,7 +31,7 @@ namespace danikk_space_engine
 	{
 		bool32 is_exits = false;//есть ли хотя-бы один не вакуумный блок в этом чанке
 		bool16 is_active = false;//есть ли хотя-бы один работающие механизм в чанке или идёт ли теплообмен между блоками.
-		bool16 is_mesh_changed = false;
+		bool16 is_changed = false;
 	};
 
 	struct BlockMeshGroup
@@ -72,7 +72,7 @@ namespace danikk_space_engine
 	class BlockMapChunk
 	{
 	public:
-		static constexpr size_t axis_size = 16;
+		static constexpr size_t axis_size = 32;
 		static constexpr ivec3 size = ivec3(axis_size);
 	private:
 		FixedTensor<BlockSlot, size> data;
@@ -108,7 +108,7 @@ namespace danikk_space_engine
 	class BlockMapRegion
 	{
 	public:
-		static constexpr size_t axis_size = 2;
+		static constexpr size_t axis_size = 1;//УСТАНОВИЛ РАЗМЕР РЕГИОНА В 1, В ДАЛЬНЕЙШЕМ НУЖНО БУДЕТ ОТРЕФАКТОРИТЬ КОД ДЛЯ ПОДДЕРЖКИ ЗНАЧЕНИЙ ВЫШЕ 1, ЛИБО ПОЛНОСТЬЮ СЛИТЬ КЛАССЫ ЧАНКА И РЕГИОНА
 		static constexpr ivec3 size = ivec3(axis_size);
 
 		static constexpr size_t block_axis_size = BlockMapChunk::axis_size * axis_size;

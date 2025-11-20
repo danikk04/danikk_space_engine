@@ -137,10 +137,10 @@ namespace danikk_space_engine
 
 	void BlockMapChunk::frame()
 	{
-		if(flags.is_mesh_changed)
+		if(flags.is_changed)
 		{
 			regenerateMesh();
-			flags.is_mesh_changed = false;
+			flags.is_changed = false;
 		}
 		mesh_groups.frame();
 	}
@@ -380,12 +380,12 @@ namespace danikk_space_engine
 		assert(current_block_context->block->getId() == 0);
 		BlockMapChunk* current_chunk = current_block_context->chunk;
 		block_collection_flags* chunk_flags = &current_chunk->flags;
-		chunk_flags->is_mesh_changed = true;
+		chunk_flags->is_changed = true;
 		chunk_flags->is_active = true;
 
-		/*for(ivec3 pos : TensorIterable<uvec3(2,2,2)>())
+		/*for(ivec3 ipos : TensorIterable<uvec3(2,2,2)>())
 		{
-
+			ivec3 pos = ipos - ivec3(1,1,1);
 		}*/
 	}
 

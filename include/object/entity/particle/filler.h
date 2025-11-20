@@ -19,7 +19,7 @@ namespace danikk_space_engine
 				BlockContext prev_context = getBlockAt();
 
 				current_context.block->data.copyTo(prev_context.block->data, current_context.region->getAllocator());
-				current_context.chunk->flags.is_mesh_changed = true;
+				current_context.chunk->flags.is_changed = true;
 				current_context.chunk->flags.is_active = true;
 			}
 			dispose();
