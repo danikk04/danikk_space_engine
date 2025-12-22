@@ -13,7 +13,7 @@ namespace danikk_space_engine
 		BlockSlot* block = NULL;
 		BlockMapChunk* chunk = NULL;
 		BlockMapRegion* region = NULL;
-		BlockMapObject* map = NULL;
+		object_tags::BlockMap* map = NULL;
 
 		global_pos_type pos;
 	};

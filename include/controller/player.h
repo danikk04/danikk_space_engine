@@ -5,9 +5,18 @@
 
 namespace danikk_space_engine
 {
-	class PlayerController : public Controller
+	namespace object_tags
 	{
-	public:
-		 void tick() override;
-	};
+		class PlayerController : public Controller
+		{
+		public:
+			static uint32 id;
+
+			void tick();
+
+			void virtual frame(){};
+
+			bool virtual atDispose(){return 0;};
+		};
+	}
 }

@@ -4,23 +4,31 @@
 
 namespace danikk_space_engine
 {
-
-	class WorldObject : public virtual Object
+	namespace object_tags
 	{
-	public:
-		vec3 pos;
-		vec3 size = vec3(1.0f);
-		vec3 rotation;
+		class World : public ObjectTag
+		{
+		public:
+			static uint32 id;
 
-		mat4 local_matrix;
-		mat4 world_matrix;
+			vec3 pos;
+			vec3 size = vec3(1.0f);
+			vec3 rotation;
 
-		void tick() override;
+			mat4 local_matrix;
+			mat4 world_matrix;
 
-		vec3 getFlatFront();
+			void tick();
 
-		vec3 getFront();
-	};
+			void frame(){};
+
+			bool atDispose(){ return false;};
+
+			vec3 getFlatFront();
+
+			vec3 getFront();
+		};
+	}
 
 	inline vec3 getFront(const vec3& rotation)
 	{

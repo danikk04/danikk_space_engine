@@ -6,25 +6,21 @@
 
 namespace danikk_space_engine
 {
-	class MeshedObject : public virtual WorldObject
+	class MeshedObject
 	{
+		static uint32 id;
 	public:
 		Mesh* mesh;
 		Texture texture;
 		vec4 color = vec4(1.0f);
 
-		MeshedObject() : WorldObject()
+		void frame()
 		{
-
-		}
-
-		void frame() override
-		{
+			object_stack.peek().
 			setWorldMatrix(world_matrix);
 			setDrawColor(color);
 			texture.bind();
 			mesh->draw();
-			Object::frame();
 		}
 	};
 }

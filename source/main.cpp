@@ -6,6 +6,7 @@
 #include <material.h>
 #include <localization.h>
 #include <block/block.h>
+#include <object/tag_table.h>
 
 namespace danikk_engine_game
 {
@@ -18,9 +19,10 @@ namespace danikk_engine_game
 
     void begin()
     {
-		setWindowTitle("Sotiria Project");
+		setWindowTitle("Danikk Space Engine");
 		key_binds.init();
     	static_asset_collection.load();
+    	generateTagsId();
     	gui.define();
     	gui.compose();
     	danikk_space_engine::initLocaliztion();

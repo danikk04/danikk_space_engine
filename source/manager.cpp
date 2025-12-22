@@ -6,12 +6,11 @@
 #include <asset.h>
 #include <material.h>
 
-#include <object/camera.h>
-#include <preset/container.h>
 #include <preset/block/fill.h>
 
 #include <object/block_map.h>
-#include <object/camera.h>
+#include <object/tag_table.h>
+
 #include <block/context.h>
 
 #include <controller/player.h>
@@ -27,8 +26,8 @@ namespace danikk_space_engine
 
 	void Manager::tick()
 	{
-		object_stack.push(&map_root);
-		for(Object* o : map_root.childs)
+		object_stack.push(map_root);
+		for(Object* o : map_root->childs)
 		{
 			o->tick();
 		}
@@ -38,9 +37,13 @@ namespace danikk_space_engine
 	void Manager::frame()
 	{
 		static_asset_collection.base3d_shader.use();
-		main_camera->setViewMatrix();
-		object_stack.push(&map_root);
-		for(Object* o : map_root.childs)
+		object_tags::World* camera_world = camera_object->getTag<object_tags::World>();
+		mat4 view = glm::lookAt(camera_world->pos, camera_world->pos + camera_world->getFront(), vec3(0, 1, 0));
+		mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.0001f, 10000.0f);
+		danikk_engine::setViewMatrix(view);
+		setProjectionMatrix(projection);
+		object_stack.push(map_root);
+		for(Object* o : map_root->childs)
 		{
 			o->frame();
 		}
@@ -49,13 +52,16 @@ namespace danikk_space_engine
 
 	void Manager::init()
 	{
-		map_root.world_matrix = mat4(1.0f);
+		map_root = Object::create<object_tags::World>();
+		map_root->getTag<object_tags::World>()->world_matrix = mat4(1.0f);
 
-		BlockMapObject* block_map = new BlockMapObject();
+		Object* block_map_object = Object::create<object_tags::World, object_tags::BlockMap>();
+		object_tags::BlockMap* block_map = block_map_object->getTag<object_tags::BlockMap>();
 		BlockContext context;
 		current_block_context = &context;
-		current_block_context->map = block_map;
-		map_root.childs.push(block_map);
+		current_block_context->map = block_map_object->getTag<object_tags::BlockMap>();
+		map_root->childs.push(block_map_object);
+		object_stack.push(block_map_object);
 
 		for(uvec3 pos : TensorIterable<uvec3(2,2,2)>())
 		{
@@ -66,22 +72,21 @@ namespace danikk_space_engine
 			header.id = SolidRaw::id;
 			header.main_material_id = getMaterialID("granite");
 			header.main_material_mass = 1.0f;
-			//fillRegionCorners(block);
+			fillRegionCorners(block);
 			//fillRegionCenters(block);
 			//fillRegionLine(block, pos_type(0,0,0), pos_type(31,31,31));
 			//fillRegionLine(block, pos_type(31,0,0), pos_type(0,31,31));
-			fillRegion(block);
+			//fillRegion(block);
 
 			current_block_context->region->checkExits();
 			current_block_context->region->regenerateMesh();
 		}
 
-		main_camera = new Camera();
-		main_camera->pos = vec3(16.0f, 16.0f, 16.0f);
-		block_map->childs.push(main_camera);
+		object_stack.pop();
+		camera_object = Object::create<object_tags::World, object_tags::PlayerController>();
 
-		Controller* player_controller = new PlayerController();
-		main_camera->childs.push(player_controller);
+		camera_object->getTag<object_tags::World>()->pos = vec3(16.0f, 16.0f, 16.0f);
+		block_map_object->childs.push(camera_object);
 	}
 
 	Object* getParent()

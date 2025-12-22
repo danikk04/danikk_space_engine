@@ -1,7 +1,6 @@
 #pragma once
 
 #include <default.h>
-#include <object/physic.h>
 #include <block/block.h>
 #include <block/context.h>
 #include <danikk_engine/mesh.h>
@@ -11,6 +10,7 @@
 #include <block/data.h>
 #include <block/allocator.h>
 #include <block/pos.h>
+#include "kinetic.h"
 
 namespace danikk_space_engine
 {
@@ -147,28 +147,35 @@ namespace danikk_space_engine
 		MonolithAllocator& getAllocator();
 	};
 
-	class BlockMapObject : public virtual PhysicObject
+	namespace object_tags
 	{
-		DynamicArray<BlockMapRegion> data;
-	public:
-		void tick() override;
+		class BlockMap
+		{
+			DynamicArray<BlockMapRegion> data;
+		public:
+			static uint32 id;
 
-		void frame() override;
+			void tick();
 
-		void borderFrame();
+			void frame();
 
-		BlockMapRegion& operator[](const ivec3& region_pos);
+			void atDispose(){}
 
-		BlockMapRegion* get(const ivec3& region_pos);
+			void borderFrame();
 
-		BlockContext get(const global_pos_type& global_pos);
+			BlockMapRegion& operator[](const ivec3& region_pos);
 
-		void destroyBlock();
+			BlockMapRegion* get(const ivec3& region_pos);
 
-		void regenerateMesh();
+			BlockContext get(const global_pos_type& global_pos);
 
-		void checkExits();
+			void destroyBlock();
 
-		uint filledBlockCount();
-	};
+			void regenerateMesh();
+
+			void checkExits();
+
+			uint filledBlockCount();
+		};
+	}
 }

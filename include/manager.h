@@ -4,7 +4,6 @@
 
 #include <object/object.h>
 #include <object/world.h>
-#include <object/camera.h>
 #include <block/allocator.h>
 #include <controller/controller.h>
 
@@ -13,8 +12,8 @@ namespace danikk_space_engine
 	class Manager
 	{
 	public:
-		WorldObject map_root;
-		Camera* main_camera = NULL;
+		Object* map_root;
+		Object* camera_object;
 
 		void tick();
 

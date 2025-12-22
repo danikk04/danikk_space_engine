@@ -1,6 +1,7 @@
 #include <default.h>
 
 #include <object/block_map.h>
+#include <object/world.h>
 #include <block/context.h>
 
 #include <danikk_engine/dynamic_mesh.h>
@@ -117,7 +118,6 @@ namespace danikk_space_engine
 	void BlockMapChunk::regenerateMesh()
 	{
 		mesh_groups.regenerateMesh();
-		logInfo(filledBlockCount());
 	}
 
 	void BlockMapChunk::tick()
@@ -323,152 +323,152 @@ namespace danikk_space_engine
 	{
 		return data.end();
 	}
-
-	BlockMapRegion& BlockMapObject::operator[](const ivec3& region_pos)
+	namespace object_tags
 	{
-		for(BlockMapRegion& element : data)
+		BlockMapRegion& BlockMap::operator[](const ivec3& region_pos)
 		{
-			if(element.pos == region_pos)
+			for(BlockMapRegion& element : data)
 			{
-				return element;
+				if(element.pos == region_pos)
+				{
+					return element;
+				}
+			}
+			BlockMapRegion& new_region = data.pushCtor();
+			Object* current_object = object_stack.peek();
+			new_region.pos = current_object->getTag<object_tags::World>()->pos;
+			return new_region;
+		}
+
+		BlockMapRegion* BlockMap::get(const ivec3& region_pos)
+		{
+			for(BlockMapRegion& element : data)
+			{
+				if(element.pos == region_pos)
+				{
+					return &element;
+				}
+			}
+			return NULL;
+		}
+
+		BlockContext BlockMap::get(const global_pos_type& global_pos)
+		{
+			BlockContext result;
+			BlockContext* saved_context = current_block_context;
+			current_block_context = &result;
+			result.map = this;
+			result.region = get(global_pos.getRegionPos());
+			if(result.region == NULL)
+			{
+				return result;
+			}
+			else
+			{
+				result.chunk = &(*result.region)[global_pos.getChunkPos()];
+				result.block = &(*result.chunk)[global_pos.getBlockPos()];
+
+				result.pos = global_pos;
+				current_block_context = saved_context;
+				return result;
 			}
 		}
-		BlockMapRegion& new_region = data.pushCtor();
-		new_region.pos = pos;
-		return new_region;
-	}
 
-	BlockMapRegion* BlockMapObject::get(const ivec3& region_pos)
-	{
-		for(BlockMapRegion& element : data)
+		void BlockMap::destroyBlock()
 		{
-			if(element.pos == region_pos)
+			assert(current_block_context->block->getId() != 0);
+			current_block_context->block->getHeader().id = 0;
+			current_block_context->block->data.resize(0);
+			assert(current_block_context->block->getId() == 0);
+			BlockMapChunk* current_chunk = current_block_context->chunk;
+			block_collection_flags* chunk_flags = &current_chunk->flags;
+			chunk_flags->is_changed = true;
+			chunk_flags->is_active = true;
+
+			/*for(ivec3 ipos : TensorIterable<uvec3(2,2,2)>())
 			{
-				return &element;
+				ivec3 pos = ipos - ivec3(1,1,1);
+			}*/
+		}
+
+		void BlockMap::tick()
+		{
+			BlockContext context;
+			current_block_context = &context;
+			current_block_context->map = this;
+			for(BlockMapRegion& element : data)
+			{
+				if(element.flags.is_active)
+				{
+					element.tick();
+				}
 			}
 		}
-		return NULL;
-	}
 
-	BlockContext BlockMapObject::get(const global_pos_type& global_pos)
-	{
-		BlockContext result;
-		BlockContext* saved_context = current_block_context;
-		current_block_context = &result;
-		result.map = this;
-		result.region = get(global_pos.getRegionPos());
-		if(result.region == NULL)
+		void BlockMap::frame()
 		{
-			return result;
-		}
-		else
-		{
-			result.chunk = &(*result.region)[global_pos.getChunkPos()];
-			result.block = &(*result.chunk)[global_pos.getBlockPos()];
+			BlockContext context;
+			current_block_context = &context;
+			current_block_context->map = this;
 
-			result.pos = global_pos;
-			current_block_context = saved_context;
-			return result;
-		}
-	}
+			setWorldMatrix(mat4(1.0f));
+			setDrawColor(vec4(1.0f));
 
-	void BlockMapObject::destroyBlock()
-	{
-		assert(current_block_context->block->getId() != 0);
-		current_block_context->block->getHeader().id = 0;
-		current_block_context->block->data.resize(0);
-		assert(current_block_context->block->getId() == 0);
-		BlockMapChunk* current_chunk = current_block_context->chunk;
-		block_collection_flags* chunk_flags = &current_chunk->flags;
-		chunk_flags->is_changed = true;
-		chunk_flags->is_active = true;
-
-		/*for(ivec3 ipos : TensorIterable<uvec3(2,2,2)>())
-		{
-			ivec3 pos = ipos - ivec3(1,1,1);
-		}*/
-	}
-
-	void BlockMapObject::tick()
-	{
-		BlockContext context;
-		current_block_context = &context;
-		current_block_context->map = this;
-		PhysicObject::tick();
-		for(BlockMapRegion& element : data)
-		{
-			if(element.flags.is_active)
-			{
-				element.tick();
-			}
-		}
-	}
-
-	void BlockMapObject::frame()
-	{
-		BlockContext context;
-		current_block_context = &context;
-		current_block_context->map = this;
-
-		setWorldMatrix(mat4(1.0f));
-		setDrawColor(vec4(1.0f));
-
-		for(BlockMapRegion& element : data)
-		{
-			current_block_context->region = &element;
-			current_block_context->pos.setRegionPos(current_block_context->region->pos);
-			element.frame();
-		}
-
-		Object::frame();
-	}
-
-	void BlockMapObject::borderFrame()
-	{
-		/*vec3 camera_pos = game_manager.main_camera->pos;
-		pos_type global_pos = worldPosToGlobalPos(camera_pos);
-		pos_type region_pos = globalPosToRegionPos;*/
-	}
-
-
-	void BlockMapObject::regenerateMesh()
-	{
-		BlockContext context;
-		current_block_context = &context;
-		current_block_context->map = this;
-
-		for(BlockMapRegion& element : data)
-		{
-			if(element.flags.is_exits)
+			for(BlockMapRegion& element : data)
 			{
 				current_block_context->region = &element;
 				current_block_context->pos.setRegionPos(current_block_context->region->pos);
-				element.regenerateMesh();
+				element.frame();
 			}
 		}
-	}
 
-	void BlockMapObject::checkExits()
-	{
-		BlockContext context;
-		current_block_context = &context;
-		current_block_context->map = this;
-
-		for(BlockMapRegion& element : data)
+		void BlockMap::borderFrame()
 		{
-			current_block_context->region = &element;
-			current_block_context->pos.setRegionPos(current_block_context->region->pos);
-			element.checkExits();
+			/*vec3 camera_pos = game_manager.main_camera->pos;
+			pos_type global_pos = worldPosToGlobalPos(camera_pos);
+			pos_type region_pos = globalPosToRegionPos;*/
 		}
-	}
 
-	uint BlockMapObject::filledBlockCount()
-	{
-		uint result = 0;
-		for(BlockMapRegion& element : data)
+
+		void BlockMap::regenerateMesh()
 		{
-			result += element.filledBlockCount();
+			BlockContext context;
+			current_block_context = &context;
+			current_block_context->map = this;
+
+			for(BlockMapRegion& element : data)
+			{
+				if(element.flags.is_exits)
+				{
+					current_block_context->region = &element;
+					current_block_context->pos.setRegionPos(current_block_context->region->pos);
+					element.regenerateMesh();
+				}
+			}
 		}
-		return result;
+
+		void BlockMap::checkExits()
+		{
+			BlockContext context;
+			current_block_context = &context;
+			current_block_context->map = this;
+
+			for(BlockMapRegion& element : data)
+			{
+				current_block_context->region = &element;
+				current_block_context->pos.setRegionPos(current_block_context->region->pos);
+				element.checkExits();
+			}
+		}
+
+		uint BlockMap::filledBlockCount()
+		{
+			uint result = 0;
+			for(BlockMapRegion& element : data)
+			{
+				result += element.filledBlockCount();
+			}
+			return result;
+		}
 	}
 }

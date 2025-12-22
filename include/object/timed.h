@@ -4,21 +4,26 @@
 
 namespace danikk_space_engine
 {
-	class TimedObject : public virtual Object
+	namespace object_tags
 	{
-	public:
-		size_t tick_to_live = 0;
-
-		void tick() override
+		class Timed : public ObjectTag
 		{
-			if(tick_to_live == 0)
+		public:
+			static uint32 id;
+
+			size_t tick_to_live = 0;
+
+			void tick()
 			{
-				dispose();
+				if(tick_to_live == 0)
+				{
+					dispose();
+				}
+				else
+				{
+					tick_to_live--;
+				}
 			}
-			else
-			{
-				tick_to_live--;
-			}
-		}
-	};
+		};
+	}
 }

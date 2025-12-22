@@ -1,7 +1,8 @@
 #pragma once
-#include <object/entity/entity.h>
+
 #include <object/block_map.h>
 #include <object/timed.h>
+#include <object/object.h>
 #include <block/context.h>
 #include <block/pos.h>
 
@@ -10,20 +11,23 @@
 
 namespace danikk_space_engine
 {
-	class Particle : public virtual PhysicObject, public virtual TimedObject
+	class Particle : public ObjectTag
 	{
-		virtual void collision(){};
+	public:
+		void (*atBlockCollision)();
+		void (*atEntityCollision)();
 
 		void tick() override
 		{
-			if(pos.x < 0 || pos.y < 0 || pos.z < 0)
+			useObjectTag(World, world);
+			useObjectTag(Kinetic, physic);
+
+			if(world_tag->pos.x < 0 || world_tag->pos.y < 0 || world_tag->pos.z < 0)
 			{
 				dispose();
 				return;
 			}
-			PhysicObject::tick();
-			TimedObject::tick();
-			if(speed != vec3(0.0f))
+			if(physic_tag->speed != vec3(0.0f))
 			{
 				BlockContext block_context = getBlockAt();
 				BlockContextUser user(&block_context);
@@ -34,7 +38,7 @@ namespace danikk_space_engine
 					{
 						collision();
 						speed = vec3(0.0f);
-						//dispose();
+						dispose();
 					}
 				}
 				else
@@ -43,7 +47,6 @@ namespace danikk_space_engine
 				}
 			}
 		}
-	public:
 		BlockContext getBlockAt()
 		{
 			BlockMapObject* parent_as_block_map = dynamic_cast<BlockMapObject*>(getParent());
@@ -54,21 +57,18 @@ namespace danikk_space_engine
 			return parent_as_block_map->get(global_pos);
 		}
 
+		void frame() override
+		{
+			Object::frame();
+			setWorldMatrix(world_matrix);
+			setDrawColor(vec4(0.0f, 0.0f, 0.0f, 1.0f));
+			white_texture.bind();
+			static_asset_collection.low_poly_sphere_mesh.draw();
+		}
+
 		Particle()
 		{
 			tick_to_live = 120;
 		}
 	};
-
-	struct particle_type
-	{
-		const char* particle_name;
-		void* (*constructor)();
-
-		particle_type() = default;
-
-		particle_type(const char* particle_name, void* (*constructor)()) : particle_name(particle_name), constructor(constructor){}
-	};
-
-
 }

@@ -14,7 +14,6 @@ namespace danikk_space_engine
 
 		void frame() override
 		{
-			Object::frame();
 			setWorldMatrix(world_matrix);
 			setDrawColor(vec4(0.0f, 0.0f, 0.0f, 1.0f));
 			white_texture.bind();

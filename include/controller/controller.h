@@ -5,8 +5,11 @@
 
 namespace danikk_space_engine
 {
-	class Controller : public Object
+	namespace object_tags
 	{
-	public:
-	};
+		class Controller : public ObjectTag
+		{
+		public:
+		};
+	}
 }

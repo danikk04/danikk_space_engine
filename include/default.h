@@ -16,8 +16,12 @@ namespace danikk_space_engine
 	class BlockSlot;
 	class BlockMapChunk;
 	class BlockMapRegion;
-	class BlockMapObject;
+	namespace object_tags
+	{
+		class BlockMap;
+	}
 	class Block;
+	class ObjectTagGetter;
 
 #define swap NONE
 //#define new NONE

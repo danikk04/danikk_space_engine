@@ -3,8 +3,6 @@
 #include <danikk_framework/glm.h>
 
 #include <object/world.h>
-#include <preset/container.h>
-#include <object/camera.h>
 #include <controller/player.h>
 
 #include <default.h>
