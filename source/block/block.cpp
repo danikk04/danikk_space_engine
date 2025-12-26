@@ -7,8 +7,6 @@
 #include <danikk_engine/texture.h>
 
 #include <block/block.h>
-#include <block/container.h>
-#include <block/material.h>
 #include <object/block_map.h>
 
 #include <asset.h>
@@ -54,7 +52,6 @@ namespace danikk_space_engine
 
 	void initBlockTypes()
 	{
-		InitMaterialTypes();
-		add_block_type(WoodenContainer, "wooden_container");
+
 	}
 }

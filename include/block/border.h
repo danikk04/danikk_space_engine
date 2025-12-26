@@ -6,16 +6,19 @@
 
 namespace danikk_space_engine
 {
-	enum border_display_style
+	namespace border_display_style
 	{
-		none,
-		only_chunk_frame,
-		only_region_frame,
-		all_frame,
+		enum
+		{
+			none,
+			only_chunk_frame,
+			only_region_frame,
+			all_frame,
 
-		BASE = none,
-		MAX = 4
-	};
+			BASE = none,
+			MAX = 4
+		};
+	}
 
 	extern const char* border_display_style_strings[];
 

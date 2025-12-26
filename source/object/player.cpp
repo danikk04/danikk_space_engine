@@ -3,9 +3,8 @@
 #include <danikk_framework/glm.h>
 
 #include <object/world.h>
-/*#include <object/entity/particle/plasma.h>
-#include <object/entity/particle/destroyer.h>*/
-#include <controller/player.h>
+#include <object/projectile.h>
+#include <object/player.h>
 
 #include <default.h>
 #include <manager.h>
@@ -54,45 +53,22 @@ namespace danikk_space_engine
 			direction *= speed;
 			controllable_as_world->pos += direction;
 
-			/*Camera* controllable_as_camera = dynamic_cast<Camera*>(object_stack.peek());
-			if(controllable_as_camera != NULL)
+			if(getKeyboardState(keyboard_buttons::left_alt) == button_states::hold)
 			{
-				if(getKeyboardState(keyboard_buttons::left_alt) == button_states::hold)
+				Object* obj = NULL;
+				if(getKeyboardState(keyboard_buttons::f) == button_states::hold)
 				{
-					Particle* obj = NULL;
-					if(getKeyboardState(keyboard_buttons::f) == button_states::hold)
-					{
-						obj = new PlasmaBullet();
-					}
-					else if(getKeyboardState(keyboard_buttons::g) == button_states::hold)
-					{
-						obj = new DestroyerBullet();
-					}
-					if(obj != NULL)
-					{
-						vec3 randomized_rotation = controllable_as_world->rotation + vec3(randVec2(), 0.0f) * 0.3f;
-						obj->speed = getFront(randomized_rotation) * 5.0f;
-						obj->pos = controllable_as_world->pos + obj->speed / vec3(4.0f);
-						obj->rotation = randomized_rotation;
-
-						getParentOfParent()->childs.push(obj);
-					}
+					//obj = new PlasmaBullet();
 				}
-
-				if(getKeyboardState(keyboard_buttons::f9) == button_states::hold)
+				else if(getKeyboardState(keyboard_buttons::g) == button_states::hold)
 				{
-					for(size_t i = 0; i < 120; i ++)
-					{
-						PlasmaBullet* obj = new PlasmaBullet();
-						vec3 randomized_rotation = vec3(randVec2(), 0.0f) * pi;
-						obj->speed = getFront(randomized_rotation) * 5.0f;
-						obj->pos = controllable_as_world->pos + obj->speed / vec3(4.0f);
-						obj->rotation = randomized_rotation;
-
-						getParentOfParent()->childs.push(obj);
-					}
+					obj = createDestroyerProjectile(controllable_as_world->pos, controllable_as_world->rotation);
 				}
-			}*/
+				if(obj != NULL)
+				{
+					getParentObject()->addChild(obj);
+				}
+			}
 		}
 	}
 }

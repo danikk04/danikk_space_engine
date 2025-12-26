@@ -28,8 +28,8 @@ namespace danikk_space_engine
 
 	pos_bit_data block_pos_bits			(4, 0, 			0b00000000000000000000000000001111);
 	pos_bit_data chunk_pos_bits			(0, 4, 			0b00000000000000000000000000000000);
-	pos_bit_data region_pos_bits		(27, 4,			0b11111111111111111111111111110000);
-	pos_bit_data chunk_block_pos_bits	(5, 0,			0b00000000000000000000000000001111);
+	pos_bit_data region_pos_bits		(28, 4,			0b11111111111111111111111111110000);
+	pos_bit_data chunk_block_pos_bits	(4, 0,			0b00000000000000000000000000001111);
 
 	//ПОСКОЛЬКУ РАЗМЕР РЕГИОНА УСТАНОВИЛ В 1, ТО НА ПОЗИЦИЮ ЧАНКА УДЕЛЯЕТСЯ 0 БИТ, ЗНАЧЕНИЕ НИЖЕ ДЛЯ РАЗМЕРА 2 на 2 на 2
 	/*pos_bit_data block_pos_bits			(4, 0, 			0b00000000000000000000000000001111);

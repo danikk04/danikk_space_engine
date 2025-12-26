@@ -6,16 +6,15 @@
 #include <asset.h>
 #include <material.h>
 
-#include <preset/block/fill.h>
+#include <block/fill.h>
 
 #include <object/block_map.h>
 #include <object/tag_table.h>
+#include <object/player.h>
 
 #include <block/context.h>
+#include <block/gen.h>
 
-#include <controller/player.h>
-
-#include <block/container.h>
 #include <block/data.h>
 #include <block/allocator.h>
 
@@ -27,7 +26,7 @@ namespace danikk_space_engine
 	void Manager::tick()
 	{
 		object_stack.push(map_root);
-		for(Object* o : map_root->childs)
+		for(Object* o : map_root->iterateChilds())
 		{
 			o->tick();
 		}
@@ -43,7 +42,7 @@ namespace danikk_space_engine
 		danikk_engine::setViewMatrix(view);
 		setProjectionMatrix(projection);
 		object_stack.push(map_root);
-		for(Object* o : map_root->childs)
+		for(Object* o : map_root->iterateChilds())
 		{
 			o->frame();
 		}
@@ -60,23 +59,15 @@ namespace danikk_space_engine
 		BlockContext context;
 		current_block_context = &context;
 		current_block_context->map = block_map_object->getTag<object_tags::BlockMap>();
-		map_root->childs.push(block_map_object);
+		map_root->addChild(block_map_object);
 		object_stack.push(block_map_object);
 
-		for(uvec3 pos : TensorIterable<uvec3(2,2,2)>())
+		for(uvec3 pos : TensorIterable<map_size>())
 		{
 			ivec3 region_pos = (ivec3)pos;
 			current_block_context->region = &(*block_map)[region_pos];
-			BlockSlot block;
-			BlockBaseHeader& header = block.createHeader();
-			header.id = SolidRaw::id;
-			header.main_material_id = getMaterialID("granite");
-			header.main_material_mass = 1.0f;
-			fillRegionCorners(block);
-			//fillRegionCenters(block);
-			//fillRegionLine(block, pos_type(0,0,0), pos_type(31,31,31));
-			//fillRegionLine(block, pos_type(31,0,0), pos_type(0,31,31));
-			//fillRegion(block);
+
+
 
 			current_block_context->region->checkExits();
 			current_block_context->region->regenerateMesh();
@@ -86,7 +77,7 @@ namespace danikk_space_engine
 		camera_object = Object::create<object_tags::World, object_tags::PlayerController>();
 
 		camera_object->getTag<object_tags::World>()->pos = vec3(16.0f, 16.0f, 16.0f);
-		block_map_object->childs.push(camera_object);
+		block_map_object->addChild(camera_object);
 	}
 
 	Object* getParent()

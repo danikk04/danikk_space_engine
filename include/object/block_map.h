@@ -27,11 +27,28 @@ namespace danikk_space_engine
 
 	global_pos_type getBlockOffset();
 
+	namespace block_collection_exits_state
+	{
+		enum
+		{
+			None,		//не существует - заполнен вакуумом
+			Exits,		//существует - есть хоть один не вакуумный блок
+			Sleep,		//спящий - есть хоть какой-то теплообмен между плитками
+			Active,		//активный - есть живая сущность или работающий механизм
+			Changed		//изменённый - было изменение и его нужно обработать
+		};
+	}
 	struct block_collection_flags//флаги как для чанков, так и для регионов
 	{
-		bool32 is_exits = false;//есть ли хотя-бы один не вакуумный блок в этом чанке
-		bool16 is_active = false;//есть ли хотя-бы один работающие механизм в чанке или идёт ли теплообмен между блоками.
-		bool16 is_changed = false;
+		int64 exits_state;
+
+#define def_f(name) void set ## name() { exits_state = block_collection_exits_state::name; } bool is ## name() { return exits_state >= block_collection_exits_state::name; }
+		def_f(None);
+		def_f(Exits);
+		def_f(Sleep);
+		def_f(Active);
+		def_f(Changed);
+#undef def_f
 	};
 
 	struct BlockMeshGroup

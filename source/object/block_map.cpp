@@ -9,13 +9,14 @@
 #include <block/block.h>
 #include <block/data.h>
 #include <block/pos.h>
+#include <block/material.h>
 #include <block/border.h>
 #include <material.h>
 #include <manager.h>
 
 namespace danikk_space_engine
 {
-	Block* BlockBaseHeader::getBlockType()
+	Block* BlockSlot::getBlockType()
 	{
 		return block_table[id];
 	}
@@ -40,7 +41,7 @@ namespace danikk_space_engine
 
 		for(const ivec3& pos : current_block_context->chunk->iteratePos())
 		{
-			uint32 block_id = (*current_block_context->chunk)[pos].getId();
+			uint32 block_id = (*current_block_context->chunk)[pos].id;
 			if(block_id == 0 || block_id != this->block_id)
 			{
 				continue;
@@ -51,7 +52,7 @@ namespace danikk_space_engine
 				BlockContext block;
 				ivec3 block_global_offset = current_block_context->pos.getGlobalPos();
 				block = current_block_context->chunk->findGet(directed_pos);
-				if(block.block == NULL || block.block->getId() != 0)
+				if(block.block == NULL || block.block->id != 0)
 				{
 					continue;
 				}
@@ -82,14 +83,14 @@ namespace danikk_space_engine
 
 		for(BlockSlot& block : *current_block_context->chunk)
 		{
-			if(!block.isHeaderExits())
+			if(block.id == 0)
 			{
 				continue;
 			}
 			bool block_group_exits = false;
 			for(BlockMeshGroup& group : data)
 			{
-				if(group.block_id == block.getId())
+				if(group.block_id == block.id)
 				{
 					block_group_exits = true;
 					break;
@@ -98,10 +99,10 @@ namespace danikk_space_engine
 			if(!block_group_exits)
 			{
 				BlockMeshGroup& group = data.pushCtor();
-				BlockBaseHeader& header = block.getHeader();
 
-				group.block_id = header.id;
-				group.texture = getMaterialTexture(header.main_material_id);
+				group.block_id = block.id;
+				useObjectTag((&block), BlockMaterial, material);
+				group.texture = getMaterialTexture(material_tag->main_material_id);
 				group.regenerateMesh();
 			}
 		}
@@ -125,22 +126,21 @@ namespace danikk_space_engine
 		for(ivec3 pos : data.iteratePos())
 		{
 			BlockSlot& block = data[pos];
-			if(!block.isHeaderExits())
+			if(!block.id != 0)
 			{
 				continue;
 			}
-			BlockBaseHeader& header = block.getHeader();
 			current_block_context->block = &(*this)[pos];
-			header.getBlockType()->tick();
+			//block.tick();
 		}
 	}
 
 	void BlockMapChunk::frame()
 	{
-		if(flags.is_changed)
+		if(flags.isChanged())
 		{
 			regenerateMesh();
-			flags.is_changed = false;
+			flags.setActive();
 		}
 		mesh_groups.frame();
 	}
@@ -149,25 +149,25 @@ namespace danikk_space_engine
 	{
 		for(BlockSlot& block : *this)
 		{
-			if(block.getId() != 0)
+			if(block.id != 0)
 			{
-				flags.is_exits = true;
+				flags.setExits();
 				return;
 			}
 		}
-		flags.is_exits = false;
+		flags.setNone();
 	}
 
 	size_t BlockMapChunk::filledBlockCount()
 	{
-		if(!flags.is_exits)
+		if(flags.isNone())
 		{
 			return 0;
 		}
 		uint result = 0;
 		for(BlockSlot& block : *this)
 		{
-			if(block.getId() != 0)
+			if(block.id != 0)
 			{
 				result++;
 			}
@@ -225,7 +225,7 @@ namespace danikk_space_engine
 		for(ivec3 pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
-			if(element.flags.is_active)
+			if(element.flags.isActive())
 			{
 				current_block_context->chunk = &element;
 				current_block_context->pos.setChunkPos(pos);
@@ -240,7 +240,7 @@ namespace danikk_space_engine
 		for(ivec3 pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
-			if(element.flags.is_exits)
+			if(element.flags.isExits())
 			{
 				current_block_context->chunk = &element;
 				current_block_context->pos.setChunkPos(pos);
@@ -255,7 +255,7 @@ namespace danikk_space_engine
 		for(ivec3 pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
-			if(element.flags.is_exits)
+			if(element.flags.isExits())
 			{
 				current_block_context->chunk = &element;
 				current_block_context->pos.setChunkPos(pos);
@@ -267,12 +267,12 @@ namespace danikk_space_engine
 	void BlockMapRegion::checkExits()
 	{
 		current_block_context->region = this;
-		flags.is_exits = false;
+		flags.setNone();
 		for(ivec3 pos : data.iteratePos())
 		{
 			BlockMapChunk& element = data[pos];
 			element.checkExits();
-			if(element.flags.is_exits)
+			if(element.flags.isExits())
 			{
 				current_block_context->chunk = &element;
 				current_block_context->pos.setChunkPos(pos);
@@ -292,7 +292,7 @@ namespace danikk_space_engine
 
 	uint BlockMapRegion::filledBlockCount()
 	{
-		if(!flags.is_exits)
+		if(flags.isNone())
 		{
 			return 0;
 		}
@@ -358,32 +358,34 @@ namespace danikk_space_engine
 			BlockContext* saved_context = current_block_context;
 			current_block_context = &result;
 			result.map = this;
-			result.region = get(global_pos.getRegionPos());
+			thread_local BlockMapRegion* region_cache = NULL;
+			ivec3 region_pos = global_pos.getRegionPos();
+			if(region_cache == NULL || region_cache->pos != region_pos)
+			{
+				result.region = get(region_pos);
+			}
+			else
+			{
+				result.region = region_cache;
+			}
 			if(result.region == NULL)
 			{
 				return result;
 			}
-			else
-			{
-				result.chunk = &(*result.region)[global_pos.getChunkPos()];
-				result.block = &(*result.chunk)[global_pos.getBlockPos()];
+			result.chunk = &(*result.region)[global_pos.getChunkPos()];
+			result.block = &(*result.chunk)[global_pos.getBlockPos()];
 
-				result.pos = global_pos;
-				current_block_context = saved_context;
-				return result;
-			}
+			result.pos = global_pos;
+			current_block_context = saved_context;
+			return result;
 		}
 
 		void BlockMap::destroyBlock()
 		{
-			assert(current_block_context->block->getId() != 0);
-			current_block_context->block->getHeader().id = 0;
-			current_block_context->block->data.resize(0);
-			assert(current_block_context->block->getId() == 0);
+			current_block_context->block->id = 0;
 			BlockMapChunk* current_chunk = current_block_context->chunk;
 			block_collection_flags* chunk_flags = &current_chunk->flags;
-			chunk_flags->is_changed = true;
-			chunk_flags->is_active = true;
+			chunk_flags->setActive();
 
 			/*for(ivec3 ipos : TensorIterable<uvec3(2,2,2)>())
 			{
@@ -398,7 +400,7 @@ namespace danikk_space_engine
 			current_block_context->map = this;
 			for(BlockMapRegion& element : data)
 			{
-				if(element.flags.is_active)
+				if(element.flags.isActive())
 				{
 					element.tick();
 				}
@@ -438,7 +440,7 @@ namespace danikk_space_engine
 
 			for(BlockMapRegion& element : data)
 			{
-				if(element.flags.is_exits)
+				if(element.flags.isExits())
 				{
 					current_block_context->region = &element;
 					current_block_context->pos.setRegionPos(current_block_context->region->pos);

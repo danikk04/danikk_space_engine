@@ -24,10 +24,6 @@ namespace danikk_space_engine
 				world->pos += speed * getTargetFrameDelay();
 				world->rotation += rotation_speed * getTargetFrameDelay();
 			}
-
-			void frame() {}
-
-			bool atDispose() { return false; }
 		};
 	}
 }

@@ -20,10 +20,6 @@ namespace danikk_space_engine
 
 			void tick();
 
-			void frame(){};
-
-			bool atDispose(){ return false;};
-
 			vec3 getFlatFront();
 
 			vec3 getFront();

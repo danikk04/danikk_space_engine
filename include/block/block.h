@@ -10,6 +10,9 @@ namespace danikk_space_engine
 		public:
 		const char* system_name;
 		const String* translated_name;
+		vec2 uv_size;
+		vec2 uv_offset;
+		uint atlas_index;
 
 		Block() = default;
 

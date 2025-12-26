@@ -12,26 +12,30 @@ namespace danikk_space_engine
 		new (result) Object();
 		return result;
 	}
+
 	void Object::tick()
 	{
 		object_stack.push(this);
-		for(index_t i = 0; i < childs.size(); i++)
-		{
-			if(!childs[i]->exits)
-			{
-				free(childs[i]);
-				childs[i] = childs.pop();
-			}
-		}
-		for(index_t i = 0; i < childs.size(); i++)
-		{
-			Object* child = childs[i];
-			child->tick();
-		}
 		for(index_t i = 0; i < tags.size(); i++)
 		{
 			TagHeader* tag = &tags[i];
 			tag->tick();
+		}
+		if(childs != NULL)
+		{
+			for(index_t i = 0; i < childs->size(); i++)
+			{
+				if(!(((*childs)[i])->tags.size() > 0))
+				{
+					free((*childs)[i]);
+					(*childs)[i] = childs->pop();
+				}
+			}
+			for(index_t i = 0; i < childs->size(); i++)
+			{
+				Object* child = (*childs)[i];
+				child->tick();
+			}
 		}
 		object_stack.pop();
 	}
@@ -39,18 +43,18 @@ namespace danikk_space_engine
 	void Object::frame()
 	{
 		object_stack.push(this);
-		for(index_t i = 0; i < childs.size(); i++)
+		if(childs != NULL)
 		{
-			Object* child = childs[i];
-			if(child->exits)
+			for(index_t i = 0; i < childs->size(); i++)
 			{
+				Object* child = (*childs)[i];
 				child->frame();
 			}
-			for(index_t j = 0; j < tags.size(); j++)
-			{
-				TagHeader* tag = &tags[j];
-				tag->frame();
-			}
+		}
+		for(index_t j = 0; j < tags.size(); j++)
+		{
+			TagHeader* tag = &tags[j];
+			tag->frame();
 		}
 		object_stack.pop();
 	}
@@ -62,7 +66,7 @@ namespace danikk_space_engine
 		{
 			tags[i].atDispose();
 		}
-		exits = false;
+		tags.clear();
 	}
 
 	byte* Object::getTagMemory(uint32 type)
@@ -75,6 +79,42 @@ namespace danikk_space_engine
 			}
 		}
 		return NULL;
+	}
+
+	byte* Object::getTagMemory(index_t i)
+	{
+		return (byte*)this + tags[i].data_offset;
+	}
+
+	void Object::addChild(Object* obj)
+	{
+		if (childs == NULL)
+		{
+			void* ptr = malloc(sizeof(DynamicArray<Object*>));
+			childs = new (ptr) DynamicArray<Object*>();
+		}
+		childs->push(obj);
+	}
+
+	danikk_framework::PointerIterable<Object*> Object::iterateChilds()
+	{
+		danikk_framework::PointerIterable<Object*> result;
+		if(childs == NULL)
+		{
+			result._begin = NULL;
+			result._end = NULL;
+		}
+		else
+		{
+			result._begin = childs->begin();
+			result._end = childs->end();
+		}
+		return result;
+	}
+
+	bool Object::haveChilds()
+	{
+		return childs != NULL;
 	}
 
 	byte* Object::TagHeader::getTagMemory()

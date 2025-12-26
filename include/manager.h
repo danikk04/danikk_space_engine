@@ -5,7 +5,7 @@
 #include <object/object.h>
 #include <object/world.h>
 #include <block/allocator.h>
-#include <controller/controller.h>
+#include <object/player.h>
 
 namespace danikk_space_engine
 {

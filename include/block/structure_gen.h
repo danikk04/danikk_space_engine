@@ -8,16 +8,12 @@ namespace danikk_space_engine
 {
 	namespace object_tags
 	{
-		class BlockMaterial : ObjectTag
+		class StructureGenBlock : ObjectTag
 		{
 		public:
 			static uint32 id;
 
-			uint32 main_material_id = 0;
-
-			float main_material_mass = 0;
-			float temperature = 0;
 		};
 	}
 }
-
+	

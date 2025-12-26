@@ -8,8 +8,5 @@ sources = files(
 	'localization.cpp', 
 )
 
-subdir('controller')
-subdir('collider')
 subdir('block')
 subdir('object')
-subdir('preset')

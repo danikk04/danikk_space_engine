@@ -1,3 +1,0 @@
-#sources += files(
-#	'particle.cpp',
-#)
