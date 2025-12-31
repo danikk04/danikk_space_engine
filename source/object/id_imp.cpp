@@ -8,7 +8,7 @@
 #include <object/limited_live.h>
 
 #include <block/material.h>
-#include <block/structure_gen.h>
+#include "../../include/block/structure.h"
 
 namespace danikk_space_engine
 {
@@ -21,7 +21,7 @@ namespace danikk_space_engine
 	uint32 object_tags::LimitedLive::id;
 
 	uint32 object_tags::BlockMaterial::id;
-	uint32 object_tags::StructureGenBlock::id;
+	uint32 object_tags::StructureGen::id;
 
 	using namespace internal;
 

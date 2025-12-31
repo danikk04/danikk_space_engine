@@ -10,6 +10,7 @@
 #include <block/data.h>
 #include <block/allocator.h>
 #include <block/pos.h>
+#include <block/structure.h>
 #include "kinetic.h"
 
 namespace danikk_space_engine
@@ -169,6 +170,7 @@ namespace danikk_space_engine
 		class BlockMap
 		{
 			DynamicArray<BlockMapRegion> data;
+			DynamicArray<GeneratingStructure> data;
 		public:
 			static uint32 id;
 
