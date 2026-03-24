@@ -25,4 +25,4 @@ namespace danikk_space_engine
 		};
 	}
 }
-	
+
