@@ -59,16 +59,6 @@ namespace danikk_space_engine
 		object_stack.pop();
 	}
 
-	void Object::dispose()
-	{
-		index_t i = tags.size() - 1;
-		while(i --> 0)
-		{
-			tags[i].atDispose();
-		}
-		tags.clear();
-	}
-
 	byte* Object::getTagMemory(uint32 type)
 	{
 		for(TagHeader& tag : tags)

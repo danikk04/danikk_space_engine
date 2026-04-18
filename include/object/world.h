@@ -6,11 +6,9 @@ namespace danikk_space_engine
 {
 	namespace object_tags
 	{
-		class World : public ObjectTag
+		class World : public Object
 		{
 		public:
-			static uint32 id;
-
 			vec3 pos;
 			vec3 size = vec3(1.0f);
 			vec3 rotation;

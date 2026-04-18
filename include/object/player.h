@@ -7,7 +7,7 @@ namespace danikk_space_engine
 {
 	namespace object_tags
 	{
-		class PlayerController : public ObjectTag
+		class PlayerController : public Object
 		{
 		public:
 			static uint32 id;

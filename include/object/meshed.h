@@ -9,19 +9,16 @@ namespace danikk_space_engine
 {
 	namespace object_tags
 	{
-		class Meshed : public ObjectTag
+		class Meshed : public World
 		{
 		public:
-			static uint32 id;
-
 			Mesh* mesh;
 			Texture texture;
 			vec4 color = vec4(1.0f);
 
 			void frame()
 			{
-				useCurrentObjectTag(World, world);
-				setWorldMatrix(world_tag->world_matrix);
+				setWorldMatrix(world_matrix);
 				setDrawColor(color);
 				texture.bind();
 				mesh->draw();

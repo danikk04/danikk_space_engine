@@ -8,7 +8,7 @@ namespace danikk_space_engine
 {
 	namespace object_tags
 	{
-		class Kinetic : public ObjectTag
+		class Kinetic : public World
 		{
 		public:
 			static uint32 id;
@@ -20,9 +20,8 @@ namespace danikk_space_engine
 
 			void tick()
 			{
-				object_tags::World* world = object_stack.peek()->getTag<object_tags::World>();
-				world->pos += speed * getTargetFrameDelay();
-				world->rotation += rotation_speed * getTargetFrameDelay();
+				pos += speed * getTargetFrameDelay();
+				rotation += rotation_speed * getTargetFrameDelay();
 			}
 		};
 	}

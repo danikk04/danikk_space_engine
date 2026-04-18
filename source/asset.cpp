@@ -1,5 +1,5 @@
 #include <asset.h>
-#include <danikk_framework/string_buffer.h>
+#include <danikk_framework/static_string.h>
 
 namespace danikk_space_engine
 {

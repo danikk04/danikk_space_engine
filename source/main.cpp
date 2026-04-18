@@ -5,8 +5,6 @@
 #include <manager.h>
 #include <material.h>
 #include <localization.h>
-#include <block/block.h>
-#include <object/tag_table.h>
 
 namespace danikk_engine_game
 {
@@ -26,7 +24,6 @@ namespace danikk_engine_game
     	gui.define();
     	gui.compose();
     	danikk_space_engine::initLocaliztion();
-    	danikk_space_engine::initBlockTypes();
     	danikk_space_engine::initMaterials();
 
     	game_manager.init();

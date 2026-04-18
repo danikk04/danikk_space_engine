@@ -7,6 +7,3 @@ sources = files(
 	'material.cpp', 
 	'localization.cpp', 
 )
-
-subdir('block')
-subdir('object')

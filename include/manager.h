@@ -4,7 +4,6 @@
 
 #include <object/object.h>
 #include <object/world.h>
-#include <block/allocator.h>
 #include <object/player.h>
 
 namespace danikk_space_engine
@@ -27,5 +26,4 @@ namespace danikk_space_engine
 	Object* getParentOfParent();
 
 	extern Manager game_manager;
-	extern MonolithAllocator entity_allocator;
 }

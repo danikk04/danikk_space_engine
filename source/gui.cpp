@@ -16,6 +16,7 @@ namespace danikk_space_engine
     	fps_label.anchor = GUIAnchor::top;
     	fps_label.pos = vec2(0, 0);
     	fps_label.relative_size = vec2(0.25f, 0.05f);
+    	fps_label.name = "fps_label";
 
     	debug_info_label_style.anchor = TextAnchor::multiline;
     	debug_info_label_style.absolute_char_height = 0.01f;
@@ -27,6 +28,7 @@ namespace danikk_space_engine
     	debug_info_label.text_style = &debug_info_label_style;
     	debug_info_label.pos = vec2(0, 0);
     	debug_info_label.relative_size = vec2(0.4f, 0.3f);
+    	debug_info_label.name = "debug_info_label";
 	}
 
 	void GUI::compose()
@@ -38,6 +40,6 @@ namespace danikk_space_engine
 	void GUI::frame()
 	{
     	format(fps_label.text, "FPS:%", fps_counter.getValue());
-    	format(debug_info_label.text, "camera_pos:%", truncateTo100(game_manager.camera_object->getTag<object_tags::World>()->pos));
+    	format(debug_info_label.text, "camera_pos:%", truncateTo100(game_manager.camera_object->pos));
 	}
 }
