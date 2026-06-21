@@ -7,22 +7,19 @@
 
 namespace danikk_space_engine
 {
-	namespace object_tags
+	class MeshedObject : public WorldObject
 	{
-		class Meshed : public World
-		{
-		public:
-			Mesh* mesh;
-			Texture texture;
-			vec4 color = vec4(1.0f);
+	public:
+		Mesh* mesh;
+		Texture texture;
+		vec4 color = vec4(1.0f);
 
-			void frame()
-			{
-				setWorldMatrix(world_matrix);
-				setDrawColor(color);
-				texture.bind();
-				mesh->draw();
-			}
-		};
-	}
+		void frame()
+		{
+			setWorldMatrix(world_matrix);
+			setDrawColor(color);
+			texture.bind();
+			mesh->draw();
+		}
+	};
 }

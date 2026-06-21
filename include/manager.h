@@ -11,8 +11,8 @@ namespace danikk_space_engine
 	class Manager
 	{
 	public:
-		Object* map_root;
-		Object* camera_object;
+		WorldObject* map_root;
+		WorldObject* camera_object;
 
 		void tick();
 

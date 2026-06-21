@@ -2,17 +2,15 @@
 
 #include <default.h>
 #include <object/object.h>
+#include <object/world.h>
 
 namespace danikk_space_engine
 {
-	namespace object_tags
+	class Player : public WorldObject
 	{
-		class PlayerController : public Object
-		{
-		public:
-			static uint32 id;
+	public:
+		static uint32 id;
 
-			void tick();
-		};
-	}
+		void tick();
+	};
 }

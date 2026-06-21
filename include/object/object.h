@@ -27,19 +27,8 @@ namespace danikk_space_engine
 		bool haveChilds();
 	};
 
-	inline Object* getCurrentObject()
-	{
-		return object_stack.peek();
-	}
-
 	inline Object* getParentObject()
 	{
 		return object_stack[object_stack.size() - 2];
 	}
-
-	#define useCurrentObjectTag(type_name, name2) object_tags::type_name* name2 ## _tag = getObjectTag<object_tags::type_name>()
-
-	#define useParentObjectTag(type_name, name2) object_tags::type_name* name2 ## _tag = getParentTag<object_tags::type_name>()
-
-	#define useObjectTag(object, type_name, name2) object_tags::type_name* name2 ## _tag = (object_tags::type_name*)object->getTagMemory(object_tags::type_name::id)
 }
