@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "meson setup",
+      "type": "shell",
+      "command": "meson setup build || true",
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "meson compile -C build",
+      "problemMatcher": ["$gcc"],
+      "dependsOn": "meson setup",
+      "group": { "kind": "build", "isDefault": true }
+    }
+  ]
+}
