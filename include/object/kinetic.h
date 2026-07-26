@@ -1,15 +1,13 @@
 #pragma once
 
 #include <danikk_engine/danikk_engine.h>
-#include "world.h"
+#include "posed.h"
 
 namespace danikk_space_engine
 {
-	class KineticObject : public WorldObject
+	class KineticObject : public PosedObject
 	{
 	public:
-		static uint32 id;
-
 		vec3 speed;
 		vec3 rotation_speed;
 		float mass = 0;

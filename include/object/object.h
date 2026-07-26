@@ -9,25 +9,43 @@
 
 namespace danikk_space_engine
 {
-	extern thread_local Array<Object*, 16> object_stack;
+	extern thread_local Array<BaseObject*, 16> object_stack;
 
-	class Object
+	class BaseObject
 	{
-		DynamicArray<Object*>* childs = NULL;
+		struct child_data
+		{
+			DynamicArray<BaseObject*> objects;
+			DynamicArray<byte> data;
+		};
+		child_data* childs;
 	public:
 
 		void tick();
 
 		void frame();
 
-		void addChild(Object* obj);
+		void addChild(BaseObject* obj);
 
-		danikk_framework::PointerIterable<Object*> iterateChilds();
+		template<class object_t, class... args_t>  createObject(const args_t&... args)
+		{
+
+		}
+
+		template<class object_t> static object_t* create()
+		{
+			object_t* result;
+			result = (object_t*)malloc(sizeof(object_t));
+			new (result) object_t();
+			return result;
+		}
+
+		danikk_framework::PointerIterable<BaseObject*> iterateChilds();
 
 		bool haveChilds();
 	};
 
-	inline Object* getParentObject()
+	inline BaseObject* getParentObject()
 	{
 		return object_stack[object_stack.size() - 2];
 	}

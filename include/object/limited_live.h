@@ -4,11 +4,9 @@
 
 namespace danikk_space_engine
 {
-	class LimitedLiveObject : public Object
+	class LimitedLiveObject : public BaseObject
 	{
 	public:
-		static uint32 id;
-
 		uint32 tick_to_live = 0;
 		uint32 ticked = false;
 

@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	using namespace danikk_engine;
 	using namespace danikk_framework;
 
-	class Object;
+	class BaseObject;
 
 	class BlockSlot;
 	class BlockMapChunk;

@@ -2,12 +2,12 @@
 
 #include <default.h>
 #include <object/object.h>
-#include <object/world.h>
 #include <danikk_engine/mesh.h>
+#include "posed.h"
 
 namespace danikk_space_engine
 {
-	class MeshedObject : public WorldObject
+	class MeshedObject : public PosedObject
 	{
 	public:
 		Mesh* mesh;

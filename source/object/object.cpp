@@ -2,49 +2,49 @@
 
 namespace danikk_space_engine
 {
-	thread_local Array<Object*, 16> object_stack;
+	thread_local Array<BaseObject*, 16> object_stack;
 
-	void Object::tick()
+	void BaseObject::tick()
 	{
 		object_stack.push(this);
 		if(childs != NULL)
 		{
 			for(index_t i = 0; i < childs->size(); i++)
 			{
-				Object* child = (*childs)[i];
+				BaseObject* child = (*childs)[i];
 				child->tick();
 			}
 		}
 		object_stack.pop();
 	}
 
-	void Object::frame()
+	void BaseObject::frame()
 	{
 		object_stack.push(this);
 		if(childs != NULL)
 		{
 			for(index_t i = 0; i < childs->size(); i++)
 			{
-				Object* child = (*childs)[i];
+				BaseObject* child = (*childs)[i];
 				child->frame();
 			}
 		}
 		object_stack.pop();
 	}
 
-	void Object::addChild(Object* obj)
+	void BaseObject::addChild(BaseObject* obj)
 	{
 		if (childs == NULL)
 		{
-			void* ptr = malloc(sizeof(DynamicArray<Object*>));
-			childs = new (ptr) DynamicArray<Object*>();
+			void* ptr = malloc(sizeof(child_data));
+			childs = new (ptr) child_data();
 		}
 		childs->push(obj);
 	}
 
-	danikk_framework::PointerIterable<Object*> Object::iterateChilds()
+	danikk_framework::PointerIterable<BaseObject*> BaseObject::iterateChilds()
 	{
-		danikk_framework::PointerIterable<Object*> result;
+		danikk_framework::PointerIterable<BaseObject*> result;
 		if(childs == NULL)
 		{
 			result._begin = NULL;
@@ -58,7 +58,7 @@ namespace danikk_space_engine
 		return result;
 	}
 
-	bool Object::haveChilds()
+	bool BaseObject::haveChilds()
 	{
 		return childs != NULL;
 	}

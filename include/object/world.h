@@ -1,32 +1,22 @@
 #pragma once
 
-#include <object/object.h>
+#include <object/kinetic.h>
 
 namespace danikk_space_engine
 {
-	class WorldObject : public Object
+	class WorldObject : public PosedObject
 	{
+		float temp;
+		uint32 self_index;
 	public:
-		vec3 pos;
-		vec3 size = vec3(1.0f);
-		vec3 rotation;
+		void tick()
+		{
 
-		mat4 local_matrix;
-		mat4 world_matrix;
+		}
 
-		void tick();
-
-		vec3 getFlatFront();
-
-		vec3 getFront();
+		float getApproxRadius()
+		{
+			return 1.0f;
+		}
 	};
-
-	inline vec3 getFront(const vec3& rotation)
-	{
-		return vec3(
-				(float)cos(rotation.y) * (float)cos(rotation.x),
-				(float)sin(rotation.y),
-				(float)cos(rotation.y) * (float)sin(rotation.x)
-		);
-	}
 }

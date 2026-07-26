@@ -12,8 +12,9 @@ namespace danikk_space_engine
 
 	void Manager::tick()
 	{
+		controller.tick();
 		object_stack.push(map_root);
-		for(Object* o : map_root->iterateChilds())
+		for(BaseObject* o : map_root->iterateChilds())
 		{
 			o->tick();
 		}
@@ -23,12 +24,12 @@ namespace danikk_space_engine
 	void Manager::frame()
 	{
 		static_asset_collection.base3d_shader.use();
-		mat4 view = glm::lookAt(camera_object->pos, camera_object->pos + camera_object->getFront(), vec3(0, 1, 0));
+		mat4 view = glm::lookAt(camera->pos, camera->pos + camera->getFront(), vec3(0, 1, 0));
 		mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.0001f, 10000.0f);
 		danikk_engine::setViewMatrix(view);
 		setProjectionMatrix(projection);
 		object_stack.push(map_root);
-		for(Object* o : map_root->iterateChilds())
+		for(BaseObject* o : map_root->iterateChilds())
 		{
 			o->frame();
 		}
@@ -37,15 +38,17 @@ namespace danikk_space_engine
 
 	void Manager::init()
 	{
-
+		map_root = BaseObject::create<PosedObject>();
+		camera = BaseObject::create<PosedObject>();
+		controller.target = camera;
 	}
 
-	Object* getParent()
+	BaseObject* getParent()
 	{
 		return object_stack[object_stack.size() - 1];
 	}
 
-	Object* getParentOfParent()
+	BaseObject* getParentOfParent()
 	{
 		return object_stack[object_stack.size() - 2];
 	}
