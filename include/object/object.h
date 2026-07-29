@@ -13,12 +13,7 @@ namespace danikk_space_engine
 
 	class BaseObject
 	{
-		struct child_data
-		{
-			DynamicArray<BaseObject*> objects;
-			DynamicArray<byte> data;
-		};
-		child_data* childs;
+		DynamicArray<BaseObject*>* childs;
 	public:
 
 		void tick();
@@ -27,9 +22,12 @@ namespace danikk_space_engine
 
 		void addChild(BaseObject* obj);
 
-		template<class object_t, class... args_t>  createObject(const args_t&... args)
+		template<class object_t, class... args_t> static object_t* create(const args_t&... args)
 		{
-
+			object_t* result;
+			result = (object_t*)malloc(sizeof(object_t));
+			new (result) object_t(args...);
+			return result;
 		}
 
 		template<class object_t> static object_t* create()

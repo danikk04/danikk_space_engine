@@ -36,8 +36,8 @@ namespace danikk_space_engine
 	{
 		if (childs == NULL)
 		{
-			void* ptr = malloc(sizeof(child_data));
-			childs = new (ptr) child_data();
+			void* ptr = malloc(sizeof(DynamicArray<BaseObject*>));
+			childs = new (ptr) DynamicArray<BaseObject*>();
 		}
 		childs->push(obj);
 	}
