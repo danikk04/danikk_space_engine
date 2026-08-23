@@ -2,7 +2,7 @@
 
 #include <danikk_engine/danikk_engine.h>
 
-#include <object/world.h>
+#include <object/gameobject.h>
 
 #include <danikk_engine/input.h>
 #include <danikk_engine/danikk_engine.h>
@@ -10,14 +10,13 @@
 
 #include <default.h>
 #include <manager.h>
-#include <object/world.h>
 
 namespace danikk_space_engine
 {
 	class Controller
 	{
 	public:
-		PosedObject* target;
+		GameObject* target;
 
 		virtual void tick() = 0;
 	};
@@ -54,23 +53,14 @@ namespace danikk_space_engine
 			}
 			if(getKeyboardState(keyboard_buttons::a))
 			{
-				direction += glm::rotateY(target->getFlatFront(), 0.5f * pi);
+				direction += glm::rotateY(target->getFront(), 0.5f * pi);
 			}
 			else if(getKeyboardState(keyboard_buttons::d))
 			{
-				direction += glm::rotateY(target->getFlatFront(), 1.5f * pi);
+				direction += glm::rotateY(target->getFront(), 1.5f * pi);
 			}
 			direction *= speed;
 			target->pos += direction;
-
-			if(getKeyboardState(keyboard_buttons::left_alt) == button_states::hold)
-			{
-				BaseObject* obj = NULL;
-				if(obj != NULL)
-				{
-					getParentObject()->addChild(obj);
-				}
-			}
 		}
 	};
 }

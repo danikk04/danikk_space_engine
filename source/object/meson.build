@@ -1,4 +1,3 @@
 sources += files(
-	'object.cpp',
-	'world.cpp'
+	'gameobject.cpp'
 )

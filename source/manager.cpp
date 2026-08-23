@@ -13,12 +13,7 @@ namespace danikk_space_engine
 	void Manager::tick()
 	{
 		controller.tick();
-		object_stack.push(map_root);
-		for(BaseObject* o : map_root->iterateChilds())
-		{
-			o->tick();
-		}
-		object_stack.pop();
+		map_root->tick();
 	}
 
 	void Manager::frame()
@@ -28,28 +23,30 @@ namespace danikk_space_engine
 		mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.0001f, 10000.0f);
 		setViewMatrix(view);
 		setProjectionMatrix(projection);
-		object_stack.push(map_root);
-		for(BaseObject* o : map_root->iterateChilds())
-		{
-			o->frame();
-		}
-		object_stack.pop();
+		map_root->frame();
 	}
 
 	void Manager::init()
 	{
-		map_root = BaseObject::create<PosedObject>();
-		camera = BaseObject::create<PosedObject>();
+		map_root = new GameObject();
+		camera = new GameObject();
 		controller.target = camera;
 	}
 
-	BaseObject* getParent()
+	thread_local Array<GameObject*, 16> object_stack;
+
+	GameObject* getParent()
 	{
 		return object_stack[object_stack.size() - 1];
 	}
 
-	BaseObject* getParentOfParent()
+	void pushParent(GameObject* object)
 	{
-		return object_stack[object_stack.size() - 2];
+		object_stack.push(object);
+	}
+
+	void popParent()
+	{
+		object_stack.pop();
 	}
 }

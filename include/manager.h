@@ -2,17 +2,16 @@
 
 #include <default.h>
 
-#include <object/object.h>
+#include <object/gameobject.h>
 #include <controller.h>
-#include "object/posed.h"
 
 namespace danikk_space_engine
 {
 	class Manager
 	{
 	public:
-		PosedObject* map_root;
-		PosedObject* camera;
+		GameObject* map_root;
+		GameObject* camera;
 		LocalPlayerController controller;
 
 		void tick();
@@ -22,9 +21,11 @@ namespace danikk_space_engine
 		void init();
 	};
 
-	BaseObject* getParent();
+	GameObject* getParent();
 
-	BaseObject* getParentOfParent();
+	void pushParent(GameObject* object);
+
+	void popParent();
 
 	extern Manager game_manager;
 }

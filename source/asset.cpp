@@ -4,7 +4,6 @@
 namespace danikk_space_engine
 {
 	StaticAssetCollection static_asset_collection;
-	//BlockAtlas block_atlas;
 
 	void StaticAssetCollection::load()
 	{
