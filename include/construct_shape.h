@@ -13,13 +13,13 @@ namespace danikk_space_engine
 		float params[3];
 	};
 
-	DynamicArary<ConstructShape> construct_shapes;
+	ConstructShape* getConstructShape(int32 type, vec3 size, float* params);
 
-	struct ConstructShapeType
+	void initConstructShapeTypes();
+
+	enum ConstructShapeTypes
 	{
-		static constexpr uint32 none = 0;
-		static constexpr uint32 block = 1;
-
-		uint32 data = 0;
+		none,
+		block
 	};
 }
