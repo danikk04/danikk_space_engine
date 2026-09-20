@@ -18,19 +18,10 @@ namespace danikk_space_engine
 		return 0;
 	}
 
-	Texture& getMaterialTexture(uint material_id)
-	{
-		return material_list[material_id].main_texture;
-	}
-
 	void initMaterials()
 	{
 		material_list.pushCtor("VOID");
 		material_list.pushCtor("sandstone");
 		material_list.pushCtor("granite");
-		for(Material& material : material_list)
-		{
-			material.main_texture = Texture(material.name);
-		}
 	}
 }

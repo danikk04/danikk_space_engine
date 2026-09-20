@@ -8,7 +8,7 @@ namespace danikk_space_engine
 	struct Material
 	{
 		const char* name;
-		Texture main_texture;
+		vec3 color;
 
 		Material(const char* name)
 		{
@@ -17,8 +17,6 @@ namespace danikk_space_engine
 	};
 
 	uint32 getMaterialID(const char* name);
-
-	Texture& getMaterialTexture(uint material_id);
 
 	void initMaterials();
 }

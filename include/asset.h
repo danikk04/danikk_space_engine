@@ -17,7 +17,7 @@ namespace danikk_space_engine
 		Shader base3d_shader;
 		Font base_font;
 		Mesh low_poly_sphere_mesh;
-		Mesh bold_chunk_border_mesh;
+		Mesh cube_mesh;
 
 		Texture border_texture;
 

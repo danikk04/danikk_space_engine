@@ -5,6 +5,7 @@
 #include <manager.h>
 #include <material.h>
 #include <localization.h>
+#include <danikk_engine/dynamic_mesh.h>
 
 namespace danikk_engine_game
 {
