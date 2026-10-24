@@ -20,8 +20,8 @@ namespace danikk_space_engine
 
 	void initMaterials()
 	{
-		material_list.pushCtor("VOID");
-		material_list.pushCtor("sandstone");
-		material_list.pushCtor("granite");
+		material_list.pushCtor("void", 0x000000);
+		material_list.pushCtor("sandstone", 0xC4A484);
+		material_list.pushCtor("granite", 0x746A5E);
 	}
 }

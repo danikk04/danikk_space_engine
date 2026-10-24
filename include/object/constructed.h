@@ -15,7 +15,7 @@ namespace danikk_space_engine
 		{
 			GameObject::frame();
 			setWorldMatrix(world_matrix);
-			setDrawColor(color);
+			setDrawColor(main_material->color);
 			texture.bind();
 			mesh->draw();
 		}

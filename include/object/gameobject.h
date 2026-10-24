@@ -20,7 +20,6 @@ namespace danikk_space_engine
 		);
 	}
 
-	//TODO: сделать так, чтобы массивы и кинетика были в отдельных структурах, которые будут выделяться в памяти по необходимости
 	class GameObject
 	{
 	public:
@@ -38,6 +37,7 @@ namespace danikk_space_engine
 
 		mat4 local_matrix;
 		mat4 world_matrix;
+
 		virtual void tick();
 
 		virtual void frame();

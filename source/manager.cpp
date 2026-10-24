@@ -30,6 +30,10 @@ namespace danikk_space_engine
 	{
 		map_root = new GameObject();
 		camera = new GameObject();
+
+		//Gameobject* ground = new GameObject();
+		//map_root.childs.push(ground);
+
 		controller.target = camera;
 	}
 
