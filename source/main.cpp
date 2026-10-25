@@ -24,7 +24,7 @@ namespace danikk_engine_game
     	gui.define();
     	gui.compose();
     	danikk_space_engine::initLocaliztion();
-    	danikk_space_engine::initMaterials();
+    	danikk_space_engine::loadMaterials();
 
     	game_manager.init();
     	static_asset_collection.base2d_shader.use();

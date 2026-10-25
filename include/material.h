@@ -32,5 +32,5 @@ namespace danikk_space_engine
 
 	uint32 getMaterialID(const char* name);
 
-	void initMaterials();
+	void loadMaterials();
 }

@@ -1,6 +1,7 @@
 #include <material.h>
 
 #include <danikk_framework/cstring_functions.h>
+#include <danikk_framework/filestream.h>
 
 namespace danikk_space_engine
 {
@@ -18,7 +19,7 @@ namespace danikk_space_engine
 		return 0;
 	}
 
-	void initMaterials()
+	void loadMaterials()
 	{
 		material_list.pushCtor("void", 0x000000);
 		material_list.pushCtor("sandstone", 0xC4A484);
