@@ -1,8 +1,8 @@
-#include <keybind.h>
+#include <danikk_space_engine/keybind.h>
 
 #include <danikk_engine/input.h>
-#include <default.h>
-#include <manager.h>
+#include <danikk_space_engine/default.h>
+#include <danikk_space_engine/manager.h>
 
 namespace danikk_space_engine
 {

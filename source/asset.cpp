@@ -1,4 +1,4 @@
-#include <asset.h>
+#include <danikk_space_engine/asset.h>
 #include <danikk_framework/static_string.h>
 #include <danikk_engine/dynamic_mesh.h>
 

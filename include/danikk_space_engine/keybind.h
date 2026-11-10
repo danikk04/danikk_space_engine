@@ -1,6 +1,6 @@
 #pragma once
 
-#include <default.h>
+#include <danikk_space_engine/default.h>
 #include <danikk_engine/key_bind.h>
 
 namespace danikk_space_engine

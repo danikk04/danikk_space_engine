@@ -1,5 +1,5 @@
-#include <object/gameobject.h>
-#include <manager.h>
+#include <danikk_space_engine/object/gameobject.h>
+#include <danikk_space_engine/manager.h>
 
 namespace danikk_space_engine
 {

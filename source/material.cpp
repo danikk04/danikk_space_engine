@@ -1,4 +1,4 @@
-#include <material.h>
+#include <danikk_space_engine/material.h>
 
 #include <danikk_framework/cstring_functions.h>
 #include <danikk_framework/filestream.h>

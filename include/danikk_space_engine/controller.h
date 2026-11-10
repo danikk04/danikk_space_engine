@@ -2,14 +2,14 @@
 
 #include <danikk_engine/danikk_engine.h>
 
-#include <object/gameobject.h>
+#include <danikk_space_engine/object/gameobject.h>
 
 #include <danikk_engine/input.h>
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_framework/glm.h>
 
-#include <default.h>
-#include <manager.h>
+#include <danikk_space_engine/default.h>
+#include <danikk_space_engine/manager.h>
 
 namespace danikk_space_engine
 {

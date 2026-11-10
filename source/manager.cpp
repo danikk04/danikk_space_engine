@@ -2,9 +2,9 @@
 #include <danikk_framework/tensor.h>
 #include <danikk_framework/glm.h>
 
-#include <manager.h>
-#include <asset.h>
-#include <material.h>
+#include <danikk_space_engine/manager.h>
+#include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/material.h>
 
 namespace danikk_space_engine
 {

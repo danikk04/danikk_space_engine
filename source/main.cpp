@@ -1,10 +1,10 @@
-#include <gui.h>
-#include <keybind.h>
-#include <asset.h>
-#include <default.h>
-#include <manager.h>
-#include <material.h>
-#include <localization.h>
+#include <danikk_space_engine/gui.h>
+#include <danikk_space_engine/keybind.h>
+#include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/default.h>
+#include <danikk_space_engine/manager.h>
+#include <danikk_space_engine/material.h>
+#include <danikk_space_engine/localization.h>
 #include <danikk_engine/dynamic_mesh.h>
 
 namespace danikk_engine_game

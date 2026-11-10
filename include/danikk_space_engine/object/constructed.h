@@ -1,8 +1,8 @@
 #pragma once
 
-#include <default.h>
-#include <material.h>
-#include <object/gameobject.h>
+#include <danikk_space_engine/default.h>
+#include <danikk_space_engine/material.h>
+#include <danikk_space_engine/object/gameobject.h>
 #include <danikk_engine/mesh.h>
 
 namespace danikk_space_engine

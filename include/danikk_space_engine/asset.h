@@ -7,7 +7,7 @@
 #include <danikk_engine/shader.h>
 #include <danikk_engine/style.h>
 #include <danikk_engine/mesh.h>
-#include "default.h"
+#include <danikk_space_engine/default.h>
 
 namespace danikk_space_engine
 {
