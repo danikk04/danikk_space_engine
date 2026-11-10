@@ -1,3 +1,4 @@
 sources += files(
-	'gameobject.cpp'
+	'gameobject.cpp',
+	'constructed.cpp'
 )

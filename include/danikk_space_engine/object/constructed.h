@@ -1,23 +1,24 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/material.h>
 #include <danikk_space_engine/object/gameobject.h>
+#include <danikk_space_engine/shape.h>
 #include <danikk_engine/mesh.h>
 
 namespace danikk_space_engine
 {
 	class ConstructedObject : public GameObject
 	{
-		Material* main_material;
+	private:
+		Mesh* mesh = nullptr; // Borrowed from the shape mesh cache.
+		vec3 shape_size = vec3(1.0f);
+		vec4 draw_color = vec4(1.0f);
+
+		ConstructedObject() = default;
+
 	public:
-		void render() override
-		{
-			GameObject::render();
-			setWorldMatrix(world_matrix);
-			setDrawColor(main_material->color);
-			texture.bind();
-			mesh->draw();
-		}
+		static ConstructedObject* create(ShapeId shape_id, vec3 size, vec4 color);
+
+		void render() override;
 	};
 }

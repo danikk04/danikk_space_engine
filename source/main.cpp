@@ -4,6 +4,7 @@
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/manager.h>
 #include <danikk_space_engine/material.h>
+#include <danikk_space_engine/shape.h>
 #include <danikk_space_engine/localization.h>
 #include <danikk_engine/dynamic_mesh.h>
 
@@ -19,6 +20,7 @@ namespace danikk_engine_game
     void begin()
     {
 		setWindowTitle("Danikk Space Engine");
+		initShapeTable();
 		key_binds.init();
     	static_asset_collection.load();
     	gui.define();

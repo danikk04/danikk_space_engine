@@ -5,7 +5,8 @@ sources = files(
 	'localization.cpp', 
 	'main.cpp', 
 	'manager.cpp', 
-	'material.cpp'
+	'material.cpp',
+	'shape.cpp'
 )
 
 subdir('object')

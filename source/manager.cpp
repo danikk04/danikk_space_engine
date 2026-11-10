@@ -5,6 +5,7 @@
 #include <danikk_space_engine/manager.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/material.h>
+#include <danikk_space_engine/object/constructed.h>
 
 namespace danikk_space_engine
 {
@@ -56,6 +57,36 @@ namespace danikk_space_engine
 		map_root->addChild(camera);
 
 		controller.target = camera;
+
+		struct TestObject
+		{
+			vec3 size;
+			vec3 position;
+			vec3 rotation;
+			vec4 color;
+		};
+		const TestObject test_objects[] =
+		{
+			{vec3(1, 1, 1), vec3(5, 0, -3), vec3(0.0f, 0.0f, 0.0f), vec4(0.9f, 0.25f, 0.2f, 1.0f)},
+			{vec3(2, 1, 1), vec3(5, 0,  0), vec3(0.0f, 0.5f, 0.0f), vec4(0.2f, 0.8f, 0.3f, 1.0f)},
+			{vec3(1, 2, 1), vec3(5, 0,  3), vec3(0.5f, 0.0f, 0.0f), vec4(0.2f, 0.4f, 0.95f, 1.0f)},
+			{vec3(1, 1, 2), vec3(8, 2, -1), vec3(0.0f, 0.7f, 0.3f), vec4(0.95f, 0.75f, 0.15f, 1.0f)},
+			{vec3(2, 1, 2), vec3(8,-2,  1), vec3(0.4f, 0.3f, 0.8f), vec4(0.75f, 0.25f, 0.85f, 1.0f)}
+		};
+		for(const TestObject& test_object : test_objects)
+		{
+			ConstructedObject* object = ConstructedObject::create(ShapeId::cube, test_object.size, test_object.color);
+			if(object == nullptr)
+			{
+				continue;
+			}
+			object->pos = test_object.position;
+			object->rotation = test_object.rotation;
+			if(!map_root->addChild(object))
+			{
+				object->destroy();
+			}
+		}
 	}
 
 }
