@@ -9,9 +9,9 @@ namespace danikk_space_engine
 	class EntityObject : public GameObject
 	{
 	public:
-		void frame()
+		void render() override
 		{
-			GameObject::frame();
+			GameObject::render();
 		}
 	};
 }

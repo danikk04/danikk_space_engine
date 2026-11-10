@@ -13,7 +13,10 @@ namespace danikk_space_engine
 	void Manager::tick()
 	{
 		controller.tick();
-		map_root->tick();
+		for(GameObject* child : map_root->getChilds())
+		{
+			child->tick();
+		}
 	}
 
 	void Manager::frame()
@@ -30,6 +33,9 @@ namespace danikk_space_engine
 	{
 		map_root = new GameObject();
 		camera = new GameObject();
+		map_root->local_matrix = mat4(1.0f);
+		map_root->world_matrix = mat4(1.0f);
+		map_root->addChild(camera);
 
 		//Gameobject* ground = new GameObject();
 		//map_root.childs.push(ground);
@@ -37,20 +43,4 @@ namespace danikk_space_engine
 		controller.target = camera;
 	}
 
-	thread_local Array<GameObject*, 16> object_stack;
-
-	GameObject* getParent()
-	{
-		return object_stack[object_stack.size() - 1];
-	}
-
-	void pushParent(GameObject* object)
-	{
-		object_stack.push(object);
-	}
-
-	void popParent()
-	{
-		object_stack.pop();
-	}
 }

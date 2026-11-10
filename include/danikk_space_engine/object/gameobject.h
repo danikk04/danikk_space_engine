@@ -22,25 +22,39 @@ namespace danikk_space_engine
 
 	class GameObject
 	{
+	private:
+		DynamicArray<GameObject*> links;//Связанные объекты, не владеет ими
+		DynamicArray<GameObject*> childs;//Владеет дочерними объектами
+		GameObject* parent = nullptr;
+
 	public:
-		DynamicArray<GameObject*> links;//Связанные объекты (стыковка и т.п.)
-		DynamicArray<GameObject*> childs;//Дочерние объекты (блоки в структуре и т.п.)
+		GameObject() = default;
+		GameObject(const GameObject&) = delete;
+		GameObject& operator=(const GameObject&) = delete;
+		virtual ~GameObject();
+
+		bool addChild(GameObject* child);
+		bool addLink(GameObject* object);
+		const DynamicArray<GameObject*>& getChilds() const { return childs; }
+		const DynamicArray<GameObject*>& getLinks() const { return links; }
 
 		//Кинетика
-		vec3 speed;
-		vec3 rotation_speed;
+		vec3 speed = vec3(0.0f);
+		vec3 rotation_speed = vec3(0.0f);
 
 		//Расположение
-		vec3 pos;
+		vec3 pos = vec3(0.0f);
 		vec3 size = vec3(1.0f);
-		vec3 rotation;
+		vec3 rotation = vec3(0.0f);
 
-		mat4 local_matrix;
-		mat4 world_matrix;
+		mat4 local_matrix = mat4(1.0f);
+		mat4 world_matrix = mat4(1.0f);
 
-		virtual void tick();
+		void tick();
+		virtual void update();
 
-		virtual void frame();
+		void frame();
+		virtual void render();
 
 		vec3 getFront()
 		{

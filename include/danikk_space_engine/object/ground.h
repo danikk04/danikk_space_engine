@@ -14,9 +14,9 @@ namespace danikk_space_engine
 
 		}
 
-		void frame()
+		void render() override
 		{
-			GroundObject::frame();
+			GameObject::render();
 		}
 	};
 }

@@ -11,9 +11,9 @@ namespace danikk_space_engine
 	{
 		Material* main_material;
 	public:
-		void frame()
+		void render() override
 		{
-			GameObject::frame();
+			GameObject::render();
 			setWorldMatrix(world_matrix);
 			setDrawColor(main_material->color);
 			texture.bind();

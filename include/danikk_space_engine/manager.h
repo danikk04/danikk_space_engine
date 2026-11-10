@@ -21,11 +21,5 @@ namespace danikk_space_engine
 		void init();
 	};
 
-	GameObject* getParent();
-
-	void pushParent(GameObject* object);
-
-	void popParent();
-
 	extern Manager game_manager;
 }
