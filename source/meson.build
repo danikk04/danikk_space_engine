@@ -8,5 +8,6 @@ sources = files(
 	'material.cpp',
 )
 
+subdir('voxel')
 subdir('shape')
 subdir('object')
