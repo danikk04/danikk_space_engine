@@ -35,10 +35,10 @@ namespace danikk_space_engine
 		DynamicMesh<DefaultVertex> mesh;
 		addQuad(mesh, vec3(-x,-y,-z), vec3(-x,-y, z), vec3(-x, y, z), vec3(-x, y,-z), vec3(-1,0,0), size.z, size.y);
 		addQuad(mesh, vec3( x,-y, z), vec3( x,-y,-z), vec3( x, y,-z), vec3( x, y, z), vec3( 1,0,0), size.z, size.y);
-		addQuad(mesh, vec3(-x,-y, z), vec3( x,-y, z), vec3( x,-y,-z), vec3(-x,-y,-z), vec3(0,-1,0), size.x, size.z);
-		addQuad(mesh, vec3(-x, y,-z), vec3( x, y,-z), vec3( x, y, z), vec3(-x, y, z), vec3(0, 1,0), size.x, size.z);
-		addQuad(mesh, vec3(-x,-y,-z), vec3( x,-y,-z), vec3( x, y,-z), vec3(-x, y,-z), vec3(0,0,-1), size.x, size.y);
-		addQuad(mesh, vec3( x,-y, z), vec3(-x,-y, z), vec3(-x, y, z), vec3( x, y, z), vec3(0,0, 1), size.x, size.y);
+		addQuad(mesh, vec3(-x,-y, z), vec3(-x,-y,-z), vec3( x,-y,-z), vec3( x,-y, z), vec3(0,-1,0), size.z, size.x);
+		addQuad(mesh, vec3(-x, y,-z), vec3(-x, y, z), vec3( x, y, z), vec3( x, y,-z), vec3(0, 1,0), size.z, size.x);
+		addQuad(mesh, vec3( x,-y,-z), vec3(-x,-y,-z), vec3(-x, y,-z), vec3( x, y,-z), vec3(0,0,-1), size.x, size.y);
+		addQuad(mesh, vec3(-x,-y, z), vec3( x,-y, z), vec3( x, y, z), vec3(-x, y, z), vec3(0,0, 1), size.x, size.y);
 		DefaultVertex::setAttributes();
 		mesh.setDataToMesh(*result);
 		return result;

@@ -64,6 +64,17 @@ namespace danikk_space_engine
 			return danikk_space_engine::getFront(rotation);
 		}
 
+		vec3 getUp()
+		{
+			mat4 roll_matrix = glm::rotate(mat4(1.0f), rotation.z, getFront());
+			return vec3(roll_matrix * vec4(0.0f, 1.0f, 0.0f, 0.0f));
+		}
+
+		vec3 getRight()
+		{
+			return glm::normalize(glm::cross(getFront(), getUp()));
+		}
+
 		float getApproxRadius()
 		{
 			return 1.0f;

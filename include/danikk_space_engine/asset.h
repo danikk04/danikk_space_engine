@@ -20,6 +20,7 @@ namespace danikk_space_engine
 		Mesh cube_mesh;
 
 		Texture border_texture;
+		Texture container_texture;
 
 		void load();
 	};

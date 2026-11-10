@@ -27,10 +27,24 @@ namespace danikk_space_engine
 		void tick()
 		{
 			vec2 cursor_delta = getCursorDelta() * getMouseSensivity();
-			target->rotation.x += cursor_delta.x;
-			target->rotation.y += cursor_delta.y;
+			float roll_cos = cos(target->rotation.z);
+			float roll_sin = sin(target->rotation.z);
+			float yaw_delta = cursor_delta.x * roll_cos + cursor_delta.y * roll_sin;
+			float pitch_delta = -cursor_delta.x * roll_sin + cursor_delta.y * roll_cos;
+			target->rotation.x += yaw_delta;
+			target->rotation.y += pitch_delta;
 
 			target->rotation.y = glm::clamp(target->rotation.y, -pi_half + 0.0001f, pi_half - 0.0001f);
+
+			float roll_delta = 1.5f * getTargetFrameDelay();
+			if(getKeyboardState(keyboard_buttons::q))
+			{
+				target->rotation.z -= roll_delta;
+			}
+			if(getKeyboardState(keyboard_buttons::e))
+			{
+				target->rotation.z += roll_delta;
+			}
 
 			float speed = getTargetFrameDelay();
 			if(getKeyboardState(keyboard_buttons::left_shift))
@@ -51,13 +65,14 @@ namespace danikk_space_engine
 			{
 				direction += -target->getFront();
 			}
+			vec3 camera_right = target->getRight();
 			if(getKeyboardState(keyboard_buttons::a))
 			{
-				direction += glm::rotateY(target->getFront(), 0.5f * pi);
+				direction -= camera_right;
 			}
-			else if(getKeyboardState(keyboard_buttons::d))
+			if(getKeyboardState(keyboard_buttons::d))
 			{
-				direction += glm::rotateY(target->getFront(), 1.5f * pi);
+				direction += camera_right;
 			}
 			direction *= speed;
 			target->pos += direction;

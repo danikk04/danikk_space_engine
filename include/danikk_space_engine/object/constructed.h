@@ -12,12 +12,11 @@ namespace danikk_space_engine
 	private:
 		Mesh* mesh = nullptr; // Borrowed from the shape mesh cache.
 		vec3 shape_size = vec3(1.0f);
-		vec4 draw_color = vec4(1.0f);
 
 		ConstructedObject() = default;
 
 	public:
-		static ConstructedObject* create(ShapeId shape_id, vec3 size, vec4 color);
+		static ConstructedObject* create(ShapeId shape_id, vec3 size);
 
 		void render() override;
 	};
