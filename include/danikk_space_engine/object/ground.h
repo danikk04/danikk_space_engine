@@ -9,14 +9,16 @@ namespace danikk_space_engine
 	class GroundObject : public GameObject
 	{
 	public:
+		float gravity_acceleration = 9.8f;
+		float friction_acceleration = 0.01f;
+
+		static GroundObject* create();
+
 		void generateLevel()
 		{
 
 		}
 
-		void render() override
-		{
-			GameObject::render();
-		}
+		void update() override;
 	};
 }

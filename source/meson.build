@@ -6,7 +6,7 @@ sources = files(
 	'main.cpp', 
 	'manager.cpp', 
 	'material.cpp',
-	'shape.cpp'
 )
 
+subdir('shape')
 subdir('object')

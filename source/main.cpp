@@ -4,7 +4,7 @@
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/manager.h>
 #include <danikk_space_engine/material.h>
-#include <danikk_space_engine/shape.h>
+#include <danikk_space_engine/shape/shape.h>
 #include <danikk_space_engine/localization.h>
 #include <danikk_engine/dynamic_mesh.h>
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_framework/virtual_dynamic_array.h>
+#include <danikk_space_engine/shape/shape.h>
 
 #include <danikk_space_engine/default.h>
 #include <danikk_framework/glm.h>
@@ -26,6 +27,7 @@ namespace danikk_space_engine
 		DynamicArray<GameObject*> links;//Связанные объекты, не владеет ими
 		DynamicArray<GameObject*> childs;//Владеет дочерними объектами
 		GameObject* parent = nullptr;
+		void updateTransform();
 
 	public:
 		GameObject() = default;
@@ -55,6 +57,7 @@ namespace danikk_space_engine
 
 		void tick();
 		virtual void update();
+		virtual const ShapeDefinition* getShapeDefinition() const { return nullptr; }
 
 		void frame();
 		virtual void render();

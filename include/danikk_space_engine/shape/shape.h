@@ -9,15 +9,29 @@
 
 namespace danikk_space_engine
 {
-	enum class ShapeId : uint8_t
+	struct CollisionInfo
 	{
-		cube
+		bool collided = false;
+		vec3 normal = vec3(0.0f);
+		float penetration = 0.0f;
 	};
 
-	struct ShapeMeshCacheEntry
+	typedef uint32 ShapeId;
+
+	struct ShapeType
+	{
+		static constexpr ShapeId none = 0;
+		static constexpr ShapeId cube = 1;
+		static constexpr ShapeId sphere = 2;
+		static constexpr size_t count = 3;
+	};
+
+	struct ShapeMesh
 	{
 		vec3 size;
 		Mesh* mesh;
+
+		ShapeMesh(vec3 size, Mesh* mesh) : size(size), mesh(mesh) {}
 	};
 
 	struct ShapeDefinition
@@ -27,9 +41,9 @@ namespace danikk_space_engine
 		ShapeId id;
 		const char* name;
 		mesh_factory_t createMesh;
-		DynamicArray<ShapeMeshCacheEntry> meshes;
+		DynamicArray<ShapeMesh> meshes;
 
-		Mesh* getMesh(vec3 size);
+		ShapeMesh* getMeshEntry(vec3 size);
 	};
 
 	extern ShapeDefinition shape_table[];

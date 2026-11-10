@@ -5,30 +5,22 @@
 #include <danikk_framework/memory.h>
 
 #include <new>
+#include <cstdlib>
 
 namespace danikk_space_engine
 {
 	ConstructedObject* ConstructedObject::create(ShapeId shape_id, vec3 size)
 	{
 		ShapeDefinition* shape = findShape(shape_id);
-		if(shape == nullptr)
-		{
-			return nullptr;
-		}
+		if(shape == nullptr) std::abort();
 
 		void* memory = malloc(sizeof(ConstructedObject));
-		if(memory == nullptr)
-		{
-			return nullptr;
-		}
+		if(memory == nullptr) std::abort();
 		ConstructedObject* object = new (memory) ConstructedObject();
-		object->shape_size = size;
-		object->mesh = shape->getMesh(size);
-		if(object->mesh == nullptr)
-		{
-			object->destroy();
-			return nullptr;
-		}
+		object->size = size;
+		object->shape_definition = shape;
+		object->mesh_entry = shape->getMeshEntry(size);
+		if(object->mesh_entry == nullptr) std::abort();
 		return object;
 	}
 
@@ -37,6 +29,11 @@ namespace danikk_space_engine
 		setWorldMatrix(world_matrix);
 		setDrawColor(vec4(1.0f));
 		static_asset_collection.container_texture.bind();
-		mesh->draw();
+		mesh_entry->mesh->draw();
+	}
+
+	const ShapeDefinition* ConstructedObject::getShapeDefinition() const
+	{
+		return shape_definition;
 	}
 }
