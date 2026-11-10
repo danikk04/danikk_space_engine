@@ -1,13 +1,27 @@
 #include <danikk_space_engine/object/gameobject.h>
-#include <danikk_space_engine/manager.h>
+#include <danikk_framework/memory.h>
+
+#include <new>
 
 namespace danikk_space_engine
 {
+	GameObject* GameObject::create()
+	{
+		void* memory = malloc(sizeof(GameObject));
+		return memory == nullptr ? nullptr : new (memory) GameObject();
+	}
+
+	void GameObject::destroy()
+	{
+		this->~GameObject();
+		free(this);
+	}
+
 	GameObject::~GameObject()
 	{
 		for(GameObject* child : childs)
 		{
-			delete child;
+			child->destroy();
 		}
 	}
 

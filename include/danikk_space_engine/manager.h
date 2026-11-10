@@ -10,8 +10,10 @@ namespace danikk_space_engine
 	class Manager
 	{
 	public:
-		GameObject* map_root;
-		GameObject* camera;
+		~Manager();
+
+		GameObject* map_root = nullptr;
+		GameObject* camera = nullptr;
 		LocalPlayerController controller;
 
 		void tick();

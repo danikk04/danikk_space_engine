@@ -33,6 +33,9 @@ namespace danikk_space_engine
 		GameObject& operator=(const GameObject&) = delete;
 		virtual ~GameObject();
 
+		static GameObject* create();		
+		void destroy();
+
 		bool addChild(GameObject* child);
 		bool addLink(GameObject* object);
 		const DynamicArray<GameObject*>& getChilds() const { return childs; }

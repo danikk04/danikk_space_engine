@@ -10,6 +10,16 @@ namespace danikk_space_engine
 {
 	Manager game_manager;
 
+	Manager::~Manager()
+	{
+		if(map_root != nullptr)
+		{
+			map_root->destroy();
+			map_root = nullptr;
+			camera = nullptr;
+		}
+	}
+
 	void Manager::tick()
 	{
 		controller.tick();
@@ -31,14 +41,19 @@ namespace danikk_space_engine
 
 	void Manager::init()
 	{
-		map_root = new GameObject();
-		camera = new GameObject();
+		map_root = GameObject::create();
+		camera = GameObject::create();
+		if(map_root == nullptr || camera == nullptr)
+		{
+			if(map_root != nullptr) map_root->destroy();
+			if(camera != nullptr) camera->destroy();
+			map_root = nullptr;
+			camera = nullptr;
+			return;
+		}
 		map_root->local_matrix = mat4(1.0f);
 		map_root->world_matrix = mat4(1.0f);
 		map_root->addChild(camera);
-
-		//Gameobject* ground = new GameObject();
-		//map_root.childs.push(ground);
 
 		controller.target = camera;
 	}
