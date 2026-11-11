@@ -9,7 +9,7 @@
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/manager.h>
+#include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {

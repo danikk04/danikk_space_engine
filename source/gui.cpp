@@ -1,6 +1,6 @@
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/asset.h>
-#include <danikk_space_engine/manager.h>
+#include <danikk_space_engine/world.h>
 
 #include <danikk_framework/glm.h>
 #include <danikk_framework/format.h>
@@ -40,6 +40,6 @@ namespace danikk_space_engine
 	void GUI::frame()
 	{
     	format(fps_label.text, "FPS:%", fps_counter.getValue());
-    	format(debug_info_label.text, "camera_pos:%", truncateTo100(game_manager.camera->pos));
+    	format(debug_info_label.text, "camera_pos:%", truncateTo100(world.camera->pos));
 	}
 }

@@ -7,10 +7,10 @@
 
 namespace danikk_space_engine
 {
-	class Manager
+	class World
 	{
 	public:
-		~Manager();
+		~World();
 
 		GameObject* map_root = nullptr;
 		GameObject* camera = nullptr;
@@ -23,5 +23,5 @@ namespace danikk_space_engine
 		void init();
 	};
 
-	extern Manager game_manager;
+	extern World world;
 }

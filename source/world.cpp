@@ -2,7 +2,7 @@
 #include <danikk_framework/tensor.h>
 #include <danikk_framework/glm.h>
 
-#include <danikk_space_engine/manager.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/object/constructed.h>
@@ -10,9 +10,9 @@
 
 namespace danikk_space_engine
 {
-	Manager game_manager;
+	World world;
 
-	Manager::~Manager()
+	World::~World()
 	{
 		if(map_root != nullptr)
 		{
@@ -22,7 +22,7 @@ namespace danikk_space_engine
 		}
 	}
 
-	void Manager::tick()
+	void World::tick()
 	{
 		controller.tick();
 		for(GameObject* child : map_root->getChilds())
@@ -31,7 +31,7 @@ namespace danikk_space_engine
 		}
 	}
 
-	void Manager::frame()
+	void World::frame()
 	{
 		static_asset_collection.base3d_shader.use();
 		vec3 camera_front = camera->getFront();
@@ -42,7 +42,7 @@ namespace danikk_space_engine
 		map_root->frame();
 	}
 
-	void Manager::init()
+	void World::init()
 	{
 		map_root = GameObject::create();
 		camera = GameObject::create();

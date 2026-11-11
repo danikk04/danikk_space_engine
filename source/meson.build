@@ -4,10 +4,9 @@ sources = files(
 	'keybind.cpp', 
 	'localization.cpp', 
 	'main.cpp', 
-	'manager.cpp', 
+	'world.cpp', 
 	'material.cpp',
 )
 
-subdir('voxel')
 subdir('shape')
 subdir('object')

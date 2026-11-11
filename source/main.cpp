@@ -2,7 +2,7 @@
 #include <danikk_space_engine/keybind.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/manager.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/shape/shape.h>
 #include <danikk_space_engine/localization.h>
@@ -28,7 +28,7 @@ namespace danikk_engine_game
     	danikk_space_engine::initLocaliztion();
     	danikk_space_engine::loadMaterials();
 
-    	game_manager.init();
+    	world.init();
     	static_asset_collection.base2d_shader.use();
     }
 
@@ -36,7 +36,7 @@ namespace danikk_engine_game
     {
     	gui.frame();
     	key_binds.frame();
-    	game_manager.tick();
-    	game_manager.frame();
+    	world.tick();
+    	world.frame();
     }
 }
