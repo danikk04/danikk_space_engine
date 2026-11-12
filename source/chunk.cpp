@@ -1,4 +1,4 @@
-#include <danikk_space_engine/region.h>
+#include <danikk_space_engine/chunk.h>
 #include <danikk_space_engine/world.h>
 
 #include <danikk_engine/mesh.h>
@@ -25,13 +25,13 @@ namespace danikk_space_engine
 		return vec2(position.x, position.y);
 	}
 
-	Region::Region(Region&& other) noexcept
+	Chunk::Chunk(Chunk&& other) noexcept
 		: mesh(other.mesh), position(other.position), volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids))
 	{
 		other.mesh = nullptr;
 	}
 
-	Region& Region::operator=(Region&& other) noexcept
+	Chunk& Chunk::operator=(Chunk&& other) noexcept
 	{
 		if(this == &other)
 		{
@@ -46,12 +46,12 @@ namespace danikk_space_engine
 		return *this;
 	}
 
-	Region::~Region()
+	Chunk::~Chunk()
 	{
 		destroyMesh();
 	}
 
-	void Region::destroyMesh()
+	void Chunk::destroyMesh()
 	{
 		if(mesh == nullptr)
 		{
@@ -64,7 +64,10 @@ namespace danikk_space_engine
 		mesh = nullptr;
 	}
 
-	Mesh& Region::createMesh()
+	// Builds a triangle mesh for all valid volume cells owned by this chunk.
+	// Expands topology triangles into vertices, skips invalid or degenerate faces, projects
+	// planar UVs from the face normal, uploads buffers, and configures vertex attributes.
+	Mesh& Chunk::createMesh()
 	{
 		if(mesh == nullptr)
 		{
@@ -140,12 +143,12 @@ namespace danikk_space_engine
 		return *mesh;
 	}
 
-	mat4 Region::createWorldMatrix() const
+	mat4 Chunk::createWorldMatrix() const
 	{
 		return glm::translate(mat4(1.0f), position);
 	}
 
-	void Region::draw()
+	void Chunk::draw()
 	{
 		if(mesh == nullptr || volume_cell_ids.size() == 0)
 		{

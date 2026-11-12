@@ -7,9 +7,9 @@
 
 namespace danikk_space_engine
 {
-	using RegionId = uint32;
+	using ChunkId = uint32;
 
-	class Region
+	class Chunk
 	{
 		Mesh* mesh = nullptr;
 
@@ -17,12 +17,12 @@ namespace danikk_space_engine
 		vec3 position = vec3(0.0f);
 		DynamicArray<VolumeCellId> volume_cell_ids;
 
-		Region() = default;
-		Region(const Region&) = delete;
-		Region& operator=(const Region&) = delete;
-		Region(Region&& other) noexcept;
-		Region& operator=(Region&& other) noexcept;
-		~Region();
+		Chunk() = default;
+		Chunk(const Chunk&) = delete;
+		Chunk& operator=(const Chunk&) = delete;
+		Chunk(Chunk&& other) noexcept;
+		Chunk& operator=(Chunk&& other) noexcept;
+		~Chunk();
 
 		Mesh& createMesh();
 		mat4 createWorldMatrix() const;

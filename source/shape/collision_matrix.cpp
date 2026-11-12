@@ -28,6 +28,9 @@ namespace danikk_space_engine
 		return result;
 	}
 
+	// Tests two oriented boxes with the separating axis theorem and returns the minimum penetration.
+	// Projects both boxes onto their three face axes and nine pairwise cross-product axes;
+	// any non-overlapping projection rejects collision, otherwise the shallowest axis gives the normal.
 	static CollisionInfo checkCubeCubeCollision(const GameObject& object_a, const GameObject& object_b)
 	{
 		CollisionInfo result;
@@ -97,6 +100,9 @@ namespace danikk_space_engine
 		return result;
 	}
 
+	// Tests a sphere against an oriented box and computes a contact normal and penetration depth.
+	// Projects the sphere center onto each box axis to find the closest point, then checks radius overlap;
+	// if the center is inside the box, selects the nearest face as the contact direction.
 	static CollisionInfo checkCubeSphereCollision(const GameObject& cube_object, const GameObject& sphere_object)
 	{
 		CollisionInfo result;

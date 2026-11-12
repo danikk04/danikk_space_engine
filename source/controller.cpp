@@ -29,6 +29,9 @@ namespace danikk_space_engine
 		return glm::normalize(glm::cross(getFront(), getUp()));
 	}
 
+	// Updates camera rotation from mouse input and moves its target point using keyboard input.
+	// Rotates mouse deltas by camera roll, clamps pitch, applies Q/E roll, then combines
+	// the front and right vectors for WASD movement with shift/control speed modifiers.
 	void LocalPlayerController::tick(WorldData& data)
 	{
 		Point& target = data.getPoint(target_point_id);
@@ -97,6 +100,9 @@ namespace danikk_space_engine
 		return false;
 	}
 
+	// Handles face selection on left click and draws selected and hovered face overlays.
+	// Raycasts from the camera, toggles the hit FacePtr (or clears selection on a miss),
+	// then renders selected faces gray and the unselected current hit red.
 	void LocalPlayerController::frame(const World& world)
 	{
 		const RaycastHit hit = world.raycastFromCamera();

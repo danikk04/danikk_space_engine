@@ -8,6 +8,9 @@ namespace danikk_space_engine
 {
 	World world;
 
+	// Casts a ray through every triangulated face in each chunk and returns the nearest hit.
+	// Normalizes the direction, transforms cell points to world space, intersects each triangle,
+	// and keeps the closest hit together with its FacePtr and triangle point IDs.
 	RaycastHit World::raycast(const vec3& origin, const vec3& direction, float max_distance) const
 	{
 		RaycastHit result;
@@ -21,11 +24,11 @@ namespace danikk_space_engine
 		const Ray ray{origin, normalized_direction};
 		float nearest_distance = max_distance;
 
-		for(RegionId region_id = 0; region_id < regions.size(); region_id++)
+		for(ChunkId chunk_id = 0; chunk_id < chunks.size(); chunk_id++)
 		{
-			const Region& region = regions[region_id];
-			const mat4 region_world_matrix = region.createWorldMatrix();
-			for(VolumeCellId cell_id : region.volume_cell_ids)
+			const Chunk& chunk = chunks[chunk_id];
+			const mat4 chunk_world_matrix = chunk.createWorldMatrix();
+			for(VolumeCellId cell_id : chunk.volume_cell_ids)
 			{
 				if(cell_id >= data.getVolumeCellCount())
 				{
@@ -48,9 +51,9 @@ namespace danikk_space_engine
 					}
 
 					const vec3 a = data.getPoint(point_ids[0]).position;
-					const vec3 world_a = vec3(region_world_matrix * vec4(a, 1.0f));
-					const vec3 world_b = vec3(region_world_matrix * vec4(data.getPoint(point_ids[1]).position, 1.0f));
-					const vec3 world_c = vec3(region_world_matrix * vec4(data.getPoint(point_ids[2]).position, 1.0f));
+					const vec3 world_a = vec3(chunk_world_matrix * vec4(a, 1.0f));
+					const vec3 world_b = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[1]).position, 1.0f));
+					const vec3 world_c = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[2]).position, 1.0f));
 					const RayTriangleIntersection intersection = intersectRayTriangle(ray, world_a, world_b, world_c);
 					if(!intersection.hit || intersection.distance > nearest_distance)
 					{
@@ -62,7 +65,7 @@ namespace danikk_space_engine
 					result.distance = intersection.distance;
 					result.position = origin + normalized_direction * intersection.distance;
 					result.normal = intersection.normal;
-					result.face = FacePtr{region_id, cell_id, topology.triangle_face_indices[triangle_index]};
+					result.face = FacePtr{chunk_id, cell_id, topology.triangle_face_indices[triangle_index]};
 					result.triangle_index = triangle_index;
 					result.points[0] = point_ids[0];
 					result.points[1] = point_ids[1];
@@ -96,25 +99,28 @@ namespace danikk_space_engine
 		const mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.1f, 10000.0f);
 		setViewMatrix(view);
 		setProjectionMatrix(projection);
-		for(Region& region : regions)
+		for(Chunk& chunk : chunks)
 		{
-			region.draw();
+			chunk.draw();
 		}
 		controller.frame(*this);
 	}
 
+	// Resets world data and builds the initial camera, prism, and bipyramid scene.
+	// Creates points and volume cells through WorldData, assigns cell topology and material,
+	// registers both cells with one chunk, then generates the chunk mesh.
 	void World::init()
 	{
 		data.clear();
-		regions.clear();
+		chunks.clear();
 		controller.selected_polygons = DynamicArray<FacePtr>();
 
 		controller.target_point_id = data.createPoint();
 		Point& camera_point = data.getPoint(controller.target_point_id);
 		camera_point.position = vec3(0.0f);
 		controller.rotation = vec3(0.0f);
-		Region& region = regions.pushCtor();
-		region.position = vec3(0.0f, 0.0f, -5.0f);
+		Chunk& chunk = chunks.pushCtor();
+		chunk.position = vec3(0.0f, 0.0f, -5.0f);
 
 		const PointId first_prism_point = static_cast<PointId>(data.getPointCount());
 		const vec3 prism_positions[] =
@@ -135,7 +141,7 @@ namespace danikk_space_engine
 
 		const VolumeCellId prism_id = data.createVolumeCell();
 		VolumeCell& prism = data.getVolumeCell(prism_id);
-		region.volume_cell_ids.push(prism_id);
+		chunk.volume_cell_ids.push(prism_id);
 		for(uint8 i = 0; i < 6; i++)
 		{
 			prism.points[i] = first_prism_point + i;
@@ -164,7 +170,7 @@ namespace danikk_space_engine
 
 		const VolumeCellId bipyramid_id = data.createVolumeCell();
 		VolumeCell& bipyramid = data.getVolumeCell(bipyramid_id);
-		region.volume_cell_ids.push(bipyramid_id);
+		chunk.volume_cell_ids.push(bipyramid_id);
 		for(uint8 i = 0; i < 5; i++)
 		{
 			bipyramid.points[i] = first_bipyramid_point + i;
@@ -175,6 +181,6 @@ namespace danikk_space_engine
 		bipyramid.temperature = 293.15f;
 		bipyramid.health = 100.0f;
 
-		region.createMesh();
+		chunk.createMesh();
 	}
 }

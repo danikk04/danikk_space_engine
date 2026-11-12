@@ -8,7 +8,7 @@ sources = files(
 	'world.cpp', 
 	'world_data.cpp',
 	'material.cpp',
-	'region.cpp',
+	'chunk.cpp',
 	'polygon_highlight.cpp',
 	'volume_cell.cpp',
 )

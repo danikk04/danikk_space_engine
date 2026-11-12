@@ -6,18 +6,21 @@
 
 namespace danikk_space_engine
 {
+	// Draws the selected face of a volume cell as a slightly inset overlay toward the camera.
+	// Collects unique face points from the topology triangles, computes the face center,
+	// rebuilds its triangles with a small camera offset, uploads them, and draws in the chunk transform.
 	void drawPolygonHighlight(
 		const World& world,
 		const FacePtr& face,
 		Mesh& highlight_mesh,
 		const vec4& color)
 	{
-		if(face.region_id >= world.regions.size())
+		if(face.chunk_id >= world.chunks.size())
 		{
 			return;
 		}
 
-		const Region& region = world.regions[face.region_id];
+		const Chunk& chunk = world.chunks[face.chunk_id];
 		if(face.cell_id >= world.data.getVolumeCellCount())
 		{
 			return;
@@ -75,8 +78,8 @@ namespace danikk_space_engine
 		}
 		face_center /= static_cast<float>(face_point_count);
 
-		const mat4 region_world_matrix = region.createWorldMatrix();
-		const vec3 face_center_world = vec3(region_world_matrix * vec4(face_center, 1.0f));
+		const mat4 chunk_world_matrix = chunk.createWorldMatrix();
+		const vec3 face_center_world = vec3(chunk_world_matrix * vec4(face_center, 1.0f));
 		const vec3 camera_position = world.data.getPoint(world.controller.target_point_id).position;
 		const vec3 camera_delta = camera_position - face_center_world;
 		const float camera_distance = glm::length(camera_delta);
@@ -145,7 +148,7 @@ namespace danikk_space_engine
 		DefaultVertex::setAttributes();
 		white_texture.bind();
 		setDrawColor(color);
-		setWorldMatrix(region_world_matrix);
+		setWorldMatrix(chunk_world_matrix);
 		highlight_mesh.draw();
 	}
 }

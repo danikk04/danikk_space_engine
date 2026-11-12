@@ -4,6 +4,9 @@
 
 namespace danikk_space_engine
 {
+	// Computes the nearest forward intersection between a ray and one triangle.
+	// Uses the Moller-Trumbore determinant and barycentric tests, rejecting degenerate,
+	// parallel, outside, or behind-origin intersections before returning distance and normal.
 	RayTriangleIntersection intersectRayTriangle(
 		const Ray& ray,
 		const vec3& a,

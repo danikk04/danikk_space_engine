@@ -23,6 +23,9 @@ namespace danikk_space_engine
 		mesh.addSquare(vertices);
 	}
 
+	// Creates a unit cube mesh whose face UV ranges tile according to the requested dimensions.
+	// Allocates a Mesh, emits six independently normaled quads with size-based UV extents,
+	// uploads the generated vertices and indices, and configures the vertex attributes.
 	static Mesh* createCubeMesh(vec3 size)
 	{
 		void* memory = malloc(sizeof(Mesh));
