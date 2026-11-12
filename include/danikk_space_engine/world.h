@@ -16,7 +16,7 @@ namespace danikk_space_engine
 		vec3 position = vec3(0.0f);
 		vec3 normal = vec3(0.0f);
 		uint32 region_index = 0;
-		uint32 cell_index = 0;
+		VolumeCellId cell_id = 0;
 		uint8 face_index = 0;
 		uint8 triangle_index = 0;
 		PointId points[3]{};
@@ -26,6 +26,7 @@ namespace danikk_space_engine
 	{
 	public:
 		DynamicArray<Point> points;
+		DynamicArray<VolumeCell> volume_cells;
 		DynamicArray<Region> regions;
 		LocalPlayerController controller;
 

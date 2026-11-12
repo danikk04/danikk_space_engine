@@ -5,6 +5,8 @@
 
 namespace danikk_space_engine
 {
+	using VolumeCellId = uint32;
+
 	enum class VolumeCellTopology : uint8
 	{
 		none = 0,

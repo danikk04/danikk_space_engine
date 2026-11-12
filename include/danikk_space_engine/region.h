@@ -13,7 +13,7 @@ namespace danikk_space_engine
 
 	public:
 		vec3 position = vec3(0.0f);
-		DynamicArray<VolumeCell> volume_cells;
+		DynamicArray<VolumeCellId> volume_cell_ids;
 
 		Region() = default;
 		Region(const Region&) = delete;

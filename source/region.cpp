@@ -26,7 +26,7 @@ namespace danikk_space_engine
 	}
 
 	Region::Region(Region&& other) noexcept
-		: mesh(other.mesh), position(other.position), volume_cells(static_cast<DynamicArray<VolumeCell>&&>(other.volume_cells))
+		: mesh(other.mesh), position(other.position), volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids))
 	{
 		other.mesh = nullptr;
 	}
@@ -40,7 +40,7 @@ namespace danikk_space_engine
 
 		destroyMesh();
 		position = other.position;
-		volume_cells = static_cast<DynamicArray<VolumeCell>&&>(other.volume_cells);
+		volume_cell_ids = static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids);
 		mesh = other.mesh;
 		other.mesh = nullptr;
 		return *this;
@@ -77,8 +77,13 @@ namespace danikk_space_engine
 		DynamicArray<DefaultVertex> vertices;
 		DynamicArray<gl_point_index_t> indices;
 
-		for(const VolumeCell& cell : volume_cells)
+		for(VolumeCellId cell_id : volume_cell_ids)
 		{
+			if(cell_id >= world.volume_cells.size())
+			{
+				std::abort();
+			}
+			const VolumeCell& cell = world.volume_cells[cell_id];
 			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
 			for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
 			{
@@ -143,12 +148,17 @@ namespace danikk_space_engine
 
 	void Region::draw()
 	{
-		if(mesh == nullptr || volume_cells.size() == 0)
+		if(mesh == nullptr || volume_cell_ids.size() == 0)
 		{
 			return;
 		}
 
-		MaterialDefinition& material = getMaterial(volume_cells[0].material);
+		const VolumeCellId cell_id = volume_cell_ids[0];
+		if(cell_id >= world.volume_cells.size())
+		{
+			return;
+		}
+		MaterialDefinition& material = getMaterial(world.volume_cells[cell_id].material);
 		if(material.texture.isNull())
 		{
 			white_texture.bind();

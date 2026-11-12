@@ -69,9 +69,13 @@ namespace danikk_space_engine
 		{
 			const Region& region = regions[region_index];
 			const mat4 region_world_matrix = region.createWorldMatrix();
-			for(uint32 cell_index = 0; cell_index < region.volume_cells.size(); cell_index++)
+			for(VolumeCellId cell_id : region.volume_cell_ids)
 			{
-				const VolumeCell& cell = region.volume_cells[cell_index];
+				if(cell_id >= volume_cells.size())
+				{
+					continue;
+				}
+				const VolumeCell& cell = volume_cells[cell_id];
 				const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
 				for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
 				{
@@ -105,7 +109,7 @@ namespace danikk_space_engine
 					result.position = origin + normalized_direction * distance;
 					result.normal = normal;
 					result.region_index = region_index;
-					result.cell_index = cell_index;
+					result.cell_id = cell_id;
 					result.face_index = topology.triangle_face_indices[triangle_index];
 					result.triangle_index = triangle_index;
 					result.points[0] = point_ids[0];
@@ -150,6 +154,7 @@ namespace danikk_space_engine
 	void World::init()
 	{
 		points.clear();
+		volume_cells.clear();
 		regions.clear();
 		controller.selected_polygons = DynamicArray<LocalPlayerController::SelectedPolygon>();
 
@@ -177,7 +182,9 @@ namespace danikk_space_engine
 			point.position = prism_positions[i];
 		}
 
-		VolumeCell& prism = region.volume_cells.pushCtor();
+		const VolumeCellId prism_id = static_cast<VolumeCellId>(volume_cells.size());
+		VolumeCell& prism = volume_cells.pushCtor();
+		region.volume_cell_ids.push(prism_id);
 		for(uint8 i = 0; i < 6; i++)
 		{
 			prism.points[i] = first_prism_point + i;
@@ -204,7 +211,9 @@ namespace danikk_space_engine
 			point.position = bipyramid_positions[i];
 		}
 
-		VolumeCell& bipyramid = region.volume_cells.pushCtor();
+		const VolumeCellId bipyramid_id = static_cast<VolumeCellId>(volume_cells.size());
+		VolumeCell& bipyramid = volume_cells.pushCtor();
+		region.volume_cell_ids.push(bipyramid_id);
 		for(uint8 i = 0; i < 5; i++)
 		{
 			bipyramid.points[i] = first_bipyramid_point + i;
