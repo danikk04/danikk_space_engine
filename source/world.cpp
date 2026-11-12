@@ -106,6 +106,7 @@ namespace danikk_space_engine
 					result.normal = normal;
 					result.region_index = region_index;
 					result.cell_index = cell_index;
+					result.face_index = topology.triangle_face_indices[triangle_index];
 					result.triangle_index = triangle_index;
 					result.points[0] = point_ids[0];
 					result.points[1] = point_ids[1];
@@ -150,6 +151,7 @@ namespace danikk_space_engine
 	{
 		points.clear();
 		regions.clear();
+		controller.selected_polygons = DynamicArray<LocalPlayerController::SelectedPolygon>();
 
 		Point& camera_point = points.pushCtor();
 		controller.target_point_id = static_cast<PointId>(points.size() - 1);
@@ -185,6 +187,34 @@ namespace danikk_space_engine
 		prism.mass = 100.0f;
 		prism.temperature = 293.15f;
 		prism.health = 100.0f;
+
+		const PointId first_bipyramid_point = static_cast<PointId>(points.size());
+		const vec3 bipyramid_positions[] =
+		{
+			vec3(2.8f,  0.0f, -0.75f),
+			vec3(2.0f,  0.0f,  0.65f),
+			vec3(3.6f,  0.0f,  0.65f),
+			vec3(2.8f,  0.9f,  0.0f),
+			vec3(2.8f, -0.9f,  0.0f)
+		};
+
+		for(uint8 i = 0; i < 5; i++)
+		{
+			Point& point = points.pushCtor();
+			point.position = bipyramid_positions[i];
+		}
+
+		VolumeCell& bipyramid = region.volume_cells.pushCtor();
+		for(uint8 i = 0; i < 5; i++)
+		{
+			bipyramid.points[i] = first_bipyramid_point + i;
+		}
+		bipyramid.topology = VolumeCellTopology::triangular_bipyramid;
+		bipyramid.material = default_materials::sandstone;
+		bipyramid.mass = 100.0f;
+		bipyramid.temperature = 293.15f;
+		bipyramid.health = 100.0f;
+
 		region.createMesh();
 	}
 }

@@ -25,7 +25,9 @@ namespace danikk_space_engine
 	{
 		uint8 point_count;
 		uint8 triangle_count;
+		uint8 face_count;
 		const VolumeCellTriangle* triangles;
+		const uint8* triangle_face_indices;
 	};
 
 	struct VolumeCell

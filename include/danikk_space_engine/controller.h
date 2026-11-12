@@ -27,7 +27,18 @@ namespace danikk_space_engine
 	class LocalPlayerController : public Controller
 	{
 	public:
+		struct SelectedPolygon
+		{
+			uint32 region_index;
+			uint32 cell_index;
+			uint8 face_index;
+
+			SelectedPolygon(uint32 region_index, uint32 cell_index, uint8 face_index)
+				: region_index(region_index), cell_index(cell_index), face_index(face_index) {}
+		};
+
 		vec3 rotation = vec3(0.0f);
+		DynamicArray<SelectedPolygon> selected_polygons;
 
 		void frame(const World& world) override;
 

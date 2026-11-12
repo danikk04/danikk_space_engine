@@ -42,14 +42,20 @@ namespace danikk_space_engine
 			{{3, 7, 4}}, {{3, 4, 0}}
 		};
 
+		constexpr uint8 tetrahedron_triangle_faces[] = {0, 1, 2, 3};
+		constexpr uint8 triangular_prism_triangle_faces[] = {0, 1, 2, 2, 3, 3, 4, 4};
+		constexpr uint8 triangular_bipyramid_triangle_faces[] = {0, 1, 2, 3, 4, 5};
+		constexpr uint8 octahedron_triangle_faces[] = {0, 1, 2, 3, 4, 5, 6, 7};
+		constexpr uint8 hexahedron_triangle_faces[] = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
+
 		const VolumeCellTopologyDefinition topology_definitions[] =
 		{
-			{0, 0, nullptr},
-			{4, 4, tetrahedron_triangles},
-			{6, 8, triangular_prism_triangles},
-			{5, 6, triangular_bipyramid_triangles},
-			{6, 8, octahedron_triangles},
-			{8, 12, hexahedron_triangles}
+			{0, 0, 0, nullptr, nullptr},
+			{4, 4, 4, tetrahedron_triangles, tetrahedron_triangle_faces},
+			{6, 8, 5, triangular_prism_triangles, triangular_prism_triangle_faces},
+			{5, 6, 6, triangular_bipyramid_triangles, triangular_bipyramid_triangle_faces},
+			{6, 8, 8, octahedron_triangles, octahedron_triangle_faces},
+			{8, 12, 6, hexahedron_triangles, hexahedron_triangle_faces}
 		};
 	}
 
