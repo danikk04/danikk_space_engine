@@ -84,16 +84,12 @@ namespace danikk_space_engine
 	}
 
 	static bool isSelected(
-		const DynamicArray<LocalPlayerController::SelectedPolygon>& selected_polygons,
-		uint32 region_index,
-		VolumeCellId cell_id,
-		uint8 face_index)
+		const DynamicArray<FacePtr>& selected_polygons,
+		const FacePtr& face)
 	{
-		for(const LocalPlayerController::SelectedPolygon& selected : selected_polygons)
+		for(const FacePtr& selected : selected_polygons)
 		{
-			if(selected.region_index == region_index
-				&& selected.cell_id == cell_id
-				&& selected.face_index == face_index)
+			if(selected == face)
 			{
 				return true;
 			}
@@ -111,10 +107,8 @@ namespace danikk_space_engine
 				size_t selected_index = selected_polygons.size();
 				for(size_t i = 0; i < selected_polygons.size(); i++)
 				{
-					const SelectedPolygon& selected = selected_polygons[i];
-					if(selected.region_index == hit.region_index
-						&& selected.cell_id == hit.cell_id
-						&& selected.face_index == hit.face_index)
+					const FacePtr& selected = selected_polygons[i];
+					if(selected == hit.face)
 					{
 						selected_index = i;
 						break;
@@ -130,17 +124,17 @@ namespace danikk_space_engine
 					selected_polygons.resize(selected_polygons.size() - 1);
 					if(selected_polygons.size() == 0)
 					{
-						selected_polygons = DynamicArray<SelectedPolygon>();
+					selected_polygons = DynamicArray<FacePtr>();
 					}
 				}
 				else
 				{
-					selected_polygons.pushCtor(hit.region_index, hit.cell_id, hit.face_index);
+					selected_polygons.push(hit.face);
 				}
 			}
 			else
 			{
-				selected_polygons = DynamicArray<SelectedPolygon>();
+				selected_polygons = DynamicArray<FacePtr>();
 			}
 		}
 
@@ -148,24 +142,20 @@ namespace danikk_space_engine
 		const vec4 selected_color(0.5f, 0.5f, 0.5f, 1.0f);
 		const vec4 hover_color(1.0f, 0.15f, 0.15f, 1.0f);
 
-		for(const SelectedPolygon& selected : selected_polygons)
+		for(const FacePtr& selected : selected_polygons)
 		{
 			drawPolygonHighlight(
 				world,
-				selected.region_index,
-				selected.cell_id,
-				selected.face_index,
+				selected,
 				highlight_mesh,
 				selected_color);
 		}
 
-		if(hit.hit && !isSelected(selected_polygons, hit.region_index, hit.cell_id, hit.face_index))
+		if(hit.hit && !isSelected(selected_polygons, hit.face))
 		{
 			drawPolygonHighlight(
 				world,
-				hit.region_index,
-				hit.cell_id,
-				hit.face_index,
+				hit.face,
 				highlight_mesh,
 				hover_color);
 		}

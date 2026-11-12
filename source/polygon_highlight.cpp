@@ -8,24 +8,22 @@ namespace danikk_space_engine
 {
 	void drawPolygonHighlight(
 		const World& world,
-		uint32 region_index,
-		VolumeCellId cell_id,
-		uint8 face_index,
+		const FacePtr& face,
 		Mesh& highlight_mesh,
 		const vec4& color)
 	{
-		if(region_index >= world.regions.size())
+		if(face.region_index >= world.regions.size())
 		{
 			return;
 		}
 
-		const Region& region = world.regions[region_index];
-		if(cell_id >= world.data.getVolumeCellCount())
+		const Region& region = world.regions[face.region_index];
+		if(face.cell_id >= world.data.getVolumeCellCount())
 		{
 			return;
 		}
 
-		const VolumeCell& cell = world.data.getVolumeCell(cell_id);
+		const VolumeCell& cell = world.data.getVolumeCell(face.cell_id);
 		const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
 		if(topology.triangle_face_indices == nullptr)
 		{
@@ -36,7 +34,7 @@ namespace danikk_space_engine
 		uint8 face_point_count = 0;
 		for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
 		{
-			if(topology.triangle_face_indices[triangle_index] != face_index)
+			if(topology.triangle_face_indices[triangle_index] != face.face_index)
 			{
 				continue;
 			}
@@ -93,7 +91,7 @@ namespace danikk_space_engine
 
 		for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
 		{
-			if(topology.triangle_face_indices[triangle_index] != face_index)
+			if(topology.triangle_face_indices[triangle_index] != face.face_index)
 			{
 				continue;
 			}

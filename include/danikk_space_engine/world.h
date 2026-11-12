@@ -3,6 +3,7 @@
 #include <danikk_space_engine/default.h>
 
 #include <danikk_space_engine/point.h>
+#include <danikk_space_engine/face_ptr.h>
 #include <danikk_space_engine/region.h>
 #include <danikk_space_engine/controller.h>
 #include <danikk_space_engine/world_data.h>
@@ -16,9 +17,7 @@ namespace danikk_space_engine
 		float distance = 0.0f;
 		vec3 position = vec3(0.0f);
 		vec3 normal = vec3(0.0f);
-		uint32 region_index = 0;
-		VolumeCellId cell_id = 0;
-		uint8 face_index = 0;
+		FacePtr face;
 		uint8 triangle_index = 0;
 		PointId points[3]{};
 	};

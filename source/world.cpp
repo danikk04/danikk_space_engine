@@ -62,9 +62,7 @@ namespace danikk_space_engine
 					result.distance = intersection.distance;
 					result.position = origin + normalized_direction * intersection.distance;
 					result.normal = intersection.normal;
-					result.region_index = region_index;
-					result.cell_id = cell_id;
-					result.face_index = topology.triangle_face_indices[triangle_index];
+					result.face = FacePtr{region_index, cell_id, topology.triangle_face_indices[triangle_index]};
 					result.triangle_index = triangle_index;
 					result.points[0] = point_ids[0];
 					result.points[1] = point_ids[1];
@@ -109,7 +107,7 @@ namespace danikk_space_engine
 	{
 		data.clear();
 		regions.clear();
-		controller.selected_polygons = DynamicArray<LocalPlayerController::SelectedPolygon>();
+		controller.selected_polygons = DynamicArray<FacePtr>();
 
 		controller.target_point_id = data.createPoint();
 		Point& camera_point = data.getPoint(controller.target_point_id);

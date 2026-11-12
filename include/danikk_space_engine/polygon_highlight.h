@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/volume_cell.h>
+#include <danikk_space_engine/face_ptr.h>
 #include <danikk_space_engine/fwd.h>
 
 #include <danikk_engine/mesh.h>
@@ -10,9 +11,7 @@ namespace danikk_space_engine
 {
 	void drawPolygonHighlight(
 		const World& world,
-		uint32 region_index,
-		VolumeCellId cell_id,
-		uint8 face_index,
+		const FacePtr& face,
 		Mesh& highlight_mesh,
 		const vec4& color);
 }
