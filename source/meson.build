@@ -9,4 +9,3 @@ sources = files(
 )
 
 subdir('shape')
-subdir('object')
