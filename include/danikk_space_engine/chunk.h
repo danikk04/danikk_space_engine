@@ -25,6 +25,7 @@ namespace danikk_space_engine
 		~Chunk();
 
 		Mesh& createMesh();
+		bool hasSharedFace(VolumeCellId cell_id, uint8 face_index) const;
 		mat4 createWorldMatrix() const;
 		void draw();
 		void destroyMesh();

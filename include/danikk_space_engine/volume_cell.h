@@ -47,4 +47,6 @@ namespace danikk_space_engine
 	};
 
 	const VolumeCellTopologyDefinition& getVolumeCellTopologyDefinition(VolumeCellTopology topology);
+	uint8 getVolumeCellFacePointIds(const VolumeCell& cell, uint8 face_index, PointId point_ids[8]);
+	bool volumeCellFacesSharePoints(const VolumeCell& cell_a, uint8 face_a, const VolumeCell& cell_b, uint8 face_b);
 }

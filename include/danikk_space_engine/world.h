@@ -37,6 +37,7 @@ namespace danikk_space_engine
 
 		RaycastHit raycast(const vec3& origin, const vec3& direction, float max_distance = 10000.0f) const;
 		RaycastHit raycastFromCamera(float max_distance = 10000.0f) const;
+		DynamicArray<FacePtr> extrudeFaces(const DynamicArray<FacePtr>& faces, float distance);
 	};
 
 	extern World world;

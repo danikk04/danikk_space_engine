@@ -46,11 +46,17 @@ namespace danikk_space_engine
 		rotation.y = glm::clamp(rotation.y, -pi_half + 0.0001f, pi_half - 0.0001f);
 
 		const float roll_delta = 1.5f * getTargetFrameDelay();
-		if(getKeyboardState(keyboard_buttons::q))
+		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
+		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
+		const bool alt_down = left_alt_state == button_states::press || left_alt_state == button_states::hold
+			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
+		const int q_state = getKeyboardState(keyboard_buttons::q);
+		if(q_state == button_states::press || q_state == button_states::hold)
 		{
 			rotation.z -= roll_delta;
 		}
-		if(getKeyboardState(keyboard_buttons::e))
+		const int e_state = getKeyboardState(keyboard_buttons::e);
+		if(!alt_down && (e_state == button_states::press || e_state == button_states::hold))
 		{
 			rotation.z += roll_delta;
 		}
@@ -100,11 +106,26 @@ namespace danikk_space_engine
 		return false;
 	}
 
-	// Handles face selection on left click and draws selected and hovered face overlays.
-	// Raycasts from the camera, toggles the hit FacePtr (or clears selection on a miss),
-	// then renders selected faces gray and the unselected current hit red.
-	void LocalPlayerController::frame(const World& world)
+	// Extrudes selected faces on Alt+E, handles left-click selection, and draws face overlays.
+	// Replaces selection with the generated top faces, raycasts from the camera, toggles
+	// the hit FacePtr (or clears selection on a miss), then draws selected and hovered faces.
+	void LocalPlayerController::frame(World& world)
 	{
+		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
+		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
+		const bool alt_down = left_alt_state == button_states::press || left_alt_state == button_states::hold
+			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
+		if(alt_down
+			&& getKeyboardState(keyboard_buttons::e) == button_states::press
+			&& selected_polygons.size() > 0)
+		{
+			DynamicArray<FacePtr> extruded_faces = world.extrudeFaces(selected_polygons, 1.0f);
+			if(extruded_faces.size() > 0)
+			{
+				selected_polygons = static_cast<DynamicArray<FacePtr>&&>(extruded_faces);
+			}
+		}
+
 		const RaycastHit hit = world.raycastFromCamera();
 		if(getMouseState(mouse_buttons::left) == button_states::press)
 		{
@@ -130,7 +151,7 @@ namespace danikk_space_engine
 					selected_polygons.resize(selected_polygons.size() - 1);
 					if(selected_polygons.size() == 0)
 					{
-					selected_polygons = DynamicArray<FacePtr>();
+						selected_polygons = DynamicArray<FacePtr>();
 					}
 				}
 				else

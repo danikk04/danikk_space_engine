@@ -87,8 +87,17 @@ namespace danikk_space_engine
 			}
 			const VolumeCell& cell = world.data.getVolumeCell(cell_id);
 			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
+			bool shared_faces[8]{};
+			for(uint8 face_index = 0; face_index < topology.face_count; face_index++)
+			{
+				shared_faces[face_index] = hasSharedFace(cell_id, face_index);
+			}
 			for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
 			{
+				if(shared_faces[topology.triangle_face_indices[triangle_index]])
+				{
+					continue;
+				}
 				const VolumeCellTriangle& triangle = topology.triangles[triangle_index];
 				const PointId point_ids[3]
 				{
@@ -141,6 +150,32 @@ namespace danikk_space_engine
 			indices.size());
 		DefaultVertex::setAttributes();
 		return *mesh;
+	}
+
+	bool Chunk::hasSharedFace(VolumeCellId cell_id, uint8 face_index) const
+	{
+		if(cell_id >= world.data.getVolumeCellCount())
+		{
+			return false;
+		}
+		const VolumeCell& cell = world.data.getVolumeCell(cell_id);
+		for(VolumeCellId other_cell_id : volume_cell_ids)
+		{
+			if(other_cell_id == cell_id || other_cell_id >= world.data.getVolumeCellCount())
+			{
+				continue;
+			}
+			const VolumeCell& other_cell = world.data.getVolumeCell(other_cell_id);
+			const VolumeCellTopologyDefinition& other_topology = getVolumeCellTopologyDefinition(other_cell.topology);
+			for(uint8 other_face = 0; other_face < other_topology.face_count; other_face++)
+			{
+				if(volumeCellFacesSharePoints(cell, face_index, other_cell, other_face))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	mat4 Chunk::createWorldMatrix() const
