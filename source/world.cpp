@@ -2,56 +2,11 @@
 
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/asset.h>
-
-#include <cmath>
+#include <danikk_space_engine/math/ray.h>
 
 namespace danikk_space_engine
 {
 	World world;
-
-	static bool rayIntersectsTriangle(
-		const vec3& origin,
-		const vec3& direction,
-		const vec3& a,
-		const vec3& b,
-		const vec3& c,
-		float& distance,
-		vec3& normal)
-	{
-		constexpr float epsilon = 0.000001f;
-		const vec3 edge_a = b - a;
-		const vec3 edge_b = c - a;
-		const vec3 determinant_vector = glm::cross(direction, edge_b);
-		const float determinant = glm::dot(edge_a, determinant_vector);
-		if(std::fabs(determinant) <= epsilon)
-		{
-			return false;
-		}
-
-		const float inverse_determinant = 1.0f / determinant;
-		const vec3 origin_offset = origin - a;
-		const float barycentric_u = glm::dot(origin_offset, determinant_vector) * inverse_determinant;
-		if(barycentric_u < 0.0f || barycentric_u > 1.0f)
-		{
-			return false;
-		}
-
-		const vec3 barycentric_vector = glm::cross(origin_offset, edge_a);
-		const float barycentric_v = glm::dot(direction, barycentric_vector) * inverse_determinant;
-		if(barycentric_v < 0.0f || barycentric_u + barycentric_v > 1.0f)
-		{
-			return false;
-		}
-
-		distance = glm::dot(edge_b, barycentric_vector) * inverse_determinant;
-		if(distance < 0.0f)
-		{
-			return false;
-		}
-
-		normal = glm::normalize(glm::cross(edge_a, edge_b));
-		return true;
-	}
 
 	RaycastHit World::raycast(const vec3& origin, const vec3& direction, float max_distance) const
 	{
@@ -63,6 +18,7 @@ namespace danikk_space_engine
 		}
 
 		const vec3 normalized_direction = direction / direction_length;
+		const Ray ray{origin, normalized_direction};
 		float nearest_distance = max_distance;
 
 		for(uint32 region_index = 0; region_index < regions.size(); region_index++)
@@ -95,19 +51,17 @@ namespace danikk_space_engine
 					const vec3 world_a = vec3(region_world_matrix * vec4(a, 1.0f));
 					const vec3 world_b = vec3(region_world_matrix * vec4(points[point_ids[1]].position, 1.0f));
 					const vec3 world_c = vec3(region_world_matrix * vec4(points[point_ids[2]].position, 1.0f));
-					float distance;
-					vec3 normal;
-					if(!rayIntersectsTriangle(origin, normalized_direction, world_a, world_b, world_c, distance, normal)
-						|| distance > nearest_distance)
+					const RayTriangleIntersection intersection = intersectRayTriangle(ray, world_a, world_b, world_c);
+					if(!intersection.hit || intersection.distance > nearest_distance)
 					{
 						continue;
 					}
 
-					nearest_distance = distance;
+					nearest_distance = intersection.distance;
 					result.hit = true;
-					result.distance = distance;
-					result.position = origin + normalized_direction * distance;
-					result.normal = normal;
+					result.distance = intersection.distance;
+					result.position = origin + normalized_direction * intersection.distance;
+					result.normal = intersection.normal;
 					result.region_index = region_index;
 					result.cell_id = cell_id;
 					result.face_index = topology.triangle_face_indices[triangle_index];

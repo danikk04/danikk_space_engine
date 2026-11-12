@@ -12,3 +12,4 @@ sources = files(
 )
 
 subdir('shape')
+subdir('math')
