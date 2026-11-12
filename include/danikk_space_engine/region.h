@@ -7,6 +7,8 @@
 
 namespace danikk_space_engine
 {
+	using RegionId = uint32;
+
 	class Region
 	{
 		Mesh* mesh = nullptr;

@@ -12,12 +12,12 @@ namespace danikk_space_engine
 		Mesh& highlight_mesh,
 		const vec4& color)
 	{
-		if(face.region_index >= world.regions.size())
+		if(face.region_id >= world.regions.size())
 		{
 			return;
 		}
 
-		const Region& region = world.regions[face.region_index];
+		const Region& region = world.regions[face.region_id];
 		if(face.cell_id >= world.data.getVolumeCellCount())
 		{
 			return;

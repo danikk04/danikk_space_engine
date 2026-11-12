@@ -21,9 +21,9 @@ namespace danikk_space_engine
 		const Ray ray{origin, normalized_direction};
 		float nearest_distance = max_distance;
 
-		for(uint32 region_index = 0; region_index < regions.size(); region_index++)
+		for(RegionId region_id = 0; region_id < regions.size(); region_id++)
 		{
-			const Region& region = regions[region_index];
+			const Region& region = regions[region_id];
 			const mat4 region_world_matrix = region.createWorldMatrix();
 			for(VolumeCellId cell_id : region.volume_cell_ids)
 			{
@@ -62,7 +62,7 @@ namespace danikk_space_engine
 					result.distance = intersection.distance;
 					result.position = origin + normalized_direction * intersection.distance;
 					result.normal = intersection.normal;
-					result.face = FacePtr{region_index, cell_id, topology.triangle_face_indices[triangle_index]};
+					result.face = FacePtr{region_id, cell_id, topology.triangle_face_indices[triangle_index]};
 					result.triangle_index = triangle_index;
 					result.points[0] = point_ids[0];
 					result.points[1] = point_ids[1];
