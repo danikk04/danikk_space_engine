@@ -137,7 +137,7 @@ namespace danikk_space_engine
 		const vec3 camera_position = points[controller.target_point_id].position;
 		const vec3 camera_front = controller.getFront();
 		const mat4 view = glm::lookAt(camera_position, camera_position + camera_front, controller.getUp());
-		const mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.0001f, 10000.0f);
+		const mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.1f, 10000.0f);
 		setViewMatrix(view);
 		setProjectionMatrix(projection);
 		for(Region& region : regions)

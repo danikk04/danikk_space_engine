@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	{
     	base2d_shader.load("base2d");
     	base3d_shader.load("base3d");
-    	base_font.load("archive", FontTypes::rasterized);
+	    	base_font.load("archive");
 
     	setDefaultGUIShader(base2d_shader);
     	setDefaultFont(base_font);
