@@ -38,10 +38,7 @@ namespace danikk_space_engine
 		auto test_axis = [&](vec3 axis)
 		{
 			const float axis_length = glm::length(axis);
-			if(axis_length <= 0.000001f)
-			{
-				return true;
-			}
+			if(axis_length <= 0.000001f) return true;
 			axis /= axis_length;
 
 			float radius_a = 0.0f;
@@ -54,10 +51,7 @@ namespace danikk_space_engine
 
 			const float signed_distance = glm::dot(center_delta, axis);
 			const float penetration = radius_a + radius_b - abs(signed_distance);
-			if(penetration <= 0.0f)
-			{
-				return false;
-			}
+			if(penetration <= 0.0f) return false;
 			if(penetration < result.penetration)
 			{
 				result.penetration = penetration;
@@ -67,22 +61,11 @@ namespace danikk_space_engine
 		};
 
 		for(index_t index = 0; index < 3; ++index)
-		{
-			if(!test_axis(box_a.axes[index]) || !test_axis(box_b.axes[index]))
-			{
-				return result;
-			}
-		}
+			if(!test_axis(box_a.axes[index]) || !test_axis(box_b.axes[index])) return result;
 		for(index_t a = 0; a < 3; ++a)
-		{
 			for(index_t b = 0; b < 3; ++b)
-			{
-				if(!test_axis(glm::cross(box_a.axes[a], box_b.axes[b])))
-				{
-					return result;
-				}
-			}
-		}
+				if(!test_axis(glm::cross(box_a.axes[a], box_b.axes[b]))) return result;
+
 		result.collided = true;
 		return result;
 	}
@@ -105,10 +88,7 @@ namespace danikk_space_engine
 		const vec3 delta = getSphereCenter(object_b) - getSphereCenter(object_a);
 		const float distance_squared = glm::dot(delta, delta);
 		const float radius_sum = getSphereRadius(object_a) + getSphereRadius(object_b);
-		if(distance_squared >= radius_sum * radius_sum)
-		{
-			return result;
-		}
+		if(distance_squared >= radius_sum * radius_sum) return result;
 
 		const float distance = sqrt(distance_squared);
 		result.normal = distance > 0.000001f ? delta / distance : vec3(1.0f, 0.0f, 0.0f);
@@ -137,10 +117,7 @@ namespace danikk_space_engine
 
 		const vec3 delta = sphere_center - closest_point;
 		const float distance_squared = glm::dot(delta, delta);
-		if(distance_squared >= sphere_radius * sphere_radius)
-		{
-			return result;
-		}
+		if(distance_squared >= sphere_radius * sphere_radius) return result;
 
 		const float distance = sqrt(distance_squared);
 		if(distance > 0.000001f)
@@ -187,5 +164,4 @@ namespace danikk_space_engine
 		{checkNoCollision, checkCubeCubeCollision, checkCubeSphereCollision},
 		{checkNoCollision, checkSphereCubeCollision, checkSphereSphereCollision}
 	};
-
 }
