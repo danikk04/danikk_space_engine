@@ -9,6 +9,7 @@ sources = files(
 	'world_data.cpp',
 	'material.cpp',
 	'region.cpp',
+	'polygon_highlight.cpp',
 	'volume_cell.cpp',
 )
 
