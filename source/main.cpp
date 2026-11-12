@@ -3,8 +3,6 @@
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/material.h>
-#include <danikk_space_engine/shape/shape.h>
 #include <danikk_space_engine/localization.h>
 #include <danikk_engine/dynamic_mesh.h>
 
@@ -20,14 +18,11 @@ namespace danikk_engine_game
     void begin()
     {
 		setWindowTitle("Danikk Space Engine");
-		initShapeTable();
 		key_binds.init();
     	static_asset_collection.load();
     	gui.define();
     	gui.compose();
     	danikk_space_engine::initLocaliztion();
-    	danikk_space_engine::loadMaterials();
-
     	world.init();
     	static_asset_collection.base2d_shader.use();
     }

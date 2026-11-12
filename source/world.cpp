@@ -1,60 +1,34 @@
-#include <danikk_framework/danikk_framework.h>
-#include <danikk_framework/tensor.h>
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/asset.h>
-#include <danikk_space_engine/material.h>
-#include <danikk_space_engine/object/constructed.h>
-#include <danikk_space_engine/object/ground.h>
 
 namespace danikk_space_engine
 {
 	World world;
 
-	World::~World()
-	{
-		if(map_root != nullptr)
-		{
-			map_root->destroy();
-			map_root = nullptr;
-			camera = nullptr;
-		}
-	}
-
 	void World::tick()
 	{
-		controller.tick();
-		for(GameObject* child : map_root->getChilds())
-		{
-			child->tick();
-		}
+		controller.tick(points);
 	}
 
 	void World::frame()
 	{
 		static_asset_collection.base3d_shader.use();
-		vec3 camera_front = camera->getFront();
-		mat4 view = glm::lookAt(camera->pos, camera->pos + camera_front, camera->getUp());
-		mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.0001f, 10000.0f);
+		const vec3 camera_position = points[controller.target_point_id].position;
+		const vec3 camera_front = controller.getFront();
+		const mat4 view = glm::lookAt(camera_position, camera_position + camera_front, controller.getUp());
+		const mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.0001f, 10000.0f);
 		setViewMatrix(view);
 		setProjectionMatrix(projection);
-		map_root->frame();
 	}
 
 	void World::init()
 	{
-		map_root = GameObject::create();
-		camera = GameObject::create();
-		map_root->local_matrix = mat4(1.0f);
-		map_root->world_matrix = mat4(1.0f);
-		map_root->addChild(camera);
-
-		GroundObject* ground = GroundObject::create();
-		map_root->addChild(ground);
-
-		controller.target = camera;
-
+		points.clear();
+		Point& camera_point = points.pushCtor();
+		controller.target_point_id = static_cast<PointId>(points.size() - 1);
+		camera_point.position = vec3(0.0f);
+		controller.rotation = vec3(0.0f);
 	}
-
 }

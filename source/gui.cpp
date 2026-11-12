@@ -40,6 +40,6 @@ namespace danikk_space_engine
 	void GUI::frame()
 	{
     	format(fps_label.text, "FPS:%", fps_counter.getValue());
-    	format(debug_info_label.text, "camera_pos:%", truncateTo100(world.camera->pos));
+		format(debug_info_label.text, "camera_pos:%", truncateTo100(world.points[world.controller.target_point_id].position));
 	}
 }

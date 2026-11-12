@@ -2,18 +2,16 @@
 
 #include <danikk_space_engine/default.h>
 
-#include <danikk_space_engine/object/gameobject.h>
+#include <danikk_space_engine/point.h>
 #include <danikk_space_engine/controller.h>
+#include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
 {
 	class World
 	{
 	public:
-		~World();
-
-		GameObject* map_root = nullptr;
-		GameObject* camera = nullptr;
+		DynamicArray<Point> points;
 		LocalPlayerController controller;
 
 		void tick();
