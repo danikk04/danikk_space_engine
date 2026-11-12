@@ -37,6 +37,6 @@ namespace danikk_space_engine
 			debug_info_label.text,
 			"FPS:%\ncamera_pos:%",
 			fps_counter.getValue(),
-			truncateTo100(world.points[world.controller.target_point_id].position));
+			truncateTo100(world.data.getPoint(world.controller.target_point_id).position));
 	}
 }

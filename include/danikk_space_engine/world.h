@@ -5,6 +5,7 @@
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/region.h>
 #include <danikk_space_engine/controller.h>
+#include <danikk_space_engine/world_data.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
@@ -25,8 +26,7 @@ namespace danikk_space_engine
 	class World
 	{
 	public:
-		DynamicArray<Point> points;
-		DynamicArray<VolumeCell> volume_cells;
+		WorldData data;
 		DynamicArray<Region> regions;
 		LocalPlayerController controller;
 

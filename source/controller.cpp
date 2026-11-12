@@ -28,9 +28,9 @@ namespace danikk_space_engine
 		return glm::normalize(glm::cross(getFront(), getUp()));
 	}
 
-	void LocalPlayerController::tick(DynamicArray<Point>& points)
+	void LocalPlayerController::tick(WorldData& data)
 	{
-		Point& target = points[target_point_id];
+		Point& target = data.getPoint(target_point_id);
 		const vec2 cursor_delta = getCursorDelta() * getMouseSensivity();
 		const float roll_cos = cos(rotation.z);
 		const float roll_sin = sin(rotation.z);
@@ -114,12 +114,12 @@ namespace danikk_space_engine
 		}
 
 		const Region& region = world.regions[region_index];
-		if(cell_id >= world.volume_cells.size())
+		if(cell_id >= world.data.getVolumeCellCount())
 		{
 			return;
 		}
 
-		const VolumeCell& cell = world.volume_cells[cell_id];
+		const VolumeCell& cell = world.data.getVolumeCell(cell_id);
 		const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
 		if(topology.triangle_face_indices == nullptr)
 		{
@@ -139,7 +139,7 @@ namespace danikk_space_engine
 			for(uint8 corner_index = 0; corner_index < 3; corner_index++)
 			{
 				const PointId point_id = cell.points[triangle.points[corner_index]];
-				if(point_id >= world.points.size())
+				if(point_id >= world.data.getPointCount())
 				{
 					continue;
 				}
@@ -159,7 +159,7 @@ namespace danikk_space_engine
 				}
 			}
 		}
-		if(face_point_count < 3 || world.controller.target_point_id >= world.points.size())
+		if(face_point_count < 3 || world.controller.target_point_id >= world.data.getPointCount())
 		{
 			return;
 		}
@@ -167,13 +167,13 @@ namespace danikk_space_engine
 		vec3 face_center(0.0f);
 		for(uint8 point_index = 0; point_index < face_point_count; point_index++)
 		{
-			face_center += world.points[face_point_ids[point_index]].position;
+			face_center += world.data.getPoint(face_point_ids[point_index]).position;
 		}
 		face_center /= static_cast<float>(face_point_count);
 
 		const mat4 region_world_matrix = region.createWorldMatrix();
 		const vec3 face_center_world = vec3(region_world_matrix * vec4(face_center, 1.0f));
-		const vec3 camera_position = world.points[world.controller.target_point_id].position;
+		const vec3 camera_position = world.data.getPoint(world.controller.target_point_id).position;
 		const vec3 camera_delta = camera_position - face_center_world;
 		const float camera_distance = glm::length(camera_delta);
 		const vec3 camera_offset_direction = camera_distance > 0.000001f
@@ -199,14 +199,14 @@ namespace danikk_space_engine
 				cell.points[triangle.points[1]],
 				cell.points[triangle.points[2]]
 			};
-			if(point_ids[0] >= world.points.size() || point_ids[1] >= world.points.size() || point_ids[2] >= world.points.size())
+			if(point_ids[0] >= world.data.getPointCount() || point_ids[1] >= world.data.getPointCount() || point_ids[2] >= world.data.getPointCount())
 			{
 				continue;
 			}
 
-			const vec3 a = world.points[point_ids[0]].position;
-			const vec3 b = world.points[point_ids[1]].position;
-			const vec3 c = world.points[point_ids[2]].position;
+			const vec3 a = world.data.getPoint(point_ids[0]).position;
+			const vec3 b = world.data.getPoint(point_ids[1]).position;
+			const vec3 c = world.data.getPoint(point_ids[2]).position;
 			const vec3 shrunk_a = face_center + (a - face_center) / highlight_shrink_factor + camera_offset_direction * highlight_offset;
 			const vec3 shrunk_b = face_center + (b - face_center) / highlight_shrink_factor + camera_offset_direction * highlight_offset;
 			const vec3 shrunk_c = face_center + (c - face_center) / highlight_shrink_factor + camera_offset_direction * highlight_offset;

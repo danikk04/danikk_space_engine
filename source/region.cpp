@@ -73,17 +73,16 @@ namespace danikk_space_engine
 			mesh = new (memory) Mesh();
 		}
 
-		const DynamicArray<Point>& points = world.points;
 		DynamicArray<DefaultVertex> vertices;
 		DynamicArray<gl_point_index_t> indices;
 
 		for(VolumeCellId cell_id : volume_cell_ids)
 		{
-			if(cell_id >= world.volume_cells.size())
+			if(cell_id >= world.data.getVolumeCellCount())
 			{
 				std::abort();
 			}
-			const VolumeCell& cell = world.volume_cells[cell_id];
+			const VolumeCell& cell = world.data.getVolumeCell(cell_id);
 			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
 			for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
 			{
@@ -95,14 +94,14 @@ namespace danikk_space_engine
 					cell.points[triangle.points[2]]
 				};
 
-				if(point_ids[0] >= points.size() || point_ids[1] >= points.size() || point_ids[2] >= points.size())
+				if(point_ids[0] >= world.data.getPointCount() || point_ids[1] >= world.data.getPointCount() || point_ids[2] >= world.data.getPointCount())
 				{
 					std::abort();
 				}
 
-				const vec3 a = points[point_ids[0]].position;
-				const vec3 b = points[point_ids[1]].position;
-				const vec3 c = points[point_ids[2]].position;
+				const vec3 a = world.data.getPoint(point_ids[0]).position;
+				const vec3 b = world.data.getPoint(point_ids[1]).position;
+				const vec3 c = world.data.getPoint(point_ids[2]).position;
 				const vec3 cross_product = glm::cross(b - a, c - a);
 				const float normal_length = glm::length(cross_product);
 				if(normal_length <= 0.000001f)
@@ -154,11 +153,11 @@ namespace danikk_space_engine
 		}
 
 		const VolumeCellId cell_id = volume_cell_ids[0];
-		if(cell_id >= world.volume_cells.size())
+		if(cell_id >= world.data.getVolumeCellCount())
 		{
 			return;
 		}
-		MaterialDefinition& material = getMaterial(world.volume_cells[cell_id].material);
+		MaterialDefinition& material = getMaterial(world.data.getVolumeCell(cell_id).material);
 		if(material.texture.isNull())
 		{
 			white_texture.bind();
