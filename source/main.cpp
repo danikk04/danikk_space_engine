@@ -4,6 +4,7 @@
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/localization.h>
+#include <danikk_space_engine/material.h>
 #include <danikk_engine/dynamic_mesh.h>
 
 namespace danikk_engine_game
@@ -20,6 +21,7 @@ namespace danikk_engine_game
 		setWindowTitle("Danikk Space Engine");
 		key_binds.init();
     	static_asset_collection.load();
+    	loadMaterials();
     	gui.define();
     	gui.compose();
     	danikk_space_engine::initLocaliztion();

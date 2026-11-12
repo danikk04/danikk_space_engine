@@ -6,6 +6,7 @@
 
 #include <danikk_engine/input.h>
 #include <danikk_engine/danikk_engine.h>
+#include <danikk_engine/mesh.h>
 #include <danikk_framework/glm.h>
 #include <danikk_framework/dynamic_array.h>
 
@@ -13,17 +14,22 @@
 
 namespace danikk_space_engine
 {
+	class World;
+
 	class Controller
 	{
 	public:
 		PointId target_point_id = 0;
 		virtual void tick(DynamicArray<Point>& points) = 0;
+		virtual void frame(const World&) {}
 	};
 
 	class LocalPlayerController : public Controller
 	{
 	public:
 		vec3 rotation = vec3(0.0f);
+
+		void frame(const World& world) override;
 
 		vec3 getFront() const
 		{
