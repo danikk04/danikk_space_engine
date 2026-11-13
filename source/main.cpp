@@ -6,6 +6,7 @@
 #include <danikk_space_engine/material.h>
 #include <danikk_engine/dynamic_mesh.h>
 #include <danikk_engine/input.h>
+#include <danikk_framework/memory.h>
 
 namespace danikk_engine_game
 {
@@ -19,12 +20,12 @@ namespace danikk_engine_game
     void begin()
     {
 		setWindowTitle("Danikk Space Engine");
-    	static_asset_collection.load();
-    	loadMaterials();
-    	gui.define();
-    	gui.compose();
-    	danikk_space_engine::initLocaliztion();
-    	world.init();
+		launchCheckRSSDiff(static_asset_collection.load());
+		loadMaterials();
+		gui.define();
+		gui.compose();
+		danikk_space_engine::initLocaliztion();
+		world.init();
     	static_asset_collection.base2d_shader.use();
     }
 
