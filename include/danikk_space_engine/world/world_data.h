@@ -20,7 +20,10 @@ namespace danikk_space_engine
 		PointId createPoint();
 		VolumeCellId createVolumeCell();
 		Chunk& createChunk();
-		PointComponentSlotId createPointComponentSlot();
+	PointComponentSlotId createPointComponentSlot(
+		PointId point_id,
+		PointComponentTypeId type_id,
+		const void* init_data = nullptr);
 
 		Point& getPoint(PointId id);
 		const Point& getPoint(PointId id) const;

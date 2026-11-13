@@ -230,6 +230,6 @@ namespace danikk_space_engine
 		{
 			data.getChunk(chunk_id).createMesh();
 		}
-		controller.selected_polygons = DynamicArray<FacePtr>();
+		getLocalPlayerController().selected_polygons = DynamicArray<FacePtr>();
 	}
 }

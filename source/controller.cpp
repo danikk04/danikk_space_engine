@@ -5,6 +5,51 @@
 
 namespace danikk_space_engine
 {
+	void constructLocalPlayerController(void* destination, const void* init_data)
+	{
+		if(destination == nullptr)
+		{
+			danikk_engine::formatFatalError("Local player controller construction received null destination");
+		}
+		if(init_data == nullptr)
+		{
+			new (destination) LocalPlayerController();
+		}
+		else
+		{
+			new (destination) LocalPlayerController(*static_cast<const LocalPlayerController*>(init_data));
+		}
+	}
+
+	void moveLocalPlayerController(void* destination, void* source)
+	{
+		if(destination == nullptr || source == nullptr)
+		{
+			danikk_engine::formatFatalError("Local player controller move received null memory");
+		}
+		LocalPlayerController* source_controller = static_cast<LocalPlayerController*>(source);
+		new (destination) LocalPlayerController(static_cast<LocalPlayerController&&>(*source_controller));
+		source_controller->~LocalPlayerController();
+	}
+
+	void destroyLocalPlayerController(void* data)
+	{
+		if(data == nullptr)
+		{
+			danikk_engine::formatFatalError("Local player controller destruction received null memory");
+		}
+		static_cast<LocalPlayerController*>(data)->~LocalPlayerController();
+	}
+
+	void tickLocalPlayerController(PointComponentSlot& slot, World& world)
+	{
+		if(slot.getData() == nullptr)
+		{
+			danikk_engine::formatFatalError("Local player controller tick received null data");
+		}
+		static_cast<LocalPlayerController*>(slot.getData())->tick(world);
+	}
+
 	// Handles Alt+E extrusion, Alt+D deletion, and left-click face selection.
 	// Raycasts after the camera and chunk ticks, toggles the hit FacePtr, and clears
 	// all selected faces when clicking empty space.

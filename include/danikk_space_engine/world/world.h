@@ -27,8 +27,8 @@ namespace danikk_space_engine
 	{
 	public:
 		WorldData data;
-		LocalPlayerController controller;
 		PointComponentSlotId camera_component_slot_id = 0;
+		PointComponentSlotId local_player_controller_slot_id = 0;
 
 		void tick();
 
@@ -44,6 +44,8 @@ namespace danikk_space_engine
 		const CameraComponent& getCameraComponent() const;
 		Point& getCameraPoint();
 		const Point& getCameraPoint() const;
+		LocalPlayerController& getLocalPlayerController();
+		const LocalPlayerController& getLocalPlayerController() const;
 		DynamicArray<FacePtr> extrudeFaces(const DynamicArray<FacePtr>& faces, float distance);
 		void deleteVolumeCells(const DynamicArray<FacePtr>& faces);
 	};

@@ -14,6 +14,7 @@ namespace danikk_space_engine
 	{
 		none = 0,
 		camera,
+		local_player_controller,
 		machine_gun,
 		engine,
 		count
@@ -28,6 +29,7 @@ using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& w
 	{
 		size_t data_size = 0;
 		size_t data_alignment = 1;
+		bool inline_relocatable = false;
 		PointComponentConstructFunction construct = nullptr;
 		PointComponentMoveFunction move = nullptr;
 		PointComponentDestroyFunction destroy = nullptr;

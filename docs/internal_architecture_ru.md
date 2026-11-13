@@ -36,13 +36,14 @@ begin()
 classDiagram
     class World {
         +WorldData data
-        +LocalPlayerController controller
         +PointComponentSlotId camera_component_slot_id
+        +PointComponentSlotId local_player_controller_slot_id
         +init()
         +tick()
         +frame()
         +raycast() RaycastHit
         +extrudeFaces() DynamicArray~FacePtr~
+        +getLocalPlayerController() LocalPlayerController
     }
 
     class WorldData {
@@ -53,7 +54,7 @@ classDiagram
         +createPoint() PointId
         +createVolumeCell() VolumeCellId
         +createChunk() Chunk
-        +createPointComponentSlot() PointComponentSlotId
+        +createPointComponentSlot(point_id, type_id) PointComponentSlotId
         +getPoint(id) Point
         +getVolumeCell(id) VolumeCell
         +getChunk(id) Chunk
@@ -80,6 +81,7 @@ classDiagram
     class PointComponentType {
         +size_t data_size
         +size_t data_alignment
+        +bool inline_relocatable
         +construct(destination, init_data)
         +move(destination, source)
         +destroy(data)
@@ -162,14 +164,16 @@ classDiagram
     }
 
     World *-- WorldData : владеет
-    World *-- LocalPlayerController : владеет
+    World ..> PointComponentSlot : хранит ID активных camera и controller
     WorldData *-- Point : хранит
     WorldData *-- VolumeCell : хранит
     WorldData *-- Chunk : хранит
     WorldData *-- PointComponentSlot : хранит
     PointComponentSlot ..> Point : привязан к PointId
     PointComponentSlot ..> PointComponentType : разрешает type_id через таблицу
+    PointComponentSlot ..> LocalPlayerController : payload типа local_player_controller
     PointComponentType ..> CameraComponent : payload типа camera
+    PointComponentType ..> LocalPlayerController : payload типа local_player_controller
     Chunk ..> WorldData : получает ячейки и точки через world
     Chunk ..> VolumeCellId : хранит ID ячеек
     VolumeCell ..> PointId : ссылается на точки
@@ -195,11 +199,11 @@ classDiagram
 - `World` — управляет состоянием мира и его кадром. Глобальный экземпляр `world` определён в `world.cpp`.
   - Поля:
     - `data` — `WorldData`, хранилище точек и `VolumeCell`.
-    - `controller` — `LocalPlayerController`, выделение и редактирование полигонов.
     - `camera_component_slot_id` — ID активного компонента камеры.
+    - `local_player_controller_slot_id` — ID компонента локального контроллера.
   - Методы:
     - `init()` — очищает данные и чанки; создаёт точку камеры, тестовую призму и бипирамиду в одном чанке; строит меш чанка.
-    - `tick()` — обновляет компоненты каждого чанка, затем обрабатывает ввод выделения и геометрического редактирования в контроллере.
+    - `tick()` — обновляет компоненты каждого чанка, включая камеру и локальный контроллер.
     - `frame()` — строит матрицу вида по активной камере; вызывает `Chunk::frame()` для настройки проекции, затем `Chunk::draw()` и `drawPolygonHighlights(*this)`.
     - `raycast(origin, direction)` — обходит видимые треугольники ячеек и возвращает ближайшее попадание.
     - `raycastFromCamera()` — запускает raycast из точки камеры в направлении взгляда.
@@ -231,7 +235,9 @@ classDiagram
     - `getPointCount()` — возвращает количество точек.
     - `getVolumeCellCount()` — возвращает количество ячеек.
     - `getChunkCount()` — возвращает количество чанков.
-    - `createPointComponentSlot()`, `getPointComponentSlot(id)`, `getPointComponentSlotCount()` — создание и доступ к слотам компонентов.
+    - `createPointComponentSlot(point_id, type_id, init_data)` — выбирает хранилище по размеру и требованиям типа, вызывает конструктор и возвращает ID.
+    - `getPointComponentSlot(id)` — возвращает слот по ID.
+    - `getPointComponentSlotCount()` — возвращает количество слотов.
     - `clear()` — уничтожает элементы массивов, сохраняя их ёмкость.
     - `release()` — освобождает память массивов.
 
@@ -244,21 +250,22 @@ classDiagram
 
 ## component/point_component.h:
 
-- `PointComponentTypeId` — enum ID типа компонента точки: `none`, `camera`, `machine_gun`, `engine`, `count`.
+- `PointComponentTypeId` — enum ID типа компонента точки: `none`, `camera`, `local_player_controller`, `machine_gun`, `engine`, `count`.
 - `PointComponentType` — описание типа и таблица его операций.
   - Поля:
     - `data_size`, `data_alignment` — размер и выравнивание payload.
+    - `inline_relocatable` — гарантирует безопасное побайтовое перемещение payload при хранении inline.
     - `construct`, `move`, `destroy` — указатели на функции жизненного цикла payload.
     - `tick`, `frame` — указатели на функции обновления и отрисовки.
 - `getPointComponentType(type_id)` — возвращает описание из таблицы в `source/component/point_component.cpp`; неизвестный ID возвращает запись `none`.
 - `PointComponentSlot` — экземпляр компонента, привязанный к `PointId`.
   - Поля:
     - `type_id` — индекс типа в таблице описаний.
-    - `inline_data` — встроенное хранилище до 32 байт.
+    - `inline_data` — встроенное хранилище до 32 байт для inline-перемещаемых типов.
     - `external_data` — указатель на внешнее хранилище для большего payload.
     - `uses_external_data` — указывает, какое хранилище используется.
 
-`WorldData` владеет массивом `PointComponentSlot`. Тип `camera` зарегистрирован; `machine_gun` и `engine` пока имеют пустые записи.
+`WorldData` владеет массивом `PointComponentSlot`. Типы `camera` и `local_player_controller` зарегистрированы; `machine_gun` и `engine` пока имеют пустые записи. Payload контроллера хранится снаружи, поскольку содержит `DynamicArray`.
 
 ## component/camera.h:
 
@@ -341,11 +348,13 @@ classDiagram
     - `selected_polygons` — `DynamicArray<FacePtr>` выделенных граней.
   - Методы:
     - `tick(world)` — выполняет экструдирование по Alt+E, удаление по Alt+D, переключает грань по ЛКМ и снимает выделение при клике мимо.
+- `constructLocalPlayerController()`, `moveLocalPlayerController()`, `destroyLocalPlayerController()`, `tickLocalPlayerController()` — callbacks типа `local_player_controller`.
+- `World::getLocalPlayerController()` — возвращает payload компонента по активному slot ID.
 
 ## polygon_highlight.h:
 
 - `drawPolygonHighlight(world, face, mesh, color)` — рисует одну подсвеченную грань.
-- `drawPolygonHighlights(world)` — рисует все выделенные грани белым и текущую грань под курсором красным; вызывается из `World::frame()`.
+- `drawPolygonHighlights(world)` — рисует грани из `World::getLocalPlayerController().selected_polygons` и грань под курсором; вызывается из `World::frame()`.
 
 Зажатие Alt отключает ввод камеры, поэтому Alt+E и Alt+D доступны контроллеру редактирования.
 
