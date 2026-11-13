@@ -50,30 +50,47 @@ namespace danikk_space_engine
 		static_cast<LocalPlayerControllerComponent*>(slot.getData())->tick(world);
 	}
 
-	// Handles Alt+E extrusion, Alt+D deletion, and left-click face selection.
-	// Raycasts after the camera and chunk ticks, toggles the hit FacePtr, and clears
-	// all selected faces when clicking empty space.
+	// Keeps selected faces at the start of selected_faces and appends the hovered face
+	// when it is not already selected. This lets editing operate on the selected prefix,
+	// while rendering gets both selection and hover state from the same array.
 	void LocalPlayerControllerComponent::tick(World& world)
 	{
+		if(selected_faces.size() > selected_face_count)
+		{
+			selected_faces.resize(selected_face_count);
+		}
+
 		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
 		const bool alt_down = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
+		const RaycastHit edit_hit = world.raycastFromCamera();
+		const bool edit_uses_selection = selected_face_count > 0;
+		DynamicArray<FacePtr> hovered_face;
+		if(!edit_uses_selection && edit_hit.hit)
+		{
+			hovered_face.push(edit_hit.face);
+		}
+		const DynamicArray<FacePtr>& edit_faces = selected_face_count > 0
+			? selected_faces
+			: hovered_face;
+
 		if(alt_down
 			&& getKeyboardState(keyboard_buttons::e) == button_states::press
-			&& selected_polygons.size() > 0)
+			&& edit_faces.size() > 0)
 		{
-			DynamicArray<FacePtr> extruded_faces = world.extrudeFaces(selected_polygons, 1.0f);
-			if(extruded_faces.size() > 0)
+			DynamicArray<FacePtr> extruded_faces = world.extrudeFaces(edit_faces, 1.0f);
+			if(edit_uses_selection && extruded_faces.size() > 0)
 			{
-				selected_polygons = static_cast<DynamicArray<FacePtr>&&>(extruded_faces);
+				selected_faces = static_cast<DynamicArray<FacePtr>&&>(extruded_faces);
+				selected_face_count = selected_faces.size();
 			}
 		}
 		if(alt_down
 			&& getKeyboardState(keyboard_buttons::d) == button_states::press
-			&& selected_polygons.size() > 0)
+			&& edit_faces.size() > 0)
 		{
-			world.deleteVolumeCells(selected_polygons);
+			world.deleteVolumeCells(edit_faces);
 		}
 
 		const RaycastHit hit = world.raycastFromCamera();
@@ -81,10 +98,10 @@ namespace danikk_space_engine
 		{
 			if(hit.hit)
 			{
-				size_t selected_index = selected_polygons.size();
-				for(size_t i = 0; i < selected_polygons.size(); i++)
+				size_t selected_index = selected_face_count;
+				for(size_t i = 0; i < selected_face_count; i++)
 				{
-					const FacePtr& selected = selected_polygons[i];
+					const FacePtr& selected = selected_faces[i];
 					if(selected == hit.face)
 					{
 						selected_index = i;
@@ -92,28 +109,47 @@ namespace danikk_space_engine
 					}
 				}
 
-				if(selected_index < selected_polygons.size())
+				if(selected_index < selected_face_count)
 				{
-					for(size_t i = selected_index; i + 1 < selected_polygons.size(); i++)
+					for(size_t i = selected_index; i + 1 < selected_face_count; i++)
 					{
-						selected_polygons[i] = selected_polygons[i + 1];
+						selected_faces[i] = selected_faces[i + 1];
 					}
-					selected_polygons.resize(selected_polygons.size() - 1);
-					if(selected_polygons.size() == 0)
-					{
-						selected_polygons = DynamicArray<FacePtr>();
-					}
+					selected_faces.resize(selected_faces.size() - 1);
+					selected_face_count--;
 				}
 				else
 				{
-					selected_polygons.push(hit.face);
+					selected_faces.push(hit.face);
+					selected_face_count++;
 				}
 			}
 			else
 			{
-				selected_polygons = DynamicArray<FacePtr>();
+				selected_faces = DynamicArray<FacePtr>();
+				selected_face_count = 0;
 			}
 		}
 
+		if(hit.hit)
+		{
+			bool already_selected = false;
+			for(size_t i = 0; i < selected_face_count; i++)
+			{
+				if(selected_faces[i] == hit.face)
+				{
+					already_selected = true;
+					break;
+				}
+			}
+			if(!already_selected)
+			{
+				selected_faces.push(hit.face);
+			}
+		}
+		else if(selected_face_count == 0 && selected_faces.size() == 0)
+		{
+			selected_faces = DynamicArray<FacePtr>();
+		}
 	}
 }

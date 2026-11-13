@@ -6,18 +6,6 @@
 
 namespace danikk_space_engine
 {
-	static bool isSelected(const DynamicArray<FacePtr>& selected_polygons, const FacePtr& face)
-	{
-		for(const FacePtr& selected : selected_polygons)
-		{
-			if(selected == face)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
 	// Draws the selected face of a volume cell as a slightly inset overlay toward the camera.
 	// Collects unique face points from the topology triangles, computes the face center,
 	// rebuilds its triangles with a small camera offset, uploads them, and draws in the chunk transform.
@@ -170,15 +158,11 @@ namespace danikk_space_engine
 		const vec4 selected_color(0.5f, 0.5f, 0.5f, 1.0f);
 		const vec4 hover_color(1.0f, 0.15f, 0.15f, 1.0f);
 
-		for(const FacePtr& selected : world.getLocalPlayerControllerComponent().selected_polygons)
+		const LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
+		for(size_t i = 0; i < controller.selected_faces.size(); i++)
 		{
-			drawPolygonHighlight(world, selected, highlight_mesh, selected_color);
-		}
-
-		const RaycastHit hit = world.raycastFromCamera();
-		if(hit.hit && !isSelected(world.getLocalPlayerControllerComponent().selected_polygons, hit.face))
-		{
-			drawPolygonHighlight(world, hit.face, highlight_mesh, hover_color);
+			const vec4& color = i < controller.selected_face_count ? selected_color : hover_color;
+			drawPolygonHighlight(world, controller.selected_faces[i], highlight_mesh, color);
 		}
 	}
 }

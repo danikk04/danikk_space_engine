@@ -123,7 +123,7 @@ classDiagram
     }
 
     class LocalPlayerControllerComponent {
-        +DynamicArray~FacePtr~ selected_polygons
+        +DynamicArray~FacePtr~ selected_faces
         +tick(World)
     }
 
@@ -345,16 +345,17 @@ classDiagram
 
 - `LocalPlayerControllerComponent` — обрабатывает выделение и редактирование полигонов.
   - Поля:
-    - `selected_polygons` — `DynamicArray<FacePtr>` выделенных граней.
+    - `selected_faces` — `DynamicArray<FacePtr>`: сначала закреплённые выделения, затем грань под курсором, если она не выделена.
+    - `selected_face_count` — число закреплённых выделений в начале массива; оставшийся элемент, если есть, является наведённой гранью.
   - Методы:
-    - `tick(world)` — выполняет экструдирование по Alt+E, удаление по Alt+D, переключает грань по ЛКМ и снимает выделение при клике мимо.
+    - `tick(world)` — Alt+E экструдирует и Alt+D удаляет закреплённые грани; если выделений нет, действия применяются к грани под курсором. Экструдирование наведённой грани не создаёт закреплённого выделения. ЛКМ переключает выделение и снимает его при клике мимо.
 - `constructLocalPlayerControllerComponent()`, `moveLocalPlayerControllerComponent()`, `destroyLocalPlayerControllerComponent()`, `tickLocalPlayerControllerComponent()` — callbacks типа `local_player_controller_component`, реализованы в `source/component/local_player_controller.cpp`.
 - `World::getLocalPlayerControllerComponent()` — возвращает payload компонента по активному slot ID.
 
-## polygon_highlight.h:
+## effects/polygon_highlight.h:
 
 - `drawPolygonHighlight(world, face, mesh, color)` — рисует одну подсвеченную грань.
-- `drawPolygonHighlights(world)` — рисует грани из `World::getLocalPlayerControllerComponent().selected_polygons` и грань под курсором; вызывается из `World::frame()`.
+- `drawPolygonHighlights(world)` — рисует выбранные и наведённую грани из `LocalPlayerControllerComponent::selected_faces`; вызывается из `World::frame()`.
 
 Зажатие Alt отключает ввод камеры, поэтому Alt+E и Alt+D доступны контроллеру редактирования.
 
@@ -371,7 +372,7 @@ classDiagram
 - `RayTriangleIntersection` — результат пересечения: флаг, расстояние и нормаль.
 - `intersectRayTriangle(ray, a, b, c)` — использует алгоритм Мёллера — Трумбора, проверяя параллельность, барицентрические координаты и пересечение перед началом луча. Реализована в `math/ray.cpp`; не обходит мир — обход выполняет `World::raycast()`.
 
-## polygon_highlight.h:
+## effects/polygon_highlight.h:
 
 - `drawPolygonHighlight(world, face, highlight_mesh, color)` — находит грань по `FacePtr`, собирает её треугольники, слегка уменьшает геометрию вокруг центра, смещает её к камере и рисует заданным цветом с матрицей чанка.
 

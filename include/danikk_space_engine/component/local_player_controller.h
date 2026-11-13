@@ -11,7 +11,8 @@ namespace danikk_space_engine
 	class LocalPlayerControllerComponent
 	{
 	public:
-		DynamicArray<FacePtr> selected_polygons;
+		DynamicArray<FacePtr> selected_faces;
+		size_t selected_face_count = 0;
 
 		void tick(World& world);
 	};
