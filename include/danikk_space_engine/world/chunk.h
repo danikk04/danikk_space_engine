@@ -3,7 +3,7 @@
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_engine/mesh.h>
 
-#include <danikk_space_engine/component/point_component.h>
+#include <danikk_space_engine/component/point.h>
 #include <danikk_space_engine/world/volume_cell.h>
 
 namespace danikk_space_engine

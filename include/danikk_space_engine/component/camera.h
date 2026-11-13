@@ -1,6 +1,6 @@
 #pragma once
 
-#include <danikk_space_engine/component/point_component.h>
+#include <danikk_space_engine/component/point.h>
 
 namespace danikk_space_engine
 {

@@ -248,7 +248,7 @@ classDiagram
   - Точка камеры хранится непосредственно в мировых координатах и задаётся `PointComponentSlot::point_id`.
 - `PointId` — псевдоним `uint32`, индекс в `WorldData::points`.
 
-## component/point_component.h:
+## component/point.h:
 
 - `PointComponentTypeId` — enum ID типа компонента точки: `none`, `camera`, `local_player_controller_component`, `machine_gun`, `engine`, `count`.
 - `PointComponentType` — описание типа и таблица его операций.
@@ -257,7 +257,7 @@ classDiagram
     - `inline_relocatable` — гарантирует безопасное побайтовое перемещение payload при хранении inline.
     - `construct`, `move`, `destroy` — указатели на функции жизненного цикла payload.
     - `tick`, `frame` — указатели на функции обновления и отрисовки.
-- `getPointComponentType(type_id)` — возвращает описание из таблицы в `source/component/point_component.cpp`; неизвестный ID возвращает запись `none`.
+- `getPointComponentType(type_id)` — возвращает описание из таблицы в `source/component/point.cpp`; неизвестный ID возвращает запись `none`.
 - `PointComponentSlot` — экземпляр компонента, привязанный к `PointId`.
   - Поля:
     - `type_id` — индекс типа в таблице описаний.
@@ -341,14 +341,14 @@ classDiagram
 
 `FacePtr` используется результатами raycast, контроллером выделения и подсветкой. ID сохраняют значение, пока соответствующие элементы не перемещаются на другие индексы. Удаления с уплотнением массивов и счётчиков поколений пока нет.
 
-## component/local_player_controller_component.h:
+## component/local_player_controller.h:
 
 - `LocalPlayerControllerComponent` — обрабатывает выделение и редактирование полигонов.
   - Поля:
     - `selected_polygons` — `DynamicArray<FacePtr>` выделенных граней.
   - Методы:
     - `tick(world)` — выполняет экструдирование по Alt+E, удаление по Alt+D, переключает грань по ЛКМ и снимает выделение при клике мимо.
-- `constructLocalPlayerControllerComponent()`, `moveLocalPlayerControllerComponent()`, `destroyLocalPlayerControllerComponent()`, `tickLocalPlayerControllerComponent()` — callbacks типа `local_player_controller_component`, реализованы в `source/component/local_player_controller_component.cpp`.
+- `constructLocalPlayerControllerComponent()`, `moveLocalPlayerControllerComponent()`, `destroyLocalPlayerControllerComponent()`, `tickLocalPlayerControllerComponent()` — callbacks типа `local_player_controller_component`, реализованы в `source/component/local_player_controller.cpp`.
 - `World::getLocalPlayerControllerComponent()` — возвращает payload компонента по активному slot ID.
 
 ## polygon_highlight.h:
