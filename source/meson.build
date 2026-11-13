@@ -1,6 +1,5 @@
 sources = files(
 	'asset.cpp', 
-	'controller.cpp',
 	'gui.cpp', 
 	'keybind.cpp', 
 	'localization.cpp', 

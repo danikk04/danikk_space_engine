@@ -341,14 +341,14 @@ classDiagram
 
 `FacePtr` используется результатами raycast, контроллером выделения и подсветкой. ID сохраняют значение, пока соответствующие элементы не перемещаются на другие индексы. Удаления с уплотнением массивов и счётчиков поколений пока нет.
 
-## controller.h:
+## component/local_player_controller.h:
 
 - `LocalPlayerController` — обрабатывает выделение и редактирование полигонов.
   - Поля:
     - `selected_polygons` — `DynamicArray<FacePtr>` выделенных граней.
   - Методы:
     - `tick(world)` — выполняет экструдирование по Alt+E, удаление по Alt+D, переключает грань по ЛКМ и снимает выделение при клике мимо.
-- `constructLocalPlayerController()`, `moveLocalPlayerController()`, `destroyLocalPlayerController()`, `tickLocalPlayerController()` — callbacks типа `local_player_controller`.
+- `constructLocalPlayerController()`, `moveLocalPlayerController()`, `destroyLocalPlayerController()`, `tickLocalPlayerController()` — callbacks типа `local_player_controller`, реализованы в `source/component/local_player_controller.cpp`.
 - `World::getLocalPlayerController()` — возвращает payload компонента по активному slot ID.
 
 ## polygon_highlight.h:

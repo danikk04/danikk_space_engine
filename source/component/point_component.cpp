@@ -1,6 +1,6 @@
 #include <danikk_space_engine/component/point_component.h>
 #include <danikk_space_engine/component/camera.h>
-#include <danikk_space_engine/controller.h>
+#include <danikk_space_engine/component/local_player_controller.h>
 
 namespace danikk_space_engine
 {
