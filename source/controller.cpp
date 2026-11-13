@@ -50,13 +50,17 @@ namespace danikk_space_engine
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
 		const bool alt_down = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
+		if(alt_down)
+		{
+			return;
+		}
 		const int q_state = getKeyboardState(keyboard_buttons::q);
 		if(q_state == button_states::press || q_state == button_states::hold)
 		{
 			rotation.z -= roll_delta;
 		}
 		const int e_state = getKeyboardState(keyboard_buttons::e);
-		if(!alt_down && (e_state == button_states::press || e_state == button_states::hold))
+		if(e_state == button_states::press || e_state == button_states::hold)
 		{
 			rotation.z += roll_delta;
 		}
@@ -124,6 +128,12 @@ namespace danikk_space_engine
 			{
 				selected_polygons = static_cast<DynamicArray<FacePtr>&&>(extruded_faces);
 			}
+		}
+		if(alt_down
+			&& getKeyboardState(keyboard_buttons::d) == button_states::press
+			&& selected_polygons.size() > 0)
+		{
+			world.deleteVolumeCells(selected_polygons);
 		}
 
 		const RaycastHit hit = world.raycastFromCamera();

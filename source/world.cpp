@@ -249,6 +249,80 @@ namespace danikk_space_engine
 		return result;
 	}
 
+	// Removes selected cells from their owning chunks while preserving global IDs.
+	// Deleted cells are marked with the `none` topology, affected meshes are rebuilt,
+	// and the controller selection is cleared to invalidate removed face references.
+	void World::deleteVolumeCells(const DynamicArray<FacePtr>& faces)
+	{
+		DynamicArray<VolumeCellId> deleted_cell_ids;
+		DynamicArray<ChunkId> modified_chunk_ids;
+
+		for(const FacePtr& face : faces)
+		{
+			if(face.chunk_id >= chunks.size() || face.cell_id >= data.getVolumeCellCount())
+			{
+				continue;
+			}
+
+			bool already_deleted = false;
+			for(VolumeCellId deleted_cell_id : deleted_cell_ids)
+			{
+				if(deleted_cell_id == face.cell_id)
+				{
+					already_deleted = true;
+					break;
+				}
+			}
+			if(already_deleted)
+			{
+				continue;
+			}
+
+			Chunk& chunk = chunks[face.chunk_id];
+			size_t cell_index = chunk.volume_cell_ids.size();
+			for(size_t i = 0; i < chunk.volume_cell_ids.size(); i++)
+			{
+				if(chunk.volume_cell_ids[i] == face.cell_id)
+				{
+					cell_index = i;
+					break;
+				}
+			}
+			if(cell_index == chunk.volume_cell_ids.size())
+			{
+				continue;
+			}
+
+			for(size_t i = cell_index; i + 1 < chunk.volume_cell_ids.size(); i++)
+			{
+				chunk.volume_cell_ids[i] = chunk.volume_cell_ids[i + 1];
+			}
+			chunk.volume_cell_ids.resize(chunk.volume_cell_ids.size() - 1);
+			data.getVolumeCell(face.cell_id).topology = VolumeCellTopology::none;
+			deleted_cell_ids.push(face.cell_id);
+
+			bool chunk_already_modified = false;
+			for(ChunkId modified_chunk_id : modified_chunk_ids)
+			{
+				if(modified_chunk_id == face.chunk_id)
+				{
+					chunk_already_modified = true;
+					break;
+				}
+			}
+			if(!chunk_already_modified)
+			{
+				modified_chunk_ids.push(face.chunk_id);
+			}
+		}
+
+		for(ChunkId chunk_id : modified_chunk_ids)
+		{
+			chunks[chunk_id].createMesh();
+		}
+		controller.selected_polygons = DynamicArray<FacePtr>();
+	}
+
 	void World::tick()
 	{
 		controller.tick(data);
