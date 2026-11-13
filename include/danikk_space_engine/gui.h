@@ -10,6 +10,8 @@ namespace danikk_space_engine
 	class GUI
 	{
 		GUIElement debug_info_label;
+		size_t memory_sample_bytes = 0;
+		float memory_sample_timer = 1.0f;
 	public:
 		void define();
 

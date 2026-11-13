@@ -4,6 +4,7 @@
 
 #include <danikk_framework/glm.h>
 #include <danikk_framework/format.h>
+#include <danikk_framework/memory.h>
 
 namespace danikk_space_engine
 {
@@ -33,10 +34,32 @@ namespace danikk_space_engine
 
 	void GUI::frame()
 	{
+		memory_sample_timer += getTargetFrameDelay();
+		if(memory_sample_timer >= 1.0f)
+		{
+			memory_sample_bytes = getProcessMemoryUsageBytes();
+			memory_sample_timer = 0.0f;
+		}
+
+		const vec3 camera_position = truncateTo100(world.data.getPoint(world.controller.target_point_id).position);
+		if(memory_sample_bytes == 0)
+		{
+			format(
+				debug_info_label.text,
+				"FPS:%\nRAM: unavailable\ncamera_pos:%",
+				fps_counter.getValue(),
+				camera_position);
+			return;
+		}
+
+		const size_t whole_mebibytes = memory_sample_bytes / mib(1);
+		const size_t tenths_of_mebibyte = (memory_sample_bytes % mib(1)) * 10 / mib(1);
 		format(
 			debug_info_label.text,
-			"FPS:%\ncamera_pos:%",
+			"FPS:%\nRAM:%.% MiB\ncamera_pos:%",
 			fps_counter.getValue(),
-			truncateTo100(world.data.getPoint(world.controller.target_point_id).position));
+			whole_mebibytes,
+			tenths_of_mebibyte,
+			camera_position);
 	}
 }
