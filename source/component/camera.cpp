@@ -72,7 +72,7 @@ namespace danikk_space_engine
 		{
 			danikk_engine::formatFatalError("Camera component tick received null data");
 		}
-		if(slot.point_id >= world.data.getPointCount())
+		if(!world.data.isPointActive(slot.point_id))
 		{
 			danikk_engine::formatFatalError("Camera component references invalid point %", slot.point_id);
 		}

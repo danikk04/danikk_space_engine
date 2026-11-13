@@ -18,12 +18,12 @@ namespace danikk_space_engine
 
 		Chunk* findOwningChunk(PointComponentSlot& slot, World& world)
 		{
-			for(ChunkId chunk_id = 0; chunk_id < world.data.getChunkCount(); chunk_id++)
+			for(ChunkId chunk_id : world.data.getUsedChunkIds())
 			{
 				Chunk& chunk = world.data.getChunk(chunk_id);
 				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 				{
-					if(slot_id < world.data.getPointComponentSlotCount()
+					if(world.data.isPointComponentSlotActive(slot_id)
 						&& &world.data.getPointComponentSlot(slot_id) == &slot)
 					{
 						return &chunk;
@@ -101,7 +101,7 @@ namespace danikk_space_engine
 		Chunk* owner_chunk = nullptr;
 		if(spawn_machinegun)
 		{
-			if(slot.point_id >= world.data.getPointCount())
+			if(!world.data.isPointActive(slot.point_id))
 			{
 				danikk_engine::formatFatalError("Local player controller references invalid point %", slot.point_id);
 			}

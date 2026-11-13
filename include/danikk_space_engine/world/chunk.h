@@ -17,6 +17,7 @@ namespace danikk_space_engine
 		DynamicArray<uint8> shared_face_masks;
 
 	public:
+		bool mesh_dirty = true;
 		vec3 position = vec3(0.0f);
 		DynamicArray<VolumeCellId> volume_cell_ids;
 		DynamicArray<PointComponentSlotId> point_component_slot_ids;
@@ -37,5 +38,6 @@ namespace danikk_space_engine
 		mat4 createWorldMatrix() const;
 		void draw();
 		void destroyMesh();
+		void invalidateMesh();
 	};
 }

@@ -15,13 +15,13 @@ namespace danikk_space_engine
 		Mesh& highlight_mesh,
 		const vec4& color)
 	{
-		if(face.chunk_id >= world.data.getChunkCount())
+		if(!world.data.isChunkActive(face.chunk_id))
 		{
 			return;
 		}
 
 		const Chunk& chunk = world.data.getChunk(face.chunk_id);
-		if(face.cell_id >= world.data.getVolumeCellCount())
+		if(!world.data.isVolumeCellActive(face.cell_id))
 		{
 			return;
 		}
@@ -46,7 +46,7 @@ namespace danikk_space_engine
 			for(uint8 corner_index = 0; corner_index < 3; corner_index++)
 			{
 				const PointId point_id = cell.points[triangle.points[corner_index]];
-				if(point_id >= world.data.getPointCount())
+				if(!world.data.isPointActive(point_id))
 				{
 					continue;
 				}
@@ -66,7 +66,7 @@ namespace danikk_space_engine
 				}
 			}
 		}
-		if(face_point_count < 3 || world.getCameraSlot().point_id >= world.data.getPointCount())
+		if(face_point_count < 3 || !world.data.isPointActive(world.getCameraSlot().point_id))
 		{
 			return;
 		}
@@ -106,7 +106,9 @@ namespace danikk_space_engine
 				cell.points[triangle.points[1]],
 				cell.points[triangle.points[2]]
 			};
-			if(point_ids[0] >= world.data.getPointCount() || point_ids[1] >= world.data.getPointCount() || point_ids[2] >= world.data.getPointCount())
+			if(!world.data.isPointActive(point_ids[0])
+				|| !world.data.isPointActive(point_ids[1])
+				|| !world.data.isPointActive(point_ids[2]))
 			{
 				continue;
 			}

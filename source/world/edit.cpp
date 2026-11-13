@@ -23,7 +23,7 @@ namespace danikk_space_engine
 
 		for(const FacePtr& face : faces)
 		{
-			if(face.chunk_id >= data.getChunkCount() || face.cell_id >= data.getVolumeCellCount())
+			if(!data.isChunkActive(face.chunk_id) || !data.isVolumeCellActive(face.cell_id))
 			{
 				continue;
 			}
@@ -63,9 +63,9 @@ namespace danikk_space_engine
 				source_cell.points[face_triangle->points[1]],
 				source_cell.points[face_triangle->points[2]]
 			};
-			if(normal_point_ids[0] >= data.getPointCount()
-				|| normal_point_ids[1] >= data.getPointCount()
-				|| normal_point_ids[2] >= data.getPointCount())
+			if(!data.isPointActive(normal_point_ids[0])
+				|| !data.isPointActive(normal_point_ids[1])
+				|| !data.isPointActive(normal_point_ids[2]))
 			{
 				continue;
 			}
@@ -74,7 +74,7 @@ namespace danikk_space_engine
 			bool valid_points = true;
 			for(uint8 point_index = 0; point_index < point_count; point_index++)
 			{
-				if(base_point_ids[point_index] >= data.getPointCount())
+				if(!data.isPointActive(base_point_ids[point_index]))
 				{
 					valid_points = false;
 					break;
@@ -159,9 +159,8 @@ namespace danikk_space_engine
 		return result;
 	}
 
-	// Removes selected cells from their owning chunks while preserving global IDs.
-	// Deleted cells are marked with the `none` topology, affected meshes are rebuilt,
-	// and the controller selection is cleared to invalidate removed face references.
+	// Deletes each selected cell through WorldData, which removes its chunk references and
+	// returns the slot to the free list. Rebuilds affected meshes and clears stale selection.
 	void World::deleteVolumeCells(const DynamicArray<FacePtr>& faces)
 	{
 		DynamicArray<VolumeCellId> deleted_cell_ids;
@@ -169,7 +168,7 @@ namespace danikk_space_engine
 
 		for(const FacePtr& face : faces)
 		{
-			if(face.chunk_id >= data.getChunkCount() || face.cell_id >= data.getVolumeCellCount())
+			if(!data.isChunkActive(face.chunk_id) || !data.isVolumeCellActive(face.cell_id))
 			{
 				continue;
 			}
@@ -188,27 +187,7 @@ namespace danikk_space_engine
 				continue;
 			}
 
-			Chunk& chunk = data.getChunk(face.chunk_id);
-			size_t cell_index = chunk.volume_cell_ids.size();
-			for(size_t i = 0; i < chunk.volume_cell_ids.size(); i++)
-			{
-				if(chunk.volume_cell_ids[i] == face.cell_id)
-				{
-					cell_index = i;
-					break;
-				}
-			}
-			if(cell_index == chunk.volume_cell_ids.size())
-			{
-				continue;
-			}
-
-			for(size_t i = cell_index; i + 1 < chunk.volume_cell_ids.size(); i++)
-			{
-				chunk.volume_cell_ids[i] = chunk.volume_cell_ids[i + 1];
-			}
-			chunk.volume_cell_ids.resize(chunk.volume_cell_ids.size() - 1);
-			data.getVolumeCell(face.cell_id).topology = VolumeCellTopology::none;
+			data.destroyVolumeCell(face.cell_id);
 			deleted_cell_ids.push(face.cell_id);
 
 			bool chunk_already_modified = false;

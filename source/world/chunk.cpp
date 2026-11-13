@@ -69,7 +69,8 @@ namespace danikk_space_engine
 
 	Chunk::Chunk(Chunk&& other) noexcept
 		: mesh(other.mesh), shared_face_masks(static_cast<DynamicArray<uint8>&&>(other.shared_face_masks)),
-		position(other.position), volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids)),
+		mesh_dirty(other.mesh_dirty), position(other.position),
+		volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids)),
 		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids))
 	{
 		other.mesh = nullptr;
@@ -83,6 +84,7 @@ namespace danikk_space_engine
 		}
 
 		destroyMesh();
+		mesh_dirty = other.mesh_dirty;
 		position = other.position;
 		volume_cell_ids = static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids);
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
@@ -110,6 +112,12 @@ namespace danikk_space_engine
 		mesh = nullptr;
 	}
 
+	void Chunk::invalidateMesh()
+	{
+		mesh_dirty = true;
+		shared_face_masks.clear();
+	}
+
 	void Chunk::addPointComponentSlot(PointComponentSlotId slot_id)
 	{
 		point_component_slot_ids.push(slot_id);
@@ -125,6 +133,7 @@ namespace danikk_space_engine
 			{
 				danikk_engine::formatFatalError("Chunk references invalid point component slot %", slot_id);
 			}
+			if(!world.data.isPointComponentSlotActive(slot_id)) continue;
 
 			PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
 			const PointComponentType& type = getPointComponentType(slot.type_id);
@@ -149,6 +158,7 @@ namespace danikk_space_engine
 			{
 				danikk_engine::formatFatalError("Chunk references invalid point component slot %", slot_id);
 			}
+			if(!world.data.isPointComponentSlotActive(slot_id)) continue;
 
 			PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
 			if(slot.uses_external_data && slot.external_data == nullptr)
@@ -187,9 +197,10 @@ namespace danikk_space_engine
 		for(size_t cell_index = 0; cell_index < volume_cell_ids.size(); cell_index++)
 		{
 			const VolumeCellId cell_id = volume_cell_ids[cell_index];
-			if(cell_id >= world.data.getVolumeCellCount())
+			if(!world.data.isVolumeCellActive(cell_id))
 			{
-				std::abort();
+				shared_face_masks.push(0);
+				continue;
 			}
 			const VolumeCell& cell = world.data.getVolumeCell(cell_id);
 			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
@@ -241,6 +252,7 @@ namespace danikk_space_engine
 		for(size_t cell_index = 0; cell_index < volume_cell_ids.size(); cell_index++)
 		{
 			const VolumeCellId cell_id = volume_cell_ids[cell_index];
+			if(!world.data.isVolumeCellActive(cell_id)) continue;
 			const VolumeCell& cell = world.data.getVolumeCell(cell_id);
 			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
 			const uint8 shared_face_mask = shared_face_masks[cell_index];
@@ -258,7 +270,9 @@ namespace danikk_space_engine
 					cell.points[triangle.points[2]]
 				};
 
-				if(point_ids[0] >= world.data.getPointCount() || point_ids[1] >= world.data.getPointCount() || point_ids[2] >= world.data.getPointCount())
+				if(!world.data.isPointActive(point_ids[0])
+					|| !world.data.isPointActive(point_ids[1])
+					|| !world.data.isPointActive(point_ids[2]))
 				{
 					std::abort();
 				}
@@ -301,19 +315,20 @@ namespace danikk_space_engine
 			indices.data(),
 			indices.size());
 		DefaultVertex::setAttributes();
+		mesh_dirty = false;
 		return *mesh;
 	}
 
 	bool Chunk::hasSharedFace(VolumeCellId cell_id, uint8 face_index) const
 	{
-		if(cell_id >= world.data.getVolumeCellCount())
+		if(!world.data.isVolumeCellActive(cell_id))
 		{
 			return false;
 		}
 		const VolumeCell& cell = world.data.getVolumeCell(cell_id);
 		for(VolumeCellId other_cell_id : volume_cell_ids)
 		{
-			if(other_cell_id == cell_id || other_cell_id >= world.data.getVolumeCellCount())
+			if(other_cell_id == cell_id || !world.data.isVolumeCellActive(other_cell_id))
 			{
 				continue;
 			}
@@ -348,7 +363,7 @@ namespace danikk_space_engine
 		}
 
 		const VolumeCellId cell_id = volume_cell_ids[0];
-		if(cell_id >= world.data.getVolumeCellCount())
+		if(!world.data.isVolumeCellActive(cell_id))
 		{
 			return;
 		}

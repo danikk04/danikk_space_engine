@@ -26,14 +26,14 @@ namespace danikk_space_engine
 		const Ray ray{origin, normalized_direction};
 		float nearest_distance = max_distance;
 
-		for(ChunkId chunk_id = 0; chunk_id < data.getChunkCount(); chunk_id++)
+		for(ChunkId chunk_id : data.getUsedChunkIds())
 		{
 			const Chunk& chunk = data.getChunk(chunk_id);
 			const mat4 chunk_world_matrix = chunk.createWorldMatrix();
 			for(size_t cell_index = 0; cell_index < chunk.volume_cell_ids.size(); cell_index++)
 			{
 				const VolumeCellId cell_id = chunk.volume_cell_ids[cell_index];
-				if(cell_id >= data.getVolumeCellCount())
+				if(!data.isVolumeCellActive(cell_id))
 				{
 					continue;
 				}
@@ -53,7 +53,9 @@ namespace danikk_space_engine
 						cell.points[triangle.points[1]],
 						cell.points[triangle.points[2]]
 					};
-					if(point_ids[0] >= data.getPointCount() || point_ids[1] >= data.getPointCount() || point_ids[2] >= data.getPointCount())
+					if(!data.isPointActive(point_ids[0])
+						|| !data.isPointActive(point_ids[1])
+						|| !data.isPointActive(point_ids[2]))
 					{
 						continue;
 					}
@@ -90,8 +92,12 @@ namespace danikk_space_engine
 		{
 			return RaycastHit{};
 		}
+		if(!data.isPointComponentSlotActive(camera_component_slot_id))
+		{
+			return RaycastHit{};
+		}
 		const PointComponentSlot& camera_slot = data.getPointComponentSlot(camera_component_slot_id);
-		if(camera_slot.point_id >= data.getPointCount())
+		if(!data.isPointActive(camera_slot.point_id))
 		{
 			return RaycastHit{};
 		}
@@ -142,7 +148,7 @@ namespace danikk_space_engine
 
 	void World::tick()
 	{
-		for(ChunkId chunk_id = 0; chunk_id < data.getChunkCount(); chunk_id++)
+		for(ChunkId chunk_id : data.getUsedChunkIds())
 		{
 			data.getChunk(chunk_id).tick(*this);
 		}
@@ -156,11 +162,13 @@ namespace danikk_space_engine
 		const vec3 camera_front = camera.getFront();
 		const mat4 view = glm::lookAt(camera_position, camera_position + camera_front, camera.getUp());
 		setViewMatrix(view);
-		for(ChunkId chunk_id = 0; chunk_id < data.getChunkCount(); chunk_id++)
+		for(ChunkId chunk_id : data.getUsedChunkIds())
 		{
-			data.getChunk(chunk_id).frame(*this);
+			Chunk& chunk = data.getChunk(chunk_id);
+			if(chunk.mesh_dirty) chunk.createMesh();
+			chunk.frame(*this);
 		}
-		for(ChunkId chunk_id = 0; chunk_id < data.getChunkCount(); chunk_id++)
+		for(ChunkId chunk_id : data.getUsedChunkIds())
 		{
 			data.getChunk(chunk_id).draw();
 		}
