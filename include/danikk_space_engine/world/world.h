@@ -27,10 +27,12 @@ namespace danikk_space_engine
 	{
 	public:
 		WorldData data;
+		DynamicArray<PointId> pending_point_destruction_ids;
 		PointComponentSlotId camera_component_slot_id = 0;
 		PointComponentSlotId local_player_controller_component_slot_id = 0;
 
 		void tick();
+		void deferPointDestruction(PointId point_id);
 
 		void frame();
 

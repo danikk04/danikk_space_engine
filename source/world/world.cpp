@@ -152,6 +152,21 @@ namespace danikk_space_engine
 		{
 			data.getChunk(chunk_id).tick(*this);
 		}
+		for(PointId point_id : pending_point_destruction_ids)
+		{
+			if(data.isPointActive(point_id)) data.destroyPoint(point_id);
+		}
+		pending_point_destruction_ids.clear();
+	}
+
+	void World::deferPointDestruction(PointId point_id)
+	{
+		if(!data.isPointActive(point_id)) return;
+		for(PointId queued_point_id : pending_point_destruction_ids)
+		{
+			if(queued_point_id == point_id) return;
+		}
+		pending_point_destruction_ids.push(point_id);
 	}
 
 	void World::frame()
@@ -177,6 +192,7 @@ namespace danikk_space_engine
 
 	void World::init()
 	{
+		pending_point_destruction_ids.clear();
 		startBaseScenario(*this);
 	}
 }

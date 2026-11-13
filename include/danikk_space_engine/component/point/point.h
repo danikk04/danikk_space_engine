@@ -16,6 +16,7 @@ namespace danikk_space_engine
 		camera,
 		local_player_controller_component,
 		machine_gun,
+		bullet,
 		engine,
 		count
 	};
