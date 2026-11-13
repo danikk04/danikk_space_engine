@@ -4,7 +4,7 @@
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/effects/polygon_highlight.h>
-#include <danikk_space_engine/component/machinegun.h>
+#include <danikk_space_engine/scenario/base.h>
 
 namespace danikk_space_engine
 {
@@ -167,93 +167,8 @@ namespace danikk_space_engine
 		drawPolygonHighlights(*this);
 	}
 
-	// Resets world data and builds the initial camera, prism, and bipyramid scene.
-	// Creates points and volume cells through WorldData, assigns cell topology and material,
-	// registers both cells with one chunk, then generates the chunk mesh.
 	void World::init()
 	{
-		data.clear();
-
-		const PointId camera_point_id = data.createPoint();
-		Point& camera_point = data.getPoint(camera_point_id);
-		camera_point.position = vec3(0.0f);
-		Chunk& chunk = data.createChunk();
-		chunk.position = vec3(0.0f, 0.0f, -5.0f);
-		camera_component_slot_id = data.createPointComponentSlot(
-			camera_point_id,
-			PointComponentTypeId::camera);
-		chunk.addPointComponentSlot(camera_component_slot_id);
-		local_player_controller_component_slot_id = data.createPointComponentSlot(
-			camera_point_id,
-			PointComponentTypeId::local_player_controller_component);
-		chunk.addPointComponentSlot(local_player_controller_component_slot_id);
-
-		const PointId machinegun_point_id = data.createPoint();
-		data.getPoint(machinegun_point_id).position = vec3(0.0f, -1.5f, -5.0f);
-		const PointComponentSlotId machinegun_slot_id = data.createPointComponentSlot(
-			machinegun_point_id,
-			PointComponentTypeId::machine_gun);
-		chunk.addPointComponentSlot(machinegun_slot_id);
-
-		const PointId first_prism_point = static_cast<PointId>(data.getPointCount());
-		const vec3 prism_positions[] =
-		{
-			vec3(-1.0f, -0.5f, -0.8f),
-			vec3( 0.0f, -0.5f,  0.8f),
-			vec3( 1.0f, -0.5f, -0.8f),
-			vec3(-1.0f,  0.5f, -0.8f),
-			vec3( 0.0f,  0.5f,  0.8f),
-			vec3( 1.0f,  0.5f, -0.8f)
-		};
-
-		for(uint8 i = 0; i < 6; i++)
-		{
-			Point& point = data.getPoint(data.createPoint());
-			point.position = prism_positions[i];
-		}
-
-		const VolumeCellId prism_id = data.createVolumeCell();
-		VolumeCell& prism = data.getVolumeCell(prism_id);
-		chunk.volume_cell_ids.push(prism_id);
-		for(uint8 i = 0; i < 6; i++)
-		{
-			prism.points[i] = first_prism_point + i;
-		}
-		prism.topology = VolumeCellTopology::triangular_prism;
-		prism.material = default_materials::sandstone;
-		prism.mass = 100.0f;
-		prism.temperature = 293.15f;
-		prism.health = 100.0f;
-
-		const PointId first_bipyramid_point = static_cast<PointId>(data.getPointCount());
-		const vec3 bipyramid_positions[] =
-		{
-			vec3(2.8f,  0.0f, -0.75f),
-			vec3(2.0f,  0.0f,  0.65f),
-			vec3(3.6f,  0.0f,  0.65f),
-			vec3(2.8f,  0.9f,  0.0f),
-			vec3(2.8f, -0.9f,  0.0f)
-		};
-
-		for(uint8 i = 0; i < 5; i++)
-		{
-			Point& point = data.getPoint(data.createPoint());
-			point.position = bipyramid_positions[i];
-		}
-
-		const VolumeCellId bipyramid_id = data.createVolumeCell();
-		VolumeCell& bipyramid = data.getVolumeCell(bipyramid_id);
-		chunk.volume_cell_ids.push(bipyramid_id);
-		for(uint8 i = 0; i < 5; i++)
-		{
-			bipyramid.points[i] = first_bipyramid_point + i;
-		}
-		bipyramid.topology = VolumeCellTopology::triangular_bipyramid;
-		bipyramid.material = default_materials::sandstone;
-		bipyramid.mass = 100.0f;
-		bipyramid.temperature = 293.15f;
-		bipyramid.health = 100.0f;
-
-		chunk.createMesh();
+		startBaseScenario(*this);
 	}
 }
