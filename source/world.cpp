@@ -36,22 +36,19 @@ namespace danikk_space_engine
 		{
 			const Chunk& chunk = chunks[chunk_id];
 			const mat4 chunk_world_matrix = chunk.createWorldMatrix();
-			for(VolumeCellId cell_id : chunk.volume_cell_ids)
+			for(size_t cell_index = 0; cell_index < chunk.volume_cell_ids.size(); cell_index++)
 			{
+				const VolumeCellId cell_id = chunk.volume_cell_ids[cell_index];
 				if(cell_id >= data.getVolumeCellCount())
 				{
 					continue;
 				}
 				const VolumeCell& cell = data.getVolumeCell(cell_id);
 				const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
-				bool shared_faces[8]{};
-				for(uint8 face_index = 0; face_index < topology.face_count; face_index++)
-				{
-					shared_faces[face_index] = chunk.hasSharedFace(cell_id, face_index);
-				}
+				const uint8 shared_face_mask = chunk.getSharedFaceMask(cell_index);
 				for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
 				{
-					if(shared_faces[topology.triangle_face_indices[triangle_index]])
+					if((shared_face_mask & static_cast<uint8>(1u << topology.triangle_face_indices[triangle_index])) != 0)
 					{
 						continue;
 					}

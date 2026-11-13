@@ -12,6 +12,7 @@ namespace danikk_space_engine
 	class Chunk
 	{
 		Mesh* mesh = nullptr;
+		DynamicArray<uint8> shared_face_masks;
 
 	public:
 		vec3 position = vec3(0.0f);
@@ -26,6 +27,7 @@ namespace danikk_space_engine
 
 		Mesh& createMesh();
 		bool hasSharedFace(VolumeCellId cell_id, uint8 face_index) const;
+		uint8 getSharedFaceMask(size_t cell_index) const;
 		mat4 createWorldMatrix() const;
 		void draw();
 		void destroyMesh();

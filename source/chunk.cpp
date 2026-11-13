@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <danikk_space_engine/chunk.h>
 #include <danikk_space_engine/world.h>
 
@@ -11,6 +13,46 @@
 
 namespace danikk_space_engine
 {
+	struct FaceReference
+	{
+		PointId point_ids[4]{};
+		uint8 point_count = 0;
+		size_t cell_index = 0;
+		uint8 face_index = 0;
+	};
+
+	static bool faceReferenceLess(const FaceReference& left, const FaceReference& right)
+	{
+		if(left.point_count != right.point_count)
+		{
+			return left.point_count < right.point_count;
+		}
+		for(uint8 i = 0; i < left.point_count; i++)
+		{
+			if(left.point_ids[i] != right.point_ids[i])
+			{
+				return left.point_ids[i] < right.point_ids[i];
+			}
+		}
+		return false;
+	}
+
+	static bool sameFaceReference(const FaceReference& left, const FaceReference& right)
+	{
+		if(left.point_count != right.point_count)
+		{
+			return false;
+		}
+		for(uint8 i = 0; i < left.point_count; i++)
+		{
+			if(left.point_ids[i] != right.point_ids[i])
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	static vec2 projectToUV(const vec3& position, const vec3& normal)
 	{
 		const vec3 absolute_normal = glm::abs(normal);
@@ -26,7 +68,8 @@ namespace danikk_space_engine
 	}
 
 	Chunk::Chunk(Chunk&& other) noexcept
-		: mesh(other.mesh), position(other.position), volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids))
+		: mesh(other.mesh), shared_face_masks(static_cast<DynamicArray<uint8>&&>(other.shared_face_masks)),
+		position(other.position), volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids))
 	{
 		other.mesh = nullptr;
 	}
@@ -41,6 +84,7 @@ namespace danikk_space_engine
 		destroyMesh();
 		position = other.position;
 		volume_cell_ids = static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids);
+		shared_face_masks = static_cast<DynamicArray<uint8>&&>(other.shared_face_masks);
 		mesh = other.mesh;
 		other.mesh = nullptr;
 		return *this;
@@ -64,9 +108,9 @@ namespace danikk_space_engine
 		mesh = nullptr;
 	}
 
-	// Builds a triangle mesh for all valid volume cells owned by this chunk.
-	// Expands topology triangles into vertices, skips invalid or degenerate faces, projects
-	// planar UVs from the face normal, uploads buffers, and configures vertex attributes.
+	// Builds a triangle mesh for all volume cells owned by this chunk.
+	// Sorts canonicalized face point IDs to identify shared faces in O(F log F), then emits
+	// only visible triangles, reserves the output buffers, uploads them, and sets attributes.
 	Mesh& Chunk::createMesh()
 	{
 		if(mesh == nullptr)
@@ -78,23 +122,75 @@ namespace danikk_space_engine
 
 		DynamicArray<DefaultVertex> vertices;
 		DynamicArray<gl_point_index_t> indices;
+		DynamicArray<FaceReference> face_references;
+		shared_face_masks.clear();
+		shared_face_masks.reserve(volume_cell_ids.size());
+		face_references.reserve(volume_cell_ids.size() * 8);
+		size_t max_triangle_count = 0;
 
-		for(VolumeCellId cell_id : volume_cell_ids)
+		for(size_t cell_index = 0; cell_index < volume_cell_ids.size(); cell_index++)
 		{
+			const VolumeCellId cell_id = volume_cell_ids[cell_index];
 			if(cell_id >= world.data.getVolumeCellCount())
 			{
 				std::abort();
 			}
 			const VolumeCell& cell = world.data.getVolumeCell(cell_id);
 			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
-			bool shared_faces[8]{};
+			shared_face_masks.push(0);
+			max_triangle_count += topology.triangle_count;
 			for(uint8 face_index = 0; face_index < topology.face_count; face_index++)
 			{
-				shared_faces[face_index] = hasSharedFace(cell_id, face_index);
+				FaceReference reference;
+				reference.point_count = getVolumeCellFacePointIds(cell, face_index, reference.point_ids);
+				reference.cell_index = cell_index;
+				reference.face_index = face_index;
+				for(uint8 point_index = 1; point_index < reference.point_count; point_index++)
+				{
+					const PointId point_id = reference.point_ids[point_index];
+					uint8 insert_index = point_index;
+					while(insert_index > 0 && reference.point_ids[insert_index - 1] > point_id)
+					{
+						reference.point_ids[insert_index] = reference.point_ids[insert_index - 1];
+						insert_index--;
+					}
+					reference.point_ids[insert_index] = point_id;
+				}
+				face_references.push(reference);
 			}
+		}
+
+		std::sort(face_references.begin(), face_references.end(), faceReferenceLess);
+		for(size_t face_index = 0; face_index < face_references.size();)
+		{
+			size_t group_end = face_index + 1;
+			while(group_end < face_references.size()
+				&& sameFaceReference(face_references[face_index], face_references[group_end]))
+			{
+				group_end++;
+			}
+			if(group_end - face_index > 1)
+			{
+				for(size_t reference_index = face_index; reference_index < group_end; reference_index++)
+				{
+					const FaceReference& reference = face_references[reference_index];
+					shared_face_masks[reference.cell_index] |= static_cast<uint8>(1u << reference.face_index);
+				}
+			}
+			face_index = group_end;
+		}
+
+		vertices.reserve(max_triangle_count * 3);
+		indices.reserve(max_triangle_count * 3);
+		for(size_t cell_index = 0; cell_index < volume_cell_ids.size(); cell_index++)
+		{
+			const VolumeCellId cell_id = volume_cell_ids[cell_index];
+			const VolumeCell& cell = world.data.getVolumeCell(cell_id);
+			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
+			const uint8 shared_face_mask = shared_face_masks[cell_index];
 			for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
 			{
-				if(shared_faces[topology.triangle_face_indices[triangle_index]])
+				if((shared_face_mask & static_cast<uint8>(1u << topology.triangle_face_indices[triangle_index])) != 0)
 				{
 					continue;
 				}
@@ -176,6 +272,11 @@ namespace danikk_space_engine
 			}
 		}
 		return false;
+	}
+
+	uint8 Chunk::getSharedFaceMask(size_t cell_index) const
+	{
+		return cell_index < shared_face_masks.size() ? shared_face_masks[cell_index] : 0;
 	}
 
 	mat4 Chunk::createWorldMatrix() const
