@@ -1,6 +1,7 @@
 #include <danikk_space_engine/component/point.h>
 #include <danikk_space_engine/component/camera.h>
 #include <danikk_space_engine/component/local_player_controller.h>
+#include <danikk_space_engine/component/machinegun.h>
 
 namespace danikk_space_engine
 {
@@ -29,7 +30,16 @@ namespace danikk_space_engine
 				tickLocalPlayerControllerComponent,
 				nullptr
 			},
-			{}, // machine_gun
+			{
+				sizeof(MachinegunComponent),
+				alignof(MachinegunComponent),
+				true,
+				constructMachinegunComponent,
+				moveMachinegunComponent,
+				destroyMachinegunComponent,
+				nullptr,
+				frameMachinegunComponent
+			},
 			{}  // engine
 		};
 	}

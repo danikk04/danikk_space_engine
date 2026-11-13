@@ -128,17 +128,14 @@ namespace danikk_space_engine
 
 			PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
 			const PointComponentType& type = getPointComponentType(slot.type_id);
-			if(type.tick == nullptr)
-			{
-				danikk_engine::formatFatalError(
-					"Point component type % has no tick function",
-					static_cast<uint32>(slot.type_id));
-			}
 			if(slot.uses_external_data && slot.external_data == nullptr)
 			{
 				danikk_engine::formatFatalError("Point component slot % has no external data", slot_id);
 			}
-			type.tick(slot, world);
+			if(type.tick != nullptr)
+			{
+				type.tick(slot, world);
+			}
 		}
 	}
 

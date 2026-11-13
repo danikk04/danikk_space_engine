@@ -16,6 +16,7 @@ namespace danikk_space_engine
     	setDefaultFont(base_font);
 
     	low_poly_sphere_mesh = Mesh(NULL, "sphere");
+		mg42_mesh.loadObj("MG-42", "MG-42");
     	container_texture = Texture("container");
 	}
 

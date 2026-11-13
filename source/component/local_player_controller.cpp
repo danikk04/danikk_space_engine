@@ -1,10 +1,56 @@
 #include <danikk_space_engine/component/local_player_controller.h>
+#include <danikk_space_engine/component/machinegun.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <danikk_engine/input.h>
 
 namespace danikk_space_engine
 {
+	namespace
+	{
+		bool isAltDown()
+		{
+			const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
+			const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
+			return left_alt_state == button_states::press || left_alt_state == button_states::hold
+				|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
+		}
+
+		Chunk* findOwningChunk(PointComponentSlot& slot, World& world)
+		{
+			for(ChunkId chunk_id = 0; chunk_id < world.data.getChunkCount(); chunk_id++)
+			{
+				Chunk& chunk = world.data.getChunk(chunk_id);
+				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
+				{
+					if(slot_id < world.data.getPointComponentSlotCount()
+						&& &world.data.getPointComponentSlot(slot_id) == &slot)
+					{
+						return &chunk;
+					}
+				}
+			}
+			return nullptr;
+		}
+
+		void duplicateControllerPointWithMachinegun(
+			const Point& source_point,
+			const vec3& rotation,
+			Chunk& chunk,
+			World& world)
+		{
+			const PointId point_id = world.data.createPoint();
+			world.data.getPoint(point_id) = source_point;
+			MachinegunComponent machinegun;
+			machinegun.rotation = rotation;
+			const PointComponentSlotId machinegun_slot_id = world.data.createPointComponentSlot(
+				point_id,
+				PointComponentTypeId::machine_gun,
+				&machinegun);
+			chunk.addPointComponentSlot(machinegun_slot_id);
+		}
+	}
+
 	void constructLocalPlayerControllerComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr)
@@ -47,7 +93,32 @@ namespace danikk_space_engine
 		{
 			danikk_engine::formatFatalError("Local player controller tick received null data");
 		}
+
+		const int machinegun_state = getKeyboardState(keyboard_buttons::m);
+		const bool spawn_machinegun = isAltDown() && machinegun_state == button_states::press;
+		Point source_point;
+		vec3 source_rotation(0.0f);
+		Chunk* owner_chunk = nullptr;
+		if(spawn_machinegun)
+		{
+			if(slot.point_id >= world.data.getPointCount())
+			{
+				danikk_engine::formatFatalError("Local player controller references invalid point %", slot.point_id);
+			}
+			source_point = world.data.getPoint(slot.point_id);
+			source_rotation = world.getCameraComponent().rotation;
+			owner_chunk = findOwningChunk(slot, world);
+			if(owner_chunk == nullptr)
+			{
+				danikk_engine::formatFatalError("Local player controller is not registered in a chunk");
+			}
+		}
+
 		static_cast<LocalPlayerControllerComponent*>(slot.getData())->tick(world);
+		if(spawn_machinegun)
+		{
+			duplicateControllerPointWithMachinegun(source_point, source_rotation, *owner_chunk, world);
+		}
 	}
 
 	// Keeps selected faces at the start of selected_faces and appends the hovered face

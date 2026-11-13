@@ -18,6 +18,7 @@ namespace danikk_space_engine
 		Font base_font;
 		Mesh low_poly_sphere_mesh;
 		Mesh cube_mesh;
+		Mesh mg42_mesh;
 
 		Texture border_texture;
 		Texture container_texture;

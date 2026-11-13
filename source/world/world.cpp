@@ -4,6 +4,7 @@
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/effects/polygon_highlight.h>
+#include <danikk_space_engine/component/machinegun.h>
 
 namespace danikk_space_engine
 {
@@ -186,6 +187,13 @@ namespace danikk_space_engine
 			camera_point_id,
 			PointComponentTypeId::local_player_controller_component);
 		chunk.addPointComponentSlot(local_player_controller_component_slot_id);
+
+		const PointId machinegun_point_id = data.createPoint();
+		data.getPoint(machinegun_point_id).position = vec3(0.0f, -1.5f, -5.0f);
+		const PointComponentSlotId machinegun_slot_id = data.createPointComponentSlot(
+			machinegun_point_id,
+			PointComponentTypeId::machine_gun);
+		chunk.addPointComponentSlot(machinegun_slot_id);
 
 		const PointId first_prism_point = static_cast<PointId>(data.getPointCount());
 		const vec3 prism_positions[] =
