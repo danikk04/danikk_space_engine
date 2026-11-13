@@ -14,7 +14,7 @@ namespace danikk_space_engine
 	{
 		none = 0,
 		camera,
-		local_player_controller,
+		local_player_controller_component,
 		machine_gun,
 		engine,
 		count

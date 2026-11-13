@@ -127,16 +127,16 @@ namespace danikk_space_engine
 		return data.getPoint(getCameraSlot().point_id);
 	}
 
-	LocalPlayerController& World::getLocalPlayerController()
+	LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent()
 	{
-		PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_slot_id);
-		return *static_cast<LocalPlayerController*>(slot.getData());
+		PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_component_slot_id);
+		return *static_cast<LocalPlayerControllerComponent*>(slot.getData());
 	}
 
-	const LocalPlayerController& World::getLocalPlayerController() const
+	const LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent() const
 	{
-		const PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_slot_id);
-		return *static_cast<const LocalPlayerController*>(slot.getData());
+		const PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_component_slot_id);
+		return *static_cast<const LocalPlayerControllerComponent*>(slot.getData());
 	}
 
 	void World::tick()
@@ -182,10 +182,10 @@ namespace danikk_space_engine
 			camera_point_id,
 			PointComponentTypeId::camera);
 		chunk.addPointComponentSlot(camera_component_slot_id);
-		local_player_controller_slot_id = data.createPointComponentSlot(
+		local_player_controller_component_slot_id = data.createPointComponentSlot(
 			camera_point_id,
-			PointComponentTypeId::local_player_controller);
-		chunk.addPointComponentSlot(local_player_controller_slot_id);
+			PointComponentTypeId::local_player_controller_component);
+		chunk.addPointComponentSlot(local_player_controller_component_slot_id);
 
 		const PointId first_prism_point = static_cast<PointId>(data.getPointCount());
 		const vec3 prism_positions[] =

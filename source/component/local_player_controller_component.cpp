@@ -1,11 +1,11 @@
-#include <danikk_space_engine/component/local_player_controller.h>
+#include <danikk_space_engine/component/local_player_controller_component.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <danikk_engine/input.h>
 
 namespace danikk_space_engine
 {
-	void constructLocalPlayerController(void* destination, const void* init_data)
+	void constructLocalPlayerControllerComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr)
 		{
@@ -13,47 +13,47 @@ namespace danikk_space_engine
 		}
 		if(init_data == nullptr)
 		{
-			new (destination) LocalPlayerController();
+			new (destination) LocalPlayerControllerComponent();
 		}
 		else
 		{
-			new (destination) LocalPlayerController(*static_cast<const LocalPlayerController*>(init_data));
+			new (destination) LocalPlayerControllerComponent(*static_cast<const LocalPlayerControllerComponent*>(init_data));
 		}
 	}
 
-	void moveLocalPlayerController(void* destination, void* source)
+	void moveLocalPlayerControllerComponent(void* destination, void* source)
 	{
 		if(destination == nullptr || source == nullptr)
 		{
 			danikk_engine::formatFatalError("Local player controller move received null memory");
 		}
-		LocalPlayerController* source_controller = static_cast<LocalPlayerController*>(source);
-		new (destination) LocalPlayerController(static_cast<LocalPlayerController&&>(*source_controller));
-		source_controller->~LocalPlayerController();
+		LocalPlayerControllerComponent* source_controller = static_cast<LocalPlayerControllerComponent*>(source);
+		new (destination) LocalPlayerControllerComponent(static_cast<LocalPlayerControllerComponent&&>(*source_controller));
+		source_controller->~LocalPlayerControllerComponent();
 	}
 
-	void destroyLocalPlayerController(void* data)
+	void destroyLocalPlayerControllerComponent(void* data)
 	{
 		if(data == nullptr)
 		{
 			danikk_engine::formatFatalError("Local player controller destruction received null memory");
 		}
-		static_cast<LocalPlayerController*>(data)->~LocalPlayerController();
+		static_cast<LocalPlayerControllerComponent*>(data)->~LocalPlayerControllerComponent();
 	}
 
-	void tickLocalPlayerController(PointComponentSlot& slot, World& world)
+	void tickLocalPlayerControllerComponent(PointComponentSlot& slot, World& world)
 	{
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Local player controller tick received null data");
 		}
-		static_cast<LocalPlayerController*>(slot.getData())->tick(world);
+		static_cast<LocalPlayerControllerComponent*>(slot.getData())->tick(world);
 	}
 
 	// Handles Alt+E extrusion, Alt+D deletion, and left-click face selection.
 	// Raycasts after the camera and chunk ticks, toggles the hit FacePtr, and clears
 	// all selected faces when clicking empty space.
-	void LocalPlayerController::tick(World& world)
+	void LocalPlayerControllerComponent::tick(World& world)
 	{
 		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);

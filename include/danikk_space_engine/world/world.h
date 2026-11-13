@@ -6,7 +6,7 @@
 #include <danikk_space_engine/component/camera.h>
 #include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/world/chunk.h>
-#include <danikk_space_engine/component/local_player_controller.h>
+#include <danikk_space_engine/component/local_player_controller_component.h>
 #include <danikk_space_engine/world/world_data.h>
 #include <danikk_framework/dynamic_array.h>
 
@@ -28,7 +28,7 @@ namespace danikk_space_engine
 	public:
 		WorldData data;
 		PointComponentSlotId camera_component_slot_id = 0;
-		PointComponentSlotId local_player_controller_slot_id = 0;
+		PointComponentSlotId local_player_controller_component_slot_id = 0;
 
 		void tick();
 
@@ -44,8 +44,8 @@ namespace danikk_space_engine
 		const CameraComponent& getCameraComponent() const;
 		Point& getCameraPoint();
 		const Point& getCameraPoint() const;
-		LocalPlayerController& getLocalPlayerController();
-		const LocalPlayerController& getLocalPlayerController() const;
+		LocalPlayerControllerComponent& getLocalPlayerControllerComponent();
+		const LocalPlayerControllerComponent& getLocalPlayerControllerComponent() const;
 		DynamicArray<FacePtr> extrudeFaces(const DynamicArray<FacePtr>& faces, float distance);
 		void deleteVolumeCells(const DynamicArray<FacePtr>& faces);
 	};

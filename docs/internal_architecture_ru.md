@@ -23,7 +23,7 @@ begin()
 каждый кадр
   -> gui.frame()
   -> key_binds.frame()
-  -> world.tick() -> Chunk::tick() -> PointComponentType::tick() -> LocalPlayerController::tick()
+  -> world.tick() -> Chunk::tick() -> PointComponentType::tick() -> LocalPlayerControllerComponent::tick()
   -> world.frame()
        -> Chunk::frame() для чанков из WorldData
        -> Chunk::draw() для чанков из WorldData
@@ -37,13 +37,13 @@ classDiagram
     class World {
         +WorldData data
         +PointComponentSlotId camera_component_slot_id
-        +PointComponentSlotId local_player_controller_slot_id
+        +PointComponentSlotId local_player_controller_component_slot_id
         +init()
         +tick()
         +frame()
         +raycast() RaycastHit
         +extrudeFaces() DynamicArray~FacePtr~
-        +getLocalPlayerController() LocalPlayerController
+        +getLocalPlayerControllerComponent() LocalPlayerControllerComponent
     }
 
     class WorldData {
@@ -122,7 +122,7 @@ classDiagram
         +uint8 face_index
     }
 
-    class LocalPlayerController {
+    class LocalPlayerControllerComponent {
         +DynamicArray~FacePtr~ selected_polygons
         +tick(World)
     }
@@ -171,17 +171,17 @@ classDiagram
     WorldData *-- PointComponentSlot : хранит
     PointComponentSlot ..> Point : привязан к PointId
     PointComponentSlot ..> PointComponentType : разрешает type_id через таблицу
-    PointComponentSlot ..> LocalPlayerController : payload типа local_player_controller
+    PointComponentSlot ..> LocalPlayerControllerComponent : payload типа local_player_controller_component
     PointComponentType ..> CameraComponent : payload типа camera
-    PointComponentType ..> LocalPlayerController : payload типа local_player_controller
+    PointComponentType ..> LocalPlayerControllerComponent : payload типа local_player_controller_component
     Chunk ..> WorldData : получает ячейки и точки через world
     Chunk ..> VolumeCellId : хранит ID ячеек
     VolumeCell ..> PointId : ссылается на точки
     VolumeCell ..> MaterialId : ссылается на материал
     FacePtr ..> ChunkId : идентифицирует чанк
     FacePtr ..> VolumeCellId : идентифицирует ячейку
-    LocalPlayerController *-- FacePtr : хранит выделение
-    LocalPlayerController ..> World : вызывает raycast и экструдирование
+    LocalPlayerControllerComponent *-- FacePtr : хранит выделение
+    LocalPlayerControllerComponent ..> World : вызывает raycast и экструдирование
     World ..> CameraComponent : читает активную камеру
     World ..> Ray : выполняет raycast
     World ..> RaycastHit : возвращает результат raycast
@@ -200,7 +200,7 @@ classDiagram
   - Поля:
     - `data` — `WorldData`, хранилище точек и `VolumeCell`.
     - `camera_component_slot_id` — ID активного компонента камеры.
-    - `local_player_controller_slot_id` — ID компонента локального контроллера.
+    - `local_player_controller_component_slot_id` — ID компонента локального контроллера.
   - Методы:
     - `init()` — очищает данные и чанки; создаёт точку камеры, тестовую призму и бипирамиду в одном чанке; строит меш чанка.
     - `tick()` — обновляет компоненты каждого чанка, включая камеру и локальный контроллер.
@@ -250,7 +250,7 @@ classDiagram
 
 ## component/point_component.h:
 
-- `PointComponentTypeId` — enum ID типа компонента точки: `none`, `camera`, `local_player_controller`, `machine_gun`, `engine`, `count`.
+- `PointComponentTypeId` — enum ID типа компонента точки: `none`, `camera`, `local_player_controller_component`, `machine_gun`, `engine`, `count`.
 - `PointComponentType` — описание типа и таблица его операций.
   - Поля:
     - `data_size`, `data_alignment` — размер и выравнивание payload.
@@ -265,7 +265,7 @@ classDiagram
     - `external_data` — указатель на внешнее хранилище для большего payload.
     - `uses_external_data` — указывает, какое хранилище используется.
 
-`WorldData` владеет массивом `PointComponentSlot`. Типы `camera` и `local_player_controller` зарегистрированы; `machine_gun` и `engine` пока имеют пустые записи. Payload контроллера хранится снаружи, поскольку содержит `DynamicArray`.
+`WorldData` владеет массивом `PointComponentSlot`. Типы `camera` и `local_player_controller_component` зарегистрированы; `machine_gun` и `engine` пока имеют пустые записи. Payload контроллера хранится снаружи, поскольку содержит `DynamicArray`.
 
 ## component/camera.h:
 
@@ -341,20 +341,20 @@ classDiagram
 
 `FacePtr` используется результатами raycast, контроллером выделения и подсветкой. ID сохраняют значение, пока соответствующие элементы не перемещаются на другие индексы. Удаления с уплотнением массивов и счётчиков поколений пока нет.
 
-## component/local_player_controller.h:
+## component/local_player_controller_component.h:
 
-- `LocalPlayerController` — обрабатывает выделение и редактирование полигонов.
+- `LocalPlayerControllerComponent` — обрабатывает выделение и редактирование полигонов.
   - Поля:
     - `selected_polygons` — `DynamicArray<FacePtr>` выделенных граней.
   - Методы:
     - `tick(world)` — выполняет экструдирование по Alt+E, удаление по Alt+D, переключает грань по ЛКМ и снимает выделение при клике мимо.
-- `constructLocalPlayerController()`, `moveLocalPlayerController()`, `destroyLocalPlayerController()`, `tickLocalPlayerController()` — callbacks типа `local_player_controller`, реализованы в `source/component/local_player_controller.cpp`.
-- `World::getLocalPlayerController()` — возвращает payload компонента по активному slot ID.
+- `constructLocalPlayerControllerComponent()`, `moveLocalPlayerControllerComponent()`, `destroyLocalPlayerControllerComponent()`, `tickLocalPlayerControllerComponent()` — callbacks типа `local_player_controller_component`, реализованы в `source/component/local_player_controller_component.cpp`.
+- `World::getLocalPlayerControllerComponent()` — возвращает payload компонента по активному slot ID.
 
 ## polygon_highlight.h:
 
 - `drawPolygonHighlight(world, face, mesh, color)` — рисует одну подсвеченную грань.
-- `drawPolygonHighlights(world)` — рисует грани из `World::getLocalPlayerController().selected_polygons` и грань под курсором; вызывается из `World::frame()`.
+- `drawPolygonHighlights(world)` — рисует грани из `World::getLocalPlayerControllerComponent().selected_polygons` и грань под курсором; вызывается из `World::frame()`.
 
 Зажатие Alt отключает ввод камеры, поэтому Alt+E и Alt+D доступны контроллеру редактирования.
 
@@ -430,7 +430,7 @@ classDiagram
 - `key_binds` — глобальный экземпляр `KeyBindCollection`.
 - `closeGame()` — callback в `keybind.cpp`, не объявлен в заголовке; вызывает `danikk_engine::exit()` и используется привязкой Escape.
 
-Alt+E, Alt+D и ЛКМ опрашиваются в `LocalPlayerController::tick()`; Q/E, WASD и мышь обрабатываются `CameraComponent::tick()`. Эти клавиши пока не используют `KeyBindCollection`.
+Alt+E, Alt+D и ЛКМ опрашиваются в `LocalPlayerControllerComponent::tick()`; Q/E, WASD и мышь обрабатываются `CameraComponent::tick()`.
 
 ## localization.h:
 

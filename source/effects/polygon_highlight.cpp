@@ -170,13 +170,13 @@ namespace danikk_space_engine
 		const vec4 selected_color(0.5f, 0.5f, 0.5f, 1.0f);
 		const vec4 hover_color(1.0f, 0.15f, 0.15f, 1.0f);
 
-		for(const FacePtr& selected : world.getLocalPlayerController().selected_polygons)
+		for(const FacePtr& selected : world.getLocalPlayerControllerComponent().selected_polygons)
 		{
 			drawPolygonHighlight(world, selected, highlight_mesh, selected_color);
 		}
 
 		const RaycastHit hit = world.raycastFromCamera();
-		if(hit.hit && !isSelected(world.getLocalPlayerController().selected_polygons, hit.face))
+		if(hit.hit && !isSelected(world.getLocalPlayerControllerComponent().selected_polygons, hit.face))
 		{
 			drawPolygonHighlight(world, hit.face, highlight_mesh, hover_color);
 		}
