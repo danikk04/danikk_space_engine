@@ -1,6 +1,6 @@
 #pragma once
 
-#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point_component.h>
 #include <danikk_space_engine/world/volume_cell.h>
 #include <danikk_space_engine/world/chunk.h>

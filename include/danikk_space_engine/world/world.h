@@ -2,7 +2,7 @@
 
 #include <danikk_space_engine/default.h>
 
-#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/camera.h>
 #include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/world/chunk.h>

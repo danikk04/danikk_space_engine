@@ -1,7 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/material.h>
-#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world/point.h>
 
 namespace danikk_space_engine
 {
