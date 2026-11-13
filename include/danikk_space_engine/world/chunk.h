@@ -4,6 +4,7 @@
 #include <danikk_engine/mesh.h>
 
 #include <danikk_space_engine/component/point.h>
+#include <danikk_space_engine/component/graph.h>
 #include <danikk_space_engine/world/volume_cell.h>
 
 namespace danikk_space_engine
@@ -21,6 +22,7 @@ namespace danikk_space_engine
 		vec3 position = vec3(0.0f);
 		DynamicArray<VolumeCellId> volume_cell_ids;
 		DynamicArray<PointComponentSlotId> point_component_slot_ids;
+		DynamicArray<GraphComponentSlotId> graph_component_slot_ids;
 
 		Chunk() = default;
 		Chunk(const Chunk&) = delete;
@@ -31,6 +33,7 @@ namespace danikk_space_engine
 
 		Mesh& createMesh();
 		void addPointComponentSlot(PointComponentSlotId slot_id);
+		void addGraphComponentSlot(GraphComponentSlotId slot_id);
 		void tick(World& world);
 		bool hasSharedFace(VolumeCellId cell_id, uint8 face_index) const;
 		uint8 getSharedFaceMask(size_t cell_index) const;

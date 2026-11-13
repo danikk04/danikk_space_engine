@@ -71,7 +71,8 @@ namespace danikk_space_engine
 		: mesh(other.mesh), shared_face_masks(static_cast<DynamicArray<uint8>&&>(other.shared_face_masks)),
 		mesh_dirty(other.mesh_dirty), position(other.position),
 		volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids)),
-		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids))
+		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids)),
+		graph_component_slot_ids(static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids))
 	{
 		other.mesh = nullptr;
 	}
@@ -88,6 +89,7 @@ namespace danikk_space_engine
 		position = other.position;
 		volume_cell_ids = static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids);
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
+		graph_component_slot_ids = static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids);
 		shared_face_masks = static_cast<DynamicArray<uint8>&&>(other.shared_face_masks);
 		mesh = other.mesh;
 		other.mesh = nullptr;
@@ -123,6 +125,11 @@ namespace danikk_space_engine
 		point_component_slot_ids.push(slot_id);
 	}
 
+	void Chunk::addGraphComponentSlot(GraphComponentSlotId slot_id)
+	{
+		graph_component_slot_ids.push(slot_id);
+	}
+
 	void Chunk::tick(World& world)
 	{
 		const size_t component_count = point_component_slot_ids.size();
@@ -145,6 +152,24 @@ namespace danikk_space_engine
 			{
 				type.tick(slot, world);
 			}
+		}
+
+		const size_t graph_component_count = graph_component_slot_ids.size();
+		for(size_t component_index = 0; component_index < graph_component_count; component_index++)
+		{
+			const GraphComponentSlotId slot_id = graph_component_slot_ids[component_index];
+			if(slot_id >= world.data.getGraphComponentSlotCount())
+			{
+				danikk_engine::formatFatalError("Chunk references invalid graph component slot %", slot_id);
+			}
+			if(!world.data.isGraphComponentSlotActive(slot_id)) continue;
+			GraphComponentSlot& slot = world.data.getGraphComponentSlot(slot_id);
+			const GraphComponentType& type = getGraphComponentType(slot.type_id);
+			if(slot.uses_external_data && slot.external_data == nullptr)
+			{
+				danikk_engine::formatFatalError("Graph component slot % has no external data", slot_id);
+			}
+			if(type.tick != nullptr) type.tick(slot, world);
 		}
 	}
 
@@ -171,6 +196,24 @@ namespace danikk_space_engine
 			{
 				type.frame(slot, world);
 			}
+		}
+
+		const size_t graph_component_count = graph_component_slot_ids.size();
+		for(size_t component_index = 0; component_index < graph_component_count; component_index++)
+		{
+			const GraphComponentSlotId slot_id = graph_component_slot_ids[component_index];
+			if(slot_id >= world.data.getGraphComponentSlotCount())
+			{
+				danikk_engine::formatFatalError("Chunk references invalid graph component slot %", slot_id);
+			}
+			if(!world.data.isGraphComponentSlotActive(slot_id)) continue;
+			GraphComponentSlot& slot = world.data.getGraphComponentSlot(slot_id);
+			const GraphComponentType& type = getGraphComponentType(slot.type_id);
+			if(slot.uses_external_data && slot.external_data == nullptr)
+			{
+				danikk_engine::formatFatalError("Graph component slot % has no external data", slot_id);
+			}
+			if(type.frame != nullptr) type.frame(slot, world);
 		}
 	}
 

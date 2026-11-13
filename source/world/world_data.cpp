@@ -82,6 +82,7 @@ namespace danikk_space_engine
 			chunk.position = vec3(0.0f);
 			chunk.volume_cell_ids.clear();
 			chunk.point_component_slot_ids.clear();
+			chunk.graph_component_slot_ids.clear();
 			chunk.invalidateMesh();
 			insertSortedId(used_chunk_ids, id);
 			return chunk;
@@ -142,6 +143,65 @@ namespace danikk_space_engine
 		return id;
 	}
 
+	GraphComponentSlotId WorldData::createGraphComponentSlot(
+		ChunkId chunk_id,
+		PointId point_a,
+		PointId point_b,
+		GraphComponentTypeId type_id,
+		const void* init_data)
+	{
+		if(!isChunkActive(chunk_id))
+		{
+			danikk_engine::formatFatalError("Graph component references invalid chunk %", chunk_id);
+		}
+		if(!isPointActive(point_a) || !isPointActive(point_b))
+		{
+			danikk_engine::formatFatalError("Graph component references invalid endpoint points % and %", point_a, point_b);
+		}
+
+		const GraphComponentType& type = getGraphComponentType(type_id);
+		if(type_id == GraphComponentTypeId::none || type.construct == nullptr || type.data_size == 0)
+		{
+			danikk_engine::formatFatalError("Graph component type % cannot be constructed", static_cast<uint32>(type_id));
+		}
+		if(type.data_alignment > alignof(std::max_align_t))
+		{
+			danikk_engine::formatFatalError("Graph component type % requires unsupported alignment", static_cast<uint32>(type_id));
+		}
+
+		GraphComponentSlotId id;
+		GraphComponentSlot* slot_pointer;
+		if(freed_graph_component_slot_ids.size() > 0)
+		{
+			id = freed_graph_component_slot_ids.pop();
+			slot_pointer = &graph_components[id];
+		}
+		else
+		{
+			id = static_cast<GraphComponentSlotId>(graph_components.size());
+			slot_pointer = &graph_components.pushCtor();
+		}
+
+		GraphComponentSlot& slot = *slot_pointer;
+		slot.point_a = point_a;
+		slot.point_b = point_b;
+		slot.type_id = type_id;
+		slot.uses_external_data = !type.inline_relocatable
+			|| type.data_size > GraphComponentSlot::inline_data_capacity;
+		if(slot.uses_external_data)
+		{
+			slot.external_data = (danikk_framework::malloc)(type.data_size);
+			if(slot.external_data == nullptr)
+			{
+				danikk_engine::formatFatalError("Cannot allocate % bytes for graph component type %", type.data_size, static_cast<uint32>(type_id));
+			}
+		}
+		type.construct(slot.getData(), init_data);
+		insertSortedId(used_graph_component_slot_ids, id);
+		getChunk(chunk_id).addGraphComponentSlot(id);
+		return id;
+	}
+
 	void WorldData::destroyPoint(PointId id)
 	{
 		if(!isPointActive(id)) return;
@@ -170,6 +230,14 @@ namespace danikk_space_engine
 				}
 			}
 			if(cell_index < used_volume_cell_ids.size() && used_volume_cell_ids[cell_index] == cell_id) cell_index++;
+		}
+
+		for(size_t graph_index = 0; graph_index < used_graph_component_slot_ids.size();)
+		{
+			const GraphComponentSlotId graph_id = used_graph_component_slot_ids[graph_index];
+			const GraphComponentSlot& graph = graph_components[graph_id];
+			if(graph.point_a == id || graph.point_b == id) destroyGraphComponentSlot(graph_id);
+			else graph_index++;
 		}
 
 		eraseSortedId(used_point_ids, id);
@@ -214,6 +282,10 @@ namespace danikk_space_engine
 		while(chunk.point_component_slot_ids.size() > 0)
 		{
 			destroyPointComponentSlot(chunk.point_component_slot_ids[chunk.point_component_slot_ids.size() - 1]);
+		}
+		while(chunk.graph_component_slot_ids.size() > 0)
+		{
+			destroyGraphComponentSlot(chunk.graph_component_slot_ids[chunk.graph_component_slot_ids.size() - 1]);
 		}
 		while(chunk.volume_cell_ids.size() > 0)
 		{
@@ -274,6 +346,51 @@ namespace danikk_space_engine
 		freed_point_component_slot_ids.push(id);
 	}
 
+	void WorldData::destroyGraphComponentSlot(GraphComponentSlotId id)
+	{
+		if(!isGraphComponentSlotActive(id)) return;
+
+		for(ChunkId chunk_id : used_chunk_ids)
+		{
+			Chunk& chunk = chunks[chunk_id];
+			for(size_t slot_index = 0; slot_index < chunk.graph_component_slot_ids.size();)
+			{
+				if(chunk.graph_component_slot_ids[slot_index] == id)
+				{
+					for(size_t shift_index = slot_index; shift_index + 1 < chunk.graph_component_slot_ids.size(); shift_index++)
+					{
+						chunk.graph_component_slot_ids[shift_index] = chunk.graph_component_slot_ids[shift_index + 1];
+					}
+					chunk.graph_component_slot_ids.resize(chunk.graph_component_slot_ids.size() - 1);
+				}
+				else slot_index++;
+			}
+		}
+
+		GraphComponentSlot& slot = graph_components[id];
+		const GraphComponentType& type = getGraphComponentType(slot.type_id);
+		if(type.destroy == nullptr)
+		{
+			danikk_engine::formatFatalError("Graph component type % has no destroy function", static_cast<uint32>(slot.type_id));
+		}
+		if(slot.uses_external_data && slot.external_data == nullptr)
+		{
+			danikk_engine::formatFatalError("Graph component slot % has no external data", id);
+		}
+		type.destroy(slot.getData());
+		if(slot.uses_external_data)
+		{
+			free(slot.external_data);
+			slot.external_data = nullptr;
+		}
+		slot.point_a = 0;
+		slot.point_b = 0;
+		slot.type_id = GraphComponentTypeId::none;
+		slot.uses_external_data = false;
+		eraseSortedId(used_graph_component_slot_ids, id);
+		freed_graph_component_slot_ids.push(id);
+	}
+
 	bool WorldData::isPointActive(PointId id) const
 	{
 		const size_t index = findSortedId(used_point_ids, id);
@@ -298,10 +415,17 @@ namespace danikk_space_engine
 		return index < used_point_component_slot_ids.size() && used_point_component_slot_ids[index] == id;
 	}
 
+	bool WorldData::isGraphComponentSlotActive(GraphComponentSlotId id) const
+	{
+		const size_t index = findSortedId(used_graph_component_slot_ids, id);
+		return index < used_graph_component_slot_ids.size() && used_graph_component_slot_ids[index] == id;
+	}
+
 	const DynamicArray<PointId>& WorldData::getUsedPointIds() const { return used_point_ids; }
 	const DynamicArray<VolumeCellId>& WorldData::getUsedVolumeCellIds() const { return used_volume_cell_ids; }
 	const DynamicArray<ChunkId>& WorldData::getUsedChunkIds() const { return used_chunk_ids; }
 	const DynamicArray<PointComponentSlotId>& WorldData::getUsedPointComponentSlotIds() const { return used_point_component_slot_ids; }
+	const DynamicArray<GraphComponentSlotId>& WorldData::getUsedGraphComponentSlotIds() const { return used_graph_component_slot_ids; }
 
 	Point& WorldData::getPoint(PointId id)
 	{
@@ -351,6 +475,18 @@ namespace danikk_space_engine
 		return point_components[id];
 	}
 
+	GraphComponentSlot& WorldData::getGraphComponentSlot(GraphComponentSlotId id)
+	{
+		if(!isGraphComponentSlotActive(id)) danikk_engine::formatFatalError("Invalid graph component slot ID %", id);
+		return graph_components[id];
+	}
+
+	const GraphComponentSlot& WorldData::getGraphComponentSlot(GraphComponentSlotId id) const
+	{
+		if(!isGraphComponentSlotActive(id)) danikk_engine::formatFatalError("Invalid graph component slot ID %", id);
+		return graph_components[id];
+	}
+
 	size_t WorldData::getPointCount() const
 	{
 		return points.size();
@@ -371,13 +507,23 @@ namespace danikk_space_engine
 		return point_components.size();
 	}
 
+	size_t WorldData::getGraphComponentSlotCount() const
+	{
+		return graph_components.size();
+	}
+
 	void WorldData::clear()
 	{
 		while(used_point_component_slot_ids.size() > 0)
 		{
 			destroyPointComponentSlot(used_point_component_slot_ids[used_point_component_slot_ids.size() - 1]);
 		}
+		while(used_graph_component_slot_ids.size() > 0)
+		{
+			destroyGraphComponentSlot(used_graph_component_slot_ids[used_graph_component_slot_ids.size() - 1]);
+		}
 		point_components.clear();
+		graph_components.clear();
 		chunks.clear();
 		points.clear();
 		volume_cells.clear();
@@ -385,10 +531,12 @@ namespace danikk_space_engine
 		used_volume_cell_ids.clear();
 		used_chunk_ids.clear();
 		used_point_component_slot_ids.clear();
+		used_graph_component_slot_ids.clear();
 		freed_point_ids.clear();
 		freed_volume_cell_ids.clear();
 		freed_chunk_ids.clear();
 		freed_point_component_slot_ids.clear();
+		freed_graph_component_slot_ids.clear();
 	}
 
 	void WorldData::release()
@@ -396,15 +544,18 @@ namespace danikk_space_engine
 		clear();
 		chunks = DynamicArray<Chunk>();
 		point_components = DynamicArray<PointComponentSlot>();
+		graph_components = DynamicArray<GraphComponentSlot>();
 		points = DynamicArray<Point>();
 		volume_cells = DynamicArray<VolumeCell>();
 		used_point_ids = DynamicArray<PointId>();
 		used_volume_cell_ids = DynamicArray<VolumeCellId>();
 		used_chunk_ids = DynamicArray<ChunkId>();
 		used_point_component_slot_ids = DynamicArray<PointComponentSlotId>();
+		used_graph_component_slot_ids = DynamicArray<GraphComponentSlotId>();
 		freed_point_ids = DynamicArray<PointId>();
 		freed_volume_cell_ids = DynamicArray<VolumeCellId>();
 		freed_chunk_ids = DynamicArray<ChunkId>();
 		freed_point_component_slot_ids = DynamicArray<PointComponentSlotId>();
+		freed_graph_component_slot_ids = DynamicArray<GraphComponentSlotId>();
 	}
 }

@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point.h>
+#include <danikk_space_engine/component/graph.h>
 #include <danikk_space_engine/world/volume_cell.h>
 #include <danikk_space_engine/world/chunk.h>
 
@@ -15,14 +16,17 @@ namespace danikk_space_engine
 		DynamicArray<VolumeCell> volume_cells;
 		DynamicArray<Chunk> chunks;
 		DynamicArray<PointComponentSlot> point_components;
+		DynamicArray<GraphComponentSlot> graph_components;
 		DynamicArray<PointId> used_point_ids;
 		DynamicArray<VolumeCellId> used_volume_cell_ids;
 		DynamicArray<ChunkId> used_chunk_ids;
 		DynamicArray<PointComponentSlotId> used_point_component_slot_ids;
+		DynamicArray<GraphComponentSlotId> used_graph_component_slot_ids;
 		DynamicArray<PointId> freed_point_ids;
 		DynamicArray<VolumeCellId> freed_volume_cell_ids;
 		DynamicArray<ChunkId> freed_chunk_ids;
 		DynamicArray<PointComponentSlotId> freed_point_component_slot_ids;
+		DynamicArray<GraphComponentSlotId> freed_graph_component_slot_ids;
 
 	public:
 		PointId createPoint();
@@ -32,6 +36,12 @@ namespace danikk_space_engine
 			PointId point_id,
 			PointComponentTypeId type_id,
 			const void* init_data = nullptr);
+		GraphComponentSlotId createGraphComponentSlot(
+			ChunkId chunk_id,
+			PointId point_a,
+			PointId point_b,
+			GraphComponentTypeId type_id,
+			const void* init_data = nullptr);
 
 		// Point deletion also destroys attached components and cells that reference it.
 		void destroyPoint(PointId id);
@@ -40,15 +50,18 @@ namespace danikk_space_engine
 		// Chunk deletion destroys its component slots and volume cells, but leaves shared points.
 		void destroyChunk(ChunkId id);
 		void destroyPointComponentSlot(PointComponentSlotId id);
+		void destroyGraphComponentSlot(GraphComponentSlotId id);
 
 		bool isPointActive(PointId id) const;
 		bool isVolumeCellActive(VolumeCellId id) const;
 		bool isChunkActive(ChunkId id) const;
 		bool isPointComponentSlotActive(PointComponentSlotId id) const;
+		bool isGraphComponentSlotActive(GraphComponentSlotId id) const;
 		const DynamicArray<PointId>& getUsedPointIds() const;
 		const DynamicArray<VolumeCellId>& getUsedVolumeCellIds() const;
 		const DynamicArray<ChunkId>& getUsedChunkIds() const;
 		const DynamicArray<PointComponentSlotId>& getUsedPointComponentSlotIds() const;
+		const DynamicArray<GraphComponentSlotId>& getUsedGraphComponentSlotIds() const;
 
 		Point& getPoint(PointId id);
 		const Point& getPoint(PointId id) const;
@@ -58,12 +71,15 @@ namespace danikk_space_engine
 		const Chunk& getChunk(ChunkId id) const;
 		PointComponentSlot& getPointComponentSlot(PointComponentSlotId id);
 		const PointComponentSlot& getPointComponentSlot(PointComponentSlotId id) const;
+		GraphComponentSlot& getGraphComponentSlot(GraphComponentSlotId id);
+		const GraphComponentSlot& getGraphComponentSlot(GraphComponentSlotId id) const;
 
 		// These counts are total slot-array lengths, including free slots.
 		size_t getPointCount() const;
 		size_t getVolumeCellCount() const;
 		size_t getChunkCount() const;
 		size_t getPointComponentSlotCount() const;
+		size_t getGraphComponentSlotCount() const;
 
 		void clear();
 		void release();
