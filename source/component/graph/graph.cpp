@@ -1,4 +1,4 @@
-#include <danikk_space_engine/component/graph.h>
+#include <danikk_space_engine/component/graph/graph.h>
 
 namespace danikk_space_engine
 {

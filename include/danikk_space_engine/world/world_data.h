@@ -1,8 +1,8 @@
 #pragma once
 
 #include <danikk_space_engine/world/point.h>
-#include <danikk_space_engine/component/point.h>
-#include <danikk_space_engine/component/graph.h>
+#include <danikk_space_engine/component/point/point.h>
+#include <danikk_space_engine/component/graph/graph.h>
 #include <danikk_space_engine/world/volume_cell.h>
 #include <danikk_space_engine/world/chunk.h>
 

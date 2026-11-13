@@ -1,7 +1,7 @@
-#include <danikk_space_engine/component/point.h>
-#include <danikk_space_engine/component/camera.h>
-#include <danikk_space_engine/component/local_player_controller.h>
-#include <danikk_space_engine/component/machinegun.h>
+#include <danikk_space_engine/component/point/point.h>
+#include <danikk_space_engine/component/point/camera.h>
+#include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/component/point/machinegun.h>
 
 namespace danikk_space_engine
 {

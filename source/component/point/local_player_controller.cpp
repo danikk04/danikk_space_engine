@@ -1,5 +1,5 @@
-#include <danikk_space_engine/component/local_player_controller.h>
-#include <danikk_space_engine/component/machinegun.h>
+#include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <danikk_engine/input.h>

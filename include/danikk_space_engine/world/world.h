@@ -3,10 +3,10 @@
 #include <danikk_space_engine/default.h>
 
 #include <danikk_space_engine/world/point.h>
-#include <danikk_space_engine/component/camera.h>
+#include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/world/chunk.h>
-#include <danikk_space_engine/component/local_player_controller.h>
+#include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/world/world_data.h>
 #include <danikk_framework/dynamic_array.h>
 

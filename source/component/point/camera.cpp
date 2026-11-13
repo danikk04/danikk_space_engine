@@ -1,6 +1,6 @@
 #include <utility>
 
-#include <danikk_space_engine/component/camera.h>
+#include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <danikk_engine/input.h>
