@@ -25,7 +25,7 @@ begin()
   -> key_binds.frame()
   -> world.tick() -> controller.tick(data)
   -> world.frame()
-       -> Chunk::draw() для каждого чанка
+       -> Chunk::draw() для каждого чанка из WorldData
        -> controller.frame(world)
             -> при Alt+E: World::extrudeFaces()
             -> raycast, обновление выделения, подсветка полигонов
@@ -37,7 +37,6 @@ begin()
 classDiagram
     class World {
         +WorldData data
-        +DynamicArray~Chunk~ chunks
         +LocalPlayerController controller
         +init()
         +tick()
@@ -49,10 +48,13 @@ classDiagram
     class WorldData {
         -DynamicArray~Point~ points
         -DynamicArray~VolumeCell~ volume_cells
+        -DynamicArray~Chunk~ chunks
         +createPoint() PointId
         +createVolumeCell() VolumeCellId
+        +createChunk() Chunk
         +getPoint(id) Point
         +getVolumeCell(id) VolumeCell
+        +getChunk(id) Chunk
         +clear()
         +release()
     }
@@ -168,7 +170,6 @@ classDiagram
 - `World` — управляет состоянием мира и его кадром. Глобальный экземпляр `world` определён в `world.cpp`.
   - Поля:
     - `data` — `WorldData`, хранилище точек и `VolumeCell`.
-    - `chunks` — `DynamicArray<Chunk>`, чанки, загруженные в мир.
     - `controller` — `LocalPlayerController`, камера, ввод и выделение.
   - Методы:
     - `init()` — очищает данные и чанки; создаёт точку камеры, тестовую призму и бипирамиду в одном чанке; строит меш чанка.
@@ -188,17 +189,21 @@ classDiagram
 
 ## world/world_data.h:
 
-- `WorldData` — приватно владеет массивами точек и ячеек. `PointId` и `VolumeCellId` — индексы в этих массивах.
+- `WorldData` — приватно владеет массивами точек, ячеек и чанков. ID — индексы в соответствующих массивах.
   - Поля:
     - `points` — `DynamicArray<Point>`.
     - `volume_cells` — `DynamicArray<VolumeCell>`.
+    - `chunks` — `DynamicArray<Chunk>`, чанки с ID принадлежащих им ячеек и мешами.
   - Методы:
     - `createPoint()` — добавляет точку по умолчанию и возвращает её `PointId`.
     - `createVolumeCell()` — добавляет ячейку по умолчанию и возвращает её `VolumeCellId`.
+    - `createChunk()` — добавляет чанк и возвращает ссылку на него.
     - `getPoint(id)` — возвращает изменяемую или константную ссылку на точку.
     - `getVolumeCell(id)` — возвращает изменяемую или константную ссылку на ячейку.
+    - `getChunk(id)` — возвращает изменяемую или константную ссылку на чанк.
     - `getPointCount()` — возвращает количество точек.
     - `getVolumeCellCount()` — возвращает количество ячеек.
+    - `getChunkCount()` — возвращает количество чанков.
     - `clear()` — уничтожает элементы массивов, сохраняя их ёмкость.
     - `release()` — освобождает память массивов.
 
@@ -246,9 +251,9 @@ classDiagram
     - `hasSharedFace(cell_id, face_index)` — ищет совпадающую грань среди других ячеек этого чанка.
     - `createWorldMatrix()` — возвращает матрицу трансляции чанка.
     - `draw()` — привязывает материал первой ячейки, задаёт матрицу чанка и рисует меш.
-- `ChunkId` — псевдоним `uint32`, индекс в `World::chunks`.
+- `ChunkId` — псевдоним `uint32`, индекс в `WorldData::chunks`.
 
-Поиск общих граней сейчас реализован вложенным перебором: `createMesh()` проверяет грани каждой ячейки, а `hasSharedFace()` просматривает остальные ячейки и их грани. Полная перестройка меша имеет квадратичную сложность по количеству ячеек. `World::extrudeFaces()` перестраивает меш изменённого чанка после операции.
+При построении меша `createMesh()` сортирует канонические ключи граней по ID точек и выявляет совпадения за O(F log F), где F — число граней. `World::extrudeFaces()` перестраивает меш изменённого чанка после операции.
 
 ## Идентификаторы граней и управление камерой
 

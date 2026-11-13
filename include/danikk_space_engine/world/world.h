@@ -26,7 +26,6 @@ namespace danikk_space_engine
 	{
 	public:
 		WorldData data;
-		DynamicArray<Chunk> chunks;
 		LocalPlayerController controller;
 
 		void tick();

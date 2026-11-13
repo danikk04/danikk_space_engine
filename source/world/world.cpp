@@ -24,9 +24,9 @@ namespace danikk_space_engine
 		const Ray ray{origin, normalized_direction};
 		float nearest_distance = max_distance;
 
-		for(ChunkId chunk_id = 0; chunk_id < chunks.size(); chunk_id++)
+		for(ChunkId chunk_id = 0; chunk_id < data.getChunkCount(); chunk_id++)
 		{
-			const Chunk& chunk = chunks[chunk_id];
+			const Chunk& chunk = data.getChunk(chunk_id);
 			const mat4 chunk_world_matrix = chunk.createWorldMatrix();
 			for(size_t cell_index = 0; cell_index < chunk.volume_cell_ids.size(); cell_index++)
 			{
@@ -105,9 +105,9 @@ namespace danikk_space_engine
 		const mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.1f, 10000.0f);
 		setViewMatrix(view);
 		setProjectionMatrix(projection);
-		for(Chunk& chunk : chunks)
+		for(ChunkId chunk_id = 0; chunk_id < data.getChunkCount(); chunk_id++)
 		{
-			chunk.draw();
+			data.getChunk(chunk_id).draw();
 		}
 		controller.frame(*this);
 	}
@@ -118,14 +118,13 @@ namespace danikk_space_engine
 	void World::init()
 	{
 		data.clear();
-		chunks.clear();
 		controller.selected_polygons = DynamicArray<FacePtr>();
 
 		controller.target_point_id = data.createPoint();
 		Point& camera_point = data.getPoint(controller.target_point_id);
 		camera_point.position = vec3(0.0f);
 		controller.rotation = vec3(0.0f);
-		Chunk& chunk = chunks.pushCtor();
+		Chunk& chunk = data.createChunk();
 		chunk.position = vec3(0.0f, 0.0f, -5.0f);
 
 		const PointId first_prism_point = static_cast<PointId>(data.getPointCount());

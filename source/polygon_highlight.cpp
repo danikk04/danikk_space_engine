@@ -15,12 +15,12 @@ namespace danikk_space_engine
 		Mesh& highlight_mesh,
 		const vec4& color)
 	{
-		if(face.chunk_id >= world.chunks.size())
+		if(face.chunk_id >= world.data.getChunkCount())
 		{
 			return;
 		}
 
-		const Chunk& chunk = world.chunks[face.chunk_id];
+		const Chunk& chunk = world.data.getChunk(face.chunk_id);
 		if(face.cell_id >= world.data.getVolumeCellCount())
 		{
 			return;

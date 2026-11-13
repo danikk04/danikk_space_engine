@@ -23,12 +23,12 @@ namespace danikk_space_engine
 
 		for(const FacePtr& face : faces)
 		{
-			if(face.chunk_id >= chunks.size() || face.cell_id >= data.getVolumeCellCount())
+			if(face.chunk_id >= data.getChunkCount() || face.cell_id >= data.getVolumeCellCount())
 			{
 				continue;
 			}
 
-			Chunk& chunk = chunks[face.chunk_id];
+			Chunk& chunk = data.getChunk(face.chunk_id);
 			if(chunk.hasSharedFace(face.cell_id, face.face_index))
 			{
 				continue;
@@ -154,7 +154,7 @@ namespace danikk_space_engine
 
 		for(ChunkId chunk_id : modified_chunks)
 		{
-			chunks[chunk_id].createMesh();
+			data.getChunk(chunk_id).createMesh();
 		}
 		return result;
 	}
@@ -169,7 +169,7 @@ namespace danikk_space_engine
 
 		for(const FacePtr& face : faces)
 		{
-			if(face.chunk_id >= chunks.size() || face.cell_id >= data.getVolumeCellCount())
+			if(face.chunk_id >= data.getChunkCount() || face.cell_id >= data.getVolumeCellCount())
 			{
 				continue;
 			}
@@ -188,7 +188,7 @@ namespace danikk_space_engine
 				continue;
 			}
 
-			Chunk& chunk = chunks[face.chunk_id];
+			Chunk& chunk = data.getChunk(face.chunk_id);
 			size_t cell_index = chunk.volume_cell_ids.size();
 			for(size_t i = 0; i < chunk.volume_cell_ids.size(); i++)
 			{
@@ -228,7 +228,7 @@ namespace danikk_space_engine
 
 		for(ChunkId chunk_id : modified_chunk_ids)
 		{
-			chunks[chunk_id].createMesh();
+			data.getChunk(chunk_id).createMesh();
 		}
 		controller.selected_polygons = DynamicArray<FacePtr>();
 	}
