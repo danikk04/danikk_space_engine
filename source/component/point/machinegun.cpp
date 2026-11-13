@@ -21,15 +21,16 @@ namespace danikk_space_engine
 
 		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
-			for(ChunkId chunk_id : world.data.getUsedChunkIds())
+			for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
 			{
-				const Chunk& chunk = world.data.getChunk(chunk_id);
-				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
+				const WorldBody& body = world.data.getWorldBody(body_id);
+				for(ChunkId chunk_id : body.chunk_ids)
 				{
-					if(world.data.isPointComponentSlotActive(slot_id)
-						&& &world.data.getPointComponentSlot(slot_id) == &slot)
+					const Chunk& chunk = world.data.getChunk(chunk_id);
+					for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 					{
-						return chunk_id;
+						if(world.data.isPointComponentSlotActive(slot_id)
+							&& &world.data.getPointComponentSlot(slot_id) == &slot) return chunk_id;
 					}
 				}
 			}

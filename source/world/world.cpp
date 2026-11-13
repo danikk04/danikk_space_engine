@@ -26,60 +26,44 @@ namespace danikk_space_engine
 		const Ray ray{origin, normalized_direction};
 		float nearest_distance = max_distance;
 
-		for(ChunkId chunk_id : data.getUsedChunkIds())
+		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
-			const Chunk& chunk = data.getChunk(chunk_id);
-			const mat4 chunk_world_matrix = chunk.createWorldMatrix();
-			for(size_t cell_index = 0; cell_index < chunk.volume_cell_ids.size(); cell_index++)
+			const WorldBody& body = data.getWorldBody(body_id);
+			for(ChunkId chunk_id : body.chunk_ids)
 			{
-				const VolumeCellId cell_id = chunk.volume_cell_ids[cell_index];
-				if(!data.isVolumeCellActive(cell_id))
+				const Chunk& chunk = data.getChunk(chunk_id);
+				const mat4 chunk_world_matrix = chunk.createWorldMatrix();
+				for(size_t cell_index = 0; cell_index < chunk.volume_cell_ids.size(); cell_index++)
 				{
-					continue;
-				}
-				const VolumeCell& cell = data.getVolumeCell(cell_id);
-				const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
-				const uint8 shared_face_mask = chunk.getSharedFaceMask(cell_index);
-				for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
-				{
-					if((shared_face_mask & static_cast<uint8>(1u << topology.triangle_face_indices[triangle_index])) != 0)
+					const VolumeCellId cell_id = chunk.volume_cell_ids[cell_index];
+					if(!data.isVolumeCellActive(cell_id)) continue;
+					const VolumeCell& cell = data.getVolumeCell(cell_id);
+					const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
+					const uint8 shared_face_mask = chunk.getSharedFaceMask(cell_index);
+					for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
 					{
-						continue;
-					}
-					const VolumeCellTriangle& triangle = topology.triangles[triangle_index];
-					const PointId point_ids[3]
-					{
-						cell.points[triangle.points[0]],
-						cell.points[triangle.points[1]],
-						cell.points[triangle.points[2]]
-					};
-					if(!data.isPointActive(point_ids[0])
-						|| !data.isPointActive(point_ids[1])
-						|| !data.isPointActive(point_ids[2]))
-					{
-						continue;
-					}
+						if((shared_face_mask & static_cast<uint8>(1u << topology.triangle_face_indices[triangle_index])) != 0) continue;
+						const VolumeCellTriangle& triangle = topology.triangles[triangle_index];
+						const PointId point_ids[3]{cell.points[triangle.points[0]], cell.points[triangle.points[1]], cell.points[triangle.points[2]]};
+						if(!data.isPointActive(point_ids[0]) || !data.isPointActive(point_ids[1]) || !data.isPointActive(point_ids[2])) continue;
 
-					const vec3 a = data.getPoint(point_ids[0]).position;
-					const vec3 world_a = vec3(chunk_world_matrix * vec4(a, 1.0f));
-					const vec3 world_b = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[1]).position, 1.0f));
-					const vec3 world_c = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[2]).position, 1.0f));
-					const RayTriangleIntersection intersection = intersectRayTriangle(ray, world_a, world_b, world_c);
-					if(!intersection.hit || intersection.distance > nearest_distance)
-					{
-						continue;
-					}
+						const vec3 world_a = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[0]).position, 1.0f));
+						const vec3 world_b = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[1]).position, 1.0f));
+						const vec3 world_c = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[2]).position, 1.0f));
+						const RayTriangleIntersection intersection = intersectRayTriangle(ray, world_a, world_b, world_c);
+						if(!intersection.hit || intersection.distance > nearest_distance) continue;
 
-					nearest_distance = intersection.distance;
-					result.hit = true;
-					result.distance = intersection.distance;
-					result.position = origin + normalized_direction * intersection.distance;
-					result.normal = intersection.normal;
-					result.face = FacePtr{chunk_id, cell_id, topology.triangle_face_indices[triangle_index]};
-					result.triangle_index = triangle_index;
-					result.points[0] = point_ids[0];
-					result.points[1] = point_ids[1];
-					result.points[2] = point_ids[2];
+						nearest_distance = intersection.distance;
+						result.hit = true;
+						result.distance = intersection.distance;
+						result.position = origin + normalized_direction * intersection.distance;
+						result.normal = intersection.normal;
+						result.face = FacePtr{chunk_id, cell_id, topology.triangle_face_indices[triangle_index]};
+						result.triangle_index = triangle_index;
+						result.points[0] = point_ids[0];
+						result.points[1] = point_ids[1];
+						result.points[2] = point_ids[2];
+					}
 				}
 			}
 		}
@@ -148,9 +132,10 @@ namespace danikk_space_engine
 
 	void World::tick()
 	{
-		for(ChunkId chunk_id : data.getUsedChunkIds())
+		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
-			data.getChunk(chunk_id).tick(*this);
+			const WorldBody& body = data.getWorldBody(body_id);
+			for(ChunkId chunk_id : body.chunk_ids) data.getChunk(chunk_id).tick(*this);
 		}
 		for(PointId point_id : pending_point_destruction_ids)
 		{
@@ -177,15 +162,20 @@ namespace danikk_space_engine
 		const vec3 camera_front = camera.getFront();
 		const mat4 view = glm::lookAt(camera_position, camera_position + camera_front, camera.getUp());
 		setViewMatrix(view);
-		for(ChunkId chunk_id : data.getUsedChunkIds())
+		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
-			Chunk& chunk = data.getChunk(chunk_id);
-			if(chunk.mesh_dirty) chunk.createMesh();
-			chunk.frame(*this);
+			const WorldBody& body = data.getWorldBody(body_id);
+			for(ChunkId chunk_id : body.chunk_ids)
+			{
+				Chunk& chunk = data.getChunk(chunk_id);
+				if(chunk.mesh_dirty) chunk.createMesh();
+				chunk.frame(*this);
+			}
 		}
-		for(ChunkId chunk_id : data.getUsedChunkIds())
+		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
-			data.getChunk(chunk_id).draw();
+			const WorldBody& body = data.getWorldBody(body_id);
+			for(ChunkId chunk_id : body.chunk_ids) data.getChunk(chunk_id).draw();
 		}
 		drawPolygonHighlights(*this);
 	}

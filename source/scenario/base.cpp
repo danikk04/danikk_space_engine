@@ -12,10 +12,11 @@ namespace danikk_space_engine
 	{
 		world.data.clear();
 
+		const WorldBodyId planet_body_id = world.data.createWorldBody();
 		const PointId camera_point_id = world.data.createPoint();
 		Point& camera_point = world.data.getPoint(camera_point_id);
 		camera_point.position = vec3(0.0f);
-		Chunk& chunk = world.data.createChunk();
+		Chunk& chunk = world.data.createChunk(planet_body_id);
 		chunk.position = vec3(0.0f, 0.0f, -5.0f);
 		world.camera_component_slot_id = world.data.createPointComponentSlot(
 			camera_point_id,
