@@ -6,6 +6,18 @@
 
 namespace danikk_space_engine
 {
+	static bool isSelected(const DynamicArray<FacePtr>& selected_polygons, const FacePtr& face)
+	{
+		for(const FacePtr& selected : selected_polygons)
+		{
+			if(selected == face)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// Draws the selected face of a volume cell as a slightly inset overlay toward the camera.
 	// Collects unique face points from the topology triangles, computes the face center,
 	// rebuilds its triangles with a small camera offset, uploads them, and draws in the chunk transform.
@@ -66,7 +78,7 @@ namespace danikk_space_engine
 				}
 			}
 		}
-		if(face_point_count < 3 || world.controller.target_point_id >= world.data.getPointCount())
+		if(face_point_count < 3 || world.getCameraSlot().point_id >= world.data.getPointCount())
 		{
 			return;
 		}
@@ -80,7 +92,7 @@ namespace danikk_space_engine
 
 		const mat4 chunk_world_matrix = chunk.createWorldMatrix();
 		const vec3 face_center_world = vec3(chunk_world_matrix * vec4(face_center, 1.0f));
-		const vec3 camera_position = world.data.getPoint(world.controller.target_point_id).position;
+		const vec3 camera_position = world.getCameraPoint().position;
 		const vec3 camera_delta = camera_position - face_center_world;
 		const float camera_distance = glm::length(camera_delta);
 		const vec3 camera_offset_direction = camera_distance > 0.000001f
@@ -150,5 +162,23 @@ namespace danikk_space_engine
 		setDrawColor(color);
 		setWorldMatrix(chunk_world_matrix);
 		highlight_mesh.draw();
+	}
+
+	void drawPolygonHighlights(const World& world)
+	{
+		static Mesh highlight_mesh;
+		const vec4 selected_color(0.5f, 0.5f, 0.5f, 1.0f);
+		const vec4 hover_color(1.0f, 0.15f, 0.15f, 1.0f);
+
+		for(const FacePtr& selected : world.controller.selected_polygons)
+		{
+			drawPolygonHighlight(world, selected, highlight_mesh, selected_color);
+		}
+
+		const RaycastHit hit = world.raycastFromCamera();
+		if(hit.hit && !isSelected(world.controller.selected_polygons, hit.face))
+		{
+			drawPolygonHighlight(world, hit.face, highlight_mesh, hover_color);
+		}
 	}
 }

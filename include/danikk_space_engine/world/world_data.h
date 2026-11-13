@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/point.h>
+#include <danikk_space_engine/component/point_component.h>
 #include <danikk_space_engine/world/volume_cell.h>
 #include <danikk_space_engine/world/chunk.h>
 
@@ -13,11 +14,13 @@ namespace danikk_space_engine
 		DynamicArray<Point> points;
 		DynamicArray<VolumeCell> volume_cells;
 		DynamicArray<Chunk> chunks;
+		DynamicArray<PointComponentSlot> point_components;
 
 	public:
 		PointId createPoint();
 		VolumeCellId createVolumeCell();
 		Chunk& createChunk();
+		PointComponentSlotId createPointComponentSlot();
 
 		Point& getPoint(PointId id);
 		const Point& getPoint(PointId id) const;
@@ -25,10 +28,13 @@ namespace danikk_space_engine
 		const VolumeCell& getVolumeCell(VolumeCellId id) const;
 		Chunk& getChunk(ChunkId id);
 		const Chunk& getChunk(ChunkId id) const;
+		PointComponentSlot& getPointComponentSlot(PointComponentSlotId id);
+		const PointComponentSlot& getPointComponentSlot(PointComponentSlotId id) const;
 
 		size_t getPointCount() const;
 		size_t getVolumeCellCount() const;
 		size_t getChunkCount() const;
+		size_t getPointComponentSlotCount() const;
 
 		void clear();
 		void release();

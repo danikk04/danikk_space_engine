@@ -23,12 +23,11 @@ begin()
 каждый кадр
   -> gui.frame()
   -> key_binds.frame()
-  -> world.tick() -> controller.tick(data)
+  -> world.tick() -> Chunk::tick() -> PointComponentType::tick() -> LocalPlayerController::tick()
   -> world.frame()
-       -> Chunk::draw() для каждого чанка из WorldData
-       -> controller.frame(world)
-            -> при Alt+E: World::extrudeFaces()
-            -> raycast, обновление выделения, подсветка полигонов
+       -> Chunk::frame() для чанков из WorldData
+       -> Chunk::draw() для чанков из WorldData
+       -> drawPolygonHighlights(world): raycast наведённой грани и подсветка
 ```
 
 ## UML-схема активных подсистем
@@ -38,6 +37,7 @@ classDiagram
     class World {
         +WorldData data
         +LocalPlayerController controller
+        +PointComponentSlotId camera_component_slot_id
         +init()
         +tick()
         +frame()
@@ -49,12 +49,15 @@ classDiagram
         -DynamicArray~Point~ points
         -DynamicArray~VolumeCell~ volume_cells
         -DynamicArray~Chunk~ chunks
+        -DynamicArray~PointComponentSlot~ point_components
         +createPoint() PointId
         +createVolumeCell() VolumeCellId
         +createChunk() Chunk
+        +createPointComponentSlot() PointComponentSlotId
         +getPoint(id) Point
         +getVolumeCell(id) VolumeCell
         +getChunk(id) Chunk
+        +getPointComponentSlot(id) PointComponentSlot
         +clear()
         +release()
     }
@@ -62,14 +65,44 @@ classDiagram
     class Chunk {
         +vec3 position
         +DynamicArray~VolumeCellId~ volume_cell_ids
+        +DynamicArray~PointComponentSlotId~ point_component_slot_ids
         -Mesh* mesh
         +createMesh()
         +hasSharedFace()
+        +tick(World)
         +draw()
     }
 
     class Point {
         +vec3 position
+    }
+
+    class PointComponentType {
+        +size_t data_size
+        +size_t data_alignment
+        +construct(destination, init_data)
+        +move(destination, source)
+        +destroy(data)
+        +tick(slot, World)
+        +frame(slot, World)
+    }
+
+    class PointComponentSlot {
+        +PointId point_id
+        +PointComponentTypeId type_id
+        +bool uses_external_data
+        +uint8 inline_data[32]
+        +void* external_data
+    }
+
+    class CameraComponent {
+        +vec3 rotation
+        +float vertical_fov_degrees
+        +float near_clip_distance
+        +float far_clip_distance
+        +getFront() vec3
+        +getUp() vec3
+        +getRight() vec3
     }
 
     class VolumeCell {
@@ -87,21 +120,9 @@ classDiagram
         +uint8 face_index
     }
 
-    class Controller {
-        <<interface>>
-        +PointId target_point_id
-        +tick(WorldData)
-        +frame(World)
-    }
-
     class LocalPlayerController {
-        +vec3 rotation
         +DynamicArray~FacePtr~ selected_polygons
-        +getFront() vec3
-        +getUp() vec3
-        +getRight() vec3
-        +tick(WorldData)
-        +frame(World)
+        +tick(World)
     }
 
     class RaycastHit {
@@ -141,19 +162,23 @@ classDiagram
     }
 
     World *-- WorldData : владеет
-    World *-- Chunk : хранит
     World *-- LocalPlayerController : владеет
     WorldData *-- Point : хранит
     WorldData *-- VolumeCell : хранит
+    WorldData *-- Chunk : хранит
+    WorldData *-- PointComponentSlot : хранит
+    PointComponentSlot ..> Point : привязан к PointId
+    PointComponentSlot ..> PointComponentType : разрешает type_id через таблицу
+    PointComponentType ..> CameraComponent : payload типа camera
     Chunk ..> WorldData : получает ячейки и точки через world
     Chunk ..> VolumeCellId : хранит ID ячеек
     VolumeCell ..> PointId : ссылается на точки
     VolumeCell ..> MaterialId : ссылается на материал
     FacePtr ..> ChunkId : идентифицирует чанк
     FacePtr ..> VolumeCellId : идентифицирует ячейку
-    LocalPlayerController --|> Controller : реализует
     LocalPlayerController *-- FacePtr : хранит выделение
     LocalPlayerController ..> World : вызывает raycast и экструдирование
+    World ..> CameraComponent : читает активную камеру
     World ..> Ray : выполняет raycast
     World ..> RaycastHit : возвращает результат raycast
     GUI ..> World : читает позицию камеры
@@ -170,11 +195,12 @@ classDiagram
 - `World` — управляет состоянием мира и его кадром. Глобальный экземпляр `world` определён в `world.cpp`.
   - Поля:
     - `data` — `WorldData`, хранилище точек и `VolumeCell`.
-    - `controller` — `LocalPlayerController`, камера, ввод и выделение.
+    - `controller` — `LocalPlayerController`, выделение и редактирование полигонов.
+    - `camera_component_slot_id` — ID активного компонента камеры.
   - Методы:
     - `init()` — очищает данные и чанки; создаёт точку камеры, тестовую призму и бипирамиду в одном чанке; строит меш чанка.
-    - `tick()` — вызывает `controller.tick(data)`.
-    - `frame()` — задаёт 3D-шейдер, матрицы вида и проекции; рисует чанки; вызывает `controller.frame(*this)`.
+    - `tick()` — обновляет компоненты каждого чанка, затем обрабатывает ввод выделения и геометрического редактирования в контроллере.
+    - `frame()` — строит матрицу вида по активной камере; вызывает `Chunk::frame()` для настройки проекции, затем `Chunk::draw()` и `drawPolygonHighlights(*this)`.
     - `raycast(origin, direction)` — обходит видимые треугольники ячеек и возвращает ближайшее попадание.
     - `raycastFromCamera()` — запускает raycast из точки камеры в направлении взгляда.
     - `extrudeFaces(faces, distance)` — создаёт призму для треугольной грани или гексаэдр для четырёхугольной; обновляет чанки и возвращает верхние грани новых ячеек.
@@ -189,11 +215,12 @@ classDiagram
 
 ## world/world_data.h:
 
-- `WorldData` — приватно владеет массивами точек, ячеек и чанков. ID — индексы в соответствующих массивах.
+- `WorldData` — приватно владеет массивами точек, ячеек, чанков и компонентов точек. ID — индексы в соответствующих массивах.
   - Поля:
     - `points` — `DynamicArray<Point>`.
     - `volume_cells` — `DynamicArray<VolumeCell>`.
     - `chunks` — `DynamicArray<Chunk>`, чанки с ID принадлежащих им ячеек и мешами.
+    - `point_components` — `DynamicArray<PointComponentSlot>`.
   - Методы:
     - `createPoint()` — добавляет точку по умолчанию и возвращает её `PointId`.
     - `createVolumeCell()` — добавляет ячейку по умолчанию и возвращает её `VolumeCellId`.
@@ -204,6 +231,7 @@ classDiagram
     - `getPointCount()` — возвращает количество точек.
     - `getVolumeCellCount()` — возвращает количество ячеек.
     - `getChunkCount()` — возвращает количество чанков.
+    - `createPointComponentSlot()`, `getPointComponentSlot(id)`, `getPointComponentSlotCount()` — создание и доступ к слотам компонентов.
     - `clear()` — уничтожает элементы массивов, сохраняя их ёмкость.
     - `release()` — освобождает память массивов.
 
@@ -211,8 +239,42 @@ classDiagram
 
 - `Point` — хранит координату `vec3 position`.
   - Точки геометрии ячеек находятся в локальных координатах чанка и переводятся в мировые матрицей чанка.
-  - Точка камеры контроллера сейчас хранится непосредственно в мировых координатах.
+  - Точка камеры хранится непосредственно в мировых координатах и задаётся `PointComponentSlot::point_id`.
 - `PointId` — псевдоним `uint32`, индекс в `WorldData::points`.
+
+## component/point_component.h:
+
+- `PointComponentTypeId` — enum ID типа компонента точки: `none`, `camera`, `machine_gun`, `engine`, `count`.
+- `PointComponentType` — описание типа и таблица его операций.
+  - Поля:
+    - `data_size`, `data_alignment` — размер и выравнивание payload.
+    - `construct`, `move`, `destroy` — указатели на функции жизненного цикла payload.
+    - `tick`, `frame` — указатели на функции обновления и отрисовки.
+- `getPointComponentType(type_id)` — возвращает описание из таблицы в `source/component/point_component.cpp`; неизвестный ID возвращает запись `none`.
+- `PointComponentSlot` — экземпляр компонента, привязанный к `PointId`.
+  - Поля:
+    - `type_id` — индекс типа в таблице описаний.
+    - `inline_data` — встроенное хранилище до 32 байт.
+    - `external_data` — указатель на внешнее хранилище для большего payload.
+    - `uses_external_data` — указывает, какое хранилище используется.
+
+`WorldData` владеет массивом `PointComponentSlot`. Тип `camera` зарегистрирован; `machine_gun` и `engine` пока имеют пустые записи.
+
+## component/camera.h:
+
+- `CameraComponent` — состояние и параметры камеры. Позиция определяется точкой из `PointComponentSlot`; вращение хранится в компоненте.
+  - Поля:
+    - `rotation` — углы рысканья, тангажа и крена.
+    - `vertical_fov_degrees` — вертикальный угол обзора в градусах.
+    - `near_clip_distance`, `far_clip_distance` — ближняя и дальняя плоскости отсечения.
+  - Методы:
+    - `getFront()`, `getUp()`, `getRight()` — вычисляют базис камеры с учётом крена.
+- Callback-функции компонента зарегистрированы в таблице `PointComponentType`.
+- `constructCameraComponent()` — создаёт параметры по умолчанию либо копирует их из `init_data`.
+- `moveCameraComponent()` и `destroyCameraComponent()` — перемещают и уничтожают payload.
+- `tickCameraComponent()` — обрабатывает мышь, WASD, Q/E и модификаторы скорости; Alt приостанавливает движение и вращение.
+- `frameCameraComponent()` — проверяет параметры и задаёт матрицу проекции.
+- `World::init()` создаёт камеру на отдельной точке и регистрирует слот в чанке.
 
 ## world/volume_cell.h:
 
@@ -242,12 +304,15 @@ classDiagram
   - Поля:
     - `position` — позиция чанка.
     - `volume_cell_ids` — ID ячеек чанка.
+    - `point_component_slot_ids` — ID слотов компонентов, обновляемых этим чанком.
     - `mesh` — приватный `Mesh*`, которым чанк владеет.
   - Методы:
     - `Chunk(Chunk&&)`, `operator=(Chunk&&)` — передают владение мешем и массивом ID при перемещении.
     - `~Chunk()` — освобождает меш.
     - `destroyMesh()` — освобождает GPU-ресурсы, вызывает деструктор `Mesh` и `free()`.
     - `createMesh()` — строит треугольный меш из ячеек, вычисляет нормали и планарные UV, пропускает внутренние грани и загружает буферы.
+    - `addPointComponentSlot(id)` — регистрирует слот компонента для обновления этим чанком.
+    - `tick(world)` — для каждого зарегистрированного слота вызывает `tick` из `PointComponentType`.
     - `hasSharedFace(cell_id, face_index)` — ищет совпадающую грань среди других ячеек этого чанка.
     - `createWorldMatrix()` — возвращает матрицу трансляции чанка.
     - `draw()` — привязывает материал первой ячейки, задаёт матрицу чанка и рисует меш.
@@ -271,24 +336,18 @@ classDiagram
 
 ## controller.h:
 
-- `Controller` — базовый интерфейс контроллера.
+- `LocalPlayerController` — обрабатывает выделение и редактирование полигонов.
   - Поля:
-    - `target_point_id` — `PointId` точки, используемой как позиция камеры.
-  - Методы:
-    - `tick(data)` — виртуальное обновление состояния.
-    - `frame(world)` — виртуальная обработка на кадре; реализация базового класса пустая.
-- `LocalPlayerController` — контроллер камеры и локального игрока, реализующий `Controller`.
-  - Поля:
-    - `rotation` — углы камеры.
     - `selected_polygons` — `DynamicArray<FacePtr>` выделенных граней.
   - Методы:
-    - `getFront()` — вычисляет направление взгляда из рысканья и тангажа.
-    - `getUp()` — вращает мировой вектор вверх вокруг направления взгляда с учётом крена.
-    - `getRight()` — вычисляет направление вправо из векторов `front` и `up`.
-    - `tick(data)` — поворачивает камеру мышью, обрабатывает крен Q/E и перемещение WASD с модификаторами скорости.
-    - `frame(world)` — выполняет экструдирование по Alt+E, переключает грань по ЛКМ, снимает выделение при клике мимо и рисует подсветку.
+    - `tick(world)` — выполняет экструдирование по Alt+E, удаление по Alt+D, переключает грань по ЛКМ и снимает выделение при клике мимо.
 
-Alt отключает крен на E, поэтому сочетание Alt+E используется для экструдирования.
+## polygon_highlight.h:
+
+- `drawPolygonHighlight(world, face, mesh, color)` — рисует одну подсвеченную грань.
+- `drawPolygonHighlights(world)` — рисует все выделенные грани белым и текущую грань под курсором красным; вызывается из `World::frame()`.
+
+Зажатие Alt отключает ввод камеры, поэтому Alt+E и Alt+D доступны контроллеру редактирования.
 
 ## fwd.h:
 
@@ -362,7 +421,7 @@ Alt отключает крен на E, поэтому сочетание Alt+E 
 - `key_binds` — глобальный экземпляр `KeyBindCollection`.
 - `closeGame()` — callback в `keybind.cpp`, не объявлен в заголовке; вызывает `danikk_engine::exit()` и используется привязкой Escape.
 
-Alt+E и Q/E опрашиваются непосредственно в `LocalPlayerController`, а не через `KeyBindCollection`.
+Alt+E, Alt+D и ЛКМ опрашиваются в `LocalPlayerController::tick()`; Q/E, WASD и мышь обрабатываются `CameraComponent::tick()`. Эти клавиши пока не используют `KeyBindCollection`.
 
 ## localization.h:
 

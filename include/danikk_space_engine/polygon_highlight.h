@@ -14,4 +14,6 @@ namespace danikk_space_engine
 		const FacePtr& face,
 		Mesh& highlight_mesh,
 		const vec4& color);
+
+	void drawPolygonHighlights(const World& world);
 }

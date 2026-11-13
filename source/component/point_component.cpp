@@ -1,0 +1,34 @@
+#include <danikk_space_engine/component/point_component.h>
+#include <danikk_space_engine/component/camera.h>
+
+namespace danikk_space_engine
+{
+	namespace
+	{
+		const PointComponentType point_component_types[] =
+		{
+			{}, // none
+			{
+				sizeof(CameraComponent),
+				alignof(CameraComponent),
+				constructCameraComponent,
+				moveCameraComponent,
+				destroyCameraComponent,
+				tickCameraComponent,
+				frameCameraComponent
+			},
+			{}, // machine_gun
+			{}  // engine
+		};
+	}
+
+	const PointComponentType& getPointComponentType(PointComponentTypeId type_id)
+	{
+		const uint32 index = static_cast<uint32>(type_id);
+		if(index >= static_cast<uint32>(PointComponentTypeId::count))
+		{
+			return point_component_types[static_cast<uint32>(PointComponentTypeId::none)];
+		}
+		return point_component_types[index];
+	}
+}

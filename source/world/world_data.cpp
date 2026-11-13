@@ -1,5 +1,7 @@
 #include <danikk_space_engine/world/world_data.h>
 
+#include <cstdlib>
+
 namespace danikk_space_engine
 {
 	PointId WorldData::createPoint()
@@ -19,6 +21,13 @@ namespace danikk_space_engine
 	Chunk& WorldData::createChunk()
 	{
 		return chunks.pushCtor();
+	}
+
+	PointComponentSlotId WorldData::createPointComponentSlot()
+	{
+		const PointComponentSlotId id = static_cast<PointComponentSlotId>(point_components.size());
+		point_components.pushCtor();
+		return id;
 	}
 
 	Point& WorldData::getPoint(PointId id)
@@ -51,6 +60,16 @@ namespace danikk_space_engine
 		return chunks[id];
 	}
 
+	PointComponentSlot& WorldData::getPointComponentSlot(PointComponentSlotId id)
+	{
+		return point_components[id];
+	}
+
+	const PointComponentSlot& WorldData::getPointComponentSlot(PointComponentSlotId id) const
+	{
+		return point_components[id];
+	}
+
 	size_t WorldData::getPointCount() const
 	{
 		return points.size();
@@ -66,8 +85,36 @@ namespace danikk_space_engine
 		return chunks.size();
 	}
 
+	size_t WorldData::getPointComponentSlotCount() const
+	{
+		return point_components.size();
+	}
+
 	void WorldData::clear()
 	{
+		for(PointComponentSlot& slot : point_components)
+		{
+			if(slot.uses_external_data && slot.external_data == nullptr)
+			{
+				danikk_engine::formatFatalError("Point component slot has no external data during cleanup");
+			}
+
+			const PointComponentType& type = getPointComponentType(slot.type_id);
+			if(type.destroy != nullptr)
+			{
+				type.destroy(slot.getData());
+			}
+			else if(slot.type_id != PointComponentTypeId::none)
+			{
+				danikk_engine::formatFatalError("Point component type % has no destroy function", static_cast<uint32>(slot.type_id));
+			}
+
+			if(slot.uses_external_data)
+			{
+				free(slot.external_data);
+			}
+		}
+		point_components.clear();
 		chunks.clear();
 		points.clear();
 		volume_cells.clear();
@@ -75,7 +122,9 @@ namespace danikk_space_engine
 
 	void WorldData::release()
 	{
+		clear();
 		chunks = DynamicArray<Chunk>();
+		point_components = DynamicArray<PointComponentSlot>();
 		points = DynamicArray<Point>();
 		volume_cells = DynamicArray<VolumeCell>();
 	}

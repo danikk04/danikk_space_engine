@@ -13,24 +13,11 @@
 
 namespace danikk_space_engine
 {
-	class Controller
+	class LocalPlayerController
 	{
 	public:
-		PointId target_point_id = 0;
-		virtual void tick(WorldData& data) = 0;
-		virtual void frame(World&) {}
-	};
-
-	class LocalPlayerController : public Controller
-	{
-	public:
-		vec3 rotation = vec3(0.0f);
 		DynamicArray<FacePtr> selected_polygons;
 
-		void frame(World& world) override;
-		vec3 getFront() const;
-		vec3 getUp() const;
-		vec3 getRight() const;
-		void tick(WorldData& data) override;
+		void tick(World& world);
 	};
 }

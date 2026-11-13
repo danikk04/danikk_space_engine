@@ -11,4 +11,5 @@ sources = files(
 
 subdir('shape')
 subdir('math')
+subdir('component')
 subdir('world')

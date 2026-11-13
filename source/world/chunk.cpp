@@ -69,7 +69,8 @@ namespace danikk_space_engine
 
 	Chunk::Chunk(Chunk&& other) noexcept
 		: mesh(other.mesh), shared_face_masks(static_cast<DynamicArray<uint8>&&>(other.shared_face_masks)),
-		position(other.position), volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids))
+		position(other.position), volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids)),
+		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids))
 	{
 		other.mesh = nullptr;
 	}
@@ -84,6 +85,7 @@ namespace danikk_space_engine
 		destroyMesh();
 		position = other.position;
 		volume_cell_ids = static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids);
+		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
 		shared_face_masks = static_cast<DynamicArray<uint8>&&>(other.shared_face_masks);
 		mesh = other.mesh;
 		other.mesh = nullptr;
@@ -106,6 +108,63 @@ namespace danikk_space_engine
 		mesh->~Mesh();
 		free(mesh);
 		mesh = nullptr;
+	}
+
+	void Chunk::addPointComponentSlot(PointComponentSlotId slot_id)
+	{
+		point_component_slot_ids.push(slot_id);
+	}
+
+	void Chunk::tick(World& world)
+	{
+		const size_t component_count = point_component_slot_ids.size();
+		for(size_t component_index = 0; component_index < component_count; component_index++)
+		{
+			const PointComponentSlotId slot_id = point_component_slot_ids[component_index];
+			if(slot_id >= world.data.getPointComponentSlotCount())
+			{
+				danikk_engine::formatFatalError("Chunk references invalid point component slot %", slot_id);
+			}
+
+			PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+			const PointComponentType& type = getPointComponentType(slot.type_id);
+			if(type.tick == nullptr)
+			{
+				danikk_engine::formatFatalError(
+					"Point component type % has no tick function",
+					static_cast<uint32>(slot.type_id));
+			}
+			if(slot.uses_external_data && slot.external_data == nullptr)
+			{
+				danikk_engine::formatFatalError("Point component slot % has no external data", slot_id);
+			}
+			type.tick(slot, world);
+		}
+	}
+
+	void Chunk::frame(World& world)
+	{
+		const size_t component_count = point_component_slot_ids.size();
+		for(size_t component_index = 0; component_index < component_count; component_index++)
+		{
+			const PointComponentSlotId slot_id = point_component_slot_ids[component_index];
+			if(slot_id >= world.data.getPointComponentSlotCount())
+			{
+				danikk_engine::formatFatalError("Chunk references invalid point component slot %", slot_id);
+			}
+
+			PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+			if(slot.uses_external_data && slot.external_data == nullptr)
+			{
+				danikk_engine::formatFatalError("Point component slot % has no external data", slot_id);
+			}
+
+			const PointComponentType& type = getPointComponentType(slot.type_id);
+			if(type.frame != nullptr)
+			{
+				type.frame(slot, world);
+			}
+		}
 	}
 
 	// Builds a triangle mesh for all volume cells owned by this chunk.

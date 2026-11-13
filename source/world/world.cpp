@@ -3,6 +3,7 @@
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/math/ray.h>
+#include <danikk_space_engine/polygon_highlight.h>
 
 namespace danikk_space_engine
 {
@@ -84,32 +85,74 @@ namespace danikk_space_engine
 
 	RaycastHit World::raycastFromCamera(float max_distance) const
 	{
-		if(controller.target_point_id >= data.getPointCount())
+		if(camera_component_slot_id >= data.getPointComponentSlotCount())
 		{
 			return RaycastHit{};
 		}
-		return raycast(data.getPoint(controller.target_point_id).position, controller.getFront(), max_distance);
+		const PointComponentSlot& camera_slot = data.getPointComponentSlot(camera_component_slot_id);
+		if(camera_slot.point_id >= data.getPointCount())
+		{
+			return RaycastHit{};
+		}
+		return raycast(data.getPoint(camera_slot.point_id).position, getCameraComponent().getFront(), max_distance);
+	}
+
+	PointComponentSlot& World::getCameraSlot()
+	{
+		return data.getPointComponentSlot(camera_component_slot_id);
+	}
+
+	const PointComponentSlot& World::getCameraSlot() const
+	{
+		return data.getPointComponentSlot(camera_component_slot_id);
+	}
+
+	CameraComponent& World::getCameraComponent()
+	{
+		return *static_cast<CameraComponent*>(getCameraSlot().getData());
+	}
+
+	const CameraComponent& World::getCameraComponent() const
+	{
+		return *static_cast<const CameraComponent*>(getCameraSlot().getData());
+	}
+
+	Point& World::getCameraPoint()
+	{
+		return data.getPoint(getCameraSlot().point_id);
+	}
+
+	const Point& World::getCameraPoint() const
+	{
+		return data.getPoint(getCameraSlot().point_id);
 	}
 
 	void World::tick()
 	{
-		controller.tick(data);
+		for(ChunkId chunk_id = 0; chunk_id < data.getChunkCount(); chunk_id++)
+		{
+			data.getChunk(chunk_id).tick(*this);
+		}
+		controller.tick(*this);
 	}
 
 	void World::frame()
 	{
 		static_asset_collection.base3d_shader.use();
-		const vec3 camera_position = data.getPoint(controller.target_point_id).position;
-		const vec3 camera_front = controller.getFront();
-		const mat4 view = glm::lookAt(camera_position, camera_position + camera_front, controller.getUp());
-		const mat4 projection = glm::perspective(90.0f, screen_ratio_gz, 0.1f, 10000.0f);
+		const vec3 camera_position = getCameraPoint().position;
+		const CameraComponent& camera = getCameraComponent();
+		const vec3 camera_front = camera.getFront();
+		const mat4 view = glm::lookAt(camera_position, camera_position + camera_front, camera.getUp());
 		setViewMatrix(view);
-		setProjectionMatrix(projection);
+		for(ChunkId chunk_id = 0; chunk_id < data.getChunkCount(); chunk_id++)
+		{
+			data.getChunk(chunk_id).frame(*this);
+		}
 		for(ChunkId chunk_id = 0; chunk_id < data.getChunkCount(); chunk_id++)
 		{
 			data.getChunk(chunk_id).draw();
 		}
-		controller.frame(*this);
+		drawPolygonHighlights(*this);
 	}
 
 	// Resets world data and builds the initial camera, prism, and bipyramid scene.
@@ -120,12 +163,17 @@ namespace danikk_space_engine
 		data.clear();
 		controller.selected_polygons = DynamicArray<FacePtr>();
 
-		controller.target_point_id = data.createPoint();
-		Point& camera_point = data.getPoint(controller.target_point_id);
+		const PointId camera_point_id = data.createPoint();
+		Point& camera_point = data.getPoint(camera_point_id);
 		camera_point.position = vec3(0.0f);
-		controller.rotation = vec3(0.0f);
 		Chunk& chunk = data.createChunk();
 		chunk.position = vec3(0.0f, 0.0f, -5.0f);
+		camera_component_slot_id = data.createPointComponentSlot();
+		PointComponentSlot& camera_slot = data.getPointComponentSlot(camera_component_slot_id);
+		camera_slot.point_id = camera_point_id;
+		camera_slot.type_id = PointComponentTypeId::camera;
+		getPointComponentType(camera_slot.type_id).construct(camera_slot.getData(), nullptr);
+		chunk.addPointComponentSlot(camera_component_slot_id);
 
 		const PointId first_prism_point = static_cast<PointId>(data.getPointCount());
 		const vec3 prism_positions[] =

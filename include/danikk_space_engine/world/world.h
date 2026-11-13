@@ -3,6 +3,7 @@
 #include <danikk_space_engine/default.h>
 
 #include <danikk_space_engine/point.h>
+#include <danikk_space_engine/component/camera.h>
 #include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/controller.h>
@@ -27,6 +28,7 @@ namespace danikk_space_engine
 	public:
 		WorldData data;
 		LocalPlayerController controller;
+		PointComponentSlotId camera_component_slot_id = 0;
 
 		void tick();
 
@@ -36,6 +38,12 @@ namespace danikk_space_engine
 
 		RaycastHit raycast(const vec3& origin, const vec3& direction, float max_distance = 10000.0f) const;
 		RaycastHit raycastFromCamera(float max_distance = 10000.0f) const;
+		PointComponentSlot& getCameraSlot();
+		const PointComponentSlot& getCameraSlot() const;
+		CameraComponent& getCameraComponent();
+		const CameraComponent& getCameraComponent() const;
+		Point& getCameraPoint();
+		const Point& getCameraPoint() const;
 		DynamicArray<FacePtr> extrudeFaces(const DynamicArray<FacePtr>& faces, float distance);
 		void deleteVolumeCells(const DynamicArray<FacePtr>& faces);
 	};

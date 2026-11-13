@@ -41,7 +41,7 @@ namespace danikk_space_engine
 			memory_sample_timer = 0.0f;
 		}
 
-		const vec3 camera_position = truncateTo100(world.data.getPoint(world.controller.target_point_id).position);
+		const vec3 camera_position = truncateTo100(world.getCameraPoint().position);
 		if(memory_sample_bytes == 0)
 		{
 			format(
