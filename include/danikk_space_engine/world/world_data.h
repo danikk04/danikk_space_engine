@@ -1,7 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/volume_cell.h>
+#include <danikk_space_engine/world/volume_cell.h>
 
 #include <danikk_framework/dynamic_array.h>
 

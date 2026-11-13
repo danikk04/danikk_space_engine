@@ -1,7 +1,7 @@
 #include <algorithm>
 
-#include <danikk_space_engine/chunk.h>
-#include <danikk_space_engine/world.h>
+#include <danikk_space_engine/world/chunk.h>
+#include <danikk_space_engine/world/world.h>
 
 #include <danikk_engine/mesh.h>
 #include <danikk_engine/texture_methods.h>

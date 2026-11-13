@@ -2,7 +2,7 @@
 #include <danikk_space_engine/keybind.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/world.h>
+#include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/localization.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_engine/dynamic_mesh.h>

@@ -1,6 +1,6 @@
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/asset.h>
-#include <danikk_space_engine/world.h>
+#include <danikk_space_engine/world/world.h>
 
 #include <danikk_framework/glm.h>
 #include <danikk_framework/format.h>

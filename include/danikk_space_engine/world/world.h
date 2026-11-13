@@ -3,10 +3,10 @@
 #include <danikk_space_engine/default.h>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/face_ptr.h>
-#include <danikk_space_engine/chunk.h>
+#include <danikk_space_engine/world/face_ptr.h>
+#include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/controller.h>
-#include <danikk_space_engine/world_data.h>
+#include <danikk_space_engine/world/world_data.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine

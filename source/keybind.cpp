@@ -2,7 +2,7 @@
 
 #include <danikk_engine/input.h>
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/world.h>
+#include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
 {

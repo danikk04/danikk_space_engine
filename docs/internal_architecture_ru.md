@@ -163,7 +163,7 @@ classDiagram
 
 ## Мир и геометрия
 
-## world.h:
+## world/world.h:
 
 - `World` — управляет состоянием мира и его кадром. Глобальный экземпляр `world` определён в `world.cpp`.
   - Поля:
@@ -186,7 +186,7 @@ classDiagram
     - `triangle_index` — индекс треугольника в топологии ячейки.
     - `points` — ID трёх точек треугольника.
 
-## world_data.h:
+## world/world_data.h:
 
 - `WorldData` — приватно владеет массивами точек и ячеек. `PointId` и `VolumeCellId` — индексы в этих массивах.
   - Поля:
@@ -209,7 +209,7 @@ classDiagram
   - Точка камеры контроллера сейчас хранится непосредственно в мировых координатах.
 - `PointId` — псевдоним `uint32`, индекс в `WorldData::points`.
 
-## volume_cell.h:
+## world/volume_cell.h:
 
 - `VolumeCell` — объёмная ячейка, ссылающаяся на точки по `PointId`; точками не владеет.
   - Поля:
@@ -231,7 +231,7 @@ classDiagram
 - `getVolumeCellFacePointIds(cell, face_index, point_ids)` — убирает внутренние рёбра триангулированной грани и возвращает её контур в правильном порядке.
 - `volumeCellFacesSharePoints(cell_a, face_a, cell_b, face_b)` — проверяет, совпадают ли наборы ID точек двух граней.
 
-## chunk.h:
+## world/chunk.h:
 
 - `Chunk` — группирует ID ячеек, применяет трансляцию и владеет GPU-мешем. Точки и ячейки принадлежат `WorldData`.
   - Поля:
@@ -252,7 +252,7 @@ classDiagram
 
 ## Идентификаторы граней и управление камерой
 
-## face_ptr.h:
+## world/face_ptr.h:
 
 - `FacePtr` — идентификатор грани.
   - Поля:

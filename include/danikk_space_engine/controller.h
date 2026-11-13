@@ -1,9 +1,9 @@
 #pragma once
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/face_ptr.h>
-#include <danikk_space_engine/volume_cell.h>
-#include <danikk_space_engine/world_data.h>
+#include <danikk_space_engine/world/face_ptr.h>
+#include <danikk_space_engine/world/volume_cell.h>
+#include <danikk_space_engine/world/world_data.h>
 #include <danikk_space_engine/fwd.h>
 
 #include <danikk_framework/glm.h>

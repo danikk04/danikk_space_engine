@@ -1,5 +1,5 @@
 #include <danikk_space_engine/controller.h>
-#include <danikk_space_engine/world.h>
+#include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/polygon_highlight.h>
 
 #include <danikk_engine/input.h>
