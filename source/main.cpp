@@ -1,11 +1,11 @@
 #include <danikk_space_engine/gui.h>
-#include <danikk_space_engine/keybind.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/localization.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_engine/dynamic_mesh.h>
+#include <danikk_engine/input.h>
 
 namespace danikk_engine_game
 {
@@ -19,7 +19,6 @@ namespace danikk_engine_game
     void begin()
     {
 		setWindowTitle("Danikk Space Engine");
-		key_binds.init();
     	static_asset_collection.load();
     	loadMaterials();
     	gui.define();
@@ -32,7 +31,10 @@ namespace danikk_engine_game
     void frame()
     {
     	gui.frame();
-    	key_binds.frame();
+		if(getKeyboardState(keyboard_buttons::escape) == button_states::press)
+		{
+			exit();
+		}
     	world.tick();
     	world.frame();
     }

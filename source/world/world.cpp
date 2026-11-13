@@ -3,7 +3,7 @@
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/math/ray.h>
-#include <danikk_space_engine/polygon_highlight.h>
+#include <danikk_space_engine/effects/polygon_highlight.h>
 
 namespace danikk_space_engine
 {

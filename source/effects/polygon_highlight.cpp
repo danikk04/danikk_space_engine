@@ -1,4 +1,4 @@
-#include <danikk_space_engine/polygon_highlight.h>
+#include <danikk_space_engine/effects/polygon_highlight.h>
 
 #include <danikk_space_engine/world/world.h>
 
