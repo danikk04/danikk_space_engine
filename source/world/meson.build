@@ -5,6 +5,7 @@ sources += files(
 	'volume_cell.cpp',
 	'world.cpp',
 	'world_data.cpp',
+	'world_resource_pool.cpp',
 	'world_body.cpp',
 	'planet.cpp',
 )

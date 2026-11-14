@@ -7,6 +7,7 @@
 #include <danikk_space_engine/world/ground_triangle.h>
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/world/world_body.h>
+#include <danikk_space_engine/world/world_resource_pool.h>
 
 #include <danikk_framework/dynamic_array.h>
 
@@ -14,27 +15,13 @@ namespace danikk_space_engine
 {
 	class WorldData
 	{
-		DynamicArray<Point> points;
-		DynamicArray<VolumeCell> volume_cells;
-		DynamicArray<GroundTriangle> ground_triangles;
-		DynamicArray<Chunk> chunks;
-		DynamicArray<WorldBody> world_bodies;
-		DynamicArray<PointComponentSlot> point_components;
-		DynamicArray<GraphComponentSlot> graph_components;
-		DynamicArray<PointId> used_point_ids;
-		DynamicArray<VolumeCellId> used_volume_cell_ids;
-		DynamicArray<GroundTriangleId> used_ground_triangle_ids;
-		DynamicArray<ChunkId> used_chunk_ids;
-		DynamicArray<WorldBodyId> used_world_body_ids;
-		DynamicArray<PointComponentSlotId> used_point_component_slot_ids;
-		DynamicArray<GraphComponentSlotId> used_graph_component_slot_ids;
-		DynamicArray<PointId> freed_point_ids;
-		DynamicArray<VolumeCellId> freed_volume_cell_ids;
-		DynamicArray<GroundTriangleId> freed_ground_triangle_ids;
-		DynamicArray<ChunkId> freed_chunk_ids;
-		DynamicArray<WorldBodyId> freed_world_body_ids;
-		DynamicArray<PointComponentSlotId> freed_point_component_slot_ids;
-		DynamicArray<GraphComponentSlotId> freed_graph_component_slot_ids;
+		WorldResourcePool<Point, PointId> points;
+		WorldResourcePool<VolumeCell, VolumeCellId> volume_cells;
+		WorldResourcePool<GroundTriangle, GroundTriangleId> ground_triangles;
+		WorldResourcePool<Chunk, ChunkId> chunks;
+		WorldResourcePool<WorldBody, WorldBodyId> world_bodies;
+		WorldResourcePool<PointComponentSlot, PointComponentSlotId> point_components;
+		WorldResourcePool<GraphComponentSlot, GraphComponentSlotId> graph_components;
 
 	public:
 		PointId createPoint();
