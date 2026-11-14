@@ -126,6 +126,11 @@ classDiagram
         +generatePlanetChunk(request) GeneratedChunkData
     }
 
+    class PlanetChunkCache {
+        +loadPlanetChunkCache(request, result) bool
+        +savePlanetChunkCache(request, result)
+    }
+
     class Chunk {
         +vec3 position
         +DynamicArray~VolumeCellId~ volume_cell_ids
@@ -239,6 +244,7 @@ classDiagram
     ChunkLoader ..> GeneratedChunkData : возвращает результаты
     ChunkLoader ..> PlanetChunkGenerator : выполняет генерацию в worker
     PlanetChunkGenerator ..> PlanetTerrainField : получает высоту поверхности
+    PlanetChunkGenerator ..> PlanetChunkCache : читает или сохраняет геометрию
     World ..> PointComponentSlot : хранит ID активных camera и controller
     WorldData *-- Point : хранит
     WorldData *-- VolumeCell : хранит
@@ -319,7 +325,12 @@ classDiagram
 
 - `ChunkGenerationRequest` — снимок параметров одного чанка поверхности для фонового потока; содержит ориентацию участка, координаты сетки, радиус и seed.
 - `GeneratedChunkData` — результат фоновой генерации: локальные координаты вершин и индексы треугольников, а также идентификаторы владельца и запроса.
-- `generatePlanetChunk(request)` — строит сетку участка кубической сферы, деформирует вершины скалярным полем и возвращает локальную геометрию.
+- `generatePlanetChunk(request)` — сначала проверяет кэш, а при промахе строит сетку участка кубической сферы, деформирует вершины скалярным полем и сохраняет результат.
+
+## component/world_body/planet/chunk_cache.h:
+
+- `loadPlanetChunkCache(request, result)` — загружает и проверяет кэшированную геометрию чанка.
+- `savePlanetChunkCache(request, result)` — сохраняет локальные вершины и индексы треугольников в `cache/planet_surface`.
 
 ## world/chunk_loader.h:
 
