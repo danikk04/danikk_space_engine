@@ -11,4 +11,5 @@ sources += files(
 	'world_resource_pool.cpp',
 	'world_body.cpp',
 	'planet.cpp',
+	'world_raycast.cpp',
 )
