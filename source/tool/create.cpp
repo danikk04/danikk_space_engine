@@ -82,7 +82,7 @@ namespace danikk_space_engine
 			const VolumeCellId cell_id = world.data.createVolumeCell();
 			VolumeCell& cell = world.data.getVolumeCell(cell_id);
 			cell.topology = topology;
-			cell.material = default_materials::sandstone;
+			cell.material = default_materials::stone;
 			cell.mass = 1.0f;
 			cell.health = 100.0f;
 			for(uint8 i = 0; i < point_count; i++)

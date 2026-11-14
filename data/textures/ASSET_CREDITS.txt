@@ -1,0 +1,11 @@
+Texture assets
+
+grass_32x32.png, stone_32x32.png, lava_32x32.png, water_32x32.png
+From "N64 Texture Pack" by n64guy.
+License: CC0 (public domain).
+Source: https://opengameart.org/node/170403
+
+ore_32x32.png
+From "2D Cave Textures" by MikeFozzy98 (iron texture).
+License: CC BY 3.0.
+Source: https://opengameart.org/content/2d-cave-textures

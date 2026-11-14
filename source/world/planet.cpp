@@ -21,16 +21,8 @@ namespace danikk_space_engine
 
 	MaterialId samplePlanetMaterial(const glm::dvec3& position_relative_to_planet_center)
 	{
-		const double x = position_relative_to_planet_center.x;
-		const double y = position_relative_to_planet_center.y;
-		const double z = position_relative_to_planet_center.z;
-		const double geological_field =
-			std::sin(x * 0.013 + z * 0.006)
-			+ std::cos(y * 0.011 - x * 0.004)
-			+ 0.5 * std::sin(z * 0.017 + y * 0.008);
-		return geological_field > 0.65
-			? default_materials::granite
-			: default_materials::sandstone;
+		(void)position_relative_to_planet_center;
+		return default_materials::stone;
 	}
 
 	namespace
