@@ -30,6 +30,14 @@ namespace danikk_space_engine
 		DynamicArray<PointId> pending_point_destruction_ids;
 		PointComponentSlotId camera_component_slot_id = 0;
 		PointComponentSlotId local_player_controller_component_slot_id = 0;
+		WorldBodyId planet_body_id = 0;
+		DynamicArray<ChunkId> planet_surface_chunk_ids;
+		glm::dvec3 planet_patch_origin = glm::dvec3(0.0);
+		glm::dvec3 planet_patch_up = glm::dvec3(0.0, 0.0, 1.0);
+		glm::dvec3 planet_patch_east = glm::dvec3(1.0, 0.0, 0.0);
+		glm::dvec3 planet_patch_north = glm::dvec3(0.0, 1.0, 0.0);
+		glm::dvec3 planet_stream_anchor = glm::dvec3(0.0);
+		bool planet_stream_initialized = false;
 
 		void tick();
 		void deferPointDestruction(PointId point_id);

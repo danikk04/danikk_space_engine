@@ -36,7 +36,7 @@ namespace danikk_space_engine
 
 		void duplicateControllerPointWithMachinegun(
 			const Point& source_point,
-			const vec3& rotation,
+			const CameraComponent& camera,
 			ChunkId chunk_id,
 			World& world)
 		{
@@ -44,7 +44,9 @@ namespace danikk_space_engine
 			world.data.getPoint(point_id) = source_point;
 			world.data.getPoint(point_id).chunk_reference_count = 0;
 			MachinegunComponent machinegun;
-			machinegun.rotation = rotation;
+		machinegun.forward = camera.getFront();
+		machinegun.up = camera.getUp();
+		machinegun.right = camera.getRight();
 			const PointComponentSlotId machinegun_slot_id = world.data.createPointComponentSlot(
 				point_id,
 				PointComponentTypeId::machine_gun,
@@ -99,7 +101,7 @@ namespace danikk_space_engine
 		const int machinegun_state = getKeyboardState(keyboard_buttons::m);
 		const bool spawn_machinegun = isAltDown() && machinegun_state == button_states::press;
 		Point source_point;
-		vec3 source_rotation(0.0f);
+		CameraComponent source_camera;
 		ChunkId owner_chunk_id = static_cast<ChunkId>(-1);
 		if(spawn_machinegun)
 		{
@@ -108,7 +110,7 @@ namespace danikk_space_engine
 				danikk_engine::formatFatalError("Local player controller references invalid point %", slot.point_id);
 			}
 			source_point = world.data.getPoint(slot.point_id);
-			source_rotation = world.getCameraComponent().rotation;
+			source_camera = world.getCameraComponent();
 			owner_chunk_id = findOwningChunkId(slot, world);
 			if(owner_chunk_id == static_cast<ChunkId>(-1))
 			{
@@ -119,7 +121,7 @@ namespace danikk_space_engine
 		static_cast<LocalPlayerControllerComponent*>(slot.getData())->tick(world);
 		if(spawn_machinegun)
 		{
-			duplicateControllerPointWithMachinegun(source_point, source_rotation, owner_chunk_id, world);
+			duplicateControllerPointWithMachinegun(source_point, source_camera, owner_chunk_id, world);
 		}
 	}
 

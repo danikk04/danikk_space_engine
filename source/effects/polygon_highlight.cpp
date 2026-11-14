@@ -19,6 +19,10 @@ namespace danikk_space_engine
 		{
 			return;
 		}
+		if(face.is_ground_triangle)
+		{
+			return;
+		}
 
 		const Chunk& chunk = world.data.getChunk(face.chunk_id);
 		if(!world.data.isVolumeCellActive(face.cell_id))

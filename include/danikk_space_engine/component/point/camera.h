@@ -6,6 +6,8 @@ namespace danikk_space_engine
 {
 	struct CameraComponent
 	{
+		vec3 surface_up = vec3(0.0f, 0.0f, 1.0f);
+		vec3 yaw_reference_forward = vec3(1.0f, 0.0f, 0.0f);
 		vec3 rotation = vec3(0.0f);
 		float vertical_fov_degrees = 90.0f;
 		float near_clip_distance = 0.1f;

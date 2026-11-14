@@ -9,18 +9,76 @@
 
 namespace danikk_space_engine
 {
+	namespace
+	{
+		void updateCameraSurfaceFrame(CameraComponent& camera, const PointComponentSlot& slot, const World& world)
+		{
+			if(!world.data.isChunkActive(slot.chunk_id)) return;
+			const Chunk& camera_chunk = world.data.getChunk(slot.chunk_id);
+			const WorldBody& body = world.data.getWorldBody(camera_chunk.world_body_id);
+			const glm::dvec3 radial = world.getCameraWorldPosition() - body.position;
+			const double radial_length = glm::length(radial);
+			if(radial_length <= 0.000001) return;
+
+			const vec3 new_up = vec3(radial / radial_length);
+			const vec3 old_up = glm::normalize(camera.surface_up);
+			const vec3 transport_axis = glm::cross(old_up, new_up);
+			const float sine = glm::length(transport_axis);
+			const float cosine = glm::clamp(glm::dot(old_up, new_up), -1.0f, 1.0f);
+			if(sine > 0.000001f)
+			{
+				const float angle = atan2(sine, cosine);
+				const mat4 transport = glm::rotate(mat4(1.0f), angle, transport_axis / sine);
+				camera.yaw_reference_forward = vec3(transport * vec4(camera.yaw_reference_forward, 0.0f));
+			}
+			else if(cosine < 0.0f)
+			{
+				camera.yaw_reference_forward = -camera.yaw_reference_forward;
+			}
+
+			camera.surface_up = new_up;
+			camera.yaw_reference_forward -= camera.surface_up
+				* glm::dot(camera.yaw_reference_forward, camera.surface_up);
+			const float forward_length = glm::length(camera.yaw_reference_forward);
+			if(forward_length <= 0.000001f)
+			{
+				const vec3 reference_axis = glm::abs(camera.surface_up.z) < 0.9f
+					? vec3(0.0f, 0.0f, 1.0f)
+					: vec3(1.0f, 0.0f, 0.0f);
+				camera.yaw_reference_forward = glm::normalize(
+					reference_axis - camera.surface_up * glm::dot(reference_axis, camera.surface_up));
+			}
+			else
+			{
+				camera.yaw_reference_forward /= forward_length;
+			}
+		}
+
+		vec3 getHorizontalHeading(const CameraComponent& camera)
+		{
+			const vec3 up = glm::normalize(camera.surface_up);
+			const vec3 forward = glm::normalize(
+				camera.yaw_reference_forward - up * glm::dot(camera.yaw_reference_forward, up));
+			const vec3 right = glm::normalize(glm::cross(forward, up));
+			return glm::normalize(forward * cos(camera.rotation.x) + right * sin(camera.rotation.x));
+		}
+	}
+
 	vec3 CameraComponent::getFront() const
 	{
-		return vec3(
-			static_cast<float>(cos(rotation.y)) * static_cast<float>(cos(rotation.x)),
-			static_cast<float>(sin(rotation.y)),
-			static_cast<float>(cos(rotation.y)) * static_cast<float>(sin(rotation.x)));
+		const vec3 up = glm::normalize(surface_up);
+		const vec3 heading = getHorizontalHeading(*this);
+		return glm::normalize(heading * cos(rotation.y) + up * sin(rotation.y));
 	}
 
 	vec3 CameraComponent::getUp() const
 	{
-		const mat4 roll_matrix = glm::rotate(mat4(1.0f), rotation.z, getFront());
-		return vec3(roll_matrix * vec4(0.0f, 1.0f, 0.0f, 0.0f));
+		const vec3 front = getFront();
+		const vec3 heading = getHorizontalHeading(*this);
+		const vec3 right = glm::normalize(glm::cross(heading, surface_up));
+		const vec3 base_up = glm::normalize(glm::cross(right, front));
+		const mat4 roll_matrix = glm::rotate(mat4(1.0f), rotation.z, front);
+		return glm::normalize(vec3(roll_matrix * vec4(base_up, 0.0f)));
 	}
 
 	vec3 CameraComponent::getRight() const
@@ -78,6 +136,7 @@ namespace danikk_space_engine
 		}
 
 		CameraComponent& camera = *static_cast<CameraComponent*>(slot.getData());
+		updateCameraSurfaceFrame(camera, slot, world);
 		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
 		const bool alt_down = left_alt_state == button_states::press || left_alt_state == button_states::hold
@@ -135,6 +194,7 @@ namespace danikk_space_engine
 			direction += camera.getRight();
 		}
 		world.data.getPoint(slot.point_id).position += direction * speed;
+		updateCameraSurfaceFrame(camera, slot, world);
 	}
 
 	void frameCameraComponent(PointComponentSlot& slot, World&)

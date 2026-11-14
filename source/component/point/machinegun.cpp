@@ -19,6 +19,15 @@ namespace danikk_space_engine
 		constexpr float muzzle_forward_offset = 4.4f;
 		constexpr float muzzle_vertical_offset = 0.31f;
 
+		mat4 getOrientationMatrix(const MachinegunComponent& machinegun)
+		{
+			mat4 orientation(1.0f);
+			orientation[0] = vec4(machinegun.forward, 0.0f);
+			orientation[1] = vec4(machinegun.up, 0.0f);
+			orientation[2] = vec4(machinegun.right, 0.0f);
+			return orientation;
+		}
+
 		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
 			for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
@@ -121,10 +130,8 @@ namespace danikk_space_engine
 		}
 
 		const MachinegunComponent machinegun_snapshot = machinegun;
-		const mat4 rotation_matrix = glm::rotate(mat4(1.0f), -machinegun_snapshot.rotation.x, vec3(0.0f, 1.0f, 0.0f))
-			* glm::rotate(mat4(1.0f), machinegun_snapshot.rotation.y, vec3(0.0f, 0.0f, 1.0f))
-			* glm::rotate(mat4(1.0f), machinegun_snapshot.rotation.z, vec3(1.0f, 0.0f, 0.0f));
-		const vec3 direction = glm::normalize(vec3(rotation_matrix * vec4(1.0f, 0.0f, 0.0f, 0.0f)));
+		const mat4 rotation_matrix = getOrientationMatrix(machinegun_snapshot);
+		const vec3 direction = machinegun_snapshot.forward;
 		const mat4 weapon_matrix = glm::translate(mat4(1.0f), world.data.getPoint(slot.point_id).position)
 			* rotation_matrix
 			* glm::scale(mat4(1.0f), vec3(machinegun_snapshot.scale));
@@ -166,9 +173,7 @@ namespace danikk_space_engine
 			* glm::translate(
 				mat4(1.0f),
 				world.data.getPoint(slot.point_id).position)
-			* glm::rotate(mat4(1.0f), -machinegun.rotation.x, vec3(0.0f, 1.0f, 0.0f))
-			* glm::rotate(mat4(1.0f), machinegun.rotation.y, vec3(0.0f, 0.0f, 1.0f))
-			* glm::rotate(mat4(1.0f), machinegun.rotation.z, vec3(1.0f, 0.0f, 0.0f))
+			* getOrientationMatrix(machinegun)
 			* glm::scale(mat4(1.0f), vec3(machinegun.scale));
 		setWorldMatrix(world_matrix);
 		static_asset_collection.mg42_mesh.draw();

@@ -5,6 +5,7 @@
 #include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/effects/polygon_highlight.h>
 #include <danikk_space_engine/scenario/base.h>
+#include <danikk_space_engine/world/planet.h>
 
 namespace danikk_space_engine
 {
@@ -64,6 +65,24 @@ namespace danikk_space_engine
 						result.points[1] = point_ids[1];
 						result.points[2] = point_ids[2];
 					}
+				}
+				for(GroundTriangleId triangle_id : chunk.ground_triangle_ids)
+				{
+					if(!data.isGroundTriangleActive(triangle_id)) continue;
+					const GroundTriangle& triangle = data.getGroundTriangle(triangle_id);
+					const vec3 a = chunk_relative_position + data.getPoint(triangle.points[0]).position;
+					const vec3 b = chunk_relative_position + data.getPoint(triangle.points[1]).position;
+					const vec3 c = chunk_relative_position + data.getPoint(triangle.points[2]).position;
+					const RayTriangleIntersection intersection = intersectRayTriangle(ray, a, b, c);
+					if(!intersection.hit || intersection.distance > nearest_distance) continue;
+					nearest_distance = intersection.distance;
+					result.hit = true;
+					result.distance = intersection.distance;
+					result.position = origin + glm::dvec3(normalized_direction) * static_cast<double>(intersection.distance);
+					result.normal = intersection.normal;
+					result.face = FacePtr{chunk_id, 0, 0, triangle_id, true};
+					result.triangle_index = 0;
+					for(uint8 point_index = 0; point_index < 3; point_index++) result.points[point_index] = triangle.points[point_index];
 				}
 			}
 		}
@@ -173,6 +192,7 @@ namespace danikk_space_engine
 
 	void World::frame()
 	{
+		updatePlanetStreaming(*this);
 		static_asset_collection.base3d_shader.use();
 		const CameraComponent& camera = getCameraComponent();
 		const vec3 camera_front = camera.getFront();
@@ -191,7 +211,11 @@ namespace danikk_space_engine
 		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = data.getWorldBody(body_id);
-			for(ChunkId chunk_id : body.chunk_ids) data.getChunk(chunk_id).draw(*this);
+			for(ChunkId chunk_id : body.chunk_ids)
+			{
+				Chunk& chunk = data.getChunk(chunk_id);
+				chunk.draw(*this);
+			}
 		}
 		drawPolygonHighlights(*this);
 	}
@@ -199,6 +223,8 @@ namespace danikk_space_engine
 	void World::init()
 	{
 		pending_point_destruction_ids.clear();
+		planet_surface_chunk_ids.clear();
+		planet_stream_initialized = false;
 		startBaseScenario(*this);
 	}
 }

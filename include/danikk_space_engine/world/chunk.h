@@ -6,6 +6,7 @@
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/component/graph/graph.h>
 #include <danikk_space_engine/world/volume_cell.h>
+#include <danikk_space_engine/world/ground_triangle.h>
 
 namespace danikk_space_engine
 {
@@ -22,8 +23,10 @@ namespace danikk_space_engine
 		bool mesh_dirty = true;
 		ChunkId chunk_id = 0;
 		WorldBodyId world_body_id = 0;
+		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 position = glm::dvec3(0.0);
 		DynamicArray<VolumeCellId> volume_cell_ids;
+		DynamicArray<GroundTriangleId> ground_triangle_ids;
 		DynamicArray<PointId> point_ids;
 		DynamicArray<PointComponentSlotId> point_component_slot_ids;
 		DynamicArray<GraphComponentSlotId> graph_component_slot_ids;

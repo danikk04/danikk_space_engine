@@ -69,8 +69,10 @@ namespace danikk_space_engine
 
 	Chunk::Chunk(Chunk&& other) noexcept
 		: mesh(other.mesh), shared_face_masks(static_cast<DynamicArray<uint8>&&>(other.shared_face_masks)),
-		mesh_dirty(other.mesh_dirty), chunk_id(other.chunk_id), world_body_id(other.world_body_id), position(other.position),
+		mesh_dirty(other.mesh_dirty), chunk_id(other.chunk_id), world_body_id(other.world_body_id),
+		grid_coordinate(other.grid_coordinate), position(other.position),
 		volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids)),
+		ground_triangle_ids(static_cast<DynamicArray<GroundTriangleId>&&>(other.ground_triangle_ids)),
 		point_ids(static_cast<DynamicArray<PointId>&&>(other.point_ids)),
 		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids)),
 		graph_component_slot_ids(static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids))
@@ -89,8 +91,10 @@ namespace danikk_space_engine
 		mesh_dirty = other.mesh_dirty;
 		chunk_id = other.chunk_id;
 		world_body_id = other.world_body_id;
+		grid_coordinate = other.grid_coordinate;
 		position = other.position;
 		volume_cell_ids = static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids);
+		ground_triangle_ids = static_cast<DynamicArray<GroundTriangleId>&&>(other.ground_triangle_ids);
 		point_ids = static_cast<DynamicArray<PointId>&&>(other.point_ids);
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
 		graph_component_slot_ids = static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids);
@@ -107,15 +111,13 @@ namespace danikk_space_engine
 
 	void Chunk::destroyMesh()
 	{
-		if(mesh == nullptr)
+		if(mesh != nullptr)
 		{
-			return;
+			mesh->free();
+			mesh->~Mesh();
+			free(mesh);
+			mesh = nullptr;
 		}
-
-		mesh->free();
-		mesh->~Mesh();
-		free(mesh);
-		mesh = nullptr;
 	}
 
 	void Chunk::invalidateMesh()
@@ -294,6 +296,7 @@ namespace danikk_space_engine
 			face_index = group_end;
 		}
 
+		max_triangle_count += ground_triangle_ids.size();
 		vertices.reserve(max_triangle_count * 3);
 		indices.reserve(max_triangle_count * 3);
 		for(size_t cell_index = 0; cell_index < volume_cell_ids.size(); cell_index++)
@@ -356,6 +359,28 @@ namespace danikk_space_engine
 			}
 		}
 
+		for(GroundTriangleId triangle_id : ground_triangle_ids)
+		{
+			if(!world.data.isGroundTriangleActive(triangle_id)) continue;
+			const GroundTriangle& triangle = world.data.getGroundTriangle(triangle_id);
+			if(!world.data.isPointActive(triangle.points[0])
+				|| !world.data.isPointActive(triangle.points[1])
+				|| !world.data.isPointActive(triangle.points[2])) continue;
+			const vec3 a = world.data.getPoint(triangle.points[0]).position;
+			const vec3 b = world.data.getPoint(triangle.points[1]).position;
+			const vec3 c = world.data.getPoint(triangle.points[2]).position;
+			const vec3 cross_product = glm::cross(b - a, c - a);
+			const float normal_length = glm::length(cross_product);
+			if(normal_length <= 0.000001f) continue;
+			const vec3 normal = cross_product / normal_length;
+			const vec3 positions[3] = {a, b, c};
+			for(uint8 corner = 0; corner < 3; corner++)
+			{
+				indices.push(static_cast<gl_point_index_t>(vertices.size()));
+				vertices.pushCtor(positions[corner], normal, projectToUV(positions[corner], normal));
+			}
+		}
+
 		mesh->setData(
 			reinterpret_cast<const float*>(vertices.data()),
 			vertices.size() * sizeof(DefaultVertex) / sizeof(float),
@@ -405,17 +430,29 @@ namespace danikk_space_engine
 
 	void Chunk::draw(World& world)
 	{
-		if(mesh == nullptr || volume_cell_ids.size() == 0)
+		if(mesh == nullptr || (volume_cell_ids.size() == 0 && ground_triangle_ids.size() == 0)) return;
+		MaterialDefinition* material_pointer = nullptr;
+		for(VolumeCellId cell_id : volume_cell_ids)
 		{
-			return;
+			if(world.data.isVolumeCellActive(cell_id))
+			{
+				material_pointer = &getMaterial(world.data.getVolumeCell(cell_id).material);
+				break;
+			}
 		}
-
-		const VolumeCellId cell_id = volume_cell_ids[0];
-		if(!world.data.isVolumeCellActive(cell_id))
+		if(material_pointer == nullptr)
 		{
-			return;
+			for(GroundTriangleId triangle_id : ground_triangle_ids)
+			{
+				if(world.data.isGroundTriangleActive(triangle_id))
+				{
+					material_pointer = &getMaterial(world.data.getGroundTriangle(triangle_id).material);
+					break;
+				}
+			}
 		}
-		MaterialDefinition& material = getMaterial(world.data.getVolumeCell(cell_id).material);
+		if(material_pointer == nullptr) return;
+		MaterialDefinition& material = *material_pointer;
 		if(material.texture.isNull())
 		{
 			white_texture.bind();

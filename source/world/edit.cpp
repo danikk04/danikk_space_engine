@@ -23,7 +23,7 @@ namespace danikk_space_engine
 
 		for(const FacePtr& face : faces)
 		{
-			if(!data.isChunkActive(face.chunk_id) || !data.isVolumeCellActive(face.cell_id))
+			if(face.is_ground_triangle || !data.isChunkActive(face.chunk_id) || !data.isVolumeCellActive(face.cell_id))
 			{
 				continue;
 			}
@@ -168,7 +168,7 @@ namespace danikk_space_engine
 
 		for(const FacePtr& face : faces)
 		{
-			if(!data.isChunkActive(face.chunk_id) || !data.isVolumeCellActive(face.cell_id))
+			if(face.is_ground_triangle || !data.isChunkActive(face.chunk_id) || !data.isVolumeCellActive(face.cell_id))
 			{
 				continue;
 			}

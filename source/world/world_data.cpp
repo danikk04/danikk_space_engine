@@ -73,6 +73,21 @@ namespace danikk_space_engine
 		return id;
 	}
 
+	GroundTriangleId WorldData::createGroundTriangle()
+	{
+		if(freed_ground_triangle_ids.size() > 0)
+		{
+			const GroundTriangleId id = freed_ground_triangle_ids.pop();
+			ground_triangles[id] = GroundTriangle();
+			insertSortedId(used_ground_triangle_ids, id);
+			return id;
+		}
+		const GroundTriangleId id = static_cast<GroundTriangleId>(ground_triangles.size());
+		ground_triangles.pushCtor();
+		insertSortedId(used_ground_triangle_ids, id);
+		return id;
+	}
+
 	WorldBodyId WorldData::createWorldBody()
 	{
 		if(freed_world_body_ids.size() > 0)
@@ -103,8 +118,10 @@ namespace danikk_space_engine
 			Chunk& chunk = chunks[id];
 			chunk.chunk_id = id;
 			chunk.world_body_id = world_body_id;
+			chunk.grid_coordinate = glm::ivec3(0);
 			chunk.position = glm::dvec3(0.0);
 			chunk.volume_cell_ids.clear();
+			chunk.ground_triangle_ids.clear();
 			chunk.point_ids.clear();
 			chunk.point_component_slot_ids.clear();
 			chunk.graph_component_slot_ids.clear();
@@ -118,6 +135,7 @@ namespace danikk_space_engine
 			const ChunkId id = static_cast<ChunkId>(chunks.size() - 1);
 			chunk.chunk_id = id;
 			chunk.world_body_id = world_body_id;
+			chunk.grid_coordinate = glm::ivec3(0);
 			result_id = id;
 			insertSortedId(used_chunk_ids, id);
 			result = &chunk;
@@ -168,6 +186,26 @@ namespace danikk_space_engine
 			addPointReferenceToChunk(chunk_id, cell.points[point_index]);
 		}
 		chunk.volume_cell_ids.push(cell_id);
+		chunk.invalidateMesh();
+	}
+
+	void WorldData::addGroundTriangleToChunk(ChunkId chunk_id, GroundTriangleId triangle_id)
+	{
+		if(!isChunkActive(chunk_id) || !isGroundTriangleActive(triangle_id))
+		{
+			danikk_engine::formatFatalError("Cannot attach ground triangle % to invalid chunk %", triangle_id, chunk_id);
+		}
+		Chunk& chunk = getChunk(chunk_id);
+		for(GroundTriangleId existing_id : chunk.ground_triangle_ids)
+		{
+			if(existing_id == triangle_id)
+			{
+				danikk_engine::formatFatalError("Ground triangle % is already attached to chunk %", triangle_id, chunk_id);
+			}
+		}
+		const GroundTriangle& triangle = getGroundTriangle(triangle_id);
+		for(PointId point_id : triangle.points) addPointReferenceToChunk(chunk_id, point_id);
+		chunk.ground_triangle_ids.push(triangle_id);
 		chunk.invalidateMesh();
 	}
 
@@ -353,6 +391,17 @@ namespace danikk_space_engine
 			if(cell_index < used_volume_cell_ids.size() && used_volume_cell_ids[cell_index] == cell_id) cell_index++;
 		}
 
+		for(size_t triangle_index = 0; triangle_index < used_ground_triangle_ids.size();)
+		{
+			const GroundTriangleId triangle_id = used_ground_triangle_ids[triangle_index];
+			const GroundTriangle& triangle = ground_triangles[triangle_id];
+			if(triangle.points[0] == id || triangle.points[1] == id || triangle.points[2] == id)
+			{
+				destroyGroundTriangle(triangle_id);
+			}
+			else triangle_index++;
+		}
+
 		for(size_t graph_index = 0; graph_index < used_graph_component_slot_ids.size();)
 		{
 			const GraphComponentSlotId graph_id = used_graph_component_slot_ids[graph_index];
@@ -395,6 +444,30 @@ namespace danikk_space_engine
 		freed_volume_cell_ids.push(id);
 	}
 
+	void WorldData::destroyGroundTriangle(GroundTriangleId id)
+	{
+		if(!isGroundTriangleActive(id)) return;
+		for(ChunkId chunk_id : used_chunk_ids)
+		{
+			Chunk& chunk = chunks[chunk_id];
+			for(size_t index = 0; index < chunk.ground_triangle_ids.size();)
+			{
+				if(chunk.ground_triangle_ids[index] == id)
+				{
+					for(size_t shift = index; shift + 1 < chunk.ground_triangle_ids.size(); shift++)
+					{
+						chunk.ground_triangle_ids[shift] = chunk.ground_triangle_ids[shift + 1];
+					}
+					chunk.ground_triangle_ids.resize(chunk.ground_triangle_ids.size() - 1);
+					chunk.invalidateMesh();
+				}
+				else index++;
+			}
+		}
+		eraseSortedId(used_ground_triangle_ids, id);
+		freed_ground_triangle_ids.push(id);
+	}
+
 	void WorldData::destroyChunk(ChunkId id)
 	{
 		if(!isChunkActive(id)) return;
@@ -413,6 +486,10 @@ namespace danikk_space_engine
 		{
 			destroyVolumeCell(chunk.volume_cell_ids[chunk.volume_cell_ids.size() - 1]);
 		}
+		while(chunk.ground_triangle_ids.size() > 0)
+		{
+			destroyGroundTriangle(chunk.ground_triangle_ids[chunk.ground_triangle_ids.size() - 1]);
+		}
 		chunk.destroyMesh();
 		while(chunk.point_ids.size() > 0)
 		{
@@ -428,6 +505,7 @@ namespace danikk_space_engine
 			if(point.chunk_reference_count == 0) destroyPoint(point_id);
 		}
 		chunk.world_body_id = 0;
+		chunk.grid_coordinate = glm::ivec3(0);
 		chunk.position = glm::dvec3(0.0);
 		chunk.mesh_dirty = false;
 		eraseSortedId(used_chunk_ids, id);
@@ -549,6 +627,12 @@ namespace danikk_space_engine
 		return index < used_volume_cell_ids.size() && used_volume_cell_ids[index] == id;
 	}
 
+	bool WorldData::isGroundTriangleActive(GroundTriangleId id) const
+	{
+		const size_t index = findSortedId(used_ground_triangle_ids, id);
+		return index < used_ground_triangle_ids.size() && used_ground_triangle_ids[index] == id;
+	}
+
 	bool WorldData::isChunkActive(ChunkId id) const
 	{
 		const size_t index = findSortedId(used_chunk_ids, id);
@@ -575,6 +659,7 @@ namespace danikk_space_engine
 
 	const DynamicArray<PointId>& WorldData::getUsedPointIds() const { return used_point_ids; }
 	const DynamicArray<VolumeCellId>& WorldData::getUsedVolumeCellIds() const { return used_volume_cell_ids; }
+	const DynamicArray<GroundTriangleId>& WorldData::getUsedGroundTriangleIds() const { return used_ground_triangle_ids; }
 	const DynamicArray<ChunkId>& WorldData::getUsedChunkIds() const { return used_chunk_ids; }
 	const DynamicArray<WorldBodyId>& WorldData::getUsedWorldBodyIds() const { return used_world_body_ids; }
 	const DynamicArray<PointComponentSlotId>& WorldData::getUsedPointComponentSlotIds() const { return used_point_component_slot_ids; }
@@ -602,6 +687,18 @@ namespace danikk_space_engine
 	{
 		if(!isVolumeCellActive(id)) danikk_engine::formatFatalError("Invalid volume cell ID %", id);
 		return volume_cells[id];
+	}
+
+	GroundTriangle& WorldData::getGroundTriangle(GroundTriangleId id)
+	{
+		if(!isGroundTriangleActive(id)) danikk_engine::formatFatalError("Invalid ground triangle ID %", id);
+		return ground_triangles[id];
+	}
+
+	const GroundTriangle& WorldData::getGroundTriangle(GroundTriangleId id) const
+	{
+		if(!isGroundTriangleActive(id)) danikk_engine::formatFatalError("Invalid ground triangle ID %", id);
+		return ground_triangles[id];
 	}
 
 	Chunk& WorldData::getChunk(ChunkId id)
@@ -662,6 +759,11 @@ namespace danikk_space_engine
 		return volume_cells.size();
 	}
 
+	size_t WorldData::getGroundTriangleCount() const
+	{
+		return ground_triangles.size();
+	}
+
 	size_t WorldData::getChunkCount() const
 	{
 		return chunks.size();
@@ -698,14 +800,17 @@ namespace danikk_space_engine
 		world_bodies.clear();
 		points.clear();
 		volume_cells.clear();
+		ground_triangles.clear();
 		used_point_ids.clear();
 		used_volume_cell_ids.clear();
+		used_ground_triangle_ids.clear();
 		used_chunk_ids.clear();
 		used_world_body_ids.clear();
 		used_point_component_slot_ids.clear();
 		used_graph_component_slot_ids.clear();
 		freed_point_ids.clear();
 		freed_volume_cell_ids.clear();
+		freed_ground_triangle_ids.clear();
 		freed_chunk_ids.clear();
 		freed_world_body_ids.clear();
 		freed_point_component_slot_ids.clear();
@@ -721,14 +826,17 @@ namespace danikk_space_engine
 		graph_components = DynamicArray<GraphComponentSlot>();
 		points = DynamicArray<Point>();
 		volume_cells = DynamicArray<VolumeCell>();
+		ground_triangles = DynamicArray<GroundTriangle>();
 		used_point_ids = DynamicArray<PointId>();
 		used_volume_cell_ids = DynamicArray<VolumeCellId>();
+		used_ground_triangle_ids = DynamicArray<GroundTriangleId>();
 		used_chunk_ids = DynamicArray<ChunkId>();
 		used_world_body_ids = DynamicArray<WorldBodyId>();
 		used_point_component_slot_ids = DynamicArray<PointComponentSlotId>();
 		used_graph_component_slot_ids = DynamicArray<GraphComponentSlotId>();
 		freed_point_ids = DynamicArray<PointId>();
 		freed_volume_cell_ids = DynamicArray<VolumeCellId>();
+		freed_ground_triangle_ids = DynamicArray<GroundTriangleId>();
 		freed_chunk_ids = DynamicArray<ChunkId>();
 		freed_world_body_ids = DynamicArray<WorldBodyId>();
 		freed_point_component_slot_ids = DynamicArray<PointComponentSlotId>();
