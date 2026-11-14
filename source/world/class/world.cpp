@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/effects/volume_cell_preview.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/effects/polygon_highlight.h>
@@ -248,6 +249,13 @@ namespace danikk_space_engine
 			}
 		}
 		drawPolygonHighlights(*this);
+		const LocalPlayerControllerComponent& controller = getLocalPlayerControllerComponent();
+		if(controller.active_tool == ToolId::build
+			&& controller.selected_build_action == BuildActionId::place_volume_cell)
+		{
+			const RaycastHit hit = raycastFromCamera();
+			drawVolumeCellPlacementPreview(*this, hit);
+		}
 	}
 
 	void World::init()

@@ -16,8 +16,8 @@ namespace danikk_space_engine
 		size_t selected_face_count = 0;
 		ToolId active_tool = ToolId::none;
 		float tool_scroll_accumulator = 0.0f;
-		CreateObjectId selected_create_object = CreateObjectId::none;
-		float create_object_scroll_accumulator = 0.0f;
+		BuildActionId selected_build_action = BuildActionId::none;
+		float build_action_scroll_accumulator = 0.0f;
 
 		void tick(World& world);
 	};

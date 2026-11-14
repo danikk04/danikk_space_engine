@@ -133,16 +133,16 @@ namespace danikk_space_engine
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
 		if(alt_pressed)
 		{
-			create_object_scroll_accumulator += getMouseScrollDelta();
-			while(create_object_scroll_accumulator >= 1.0f)
+			build_action_scroll_accumulator += getMouseScrollDelta();
+			while(build_action_scroll_accumulator >= 1.0f)
 			{
-				selected_create_object = stepCreateObject(selected_create_object, 1);
-				create_object_scroll_accumulator -= 1.0f;
+				selected_build_action = stepBuildAction(selected_build_action, 1);
+				build_action_scroll_accumulator -= 1.0f;
 			}
-			while(create_object_scroll_accumulator <= -1.0f)
+			while(build_action_scroll_accumulator <= -1.0f)
 			{
-				selected_create_object = stepCreateObject(selected_create_object, -1);
-				create_object_scroll_accumulator += 1.0f;
+				selected_build_action = stepBuildAction(selected_build_action, -1);
+				build_action_scroll_accumulator += 1.0f;
 			}
 		}
 		else
@@ -171,7 +171,7 @@ namespace danikk_space_engine
 				hit.hit,
 				hit.face,
 				hit,
-				selected_create_object);
+				selected_build_action);
 			if(result.replace_selected_faces)
 			{
 				selected_faces = static_cast<DynamicArray<FacePtr>&&>(result.selected_faces);

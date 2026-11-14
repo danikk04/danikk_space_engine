@@ -1,1 +1,4 @@
-sources += files('polygon_highlight.cpp')
+sources += files(
+	'polygon_highlight.cpp',
+	'volume_cell_preview.cpp',
+)

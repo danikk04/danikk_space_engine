@@ -12,18 +12,18 @@ namespace danikk_space_engine
 	{
 		none = 0,
 		select,
-		expand,
+		build,
 		erase_faces,
-		create,
 		count
 	};
 
-	enum class CreateObjectId : uint8
+	enum class BuildActionId : uint8
 	{
 		none = 0,
-		machinegun,
-		volume_cell,
-		terrain,
+		place_machinegun,
+		place_volume_cell,
+		extrude_face,
+		add_terrain,
 		count
 	};
 
@@ -34,9 +34,9 @@ namespace danikk_space_engine
 	};
 
 	ToolId stepTool(ToolId current, int direction);
-	CreateObjectId stepCreateObject(CreateObjectId current, int direction);
+	BuildActionId stepBuildAction(BuildActionId current, int direction);
 	const char* getToolName(ToolId tool);
-	const char* getCreateObjectName(CreateObjectId object);
+	const char* getBuildActionName(BuildActionId action);
 	ToolApplyResult applyTool(
 		ToolId tool,
 		World& world,
@@ -45,7 +45,7 @@ namespace danikk_space_engine
 		bool has_hovered_face,
 		const FacePtr& hovered_face,
 		const RaycastHit& hit,
-		CreateObjectId create_object);
+		BuildActionId build_action);
 	ToolApplyResult applySelectTool(
 		const DynamicArray<FacePtr>& selected_faces,
 		size_t selected_face_count,
@@ -56,7 +56,7 @@ namespace danikk_space_engine
 		World& world,
 		const DynamicArray<FacePtr>& faces,
 		bool using_selection);
-	ToolApplyResult applyExpandTool(
+	ToolApplyResult applyExtrudeTool(
 		World& world,
 		const DynamicArray<FacePtr>& faces,
 		bool using_selection);
@@ -64,5 +64,13 @@ namespace danikk_space_engine
 		World& world,
 		const DynamicArray<FacePtr>& faces,
 		bool using_selection);
-	ToolApplyResult applyCreateTool(World& world, const RaycastHit& hit, CreateObjectId object);
+	ToolApplyResult applyBuildTool(
+		World& world,
+		const DynamicArray<FacePtr>& faces,
+		size_t selected_face_count,
+		bool has_hovered_face,
+		const FacePtr& hovered_face,
+		const RaycastHit& hit,
+		BuildActionId action);
+	ToolApplyResult applyBuildPlacementTool(World& world, const RaycastHit& hit, BuildActionId action);
 }

@@ -2,28 +2,33 @@
 
 ## `tool.h`
 
-- `ToolId` — `none`, `select`, `expand`, `erase_faces`, `create`.
-- `CreateObjectId` — `none`, `machinegun`, `volume_cell`, `terrain`.
-- `ToolApplyResult` — сообщает, требуется ли заменить список выделений, и содержит новый список.
+- `ToolId` задаёт основной инструмент: `none`, `select`, `build`, `erase_faces`.
+- `BuildActionId` задаёт действие инструмента Build: `none`, `place_machinegun`, `place_volume_cell`, `extrude_face`, `add_terrain`.
+- `ToolApplyResult` сообщает, требуется ли заменить список выделений, и содержит новый список.
 - `applyTool()` направляет действие к реализации выбранного инструмента.
-- `stepTool()` и `stepCreateObject()` циклически меняют выбор.
+- `stepTool()` и `stepBuildAction()` циклически меняют основной инструмент и действие Build.
 
 ## Контроллер
 
 `LocalPlayerControllerComponent::tick()` находится в `component/point/local_player_controller.h` и реализации рядом с ним.
 
-- Колёсико меняет инструмент.
-- Alt + колёсико меняет объект для инструмента Create.
+- Колёсико меняет основной инструмент.
+- Alt + колёсико меняет действие инструмента Build.
 - ЛКМ применяет активный инструмент.
 - `selected_faces[0..selected_face_count)` — закреплённые выделения; дополнительная последняя запись может быть гранью под курсором.
-- Для Expand/Erase при наличии выделений используются выделенные грани; иначе используется грань под курсором.
+- Для вытягивания граней при наличии выделений используются выделенные грани; иначе используется грань под курсором.
+- Действия размещения и добавления грунта используют точку raycast.
+- `Create VolumeCell` создаёт куб размером 1 × 1 × 1 м; перед размещением его синяя проекция следует за точкой raycast.
+- Инструмент Erase удаляет ячейки или вычитает грунт на поверхности.
 
 ## Реализации инструментов
 
 - `source/tool/select.cpp` переключает выделение грани под курсором.
-- `source/tool/expand.cpp` вызывает `World::extrudeFaces()`.
-- `source/tool/erase.cpp` вызывает удаление выбранных объёмных ячеек либо добавляет вычитающий terrain stamp для поверхности.
-- `source/tool/create.cpp` создаёт пулемёт, случайную объёмную ячейку или добавляющий terrain stamp на поверхности.
+- `source/tool/build.cpp` направляет действие Build на вытягивание либо на размещение/добавление.
+- `source/tool/extrude.cpp` вызывает `World::extrudeFaces()`.
+- `source/tool/build_placement.cpp` размещает пулемёт или кубическую объёмную ячейку, а также добавляет грунт.
+- `source/effects/volume_cell_preview.cpp` рисует предпросмотр кубической ячейки.
+- `source/tool/erase.cpp` вызывает удаление выбранных объёмных ячеек либо вычитает грунт через `World::deleteVolumeCells()`.
 - `source/tool/none.cpp` и `source/tool/tool.cpp` содержат поведение пустого инструмента и маршрутизацию.
 
 ## Идентификация грани

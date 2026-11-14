@@ -1,8 +1,9 @@
 sources += files(
 	'tool.cpp',
+	'build.cpp',
 	'none.cpp',
 	'select.cpp',
-	'expand.cpp',
+	'extrude.cpp',
 	'erase.cpp',
-	'create.cpp',
+	'build_placement.cpp',
 )

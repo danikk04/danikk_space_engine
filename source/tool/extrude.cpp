@@ -3,7 +3,7 @@
 
 namespace danikk_space_engine
 {
-	ToolApplyResult applyExpandTool(
+	ToolApplyResult applyExtrudeTool(
 		World& world,
 		const DynamicArray<FacePtr>& faces,
 		bool using_selection)

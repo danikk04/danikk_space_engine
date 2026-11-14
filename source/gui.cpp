@@ -44,14 +44,14 @@ namespace danikk_space_engine
 		const glm::dvec3 camera_position = truncateTo100(world.getCameraWorldPosition());
 		const LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
 		const char* active_tool_name = getToolName(controller.active_tool);
-		const bool creating = controller.active_tool == ToolId::create;
-		const char* selected_object_name = getCreateObjectName(controller.selected_create_object);
+		const bool building = controller.active_tool == ToolId::build;
+		const char* selected_build_action_name = getBuildActionName(controller.selected_build_action);
 		if(memory_sample_bytes == 0)
 		{
-			if(creating)
+			if(building)
 			{
-				format(debug_info_label.text, "FPS:%\nRAM: unavailable\nTOOL:%\nSELECTED OBJECT:%\ncamera_pos:%",
-					fps_counter.getValue(), active_tool_name, selected_object_name, camera_position);
+				format(debug_info_label.text, "FPS:%\nRAM: unavailable\nTOOL:%\nBUILD ACTION:%\ncamera_pos:%",
+					fps_counter.getValue(), active_tool_name, selected_build_action_name, camera_position);
 			}
 			else
 			{
@@ -63,11 +63,11 @@ namespace danikk_space_engine
 
 		const size_t whole_mebibytes = memory_sample_bytes / mib(1);
 		const size_t tenths_of_mebibyte = (memory_sample_bytes % mib(1)) * 10 / mib(1);
-		if(creating)
+		if(building)
 		{
-			format(debug_info_label.text, "FPS:%\nRAM:%.% MiB\nTOOL:%\nSELECTED OBJECT:%\ncamera_pos:%",
+			format(debug_info_label.text, "FPS:%\nRAM:%.% MiB\nTOOL:%\nBUILD ACTION:%\ncamera_pos:%",
 				fps_counter.getValue(), whole_mebibytes, tenths_of_mebibyte,
-				active_tool_name, selected_object_name, camera_position);
+				active_tool_name, selected_build_action_name, camera_position);
 		}
 		else
 		{

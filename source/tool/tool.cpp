@@ -11,13 +11,13 @@ namespace danikk_space_engine
 		return static_cast<ToolId>(next);
 	}
 
-	CreateObjectId stepCreateObject(CreateObjectId current, int direction)
+	BuildActionId stepBuildAction(BuildActionId current, int direction)
 	{
-		constexpr int object_count = static_cast<int>(CreateObjectId::count);
+		constexpr int action_count = static_cast<int>(BuildActionId::count);
 		int next = static_cast<int>(current) + (direction < 0 ? -1 : 1);
-		if(next < 0) next = object_count - 1;
-		if(next >= object_count) next = 0;
-		return static_cast<CreateObjectId>(next);
+		if(next < 0) next = action_count - 1;
+		if(next >= action_count) next = 0;
+		return static_cast<BuildActionId>(next);
 	}
 
 	const char* getToolName(ToolId tool)
@@ -26,23 +26,23 @@ namespace danikk_space_engine
 		{
 			case ToolId::none: return "None";
 			case ToolId::select: return "Select";
-			case ToolId::expand: return "Expand";
+			case ToolId::build: return "Build";
 			case ToolId::erase_faces: return "Erase";
-			case ToolId::create: return "Create";
 			case ToolId::count: break;
 		}
 		return "Unknown";
 	}
 
-	const char* getCreateObjectName(CreateObjectId object)
+	const char* getBuildActionName(BuildActionId action)
 	{
-		switch(object)
+		switch(action)
 		{
-			case CreateObjectId::none: return "None";
-			case CreateObjectId::machinegun: return "Machinegun";
-			case CreateObjectId::volume_cell: return "VolumeCell";
-			case CreateObjectId::terrain: return "Terrain";
-			case CreateObjectId::count: break;
+			case BuildActionId::none: return "None";
+			case BuildActionId::place_machinegun: return "Place Machinegun";
+			case BuildActionId::place_volume_cell: return "Create VolumeCell";
+			case BuildActionId::extrude_face: return "Extrude Face";
+			case BuildActionId::add_terrain: return "Add Terrain";
+			case BuildActionId::count: break;
 		}
 		return "Unknown";
 	}
@@ -55,31 +55,28 @@ namespace danikk_space_engine
 		bool has_hovered_face,
 		const FacePtr& hovered_face,
 		const RaycastHit& hit,
-		CreateObjectId create_object)
+		BuildActionId build_action)
 	{
 		switch(tool)
 		{
 			case ToolId::none: return applyNoneTool(world, selected_faces, false);
 			case ToolId::select:
 				return applySelectTool(selected_faces, selected_face_count, has_hovered_face, hovered_face);
-			case ToolId::expand:
 			case ToolId::erase_faces:
 			{
 				if(selected_face_count > 0)
 				{
-					return tool == ToolId::expand
-						? applyExpandTool(world, selected_faces, true)
-						: applyEraseTool(world, selected_faces, true);
+					return applyEraseTool(world, selected_faces, true);
 				}
 				if(!has_hovered_face) return ToolApplyResult();
 				DynamicArray<FacePtr> hovered_faces;
 				hovered_faces.push(hovered_face);
-				return tool == ToolId::expand
-					? applyExpandTool(world, hovered_faces, false)
-					: applyEraseTool(world, hovered_faces, false);
+				return applyEraseTool(world, hovered_faces, false);
 			}
-			case ToolId::create:
-				return applyCreateTool(world, hit, create_object);
+			case ToolId::build:
+				return applyBuildTool(
+					world, selected_faces, selected_face_count,
+					has_hovered_face, hovered_face, hit, build_action);
 			case ToolId::count: break;
 		}
 		return ToolApplyResult();
