@@ -137,14 +137,6 @@ namespace danikk_space_engine
 
 		CameraComponent& camera = *static_cast<CameraComponent*>(slot.getData());
 		updateCameraSurfaceFrame(camera, slot, world);
-		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
-		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
-		const bool alt_down = left_alt_state == button_states::press || left_alt_state == button_states::hold
-			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
-		if(alt_down)
-		{
-			return;
-		}
 
 		const vec2 cursor_delta = getCursorDelta() * getMouseSensivity();
 		const float roll_cos = cos(camera.rotation.z);

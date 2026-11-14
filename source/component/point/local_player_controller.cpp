@@ -8,14 +8,6 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		bool isAltDown()
-		{
-			const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
-			const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
-			return left_alt_state == button_states::press || left_alt_state == button_states::hold
-				|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
-		}
-
 		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
 			for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
@@ -44,14 +36,12 @@ namespace danikk_space_engine
 			world.data.getPoint(point_id) = source_point;
 			world.data.getPoint(point_id).chunk_reference_count = 0;
 			MachinegunComponent machinegun;
-		machinegun.forward = camera.getFront();
-		machinegun.up = camera.getUp();
-		machinegun.right = camera.getRight();
-			const PointComponentSlotId machinegun_slot_id = world.data.createPointComponentSlot(
-				point_id,
-				PointComponentTypeId::machine_gun,
-				&machinegun);
-		world.data.addPointComponentSlotToChunk(chunk_id, machinegun_slot_id);
+			machinegun.forward = camera.getFront();
+			machinegun.up = camera.getUp();
+			machinegun.right = camera.getRight();
+			const PointComponentSlotId slot_id = world.data.createPointComponentSlot(
+				point_id, PointComponentTypeId::machine_gun, &machinegun);
+			world.data.addPointComponentSlotToChunk(chunk_id, slot_id);
 		}
 	}
 
@@ -98,8 +88,7 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Local player controller tick received null data");
 		}
 
-		const int machinegun_state = getKeyboardState(keyboard_buttons::m);
-		const bool spawn_machinegun = isAltDown() && machinegun_state == button_states::press;
+		const bool spawn_machinegun = getKeyboardState(keyboard_buttons::m) == button_states::press;
 		Point source_point;
 		CameraComponent source_camera;
 		ChunkId owner_chunk_id = static_cast<ChunkId>(-1);
@@ -137,73 +126,55 @@ namespace danikk_space_engine
 
 		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
-		const bool alt_down = left_alt_state == button_states::press || left_alt_state == button_states::hold
+		const bool alt_pressed = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
-		const RaycastHit edit_hit = world.raycastFromCamera();
-		const bool edit_uses_selection = selected_face_count > 0;
-		DynamicArray<FacePtr> hovered_face;
-		if(!edit_uses_selection && edit_hit.hit)
+		if(alt_pressed)
 		{
-			hovered_face.push(edit_hit.face);
-		}
-		const DynamicArray<FacePtr>& edit_faces = selected_face_count > 0
-			? selected_faces
-			: hovered_face;
-
-		if(alt_down
-			&& getKeyboardState(keyboard_buttons::e) == button_states::press
-			&& edit_faces.size() > 0)
-		{
-			DynamicArray<FacePtr> extruded_faces = world.extrudeFaces(edit_faces, 1.0f);
-			if(edit_uses_selection && extruded_faces.size() > 0)
+			create_object_scroll_accumulator += getMouseScrollDelta();
+			while(create_object_scroll_accumulator >= 1.0f)
 			{
-				selected_faces = static_cast<DynamicArray<FacePtr>&&>(extruded_faces);
+				selected_create_object = stepCreateObject(selected_create_object, 1);
+				create_object_scroll_accumulator -= 1.0f;
+			}
+			while(create_object_scroll_accumulator <= -1.0f)
+			{
+				selected_create_object = stepCreateObject(selected_create_object, -1);
+				create_object_scroll_accumulator += 1.0f;
+			}
+		}
+		else
+		{
+			tool_scroll_accumulator += getMouseScrollDelta();
+			while(tool_scroll_accumulator >= 1.0f)
+			{
+				active_tool = stepTool(active_tool, 1);
+				tool_scroll_accumulator -= 1.0f;
+			}
+			while(tool_scroll_accumulator <= -1.0f)
+			{
+				active_tool = stepTool(active_tool, -1);
+				tool_scroll_accumulator += 1.0f;
+			}
+		}
+
+		RaycastHit hit = world.raycastFromCamera();
+		if(active_tool != ToolId::none && getMouseState(mouse_buttons::left) == button_states::press)
+		{
+			ToolApplyResult result = applyTool(
+				active_tool,
+				world,
+				selected_faces,
+				selected_face_count,
+				hit.hit,
+				hit.face,
+				hit,
+				selected_create_object);
+			if(result.replace_selected_faces)
+			{
+				selected_faces = static_cast<DynamicArray<FacePtr>&&>(result.selected_faces);
 				selected_face_count = selected_faces.size();
 			}
-		}
-		if(alt_down
-			&& getKeyboardState(keyboard_buttons::d) == button_states::press
-			&& edit_faces.size() > 0)
-		{
-			world.deleteVolumeCells(edit_faces);
-		}
-
-		const RaycastHit hit = world.raycastFromCamera();
-		if(getMouseState(mouse_buttons::left) == button_states::press)
-		{
-			if(hit.hit)
-			{
-				size_t selected_index = selected_face_count;
-				for(size_t i = 0; i < selected_face_count; i++)
-				{
-					const FacePtr& selected = selected_faces[i];
-					if(selected == hit.face)
-					{
-						selected_index = i;
-						break;
-					}
-				}
-
-				if(selected_index < selected_face_count)
-				{
-					for(size_t i = selected_index; i + 1 < selected_face_count; i++)
-					{
-						selected_faces[i] = selected_faces[i + 1];
-					}
-					selected_faces.resize(selected_faces.size() - 1);
-					selected_face_count--;
-				}
-				else
-				{
-					selected_faces.push(hit.face);
-					selected_face_count++;
-				}
-			}
-			else
-			{
-				selected_faces = DynamicArray<FacePtr>();
-				selected_face_count = 0;
-			}
+			hit = world.raycastFromCamera();
 		}
 
 		if(hit.hit)

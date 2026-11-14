@@ -3,6 +3,7 @@
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/fwd.h>
+#include <danikk_space_engine/tool.h>
 
 #include <danikk_framework/dynamic_array.h>
 
@@ -13,6 +14,10 @@ namespace danikk_space_engine
 	public:
 		DynamicArray<FacePtr> selected_faces;
 		size_t selected_face_count = 0;
+		ToolId active_tool = ToolId::none;
+		float tool_scroll_accumulator = 0.0f;
+		CreateObjectId selected_create_object = CreateObjectId::none;
+		float create_object_scroll_accumulator = 0.0f;
 
 		void tick(World& world);
 	};
