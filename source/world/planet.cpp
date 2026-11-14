@@ -1,22 +1,26 @@
-#include <algorithm>
 #include <cmath>
 
+#include <danikk_space_engine/math/noise.h>
 #include <danikk_space_engine/world/planet.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
 
 namespace danikk_space_engine
 {
+	namespace
+	{
+		double samplePlanetTerrainHeight(const glm::dvec3& position)
+		{
+			return math::fractalNoise3D(position * 0.02, 3, 0.5) * 16.0;
+		}
+	}
+
 	double samplePlanetScalarField(const glm::dvec3& position_relative_to_planet_center, double radius)
 	{
-		const double x = position_relative_to_planet_center.x;
-		const double y = position_relative_to_planet_center.y;
-		const double z = position_relative_to_planet_center.z;
-		const double terrain_height =
-			7.0 * std::sin(x * 0.006) * std::sin(y * 0.005)
-			+ 4.0 * std::sin(z * 0.009 + x * 0.004)
-			+ 2.0 * std::sin(y * 0.018 + z * 0.011);
-		return radius + terrain_height - glm::length(position_relative_to_planet_center);
+		const double distance_from_center = glm::length(position_relative_to_planet_center);
+		return radius
+			+ samplePlanetTerrainHeight(position_relative_to_planet_center)
+			- distance_from_center;
 	}
 
 	MaterialId samplePlanetMaterial(const glm::dvec3& position_relative_to_planet_center)
@@ -56,7 +60,7 @@ namespace danikk_space_engine
 				face.normal * default_planet_radius
 					+ face.right * x
 					+ face.up * y);
-			const double height = samplePlanetScalarField(direction * default_planet_radius);
+			const double height = samplePlanetTerrainHeight(direction * default_planet_radius);
 			return direction * (default_planet_radius + height);
 		}
 

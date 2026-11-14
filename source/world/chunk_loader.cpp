@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr uint32 chunk_cache_magic = 0x4443484Bu;
-		constexpr uint32 chunk_cache_version = 1;
+		constexpr uint32 chunk_cache_version = 4;
 
 		struct ChunkCacheHeader
 		{
@@ -34,7 +34,7 @@ namespace danikk_space_engine
 		std::filesystem::path cacheFilePath(const ChunkGenerationRequest& request)
 		{
 			return std::filesystem::current_path() / "cache" / "planet_surface"
-				/ ("v1_" + std::to_string(request.grid_coordinate.z)
+				/ ("v4_" + std::to_string(request.grid_coordinate.z)
 					+ "_" + std::to_string(request.grid_coordinate.x)
 					+ "_" + std::to_string(request.grid_coordinate.y) + ".bin");
 		}
@@ -49,7 +49,7 @@ namespace danikk_space_engine
 				|| header.face != static_cast<uint32>(request.grid_coordinate.z)
 				|| header.x != request.grid_coordinate.x || header.y != request.grid_coordinate.y
 				|| header.planet_radius != default_planet_radius
-				|| header.point_count > 10000 || header.index_count > 1000000
+				|| header.point_count > 100000 || header.index_count > 1000000
 				|| header.index_count % 3 != 0)
 			{
 				return false;
@@ -206,10 +206,9 @@ namespace danikk_space_engine
 	}
 
 	/*
-	 * Builds a curved tangent-plane patch using only request data and local buffers. The worker
-	 * never reads or writes WorldData and never touches OpenGL. It samples the planet scalar field,
-	 * stores point positions relative to the chunk origin, and returns triangle corner indices for
-	 * the main thread to publish into the world's ID-based arrays.
+	 * Samples the deformed height field over a curved tangent-plane patch. Geometry stays on the
+	 * planet surface for now; keeping the height lookup in the scalar-field API leaves room to add
+	 * volume sampling and caves later without changing chunk streaming.
 	 */
 	GeneratedChunkData ChunkLoader::generate(const ChunkGenerationRequest& request)
 	{
