@@ -1,8 +1,8 @@
 #include <cmath>
 
 #include <danikk_space_engine/component/point/local_player_controller.h>
-#include <danikk_space_engine/component/world_body/planet.h>
-#include <danikk_space_engine/world/planet/terrain.h>
+#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/component/world_body/planet/terrain.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr int planet_chunks_per_face = 32;
-		constexpr double stream_update_distance = 8.0;
+		constexpr double chunk_update_distance = 8.0;
 
 		struct PlanetCubeFace
 		{
@@ -99,7 +99,7 @@ namespace danikk_space_engine
 			controller.selected_face_count = 0;
 		}
 
-		void rebuildPlanetStream(
+		void updatePlanetChunks(
 			PlanetComponent& planet,
 			WorldBodyComponentSlot& slot,
 			World& world,
@@ -108,12 +108,12 @@ namespace danikk_space_engine
 			// Rebuild the desired cube-sphere tile set around the camera direction, retain already loaded tiles,
 			// queue only missing tiles, and unload tiles outside the new set. Each request carries a snapshot
 			// of the planet generation parameters so the worker does not access component or world state.
-			planet.stream_anchor = camera_direction;
-			planet.stream_initialized = true;
-			planet.is_streaming = true;
+			planet.last_chunk_update_direction = camera_direction;
+			planet.chunk_set_initialized = true;
+			planet.chunk_loading_active = true;
 			const double chunk_width = 2.0 * planet.radius / planet_chunks_per_face;
 			const double tile_radius = chunk_width * 0.72;
-			const double max_center_distance = planet.chunk_stream_radius + tile_radius;
+			const double max_center_distance = planet.chunk_load_radius + tile_radius;
 			const double min_center_dot = std::cos(max_center_distance / planet.radius);
 			DynamicArray<glm::ivec3> desired_keys;
 			DynamicArray<ChunkGenerationRequest> requests;
@@ -180,7 +180,7 @@ namespace danikk_space_engine
 			const PlanetComponentSettings& settings = *static_cast<const PlanetComponentSettings*>(init_data);
 			PlanetComponent& planet = *static_cast<PlanetComponent*>(destination);
 			planet.radius = settings.radius;
-			planet.chunk_stream_radius = settings.chunk_stream_radius;
+			planet.chunk_load_radius = settings.chunk_load_radius;
 			planet.noise_seed = settings.noise_seed;
 		}
 	}
@@ -204,8 +204,8 @@ namespace danikk_space_engine
 
 	void framePlanetComponent(WorldBodyComponentSlot& slot, World& world)
 	{
-		// Track the camera relative to this body. Outside the surface streaming band, discard loaded tiles;
-		// inside it, rebuild the desired tile set only after the camera moves far enough, then re-submit its
+		// Track the camera relative to this body. Outside the chunk loading range, discard loaded tiles;
+		// inside it, refresh the desired tile set only after the camera moves far enough, then re-submit its
 		// pending requests to the loader, which deduplicates requests already queued or being generated.
 		if(!world.data.isWorldBodyActive(slot.world_body_id)
 			|| !world.data.isPointComponentSlotActive(world.camera_component_slot_id)) return;
@@ -217,31 +217,31 @@ namespace danikk_space_engine
 		if(radial_length <= 0.000001) return;
 		const double chunk_width = 2.0 * planet.radius / planet_chunks_per_face;
 		const double tile_radius = chunk_width * 0.72;
-		const bool in_stream_range = std::abs(radial_length - planet.radius)
-			<= planet.chunk_stream_radius + tile_radius;
-		if(!in_stream_range)
+		const bool in_chunk_range = std::abs(radial_length - planet.radius)
+			<= planet.chunk_load_radius + tile_radius;
+		if(!in_chunk_range)
 		{
-			if(planet.is_streaming)
+			if(planet.chunk_loading_active)
 			{
 				planet.desired_chunk_keys.clear();
 				planet.pending_requests.clear();
 				unloadChunksOutsideDesiredSet(planet, world);
-				planet.is_streaming = false;
-				planet.stream_initialized = false;
+				planet.chunk_loading_active = false;
+				planet.chunk_set_initialized = false;
 				clearFaceSelection(world);
 			}
 			return;
 		}
 
 		const glm::dvec3 camera_direction = radial / radial_length;
-		bool rebuild = !planet.stream_initialized;
-		if(planet.stream_initialized)
+		bool update_chunks = !planet.chunk_set_initialized;
+		if(planet.chunk_set_initialized)
 		{
-			const double direction_dot = glm::clamp(glm::dot(camera_direction, planet.stream_anchor), -1.0, 1.0);
+			const double direction_dot = glm::clamp(glm::dot(camera_direction, planet.last_chunk_update_direction), -1.0, 1.0);
 			const double surface_distance = std::acos(direction_dot) * planet.radius;
-			rebuild = surface_distance > stream_update_distance;
+			update_chunks = surface_distance > chunk_update_distance;
 		}
-		if(rebuild) rebuildPlanetStream(planet, slot, world, camera_direction);
+		if(update_chunks) updatePlanetChunks(planet, slot, world, camera_direction);
 		queuePlanetRequests(planet, world, slot);
 	}
 

@@ -1,5 +1,5 @@
 #include <danikk_space_engine/component/world_body/world_body.h>
-#include <danikk_space_engine/component/world_body/planet.h>
+#include <danikk_space_engine/component/world_body/planet/planet.h>
 
 namespace danikk_space_engine
 {

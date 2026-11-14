@@ -3,8 +3,8 @@
 #include <fstream>
 #include <string>
 
-#include <danikk_space_engine/world/planet/chunk_generator.h>
-#include <danikk_space_engine/world/planet/terrain.h>
+#include <danikk_space_engine/component/world_body/planet/chunk_generator.h>
+#include <danikk_space_engine/component/world_body/planet/terrain.h>
 
 namespace danikk_space_engine
 {

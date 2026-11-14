@@ -1,1 +1,2 @@
-sources += files('world_body.cpp', 'planet.cpp')
+sources += files('world_body.cpp')
+subdir('planet')

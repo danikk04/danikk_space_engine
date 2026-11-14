@@ -100,7 +100,7 @@ classDiagram
 
     class PlanetComponent {
         +double radius
-        +double chunk_stream_radius
+        +double chunk_load_radius
         +uint32 noise_seed
         +DynamicArray~PlanetChunkRecord~ chunks
         +frame()
@@ -303,7 +303,7 @@ classDiagram
   - `dispose()` сбрасывает слот после уничтожения компонента.
 - `getWorldBodyComponentType(type_id)` — возвращает запись типа из таблицы в `world_body.cpp`.
 
-## component/world_body/planet.h:
+## component/world_body/planet/planet.h:
 
 - `PlanetComponentSettings` — начальные параметры планеты: радиус, радиус стриминга и seed шума.
 - `PlanetComponent` — состояние процедурной планеты и стриминга её чанков.
@@ -311,11 +311,11 @@ classDiagram
   - `framePlanetComponent(slot, world)` — вычисляет направление камеры относительно тела; при выходе из диапазона выгружает чанки, а при смещении камеры пересобирает набор нужных ключей и ставит отсутствующие чанки в очередь `ChunkLoader`.
   - `acceptPlanetGeneratedChunk(slot, world, generated_chunk)` — проверяет актуальность ключа, создаёт чанк и его точки/треугольники из результата фоновой генерации, затем регистрирует чанк в компоненте.
 
-## world/planet/terrain.h:
+## component/world_body/planet/terrain.h:
 
 - `samplePlanetScalarField(position, radius, noise_seed)` — возвращает скалярное поле планеты: положительное значение внутри, ноль на поверхности и отрицательное снаружи. Шум задаёт рельеф.
 
-## world/planet/chunk_generator.h:
+## component/world_body/planet/chunk_generator.h:
 
 - `ChunkGenerationRequest` — снимок параметров одного чанка поверхности для фонового потока; содержит ориентацию участка, координаты сетки, радиус и seed.
 - `GeneratedChunkData` — результат фоновой генерации: локальные координаты вершин и индексы треугольников, а также идентификаторы владельца и запроса.

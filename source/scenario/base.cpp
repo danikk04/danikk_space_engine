@@ -1,6 +1,6 @@
 #include <danikk_space_engine/scenario/base.h>
 
-#include <danikk_space_engine/component/world_body/planet.h>
+#include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine

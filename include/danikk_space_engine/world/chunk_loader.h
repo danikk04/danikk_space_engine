@@ -7,7 +7,7 @@
 
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/world/planet/chunk_generator.h>
+#include <danikk_space_engine/component/world_body/planet/chunk_generator.h>
 
 namespace danikk_space_engine
 {
