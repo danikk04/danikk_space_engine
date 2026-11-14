@@ -47,18 +47,27 @@ classDiagram
     }
 
     class WorldData {
-        -DynamicArray~Point~ points
-        -DynamicArray~VolumeCell~ volume_cells
-        -DynamicArray~Chunk~ chunks
-        -DynamicArray~PointComponentSlot~ point_components
+        -WorldResourcePool~Point, PointId~ points
+        -WorldResourcePool~VolumeCell, VolumeCellId~ volume_cells
+        -WorldResourcePool~GroundTriangle, GroundTriangleId~ ground_triangles
+        -WorldResourcePool~Chunk, ChunkId~ chunks
+        -WorldResourcePool~WorldBody, WorldBodyId~ world_bodies
+        -WorldResourcePool~PointComponentSlot, PointComponentSlotId~ point_components
+        -WorldResourcePool~GraphComponentSlot, GraphComponentSlotId~ graph_components
         +createPoint() PointId
         +createVolumeCell() VolumeCellId
-        +createChunk() Chunk
+        +createGroundTriangle() GroundTriangleId
+        +createWorldBody() WorldBodyId
+        +createChunk(world_body_id) Chunk
+        +createGraphComponentSlot() GraphComponentSlotId
         +createPointComponentSlot(point_id, type_id) PointComponentSlotId
         +getPoint(id) Point
         +getVolumeCell(id) VolumeCell
         +getChunk(id) Chunk
         +getPointComponentSlot(id) PointComponentSlot
+        +destroyPoint(id)
+        +destroyChunk(id)
+        +destroyWorldBody(id)
         +clear()
         +release()
     }
@@ -219,27 +228,40 @@ classDiagram
 
 ## world/world_data.h:
 
-- `WorldData` — приватно владеет массивами точек, ячеек, чанков и компонентов точек. ID — индексы в соответствующих массивах.
+- `WorldData` — приватно владеет семью `WorldResourcePool`, по одному для каждого типа ресурса. ID адресуют слоты пула; освобождённые ID могут использоваться повторно.
   - Поля:
-    - `points` — `DynamicArray<Point>`.
-    - `volume_cells` — `DynamicArray<VolumeCell>`.
-    - `chunks` — `DynamicArray<Chunk>`, чанки с ID принадлежащих им ячеек и мешами.
-    - `point_components` — `DynamicArray<PointComponentSlot>`.
+    - `points` — `WorldResourcePool<Point, PointId>`.
+    - `volume_cells` — `WorldResourcePool<VolumeCell, VolumeCellId>`.
+    - `ground_triangles` — `WorldResourcePool<GroundTriangle, GroundTriangleId>`.
+    - `chunks` — `WorldResourcePool<Chunk, ChunkId>`.
+    - `world_bodies` — `WorldResourcePool<WorldBody, WorldBodyId>`.
+    - `point_components` — `WorldResourcePool<PointComponentSlot, PointComponentSlotId>`.
+    - `graph_components` — `WorldResourcePool<GraphComponentSlot, GraphComponentSlotId>`.
   - Методы:
-    - `createPoint()` — добавляет точку по умолчанию и возвращает её `PointId`.
-    - `createVolumeCell()` — добавляет ячейку по умолчанию и возвращает её `VolumeCellId`.
-    - `createChunk()` — добавляет чанк и возвращает ссылку на него.
-    - `getPoint(id)` — возвращает изменяемую или константную ссылку на точку.
-    - `getVolumeCell(id)` — возвращает изменяемую или константную ссылку на ячейку.
-    - `getChunk(id)` — возвращает изменяемую или константную ссылку на чанк.
-    - `getPointCount()` — возвращает количество точек.
-    - `getVolumeCellCount()` — возвращает количество ячеек.
-    - `getChunkCount()` — возвращает количество чанков.
-    - `createPointComponentSlot(point_id, type_id, init_data)` — выбирает хранилище по размеру и требованиям типа, вызывает конструктор и возвращает ID.
-    - `getPointComponentSlot(id)` — возвращает слот по ID.
-    - `getPointComponentSlotCount()` — возвращает количество слотов.
-    - `clear()` — уничтожает элементы массивов, сохраняя их ёмкость.
-    - `release()` — освобождает память массивов.
+    - Создание:
+      - `createPoint()`, `createVolumeCell()`, `createGroundTriangle()`, `createWorldBody()` — выделяют ресурс и возвращают его ID.
+      - `createChunk(world_body_id)` — создаёт чанк, записывает его владельца и регистрирует чанк в `WorldBody`; возвращает ссылку на чанк.
+      - `createPointComponentSlot(point_id, type_id, init_data)` — проверяет точку и описание типа, выделяет слот, размещает payload внутри слота или отдельно, вызывает конструктор компонента и возвращает ID.
+      - `createGraphComponentSlot(chunk_id, point_a, point_b, type_id, init_data)` — создаёт компонент связи между двумя точками, выделяет payload и добавляет слот в чанк.
+    - Привязка к чанкам:
+      - `addPointReferenceToChunk(chunk_id, point_id)` — добавляет уникальную для чанка ссылку на точку и увеличивает `chunk_reference_count`; при превышении 100 вызывает критическую ошибку.
+      - `addVolumeCellToChunk(chunk_id, cell_id)` — добавляет ячейку, регистрирует её точки в чанке и инвалидирует меш.
+      - `addGroundTriangleToChunk(chunk_id, triangle_id)` — добавляет треугольник и ссылки на его точки, затем инвалидирует меш.
+      - `addPointComponentSlotToChunk(chunk_id, slot_id)` — регистрирует слот в чанке, добавляет ссылку на его точку и записывает `chunk_id` в слот.
+    - Удаление:
+      - `destroyPoint(id)` — удаляет точку из списков чанков, уничтожает связанные с ней point/graph компоненты, ячейки и треугольники, затем освобождает точку.
+      - `destroyVolumeCell(id)` и `destroyGroundTriangle(id)` — удаляют ресурс из чанков, инвалидируют их меши и освобождают ID.
+      - `destroyChunk(id)` — удаляет чанк из `WorldBody`, уничтожает его компоненты, ячейки и треугольники, освобождает ссылки на точки и уничтожает точки, у которых не осталось чанков-владельцев.
+      - `destroyWorldBody(id)` — уничтожает все чанки тела, затем освобождает само тело.
+      - `destroyPointComponentSlot(id)` и `destroyGraphComponentSlot(id)` — отсоединяют компонент от чанков, вызывают его деструктор, освобождают внешний payload при его наличии и освобождают ID.
+    - Запросы и доступ:
+      - `isPointActive(id)` и соответствующие `is...Active(id)` для остальных шести ресурсов — проверяют, активен ли ID.
+      - `getUsedPointIds()` и соответствующие `getUsed...Ids()` — возвращают массив ID активных ресурсов для итерации.
+      - `getPoint(id)`, `getVolumeCell(id)`, `getGroundTriangle(id)`, `getChunk(id)`, `getWorldBody(id)`, `getPointComponentSlot(id)`, `getGraphComponentSlot(id)` — возвращают изменяемую или константную ссылку; неактивный ID вызывает критическую ошибку.
+      - Семь методов `get...Count()` — возвращают размер слотового массива пула, включая свободные слоты; это не число активных ресурсов.
+    - Очистка:
+      - `clear()` — уничтожает все point и graph компоненты, очищает все пулы и сохраняет их выделенную ёмкость.
+      - `release()` — вызывает `clear()` и освобождает ёмкость всех пулов.
 
 ## world/point.h:
 
