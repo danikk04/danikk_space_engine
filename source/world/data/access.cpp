@@ -57,11 +57,11 @@ namespace danikk_space_engine
 	GraphComponentSlot& WorldData::getGraphComponentSlot(GraphComponentSlotId id) { return getCheckedResource(graph_components, id, "graph component slot"); }
 	const GraphComponentSlot& WorldData::getGraphComponentSlot(GraphComponentSlotId id) const { return getCheckedResource(graph_components, id, "graph component slot"); }
 
-	size_t WorldData::getPointCount() const { return points.size(); }
-	size_t WorldData::getVolumeCellCount() const { return volume_cells.size(); }
-	size_t WorldData::getGroundTriangleCount() const { return ground_triangles.size(); }
-	size_t WorldData::getChunkCount() const { return chunks.size(); }
-	size_t WorldData::getWorldBodyCount() const { return world_bodies.size(); }
+	size_t WorldData::getPointSlotCount() const { return points.size(); }
+	size_t WorldData::getVolumeCellSlotCount() const { return volume_cells.size(); }
+	size_t WorldData::getGroundTriangleSlotCount() const { return ground_triangles.size(); }
+	size_t WorldData::getChunkSlotCount() const { return chunks.size(); }
+	size_t WorldData::getWorldBodySlotCount() const { return world_bodies.size(); }
 	size_t WorldData::getWorldBodyComponentSlotCount() const { return world_body_components.size(); }
 	size_t WorldData::getPointComponentSlotCount() const { return point_components.size(); }
 	size_t WorldData::getGraphComponentSlotCount() const { return graph_components.size(); }

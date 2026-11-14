@@ -56,7 +56,7 @@ namespace danikk_space_engine
 		// Cells and triangles store their owner chunk and slot for direct removal.
 		void destroyVolumeCell(VolumeCellId id);
 		void destroyGroundTriangle(GroundTriangleId id);
-		// Chunk deletion destroys its component slots and volume cells, but leaves shared points.
+		// Chunk deletion destroys its components and geometry; points remain active while any chunk references them.
 		void destroyChunk(ChunkId id);
 		void destroyWorldBody(WorldBodyId id);
 		void destroyWorldBodyComponentSlot(WorldBodyComponentSlotId id);
@@ -98,11 +98,11 @@ namespace danikk_space_engine
 		const GraphComponentSlot& getGraphComponentSlot(GraphComponentSlotId id) const;
 
 		// These counts are total slot-array lengths, including free slots.
-		size_t getPointCount() const;
-		size_t getVolumeCellCount() const;
-		size_t getGroundTriangleCount() const;
-		size_t getChunkCount() const;
-		size_t getWorldBodyCount() const;
+		size_t getPointSlotCount() const;
+		size_t getVolumeCellSlotCount() const;
+		size_t getGroundTriangleSlotCount() const;
+		size_t getChunkSlotCount() const;
+		size_t getWorldBodySlotCount() const;
 		size_t getWorldBodyComponentSlotCount() const;
 		size_t getPointComponentSlotCount() const;
 		size_t getGraphComponentSlotCount() const;

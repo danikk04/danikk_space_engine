@@ -18,9 +18,9 @@ namespace danikk_space_engine
 		return projection + half_chord >= 0.0f && projection - half_chord <= max_distance;
 	}
 
-	// Casts a ray through every triangulated face in each chunk and returns the nearest hit.
-	// Normalizes the direction, transforms cell points to world space, intersects each triangle,
-	// and keeps the closest hit together with its FacePtr and triangle point IDs.
+	// Casts a ray through candidate chunks and returns the nearest triangle hit.
+	// Tests each valid chunk's bounding sphere first, then transforms geometry to ray-relative space
+	// and retains the closest intersection together with its FacePtr and triangle point IDs.
 	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
 		Watcher watcher("World::raycast");

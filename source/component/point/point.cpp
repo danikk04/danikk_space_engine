@@ -51,7 +51,7 @@ namespace danikk_space_engine
 				tickBulletComponent,
 				frameBulletComponent
 			},
-			{}  // engine
+			{}  // reserved engine type; no component implementation is registered yet
 		};
 	}
 

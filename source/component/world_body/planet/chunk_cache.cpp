@@ -156,14 +156,14 @@ namespace danikk_space_engine
 		loaded_edits.resize(header.edit_count);
 		for(PlanetTerrainEdit& edit : loaded_edits)
 		{
-			uint8 add_material = 0;
+			uint8 adds_solid_terrain = 0;
 			input.read(reinterpret_cast<char*>(&edit.center.x), sizeof(double));
 			input.read(reinterpret_cast<char*>(&edit.center.y), sizeof(double));
 			input.read(reinterpret_cast<char*>(&edit.center.z), sizeof(double));
 			input.read(reinterpret_cast<char*>(&edit.radius), sizeof(double));
-			input.read(reinterpret_cast<char*>(&add_material), sizeof(add_material));
-			if(!input || !std::isfinite(edit.radius) || edit.radius <= 0.0 || add_material > 1) return false;
-			edit.add_material = add_material != 0;
+			input.read(reinterpret_cast<char*>(&adds_solid_terrain), sizeof(adds_solid_terrain));
+			if(!input || !std::isfinite(edit.radius) || edit.radius <= 0.0 || adds_solid_terrain > 1) return false;
+			edit.adds_solid_terrain = adds_solid_terrain != 0;
 		}
 		edits = static_cast<DynamicArray<PlanetTerrainEdit>&&>(loaded_edits);
 		terrain_revision = header.terrain_revision;
@@ -193,12 +193,12 @@ namespace danikk_space_engine
 		output.write(reinterpret_cast<const char*>(&header), sizeof(header));
 		for(const PlanetTerrainEdit& edit : edits)
 		{
-			const uint8 add_material = edit.add_material ? 1 : 0;
+			const uint8 adds_solid_terrain = edit.adds_solid_terrain ? 1 : 0;
 			output.write(reinterpret_cast<const char*>(&edit.center.x), sizeof(double));
 			output.write(reinterpret_cast<const char*>(&edit.center.y), sizeof(double));
 			output.write(reinterpret_cast<const char*>(&edit.center.z), sizeof(double));
 			output.write(reinterpret_cast<const char*>(&edit.radius), sizeof(double));
-			output.write(reinterpret_cast<const char*>(&add_material), sizeof(add_material));
+			output.write(reinterpret_cast<const char*>(&adds_solid_terrain), sizeof(adds_solid_terrain));
 		}
 	}
 }

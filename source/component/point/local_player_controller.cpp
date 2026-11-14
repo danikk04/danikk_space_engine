@@ -35,7 +35,7 @@ namespace danikk_space_engine
 		{
 			const PointId point_id = world.data.createPoint();
 			world.data.getPoint(point_id) = source_point;
-			world.data.getPoint(point_id).chunk_reference_count = 0;
+			world.data.getPoint(point_id).referencing_chunk_count = 0;
 			MachinegunComponent machinegun;
 			machinegun.forward = camera.getFront();
 			machinegun.up = camera.getUp();

@@ -18,6 +18,7 @@ namespace danikk_space_engine
 
 		void destroyGraphMarker(void*) {}
 
+		// Pipe and wire are registered as payload placeholders; neither has tick or frame behavior yet.
 		const GraphComponentType graph_component_types[] =
 		{
 			{}, // none

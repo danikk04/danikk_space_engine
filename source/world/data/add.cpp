@@ -53,12 +53,12 @@ namespace danikk_space_engine
 		if(point_index < chunk.point_ids.size() && chunk.point_ids[point_index] == point_id) return;
 
 		Point& point = getPoint(point_id);
-		if(point.chunk_reference_count >= 100)
+		if(point.referencing_chunk_count >= 100)
 		{
 			danikk_engine::formatFatalError("Point % exceeds the maximum of 100 chunk references", point_id);
 		}
 		insertWorldResourceId(chunk.point_ids, point_id);
-		point.chunk_reference_count++;
+		point.referencing_chunk_count++;
 	}
 
 	void WorldData::addVolumeCellToChunk(ChunkId chunk_id, VolumeCellId cell_id)

@@ -10,7 +10,8 @@ namespace danikk_space_engine
 	{
 		glm::dvec3 center = glm::dvec3(0.0);
 		double radius = 0.0;
-		bool add_material = false;
+		// Selects additive solid terrain (true) or a subtractive spherical cut (false).
+		bool adds_solid_terrain = false;
 	};
 
 	// Returns positive density inside terrain, zero on any terrain boundary, and negative density in air.

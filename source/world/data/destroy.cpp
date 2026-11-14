@@ -103,7 +103,7 @@ namespace danikk_space_engine
 		if(!isPointActive(id)) return;
 
 		eraseIdFromChunks(*this, chunks.usedIds(), id, &Chunk::point_ids);
-		points[id].chunk_reference_count = 0;
+		points[id].referencing_chunk_count = 0;
 
 		destroyMatchingResources(point_components,
 			[id](const PointComponentSlot& slot) { return slot.point_id == id; },
@@ -191,9 +191,9 @@ namespace danikk_space_engine
 		ground_triangles.free(id);
 	}
 
-	// Detaches the chunk, destroys its components and geometry, releases its mesh,
-	// then decrements ownership counts for its points. Points with no remaining
-	// chunk owners are cascaded through destroyPoint() before the chunk slot is freed.
+	// Detaches the chunk from any WorldBody that lists it, destroys its components and geometry,
+	// releases its mesh, then decrements each point's chunk-reference count. Points whose count
+	// reaches zero are freed directly because this chunk's dependents have already been destroyed.
 	void WorldData::destroyChunk(ChunkId id)
 	{
 		Watcher watcher("WorldData::destroyChunk");
@@ -216,12 +216,12 @@ namespace danikk_space_engine
 			chunk.point_ids.resize(chunk.point_ids.size() - 1);
 			if(!isPointActive(point_id)) continue;
 			Point& point = getPoint(point_id);
-			if(point.chunk_reference_count == 0)
+			if(point.referencing_chunk_count == 0)
 			{
 				danikk_engine::formatFatalError("Point % has no chunk references while releasing chunk %", point_id, id);
 			}
-			point.chunk_reference_count--;
-			if(point.chunk_reference_count == 0)
+			point.referencing_chunk_count--;
+			if(point.referencing_chunk_count == 0)
 			{
 				// All components and geometry owned by this chunk were destroyed above.
 				// A zero chunk reference count means no other chunk can still use this point.

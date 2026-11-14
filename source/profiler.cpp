@@ -6,15 +6,17 @@
 
 namespace danikk_space_engine
 {
+	using namespace danikk_framework;
+
 	namespace
 	{
-		constexpr ProfilerUInt32 invalid_node_id = static_cast<ProfilerUInt32>(-1);
-		thread_local danikk_framework::DynamicArray<ProfilerUInt32> scope_stack;
+		constexpr uint32 invalid_node_id = static_cast<uint32>(-1);
+		thread_local DynamicArray<uint32> scope_stack;
 		struct ScopeCacheEntry
 		{
 			const char* name = nullptr;
-			ProfilerUInt32 parent_id = invalid_node_id;
-			ProfilerUInt32 node_id = invalid_node_id;
+			uint32 parent_id = invalid_node_id;
+			uint32 node_id = invalid_node_id;
 		};
 		thread_local danikk_framework::DynamicArray<ScopeCacheEntry> scope_cache;
 	}
@@ -26,9 +28,9 @@ namespace danikk_space_engine
 
 	Profiler profiler;
 
-	ProfilerUInt32 Profiler::beginScope(const char* name)
+	uint32 Profiler::beginScope(const char* name)
 	{
-		const ProfilerUInt32 parent_id = scope_stack.size() == 0 ? invalid_node_id : scope_stack.peek();
+		const uint32 parent_id = scope_stack.size() == 0 ? invalid_node_id : scope_stack.peek();
 		for(const ScopeCacheEntry& cached : scope_cache)
 		{
 			if(cached.name == name && cached.parent_id == parent_id)
@@ -37,10 +39,10 @@ namespace danikk_space_engine
 				return cached.node_id;
 			}
 		}
-		ProfilerUInt32 node_id = invalid_node_id;
+		uint32 node_id = invalid_node_id;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
-			for(ProfilerUInt32 index = 0; index < nodes.size(); index++)
+			for(uint32 index = 0; index < nodes.size(); index++)
 			{
 				const Node& node = nodes[index];
 				if(node.parent_id == parent_id && std::strcmp(node.name, name) == 0)
@@ -51,7 +53,7 @@ namespace danikk_space_engine
 			}
 			if(node_id == invalid_node_id)
 			{
-				node_id = static_cast<ProfilerUInt32>(nodes.size());
+				node_id = static_cast<uint32>(nodes.size());
 				nodes.push(Node{name, parent_id});
 			}
 		}
@@ -60,7 +62,7 @@ namespace danikk_space_engine
 		return node_id;
 	}
 
-	void Profiler::endScope(ProfilerUInt32 node_id, ProfilerUInt64 elapsed_nanoseconds)
+	void Profiler::endScope(uint32 node_id, uint64 elapsed_nanoseconds)
 	{
 		if(scope_stack.size() > 0 && scope_stack.peek() == node_id)
 		{
@@ -80,9 +82,9 @@ namespace danikk_space_engine
 
 	void Profiler::endTick()
 	{
-		danikk_framework::DynamicArray<Node> report_nodes;
-		ProfilerUInt64 ticks_in_report = 0;
-		ProfilerUInt64 elapsed_milliseconds = 0;
+		DynamicArray<Node> report_nodes;
+		uint64 ticks_in_report = 0;
+		uint64 elapsed_milliseconds = 0;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			const auto now = std::chrono::steady_clock::now();
@@ -98,7 +100,7 @@ namespace danikk_space_engine
 				node.tick_nanoseconds = 0;
 				node.tick_calls = 0;
 			}
-			elapsed_milliseconds = static_cast<ProfilerUInt64>(
+			elapsed_milliseconds = static_cast<uint64>(
 				std::chrono::duration_cast<std::chrono::milliseconds>(now - report_start_time).count());
 			if(elapsed_milliseconds < report_interval_milliseconds) return;
 
@@ -114,7 +116,7 @@ namespace danikk_space_engine
 			report_start_time = now;
 		}
 
-		danikk_framework::formatLogInfo(
+		formatLogInfo(
 			"CPU profile: % ticks in % ms",
 			ticks_in_report,
 			elapsed_milliseconds);
@@ -122,8 +124,8 @@ namespace danikk_space_engine
 		for(const Node& node : report_nodes)
 		{
 			if(node.total_calls == 0) continue;
-			ProfilerUInt32 depth = 0;
-			ProfilerUInt32 parent_id = node.parent_id;
+			uint32 depth = 0;
+			uint32 parent_id = node.parent_id;
 			while(parent_id != invalid_node_id && parent_id < report_nodes.size())
 			{
 				depth++;
@@ -133,7 +135,7 @@ namespace danikk_space_engine
 			{
 				depth = sizeof(indentation) / sizeof(indentation[0]) - 1;
 			}
-			danikk_framework::formatLogInfo(
+			formatLogInfo(
 				"% %: avg % ns/tick, max % ns/tick, calls %",
 				indentation[depth],
 				node.name,
@@ -143,7 +145,7 @@ namespace danikk_space_engine
 		}
 	}
 
-	void Profiler::setReportIntervalMilliseconds(ProfilerUInt64 milliseconds)
+	void Profiler::setReportIntervalMilliseconds(uint64 milliseconds)
 	{
 		std::lock_guard<std::mutex> guard(mutex);
 		report_interval_milliseconds = milliseconds == 0 ? 1 : milliseconds;
@@ -158,7 +160,7 @@ namespace danikk_space_engine
 	Watcher::~Watcher()
 	{
 		const auto elapsed = std::chrono::steady_clock::now() - start_time;
-		const ProfilerUInt64 elapsed_nanoseconds = static_cast<ProfilerUInt64>(
+		const uint64 elapsed_nanoseconds = static_cast<uint64>(
 			std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count());
 		profiler.endScope(node_id, elapsed_nanoseconds);
 	}

@@ -76,8 +76,8 @@ namespace danikk_space_engine
 				result_space_available.notify_all();
 			}
 
-			// Compare the requested queue with the current queue first. Planet components submit their
-			// pending set every frame; rebuilding it each time caused needless allocations and scans.
+			// Compare the requested queue before rebuilding it. If the set is unchanged, this avoids
+			// needless allocations and scans when callers repeat an update.
 			size_t queued_index = 0;
 			bool same_queue = true;
 			for(const ChunkGenerationRequest& request : new_requests)

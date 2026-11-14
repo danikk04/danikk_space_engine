@@ -16,7 +16,7 @@ namespace danikk_space_engine
 				movePlanetComponent,
 				destroyPlanetComponent,
 				nullptr,
-				framePlanetComponent,
+				updatePlanetComponent,
 				acceptPlanetGeneratedChunk
 			}
 		};

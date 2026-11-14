@@ -43,7 +43,7 @@ namespace danikk_space_engine
 		for(const PlanetTerrainEdit& edit : edits)
 		{
 			const double distance = glm::length(position_relative_to_planet_center - edit.center);
-			if(edit.add_material) density = std::max(density, edit.radius - distance);
+			if(edit.adds_solid_terrain) density = std::max(density, edit.radius - distance);
 			else density = std::min(density, distance - edit.radius);
 		}
 		return density;
