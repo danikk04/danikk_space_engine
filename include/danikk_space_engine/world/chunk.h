@@ -10,6 +10,13 @@
 
 namespace danikk_space_engine
 {
+	struct ChunkMaterialRange
+	{
+		MaterialId material_id = default_materials::void_material;
+		uint32 first_index = 0;
+		uint32 index_count = 0;
+	};
+
 	using ChunkId = uint32;
 	using WorldBodyId = uint32;
 	class World;
@@ -18,6 +25,7 @@ namespace danikk_space_engine
 	{
 		Mesh* mesh = nullptr;
 		DynamicArray<uint8> shared_face_masks;
+		DynamicArray<ChunkMaterialRange> material_ranges;
 
 	public:
 		bool mesh_dirty = true;

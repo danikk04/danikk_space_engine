@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include <danikk_space_engine/world/chunk.h>
+#include <danikk_space_engine/world/planet.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <danikk_engine/mesh.h>
@@ -13,6 +14,17 @@
 
 namespace danikk_space_engine
 {
+	struct MaterialTriangleReference
+	{
+		PointId points[3]{};
+		MaterialId material_id = default_materials::void_material;
+	};
+
+	static bool materialTriangleLess(const MaterialTriangleReference& left, const MaterialTriangleReference& right)
+	{
+		return left.material_id < right.material_id;
+	}
+
 	struct FaceReference
 	{
 		PointId point_ids[4]{};
@@ -69,6 +81,7 @@ namespace danikk_space_engine
 
 	Chunk::Chunk(Chunk&& other) noexcept
 		: mesh(other.mesh), shared_face_masks(static_cast<DynamicArray<uint8>&&>(other.shared_face_masks)),
+		material_ranges(static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges)),
 		mesh_dirty(other.mesh_dirty), chunk_id(other.chunk_id), world_body_id(other.world_body_id),
 		grid_coordinate(other.grid_coordinate), position(other.position),
 		volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids)),
@@ -99,6 +112,7 @@ namespace danikk_space_engine
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
 		graph_component_slot_ids = static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids);
 		shared_face_masks = static_cast<DynamicArray<uint8>&&>(other.shared_face_masks);
+		material_ranges = static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges);
 		mesh = other.mesh;
 		other.mesh = nullptr;
 		return *this;
@@ -124,6 +138,7 @@ namespace danikk_space_engine
 	{
 		mesh_dirty = true;
 		shared_face_masks.clear();
+		material_ranges.clear();
 	}
 
 	void Chunk::addPointComponentSlot(PointComponentSlotId slot_id)
@@ -238,7 +253,9 @@ namespace danikk_space_engine
 		DynamicArray<DefaultVertex> vertices;
 		DynamicArray<gl_point_index_t> indices;
 		DynamicArray<FaceReference> face_references;
+		DynamicArray<MaterialTriangleReference> triangles;
 		shared_face_masks.clear();
+		material_ranges.clear();
 		shared_face_masks.reserve(volume_cell_ids.size());
 		face_references.reserve(volume_cell_ids.size() * 8);
 		size_t max_triangle_count = 0;
@@ -253,8 +270,8 @@ namespace danikk_space_engine
 			}
 			const VolumeCell& cell = world.data.getVolumeCell(cell_id);
 			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
-			shared_face_masks.push(0);
 			max_triangle_count += topology.triangle_count;
+			shared_face_masks.push(0);
 			for(uint8 face_index = 0; face_index < topology.face_count; face_index++)
 			{
 				FaceReference reference;
@@ -296,9 +313,7 @@ namespace danikk_space_engine
 			face_index = group_end;
 		}
 
-		max_triangle_count += ground_triangle_ids.size();
-		vertices.reserve(max_triangle_count * 3);
-		indices.reserve(max_triangle_count * 3);
+		triangles.reserve(max_triangle_count + ground_triangle_ids.size());
 		for(size_t cell_index = 0; cell_index < volume_cell_ids.size(); cell_index++)
 		{
 			const VolumeCellId cell_id = volume_cell_ids[cell_index];
@@ -327,35 +342,7 @@ namespace danikk_space_engine
 					std::abort();
 				}
 
-				const vec3 a = world.data.getPoint(point_ids[0]).position;
-				const vec3 b = world.data.getPoint(point_ids[1]).position;
-				const vec3 c = world.data.getPoint(point_ids[2]).position;
-				const vec3 cross_product = glm::cross(b - a, c - a);
-				const float normal_length = glm::length(cross_product);
-				if(normal_length <= 0.000001f)
-				{
-					continue;
-				}
-
-				if(vertices.size() + 3 > static_cast<size_t>(std::numeric_limits<gl_point_index_t>::max()) + 1)
-				{
-					std::abort();
-				}
-
-				const vec3 normal = cross_product / normal_length;
-				const vec3 triangle_positions[3] = {a, b, c};
-				const vec2 triangle_uvs[3] =
-				{
-					projectToUV(a, normal),
-					projectToUV(b, normal),
-					projectToUV(c, normal)
-				};
-
-				for(uint8 vertex_index = 0; vertex_index < 3; vertex_index++)
-				{
-					indices.push(static_cast<gl_point_index_t>(vertices.size()));
-					vertices.pushCtor(triangle_positions[vertex_index], normal, triangle_uvs[vertex_index]);
-				}
+				triangles.pushCtor(MaterialTriangleReference{{point_ids[0], point_ids[1], point_ids[2]}, cell.material});
 			}
 		}
 
@@ -366,18 +353,45 @@ namespace danikk_space_engine
 			if(!world.data.isPointActive(triangle.points[0])
 				|| !world.data.isPointActive(triangle.points[1])
 				|| !world.data.isPointActive(triangle.points[2])) continue;
+			const glm::dvec3 a = world.getPointWorldPosition(chunk_id, triangle.points[0]);
+			const glm::dvec3 b = world.getPointWorldPosition(chunk_id, triangle.points[1]);
+			const glm::dvec3 c = world.getPointWorldPosition(chunk_id, triangle.points[2]);
+			const glm::dvec3 world_body_position = world.data.getWorldBody(world.planet_body_id).position;
+			const glm::dvec3 material_sample_position = (a + b + c) / 3.0 - world_body_position;
+			triangles.pushCtor(MaterialTriangleReference{
+				{triangle.points[0], triangle.points[1], triangle.points[2]},
+				samplePlanetMaterial(material_sample_position)});
+		}
+
+		std::sort(triangles.begin(), triangles.end(), materialTriangleLess);
+		vertices.reserve(triangles.size() * 3);
+		indices.reserve(triangles.size() * 3);
+		for(const MaterialTriangleReference& triangle : triangles)
+		{
+			if(vertices.size() + 3 > static_cast<size_t>(std::numeric_limits<gl_point_index_t>::max()) + 1)
+			{
+				std::abort();
+			}
 			const vec3 a = world.data.getPoint(triangle.points[0]).position;
 			const vec3 b = world.data.getPoint(triangle.points[1]).position;
 			const vec3 c = world.data.getPoint(triangle.points[2]).position;
 			const vec3 cross_product = glm::cross(b - a, c - a);
 			const float normal_length = glm::length(cross_product);
 			if(normal_length <= 0.000001f) continue;
+			if(material_ranges.size() == 0 || material_ranges.peek().material_id != triangle.material_id)
+			{
+				material_ranges.push(ChunkMaterialRange{
+					triangle.material_id,
+					static_cast<uint32>(indices.size()),
+					0});
+			}
 			const vec3 normal = cross_product / normal_length;
 			const vec3 positions[3] = {a, b, c};
 			for(uint8 corner = 0; corner < 3; corner++)
 			{
 				indices.push(static_cast<gl_point_index_t>(vertices.size()));
 				vertices.pushCtor(positions[corner], normal, projectToUV(positions[corner], normal));
+				material_ranges.peek().index_count++;
 			}
 		}
 
@@ -430,40 +444,22 @@ namespace danikk_space_engine
 
 	void Chunk::draw(World& world)
 	{
-		if(mesh == nullptr || (volume_cell_ids.size() == 0 && ground_triangle_ids.size() == 0)) return;
-		MaterialDefinition* material_pointer = nullptr;
-		for(VolumeCellId cell_id : volume_cell_ids)
-		{
-			if(world.data.isVolumeCellActive(cell_id))
-			{
-				material_pointer = &getMaterial(world.data.getVolumeCell(cell_id).material);
-				break;
-			}
-		}
-		if(material_pointer == nullptr)
-		{
-			for(GroundTriangleId triangle_id : ground_triangle_ids)
-			{
-				if(world.data.isGroundTriangleActive(triangle_id))
-				{
-					material_pointer = &getMaterial(world.data.getGroundTriangle(triangle_id).material);
-					break;
-				}
-			}
-		}
-		if(material_pointer == nullptr) return;
-		MaterialDefinition& material = *material_pointer;
-		if(material.texture.isNull())
-		{
-			white_texture.bind();
-		}
-		else
-		{
-			material.texture.bind();
-		}
-
-		setDrawColor(vec4(material.color, 1.0f));
+		if(mesh == nullptr || material_ranges.size() == 0) return;
 		setWorldMatrix(createWorldMatrix(world));
-		mesh->draw();
+		for(const ChunkMaterialRange& range : material_ranges)
+		{
+			if(range.index_count == 0) continue;
+			MaterialDefinition& material = getMaterial(range.material_id);
+			if(material.texture.isNull())
+			{
+				white_texture.bind();
+			}
+			else
+			{
+				material.texture.bind();
+			}
+			setDrawColor(vec4(material.color, 1.0f));
+			mesh->drawRange(range.first_index, range.index_count);
+		}
 	}
 }

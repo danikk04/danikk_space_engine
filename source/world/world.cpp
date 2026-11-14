@@ -11,6 +11,11 @@ namespace danikk_space_engine
 {
 	World world;
 
+	static bool sameChunkKey(const glm::ivec3& left, const glm::ivec3& right)
+	{
+		return left.x == right.x && left.y == right.y && left.z == right.z;
+	}
+
 	// Casts a ray through every triangulated face in each chunk and returns the nearest hit.
 	// Normalizes the direction, transforms cell points to world space, intersects each triangle,
 	// and keeps the closest hit together with its FacePtr and triangle point IDs.
@@ -193,6 +198,48 @@ namespace danikk_space_engine
 	void World::frame()
 	{
 		updatePlanetStreaming(*this);
+		GeneratedChunkData generated_chunk;
+		if(chunk_loader.tryTakeCompleted(generated_chunk)
+			&& generated_chunk.generation_id == planet_generation_id
+			&& data.isWorldBodyActive(generated_chunk.world_body_id))
+		{
+			bool desired = false;
+			bool already_loaded = false;
+			for(const glm::ivec3& key : desired_planet_chunk_keys)
+			{
+				if(sameChunkKey(key, generated_chunk.grid_coordinate)) desired = true;
+			}
+			for(const PlanetChunkRecord& record : planet_chunks)
+			{
+				if(sameChunkKey(record.grid_coordinate, generated_chunk.grid_coordinate)) already_loaded = true;
+			}
+			if(desired && !already_loaded)
+			{
+				Chunk& chunk = data.createChunk(generated_chunk.world_body_id);
+				const ChunkId chunk_id = chunk.chunk_id;
+				chunk.grid_coordinate = generated_chunk.grid_coordinate;
+				chunk.position = generated_chunk.chunk_position;
+				DynamicArray<PointId> point_ids;
+				point_ids.reserve(generated_chunk.point_positions.size());
+				for(const vec3& position : generated_chunk.point_positions)
+				{
+					const PointId point_id = data.createPoint();
+					data.getPoint(point_id).position = position;
+					point_ids.push(point_id);
+				}
+				for(PointId point_id : point_ids) data.addPointReferenceToChunk(chunk_id, point_id);
+				for(size_t index = 0; index + 2 < generated_chunk.triangle_point_indices.size(); index += 3)
+				{
+					const GroundTriangleId triangle_id = data.createGroundTriangle();
+					GroundTriangle& triangle = data.getGroundTriangle(triangle_id);
+					triangle.points[0] = point_ids[generated_chunk.triangle_point_indices[index]];
+					triangle.points[1] = point_ids[generated_chunk.triangle_point_indices[index + 1]];
+					triangle.points[2] = point_ids[generated_chunk.triangle_point_indices[index + 2]];
+					data.addGroundTriangleToChunk(chunk_id, triangle_id);
+				}
+				planet_chunks.push(PlanetChunkRecord{generated_chunk.grid_coordinate, chunk_id});
+			}
+		}
 		static_asset_collection.base3d_shader.use();
 		const CameraComponent& camera = getCameraComponent();
 		const vec3 camera_front = camera.getFront();
@@ -222,9 +269,21 @@ namespace danikk_space_engine
 
 	void World::init()
 	{
+		chunk_loader.start();
 		pending_point_destruction_ids.clear();
-		planet_surface_chunk_ids.clear();
+		planet_chunks.clear();
+		desired_planet_chunk_keys.clear();
 		planet_stream_initialized = false;
 		startBaseScenario(*this);
+	}
+
+	void World::shutdown()
+	{
+		chunk_loader.stop();
+		data.release();
+		pending_point_destruction_ids.clear();
+		planet_chunks.clear();
+		desired_planet_chunk_keys.clear();
+		planet_stream_initialized = false;
 	}
 }

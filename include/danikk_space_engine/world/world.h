@@ -6,6 +6,7 @@
 #include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/world/chunk.h>
+#include <danikk_space_engine/world/chunk_loader.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/world/world_data.h>
 #include <danikk_framework/dynamic_array.h>
@@ -23,21 +24,26 @@ namespace danikk_space_engine
 		PointId points[3]{};
 	};
 
+	struct PlanetChunkRecord
+	{
+		glm::ivec3 grid_coordinate = glm::ivec3(0);
+		ChunkId chunk_id = 0;
+	};
+
 	class World
 	{
 	public:
 		WorldData data;
+		ChunkLoader chunk_loader;
 		DynamicArray<PointId> pending_point_destruction_ids;
 		PointComponentSlotId camera_component_slot_id = 0;
 		PointComponentSlotId local_player_controller_component_slot_id = 0;
 		WorldBodyId planet_body_id = 0;
-		DynamicArray<ChunkId> planet_surface_chunk_ids;
-		glm::dvec3 planet_patch_origin = glm::dvec3(0.0);
-		glm::dvec3 planet_patch_up = glm::dvec3(0.0, 0.0, 1.0);
-		glm::dvec3 planet_patch_east = glm::dvec3(1.0, 0.0, 0.0);
-		glm::dvec3 planet_patch_north = glm::dvec3(0.0, 1.0, 0.0);
+		DynamicArray<PlanetChunkRecord> planet_chunks;
+		DynamicArray<glm::ivec3> desired_planet_chunk_keys;
 		glm::dvec3 planet_stream_anchor = glm::dvec3(0.0);
 		bool planet_stream_initialized = false;
+		uint64 planet_generation_id = 0;
 
 		void tick();
 		void deferPointDestruction(PointId point_id);
@@ -45,6 +51,7 @@ namespace danikk_space_engine
 		void frame();
 
 		void init();
+		void shutdown();
 
 		RaycastHit raycast(const glm::dvec3& origin, const vec3& direction, float max_distance = 10000.0f) const;
 		RaycastHit raycastFromCamera(float max_distance = 10000.0f) const;

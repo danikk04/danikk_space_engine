@@ -17,6 +17,11 @@ namespace danikk_engine_game
 
     }
 
+	void end()
+	{
+		world.shutdown();
+	}
+
     void begin()
     {
 		setWindowTitle("Danikk Space Engine");

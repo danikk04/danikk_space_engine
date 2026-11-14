@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/material.h>
 #include <glm/glm.hpp>
 
 namespace danikk_space_engine
@@ -12,6 +13,7 @@ namespace danikk_space_engine
 	double samplePlanetScalarField(
 		const glm::dvec3& position_relative_to_planet_center,
 		double radius = default_planet_radius);
+	MaterialId samplePlanetMaterial(const glm::dvec3& position_relative_to_planet_center);
 
 	class World;
 	void initializePlanetStreaming(World& world, uint32 world_body_id);
