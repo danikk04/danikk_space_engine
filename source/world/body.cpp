@@ -1,4 +1,4 @@
-#include <danikk_space_engine/world/world_body.h>
+#include <danikk_space_engine/world/body.h>
 
 namespace danikk_space_engine
 {

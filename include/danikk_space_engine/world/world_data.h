@@ -6,8 +6,8 @@
 #include <danikk_space_engine/world/volume_cell.h>
 #include <danikk_space_engine/world/ground_triangle.h>
 #include <danikk_space_engine/world/chunk.h>
-#include <danikk_space_engine/world/world_body.h>
-#include <danikk_space_engine/world/world_resource_pool.h>
+#include <danikk_space_engine/world/body.h>
+#include <danikk_space_engine/world/resource_pool.h>
 
 #include <danikk_framework/dynamic_array.h>
 

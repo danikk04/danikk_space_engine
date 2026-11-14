@@ -1,4 +1,4 @@
-#include <danikk_space_engine/world/world_resource_pool.h>
+#include <danikk_space_engine/world/resource_pool.h>
 
 namespace danikk_space_engine
 {
