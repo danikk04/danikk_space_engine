@@ -8,7 +8,7 @@
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/world/chunk_loader.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
-#include <danikk_space_engine/world/world_data.h>
+#include <danikk_space_engine/world/data.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
