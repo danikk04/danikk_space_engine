@@ -1,108 +1,16 @@
-#include <cmath>
-#include <filesystem>
-#include <fstream>
-#include <string>
-
 #include <danikk_space_engine/world/chunk_loader.h>
-#include <danikk_space_engine/world/planet.h>
 
 namespace danikk_space_engine
 {
 	namespace
 	{
-		constexpr uint32 chunk_cache_magic = 0x4443484Bu;
-		constexpr uint32 chunk_cache_version = 4;
-		constexpr bool chunk_cache_enabled = false;
-
-		struct ChunkCacheHeader
-		{
-			uint32 magic;
-			uint32 version;
-			uint32 face;
-			int32 x;
-			int32 y;
-			uint32 point_count;
-			uint32 index_count;
-			double planet_radius;
-		};
-
 		bool sameRequestKey(const ChunkGenerationRequest& left, const ChunkGenerationRequest& right)
 		{
 			return left.generation_id == right.generation_id
+				&& left.component_slot_id == right.component_slot_id
+				&& left.component_generation_id == right.component_generation_id
+				&& left.world_body_id == right.world_body_id
 				&& left.grid_coordinate == right.grid_coordinate;
-		}
-
-		std::filesystem::path cacheFilePath(const ChunkGenerationRequest& request)
-		{
-			return std::filesystem::current_path() / "cache" / "planet_surface"
-				/ ("v4_" + std::to_string(request.grid_coordinate.z)
-					+ "_" + std::to_string(request.grid_coordinate.x)
-					+ "_" + std::to_string(request.grid_coordinate.y) + ".bin");
-		}
-
-		bool loadCachedChunk(const ChunkGenerationRequest& request, GeneratedChunkData& result)
-		{
-			std::ifstream input(cacheFilePath(request), std::ios::binary);
-			if(!input) return false;
-			ChunkCacheHeader header{};
-			input.read(reinterpret_cast<char*>(&header), sizeof(header));
-			if(!input || header.magic != chunk_cache_magic || header.version != chunk_cache_version
-				|| header.face != static_cast<uint32>(request.grid_coordinate.z)
-				|| header.x != request.grid_coordinate.x || header.y != request.grid_coordinate.y
-				|| header.planet_radius != default_planet_radius
-				|| header.point_count > 100000 || header.index_count > 1000000
-				|| header.index_count % 3 != 0)
-			{
-				return false;
-			}
-
-			std::vector<vec3> point_positions(header.point_count);
-			for(vec3& position : point_positions)
-			{
-				input.read(reinterpret_cast<char*>(&position.x), sizeof(float));
-				input.read(reinterpret_cast<char*>(&position.y), sizeof(float));
-				input.read(reinterpret_cast<char*>(&position.z), sizeof(float));
-			}
-			std::vector<uint32> triangle_point_indices(header.index_count);
-			input.read(reinterpret_cast<char*>(triangle_point_indices.data()),
-				static_cast<std::streamsize>(header.index_count * sizeof(uint32)));
-			if(!input) return false;
-
-			for(uint32 point_index : triangle_point_indices)
-			{
-				if(point_index >= point_positions.size()) return false;
-			}
-			result.point_positions = static_cast<std::vector<vec3>&&>(point_positions);
-			result.triangle_point_indices = static_cast<std::vector<uint32>&&>(triangle_point_indices);
-			return true;
-		}
-
-		void saveCachedChunk(const ChunkGenerationRequest& request, const GeneratedChunkData& result)
-		{
-			std::error_code error;
-			const std::filesystem::path file_path = cacheFilePath(request);
-			std::filesystem::create_directories(file_path.parent_path(), error);
-			if(error) return;
-			std::ofstream output(file_path, std::ios::binary | std::ios::trunc);
-			if(!output) return;
-			const ChunkCacheHeader header{
-				chunk_cache_magic,
-				chunk_cache_version,
-				static_cast<uint32>(request.grid_coordinate.z),
-				request.grid_coordinate.x,
-				request.grid_coordinate.y,
-				static_cast<uint32>(result.point_positions.size()),
-				static_cast<uint32>(result.triangle_point_indices.size()),
-				default_planet_radius};
-			output.write(reinterpret_cast<const char*>(&header), sizeof(header));
-			for(const vec3& position : result.point_positions)
-			{
-				output.write(reinterpret_cast<const char*>(&position.x), sizeof(float));
-				output.write(reinterpret_cast<const char*>(&position.y), sizeof(float));
-				output.write(reinterpret_cast<const char*>(&position.z), sizeof(float));
-			}
-			output.write(reinterpret_cast<const char*>(result.triangle_point_indices.data()),
-				static_cast<std::streamsize>(result.triangle_point_indices.size() * sizeof(uint32)));
 		}
 	}
 
@@ -137,7 +45,7 @@ namespace danikk_space_engine
 
 	void ChunkLoader::updatePendingRequests(
 		uint64 generation_id,
-		const std::vector<ChunkGenerationRequest>& new_requests)
+		const DynamicArray<ChunkGenerationRequest>& new_requests)
 	{
 		{
 			std::lock_guard<std::mutex> guard(mutex);
@@ -153,13 +61,15 @@ namespace danikk_space_engine
 				for(const GeneratedChunkData& result : completed)
 				{
 					if(result.generation_id == request.generation_id
+						&& result.component_slot_id == request.component_slot_id
+						&& result.component_generation_id == request.component_generation_id
 						&& result.grid_coordinate == request.grid_coordinate) already_queued = true;
 				}
 				for(const ChunkGenerationRequest& queued : requests)
 				{
 					if(sameRequestKey(queued, request)) already_queued = true;
 				}
-				if(!already_queued && request.generation_id == current_generation_id) requests.push_back(request);
+				if(!already_queued && request.generation_id == current_generation_id) requests.push(request);
 			}
 		}
 		order_available.notify_one();
@@ -170,8 +80,12 @@ namespace danikk_space_engine
 		std::lock_guard<std::mutex> guard(mutex);
 		while(!completed.empty())
 		{
-			GeneratedChunkData candidate = static_cast<GeneratedChunkData&&>(completed.front());
-			completed.erase(completed.begin());
+			GeneratedChunkData candidate = static_cast<GeneratedChunkData&&>(completed[0]);
+			for(size_t index = 1; index < completed.size(); index++)
+			{
+				completed[index - 1] = static_cast<GeneratedChunkData&&>(completed[index]);
+			}
+			completed.resize(completed.size() - 1);
 			if(candidate.generation_id != current_generation_id) continue;
 			result = static_cast<GeneratedChunkData&&>(candidate);
 			return true;
@@ -188,77 +102,22 @@ namespace danikk_space_engine
 				std::unique_lock<std::mutex> lock(mutex);
 				order_available.wait(lock, [this] { return stopping || !requests.empty(); });
 				if(stopping) return;
-				request = requests.front();
-				requests.erase(requests.begin());
+				request = requests[0];
+				for(size_t index = 1; index < requests.size(); index++) requests[index - 1] = requests[index];
+				requests.resize(requests.size() - 1);
 				active_request = request;
 				has_active_request = true;
 			}
 
-			GeneratedChunkData result = generate(request);
+			GeneratedChunkData result = generatePlanetChunk(request);
 			{
 				std::lock_guard<std::mutex> guard(mutex);
 				has_active_request = false;
 				if(!stopping && request.generation_id == current_generation_id)
 				{
-					completed.push_back(static_cast<GeneratedChunkData&&>(result));
+					completed.pushMove(result);
 				}
 			}
 		}
-	}
-
-	/*
-	 * Samples the deformed height field over a curved tangent-plane patch. Geometry stays on the
-	 * planet surface for now; keeping the height lookup in the scalar-field API leaves room to add
-	 * volume sampling and caves later without changing chunk streaming.
-	 */
-	GeneratedChunkData ChunkLoader::generate(const ChunkGenerationRequest& request)
-	{
-		GeneratedChunkData result;
-		result.generation_id = request.generation_id;
-		result.world_body_id = request.world_body_id;
-		result.grid_coordinate = request.grid_coordinate;
-		result.chunk_position = request.chunk_position;
-		if(chunk_cache_enabled && loadCachedChunk(request, result)) return result;
-
-		constexpr double cell_size = 4.0;
-		const size_t cells_x = static_cast<size_t>(std::ceil(request.width / cell_size));
-		const size_t cells_y = cells_x;
-		const double step_x = request.width / static_cast<double>(cells_x);
-		const double step_y = request.width / static_cast<double>(cells_y);
-		const size_t points_per_row = cells_x + 1;
-		result.point_positions.reserve(points_per_row * (cells_y + 1));
-		result.triangle_point_indices.reserve(cells_x * cells_y * 6);
-
-		for(size_t y_index = 0; y_index <= cells_y; y_index++)
-		{
-			for(size_t x_index = 0; x_index <= cells_x; x_index++)
-			{
-				const double x = request.x0 + static_cast<double>(x_index) * step_x;
-				const double y = request.y0 + static_cast<double>(y_index) * step_y;
-				const glm::dvec3 direction = glm::normalize(
-					request.up * default_planet_radius
-						+ request.east * x
-						+ request.north * y);
-				const glm::dvec3 sample_position = direction * default_planet_radius;
-				const double terrain_height = samplePlanetScalarField(sample_position);
-				const glm::dvec3 surface_position = direction * (default_planet_radius + terrain_height);
-				result.point_positions.push_back(vec3(surface_position - request.chunk_position));
-			}
-		}
-
-		for(size_t y_index = 0; y_index < cells_y; y_index++)
-		{
-			for(size_t x_index = 0; x_index < cells_x; x_index++)
-			{
-				const uint32 p00 = static_cast<uint32>(y_index * points_per_row + x_index);
-				const uint32 p10 = p00 + 1;
-				const uint32 p01 = p00 + static_cast<uint32>(points_per_row);
-				const uint32 p11 = p01 + 1;
-				result.triangle_point_indices.insert(result.triangle_point_indices.end(),
-					{p00, p10, p11, p00, p11, p01});
-			}
-		}
-		if(chunk_cache_enabled) saveCachedChunk(request, result);
-		return result;
 	}
 }

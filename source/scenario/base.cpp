@@ -1,6 +1,6 @@
 #include <danikk_space_engine/scenario/base.h>
 
-#include <danikk_space_engine/world/planet.h>
+#include <danikk_space_engine/component/world_body/planet.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
@@ -11,6 +11,9 @@ namespace danikk_space_engine
 		world.data.clear();
 
 		const WorldBodyId planet_body_id = world.data.createWorldBody();
+		const PlanetComponentSettings planet_settings;
+		world.data.createWorldBodyComponentSlot(
+			planet_body_id, WorldBodyComponentTypeId::planet, &planet_settings);
 		const PointId camera_point_id = world.data.createPoint();
 		Point& camera_point = world.data.getPoint(camera_point_id);
 		constexpr float camera_altitude = 30.0f;
@@ -30,6 +33,5 @@ namespace danikk_space_engine
 			camera_point_id,
 			PointComponentTypeId::local_player_controller_component);
 		world.data.addPointComponentSlotToChunk(camera_chunk_id, world.local_player_controller_component_slot_id);
-		initializePlanetStreaming(world, planet_body_id);
 	}
 }

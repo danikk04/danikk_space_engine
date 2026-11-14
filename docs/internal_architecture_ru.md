@@ -25,6 +25,7 @@ begin()
   -> key_binds.frame()
   -> world.tick() -> Chunk::tick() -> PointComponentType::tick() -> LocalPlayerControllerComponent::tick()
   -> world.frame()
+       -> WorldBodyComponentType::frame() для компонентов WorldBody
        -> Chunk::frame() для чанков из WorldData
        -> Chunk::draw() для чанков из WorldData
        -> drawPolygonHighlights(world): raycast наведённой грани и подсветка
@@ -52,12 +53,14 @@ classDiagram
         -WorldResourcePool~GroundTriangle, GroundTriangleId~ ground_triangles
         -WorldResourcePool~Chunk, ChunkId~ chunks
         -WorldResourcePool~WorldBody, WorldBodyId~ world_bodies
+        -WorldResourcePool~WorldBodyComponentSlot, WorldBodyComponentSlotId~ world_body_components
         -WorldResourcePool~PointComponentSlot, PointComponentSlotId~ point_components
         -WorldResourcePool~GraphComponentSlot, GraphComponentSlotId~ graph_components
         +createPoint() PointId
         +createVolumeCell() VolumeCellId
         +createGroundTriangle() GroundTriangleId
         +createWorldBody() WorldBodyId
+        +createWorldBodyComponentSlot(world_body_id, type_id) WorldBodyComponentSlotId
         +createChunk(world_body_id) Chunk
         +createGraphComponentSlot() GraphComponentSlotId
         +createPointComponentSlot(point_id, type_id) PointComponentSlotId
@@ -70,6 +73,57 @@ classDiagram
         +destroyWorldBody(id)
         +clear()
         +release()
+    }
+
+    class WorldBody {
+        +vec3d position
+        +DynamicArray~ChunkId~ chunk_ids
+        +DynamicArray~WorldBodyComponentSlotId~ component_slot_ids
+    }
+
+    class WorldBodyComponentType {
+        +construct(destination, init_data)
+        +move(destination, source)
+        +destroy(data)
+        +tick(slot, World)
+        +frame(slot, World)
+        +accept_generated_chunk(slot, World, data)
+    }
+
+    class WorldBodyComponentSlot {
+        +WorldBodyId world_body_id
+        +WorldBodyComponentTypeId type_id
+        +uint32 generation_id
+        +inline_data[32] / external_data
+        +dispose()
+    }
+
+    class PlanetComponent {
+        +double radius
+        +double chunk_stream_radius
+        +uint32 noise_seed
+        +DynamicArray~PlanetChunkRecord~ chunks
+        +frame()
+        +acceptGeneratedChunk()
+    }
+
+    class ChunkLoader {
+        -queue and completed result buffers
+        -worker thread and synchronization
+        +start()
+        +stop()
+        +updatePendingRequests()
+        +tryTakeCompleted()
+    }
+
+    class ChunkGenerationRequest
+    class GeneratedChunkData
+    class PlanetTerrainField {
+        +samplePlanetScalarField(position, radius, seed)
+    }
+
+    class PlanetChunkGenerator {
+        +generatePlanetChunk(request) GeneratedChunkData
     }
 
     class Chunk {
@@ -174,6 +228,17 @@ classDiagram
     }
 
     World *-- WorldData : владеет
+    WorldData *-- WorldBody : хранит
+    WorldData *-- WorldBodyComponentSlot : хранит
+    WorldBody *-- Chunk : владеет
+    WorldBody *-- WorldBodyComponentSlot : владеет через ID
+    WorldBodyComponentSlot ..> WorldBodyComponentType : разрешает type_id через таблицу
+    WorldBodyComponentType ..> PlanetComponent : payload типа planet
+    PlanetComponent ..> ChunkLoader : передаёт запросы генерации и принимает результаты
+    ChunkLoader ..> ChunkGenerationRequest : ставит в очередь
+    ChunkLoader ..> GeneratedChunkData : возвращает результаты
+    ChunkLoader ..> PlanetChunkGenerator : выполняет генерацию в worker
+    PlanetChunkGenerator ..> PlanetTerrainField : получает высоту поверхности
     World ..> PointComponentSlot : хранит ID активных camera и controller
     WorldData *-- Point : хранит
     WorldData *-- VolumeCell : хранит
@@ -208,16 +273,60 @@ classDiagram
 
 - `World` — управляет состоянием мира и его кадром. Глобальный экземпляр `world` определён в `world.cpp`.
   - Поля:
-    - `data` — `WorldData`, хранилище точек и `VolumeCell`.
+    - `data` — `WorldData`, хранилище сущностей мира, геометрии и компонентов.
     - `camera_component_slot_id` — ID активного компонента камеры.
     - `local_player_controller_component_slot_id` — ID компонента локального контроллера.
   - Методы:
-    - `init()` — очищает данные и чанки; создаёт точку камеры, тестовую призму и бипирамиду в одном чанке; строит меш чанка.
-    - `tick()` — обновляет компоненты каждого чанка, включая камеру и локальный контроллер.
-    - `frame()` — строит матрицу вида по активной камере; вызывает `Chunk::frame()` для настройки проекции, затем `Chunk::draw()` и `drawPolygonHighlights(*this)`.
+    - `init()` — очищает данные, запускает `ChunkLoader` и базовый сценарий с камерой и планетой.
+    - `tick()` — обновляет компоненты точек и компонентов `WorldBody`.
+    - `frame()` — вызывает frame-компоненты `WorldBody`, передаёт генератору запросы, принимает готовые чанки; затем настраивает камеру, рисует чанки и вызывает `drawPolygonHighlights(*this)`.
     - `raycast(origin, direction)` — обходит видимые треугольники ячеек и возвращает ближайшее попадание.
     - `raycastFromCamera()` — запускает raycast из точки камеры в направлении взгляда.
     - `extrudeFaces(faces, distance)` — создаёт призму для треугольной грани или гексаэдр для четырёхугольной; обновляет чанки и возвращает верхние грани новых ячеек.
+
+## world/body.h:
+
+- `WorldBody` — владеет списком чанков и ID своих компонентов; служит системой координат для планет и подвижных тел.
+  - `position` — мировая позиция тела.
+  - `chunk_ids` — чанки геометрии, принадлежащие телу.
+  - `component_slot_ids` — компоненты, чьи payload находятся в пуле `WorldData`.
+
+## component/world_body/world_body.h:
+
+- `WorldBodyComponentTypeId` — ID типа компонента WorldBody; сейчас содержит `none` и `planet`.
+- `WorldBodyComponentType` — таблица функций жизненного цикла и обновления типа компонента.
+  - `construct`, `move`, `destroy` — управляют payload.
+  - `tick`, `frame` — обновляют состояние и отрисовку компонента.
+  - `accept_generated_chunk` — передаёт компоненту результат фоновой генерации.
+- `WorldBodyComponentSlot` — экземпляр компонента, связанный с `WorldBodyId`.
+  - Хранит ID тела, типа, поколения слота и inline либо внешний payload.
+  - `dispose()` сбрасывает слот после уничтожения компонента.
+- `getWorldBodyComponentType(type_id)` — возвращает запись типа из таблицы в `world_body.cpp`.
+
+## component/world_body/planet.h:
+
+- `PlanetComponentSettings` — начальные параметры планеты: радиус, радиус стриминга и seed шума.
+- `PlanetComponent` — состояние процедурной планеты и стриминга её чанков.
+  - Хранит параметры генерации, направление последнего обновления, требуемые ключи чанков, очередь запросов и записи загруженных чанков.
+  - `framePlanetComponent(slot, world)` — вычисляет направление камеры относительно тела; при выходе из диапазона выгружает чанки, а при смещении камеры пересобирает набор нужных ключей и ставит отсутствующие чанки в очередь `ChunkLoader`.
+  - `acceptPlanetGeneratedChunk(slot, world, generated_chunk)` — проверяет актуальность ключа, создаёт чанк и его точки/треугольники из результата фоновой генерации, затем регистрирует чанк в компоненте.
+
+## world/planet/terrain.h:
+
+- `samplePlanetScalarField(position, radius, noise_seed)` — возвращает скалярное поле планеты: положительное значение внутри, ноль на поверхности и отрицательное снаружи. Шум задаёт рельеф.
+
+## world/planet/chunk_generator.h:
+
+- `ChunkGenerationRequest` — снимок параметров одного чанка поверхности для фонового потока; содержит ориентацию участка, координаты сетки, радиус и seed.
+- `GeneratedChunkData` — результат фоновой генерации: локальные координаты вершин и индексы треугольников, а также идентификаторы владельца и запроса.
+- `generatePlanetChunk(request)` — строит сетку участка кубической сферы, деформирует вершины скалярным полем и возвращает локальную геометрию.
+
+## world/chunk_loader.h:
+
+- `ChunkLoader` — управляет worker-потоком, очередью запросов и завершёнными результатами; генерация геометрии вынесена в `generatePlanetChunk()`.
+  - `start()` / `stop()` — запускают и останавливают поток.
+  - `updatePendingRequests(generation_id, requests)` — заменяет список актуальных запросов и убирает дубликаты уже выполняемых или завершённых задач.
+  - `tryTakeCompleted(result)` — выдаёт готовый результат текущего поколения.
 - `RaycastHit` — временный результат raycast.
   - Поля:
     - `hit` — было ли попадание.
@@ -229,18 +338,20 @@ classDiagram
 
 ## world/data.h:
 
-- `WorldData` — приватно владеет семью `WorldResourcePool`, по одному для каждого типа ресурса. ID адресуют слоты пула; освобождённые ID могут использоваться повторно.
+- `WorldData` — приватно владеет восемью `WorldResourcePool`, по одному для каждого типа ресурса. ID адресуют слоты пула; освобождённые ID могут использоваться повторно.
   - Поля:
     - `points` — `WorldResourcePool<Point, PointId>`.
     - `volume_cells` — `WorldResourcePool<VolumeCell, VolumeCellId>`.
     - `ground_triangles` — `WorldResourcePool<GroundTriangle, GroundTriangleId>`.
     - `chunks` — `WorldResourcePool<Chunk, ChunkId>`.
     - `world_bodies` — `WorldResourcePool<WorldBody, WorldBodyId>`.
+    - `world_body_components` — `WorldResourcePool<WorldBodyComponentSlot, WorldBodyComponentSlotId>`.
     - `point_components` — `WorldResourcePool<PointComponentSlot, PointComponentSlotId>`.
     - `graph_components` — `WorldResourcePool<GraphComponentSlot, GraphComponentSlotId>`.
   - Методы:
     - Создание:
       - `createPoint()`, `createVolumeCell()`, `createGroundTriangle()`, `createWorldBody()` — выделяют ресурс и возвращают его ID.
+      - `createWorldBodyComponentSlot(world_body_id, type_id, init_data)` — создаёт слот, размещает payload, вызывает конструктор типа и регистрирует ID в соответствующем `WorldBody`.
       - `createChunk(world_body_id)` — создаёт чанк, записывает его владельца и регистрирует чанк в `WorldBody`; возвращает ссылку на чанк.
       - `createPointComponentSlot(point_id, type_id, init_data)` — проверяет точку и описание типа, выделяет слот, размещает payload внутри слота или отдельно, вызывает конструктор компонента и возвращает ID.
       - `createGraphComponentSlot(chunk_id, point_a, point_b, type_id, init_data)` — создаёт компонент связи между двумя точками, выделяет payload и добавляет слот в чанк.
@@ -253,15 +364,15 @@ classDiagram
       - `destroyPoint(id)` — удаляет точку из списков чанков, уничтожает связанные с ней point/graph компоненты, ячейки и треугольники, затем освобождает точку.
       - `destroyVolumeCell(id)` и `destroyGroundTriangle(id)` — удаляют ресурс из чанков, инвалидируют их меши и освобождают ID.
       - `destroyChunk(id)` — удаляет чанк из `WorldBody`, уничтожает его компоненты, ячейки и треугольники, освобождает ссылки на точки и уничтожает точки, у которых не осталось чанков-владельцев.
-      - `destroyWorldBody(id)` — уничтожает все чанки тела, затем освобождает само тело.
-      - `destroyPointComponentSlot(id)` и `destroyGraphComponentSlot(id)` — отсоединяют компонент от чанков, уничтожают payload, вызывают `dispose()` слота и освобождают ID.
+      - `destroyWorldBody(id)` — уничтожает компоненты и чанки тела, затем освобождает само тело.
+      - `destroyPointComponentSlot(id)`, `destroyGraphComponentSlot(id)` и `destroyWorldBodyComponentSlot(id)` — отсоединяют компонент от владельца, уничтожают payload, вызывают `dispose()` слота и освобождают ID.
     - Запросы и доступ:
-      - `isPointActive(id)` и соответствующие `is...Active(id)` для остальных шести ресурсов — проверяют, активен ли ID.
+      - `isPointActive(id)` и соответствующие `is...Active(id)` для остальных семи ресурсов — проверяют, активен ли ID.
       - `getUsedPointIds()` и соответствующие `getUsed...Ids()` — возвращают массив ID активных ресурсов для итерации.
       - `getPoint(id)`, `getVolumeCell(id)`, `getGroundTriangle(id)`, `getChunk(id)`, `getWorldBody(id)`, `getPointComponentSlot(id)`, `getGraphComponentSlot(id)` — возвращают изменяемую или константную ссылку; неактивный ID вызывает критическую ошибку.
-      - Семь методов `get...Count()` — возвращают размер слотового массива пула, включая свободные слоты; это не число активных ресурсов.
+      - Восемь методов `get...Count()` — возвращают размер слотового массива пула, включая свободные слоты; это не число активных ресурсов.
     - Очистка:
-      - `clear()` — уничтожает все point и graph компоненты, очищает все пулы и сохраняет их выделенную ёмкость.
+      - `clear()` — уничтожает компоненты, очищает все пулы и сохраняет их выделенную ёмкость.
       - `release()` — вызывает `clear()` и освобождает ёмкость всех пулов.
 
 ## world/point.h:

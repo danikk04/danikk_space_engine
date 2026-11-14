@@ -46,6 +46,29 @@ namespace danikk_space_engine
 	GroundTriangleId WorldData::createGroundTriangle() { return ground_triangles.create(); }
 	WorldBodyId WorldData::createWorldBody() { return world_bodies.create(); }
 
+	WorldBodyComponentSlotId WorldData::createWorldBodyComponentSlot(
+		WorldBodyId world_body_id,
+		WorldBodyComponentTypeId type_id,
+		const void* init_data)
+	{
+		if(!isWorldBodyActive(world_body_id))
+		{
+			danikk_engine::formatFatalError("World body component references invalid body %", world_body_id);
+		}
+		const WorldBodyComponentType& type = getWorldBodyComponentType(type_id);
+		validateComponentType(type, type_id, "World body");
+
+		const WorldBodyComponentSlotId id = world_body_components.create();
+		WorldBodyComponentSlot& slot = world_body_components[id];
+		slot.slot_id = id;
+		slot.world_body_id = world_body_id;
+		slot.generation_id = next_world_body_component_generation_id++;
+		slot.type_id = type_id;
+		constructComponentPayload(slot, type, init_data, type_id, "world body");
+		getWorldBody(world_body_id).addComponentSlot(id);
+		return id;
+	}
+
 	Chunk& WorldData::createChunk(WorldBodyId world_body_id)
 	{
 		if(!isWorldBodyActive(world_body_id))

@@ -186,8 +186,23 @@ namespace danikk_space_engine
 	{
 		if(!isWorldBodyActive(id)) return;
 		WorldBody& body = world_bodies[id];
+		while(body.component_slot_ids.size() > 0)
+		{
+			destroyWorldBodyComponentSlot(body.component_slot_ids[body.component_slot_ids.size() - 1]);
+		}
 		while(body.chunk_ids.size() > 0) destroyChunk(body.chunk_ids[body.chunk_ids.size() - 1]);
 		world_bodies.free(id);
+	}
+
+	void WorldData::destroyWorldBodyComponentSlot(WorldBodyComponentSlotId id)
+	{
+		if(!isWorldBodyComponentSlotActive(id)) return;
+		WorldBodyComponentSlot& slot = world_body_components[id];
+		if(isWorldBodyActive(slot.world_body_id)) world_bodies[slot.world_body_id].removeComponentSlot(id);
+		const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
+		destroyComponentPayload(slot, type, id, "World body");
+		slot.dispose();
+		world_body_components.free(id);
 	}
 
 	void WorldData::destroyPointComponentSlot(PointComponentSlotId id)
@@ -216,16 +231,18 @@ namespace danikk_space_engine
 
 	void WorldData::clear()
 	{
+		destroyLastUntilEmpty(world_body_components.usedIds(),
+			[this](WorldBodyComponentSlotId id) { destroyWorldBodyComponentSlot(id); });
 		destroyLastUntilEmpty(point_components.usedIds(),
 			[this](PointComponentSlotId id) { destroyPointComponentSlot(id); });
 		destroyLastUntilEmpty(graph_components.usedIds(),
 			[this](GraphComponentSlotId id) { destroyGraphComponentSlot(id); });
-		clearPools(point_components, graph_components, chunks, world_bodies, points, volume_cells, ground_triangles);
+		clearPools(point_components, graph_components, world_body_components, chunks, world_bodies, points, volume_cells, ground_triangles);
 	}
 
 	void WorldData::release()
 	{
 		clear();
-		releasePools(points, volume_cells, ground_triangles, chunks, world_bodies, point_components, graph_components);
+		releasePools(points, volume_cells, ground_triangles, chunks, world_bodies, world_body_components, point_components, graph_components);
 	}
 }

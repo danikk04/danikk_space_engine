@@ -1,19 +1,14 @@
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/effects/polygon_highlight.h>
 #include <danikk_space_engine/scenario/base.h>
-#include <danikk_space_engine/world/planet.h>
 
 namespace danikk_space_engine
 {
 	World world;
-
-	static bool sameChunkKey(const glm::ivec3& left, const glm::ivec3& right)
-	{
-		return left.x == right.x && left.y == right.y && left.z == right.z;
-	}
 
 	PointComponentSlot& World::getCameraSlot()
 	{
@@ -79,6 +74,13 @@ namespace danikk_space_engine
 		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = data.getWorldBody(body_id);
+			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
+			{
+				if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
+				WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
+				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
+				if(type.tick != nullptr) type.tick(slot, *this);
+			}
 			for(ChunkId chunk_id : body.chunk_ids) data.getChunk(chunk_id).tick(*this);
 		}
 		for(PointId point_id : pending_point_destruction_ids)
@@ -98,49 +100,43 @@ namespace danikk_space_engine
 		pending_point_destruction_ids.push(point_id);
 	}
 
+	void World::queueChunkGenerationRequest(ChunkGenerationRequest request)
+	{
+		request.generation_id = chunk_loader_generation_id;
+		chunk_generation_requests.pushMove(request);
+	}
+
 	void World::frame()
 	{
-		updatePlanetStreaming(*this);
+		chunk_generation_requests.clear();
+		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+		{
+			const WorldBody& body = data.getWorldBody(body_id);
+			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
+			{
+				if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
+				WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
+				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
+				if(type.frame != nullptr) type.frame(slot, *this);
+			}
+		}
+		chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
+
 		GeneratedChunkData generated_chunk;
 		if(chunk_loader.tryTakeCompleted(generated_chunk)
-			&& generated_chunk.generation_id == planet_generation_id
-			&& data.isWorldBodyActive(generated_chunk.world_body_id))
+			&& generated_chunk.generation_id == chunk_loader_generation_id
+			&& data.isWorldBodyActive(generated_chunk.world_body_id)
+			&& data.isWorldBodyComponentSlotActive(generated_chunk.component_slot_id))
 		{
-			bool desired = false;
-			bool already_loaded = false;
-			for(const glm::ivec3& key : desired_planet_chunk_keys)
+			WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(generated_chunk.component_slot_id);
+			if(slot.world_body_id == generated_chunk.world_body_id
+				&& slot.generation_id == generated_chunk.component_generation_id)
 			{
-				if(sameChunkKey(key, generated_chunk.grid_coordinate)) desired = true;
-			}
-			for(const PlanetChunkRecord& record : planet_chunks)
-			{
-				if(sameChunkKey(record.grid_coordinate, generated_chunk.grid_coordinate)) already_loaded = true;
-			}
-			if(desired && !already_loaded)
-			{
-				Chunk& chunk = data.createChunk(generated_chunk.world_body_id);
-				const ChunkId chunk_id = chunk.chunk_id;
-				chunk.grid_coordinate = generated_chunk.grid_coordinate;
-				chunk.position = generated_chunk.chunk_position;
-				DynamicArray<PointId> point_ids;
-				point_ids.reserve(generated_chunk.point_positions.size());
-				for(const vec3& position : generated_chunk.point_positions)
+				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
+				if(type.accept_generated_chunk != nullptr)
 				{
-					const PointId point_id = data.createPoint();
-					data.getPoint(point_id).position = position;
-					point_ids.push(point_id);
+					type.accept_generated_chunk(slot, *this, generated_chunk);
 				}
-				for(PointId point_id : point_ids) data.addPointReferenceToChunk(chunk_id, point_id);
-				for(size_t index = 0; index + 2 < generated_chunk.triangle_point_indices.size(); index += 3)
-				{
-					const GroundTriangleId triangle_id = data.createGroundTriangle();
-					GroundTriangle& triangle = data.getGroundTriangle(triangle_id);
-					triangle.points[0] = point_ids[generated_chunk.triangle_point_indices[index]];
-					triangle.points[1] = point_ids[generated_chunk.triangle_point_indices[index + 1]];
-					triangle.points[2] = point_ids[generated_chunk.triangle_point_indices[index + 2]];
-					data.addGroundTriangleToChunk(chunk_id, triangle_id);
-				}
-				planet_chunks.push(PlanetChunkRecord{generated_chunk.grid_coordinate, chunk_id});
 			}
 		}
 		static_asset_collection.base3d_shader.use();
@@ -173,20 +169,20 @@ namespace danikk_space_engine
 	void World::init()
 	{
 		chunk_loader.start();
+		chunk_loader_generation_id++;
+		if(chunk_loader_generation_id == 0) chunk_loader_generation_id++;
+		chunk_generation_requests.clear();
+		chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
 		pending_point_destruction_ids.clear();
-		planet_chunks.clear();
-		desired_planet_chunk_keys.clear();
-		planet_stream_initialized = false;
 		startBaseScenario(*this);
 	}
 
 	void World::shutdown()
 	{
 		chunk_loader.stop();
+		chunk_loader_generation_id++;
+		chunk_generation_requests.clear();
 		data.release();
 		pending_point_destruction_ids.clear();
-		planet_chunks.clear();
-		desired_planet_chunk_keys.clear();
-		planet_stream_initialized = false;
 	}
 }

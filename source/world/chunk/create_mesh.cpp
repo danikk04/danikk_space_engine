@@ -6,7 +6,6 @@
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/world/chunk.h>
-#include <danikk_space_engine/world/planet.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <danikk_engine/mesh.h>
@@ -193,14 +192,9 @@ namespace danikk_space_engine
 			if(!world.data.isPointActive(triangle.points[0])
 				|| !world.data.isPointActive(triangle.points[1])
 				|| !world.data.isPointActive(triangle.points[2])) continue;
-			const glm::dvec3 a = world.getPointWorldPosition(chunk_id, triangle.points[0]);
-			const glm::dvec3 b = world.getPointWorldPosition(chunk_id, triangle.points[1]);
-			const glm::dvec3 c = world.getPointWorldPosition(chunk_id, triangle.points[2]);
-			const glm::dvec3 world_body_position = world.data.getWorldBody(world.planet_body_id).position;
-			const glm::dvec3 material_sample_position = (a + b + c) / 3.0 - world_body_position;
 			triangles.pushCtor(MaterialTriangleReference{
 				{triangle.points[0], triangle.points[1], triangle.points[2]},
-				samplePlanetMaterial(material_sample_position)});
+				default_materials::stone});
 		}
 
 		std::sort(triangles.begin(), triangles.end(), materialTriangleLess);

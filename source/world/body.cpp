@@ -25,4 +25,28 @@ namespace danikk_space_engine
 		}
 		return false;
 	}
+
+	void WorldBody::addComponentSlot(WorldBodyComponentSlotId slot_id)
+	{
+		for(WorldBodyComponentSlotId existing_id : component_slot_ids)
+		{
+			if(existing_id == slot_id) return;
+		}
+		component_slot_ids.push(slot_id);
+	}
+
+	bool WorldBody::removeComponentSlot(WorldBodyComponentSlotId slot_id)
+	{
+		for(size_t index = 0; index < component_slot_ids.size(); index++)
+		{
+			if(component_slot_ids[index] != slot_id) continue;
+			for(size_t shift_index = index; shift_index + 1 < component_slot_ids.size(); shift_index++)
+			{
+				component_slot_ids[shift_index] = component_slot_ids[shift_index + 1];
+			}
+			component_slot_ids.resize(component_slot_ids.size() - 1);
+			return true;
+		}
+		return false;
+	}
 }

@@ -2,6 +2,8 @@ sources += files(
 	'chunk/chunk.cpp',
 	'chunk/create_mesh.cpp',
 	'chunk_loader.cpp',
+	'planet/terrain.cpp',
+	'planet/chunk_generator.cpp',
 	'edit.cpp',
 	'volume_cell.cpp',
 	'class/world.cpp',
@@ -11,6 +13,5 @@ sources += files(
 	'data/access.cpp',
 	'resource_pool.cpp',
 	'body.cpp',
-	'planet.cpp',
 	'class/raycast.cpp',
 )

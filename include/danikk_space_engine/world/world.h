@@ -24,12 +24,6 @@ namespace danikk_space_engine
 		PointId points[3]{};
 	};
 
-	struct PlanetChunkRecord
-	{
-		glm::ivec3 grid_coordinate = glm::ivec3(0);
-		ChunkId chunk_id = 0;
-	};
-
 	class World
 	{
 	public:
@@ -38,15 +32,12 @@ namespace danikk_space_engine
 		DynamicArray<PointId> pending_point_destruction_ids;
 		PointComponentSlotId camera_component_slot_id = 0;
 		PointComponentSlotId local_player_controller_component_slot_id = 0;
-		WorldBodyId planet_body_id = 0;
-		DynamicArray<PlanetChunkRecord> planet_chunks;
-		DynamicArray<glm::ivec3> desired_planet_chunk_keys;
-		glm::dvec3 planet_stream_anchor = glm::dvec3(0.0);
-		bool planet_stream_initialized = false;
-		uint64 planet_generation_id = 0;
+		uint64 chunk_loader_generation_id = 0;
+		DynamicArray<ChunkGenerationRequest> chunk_generation_requests;
 
 		void tick();
 		void deferPointDestruction(PointId point_id);
+		void queueChunkGenerationRequest(ChunkGenerationRequest request);
 
 		void frame();
 
