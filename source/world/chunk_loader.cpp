@@ -12,6 +12,7 @@ namespace danikk_space_engine
 	{
 		constexpr uint32 chunk_cache_magic = 0x4443484Bu;
 		constexpr uint32 chunk_cache_version = 4;
+		constexpr bool chunk_cache_enabled = false;
 
 		struct ChunkCacheHeader
 		{
@@ -217,7 +218,7 @@ namespace danikk_space_engine
 		result.world_body_id = request.world_body_id;
 		result.grid_coordinate = request.grid_coordinate;
 		result.chunk_position = request.chunk_position;
-		if(loadCachedChunk(request, result)) return result;
+		if(chunk_cache_enabled && loadCachedChunk(request, result)) return result;
 
 		constexpr double cell_size = 4.0;
 		const size_t cells_x = static_cast<size_t>(std::ceil(request.width / cell_size));
@@ -257,7 +258,7 @@ namespace danikk_space_engine
 					{p00, p10, p11, p00, p11, p01});
 			}
 		}
-		saveCachedChunk(request, result);
+		if(chunk_cache_enabled) saveCachedChunk(request, result);
 		return result;
 	}
 }
