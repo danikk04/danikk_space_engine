@@ -6,12 +6,10 @@
 
 namespace danikk_space_engine
 {
-	using WorldBodyId = uint32;
-
 	class WorldBody
 	{
 	public:
-		vec3 position = vec3(0.0f);
+		glm::dvec3 position = glm::dvec3(0.0);
 		DynamicArray<ChunkId> chunk_ids;
 
 		void addChunk(ChunkId chunk_id);

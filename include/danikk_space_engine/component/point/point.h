@@ -45,6 +45,7 @@ using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& w
 		static constexpr size_t inline_data_capacity = 32;
 
 		PointId point_id = 0;
+		uint32 chunk_id = static_cast<uint32>(-1);
 		PointComponentTypeId type_id = PointComponentTypeId::none;
 		bool uses_external_data = false;
 		union

@@ -78,9 +78,9 @@ namespace danikk_space_engine
 		}
 		face_center /= static_cast<float>(face_point_count);
 
-		const mat4 chunk_world_matrix = chunk.createWorldMatrix();
+		const mat4 chunk_world_matrix = chunk.createWorldMatrix(world);
 		const vec3 face_center_world = vec3(chunk_world_matrix * vec4(face_center, 1.0f));
-		const vec3 camera_position = world.getCameraPoint().position;
+		const vec3 camera_position(0.0f);
 		const vec3 camera_delta = camera_position - face_center_world;
 		const float camera_distance = glm::length(camera_delta);
 		const vec3 camera_offset_direction = camera_distance > 0.000001f

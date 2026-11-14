@@ -37,6 +37,9 @@ namespace danikk_space_engine
 		VolumeCellId createVolumeCell();
 		WorldBodyId createWorldBody();
 		Chunk& createChunk(WorldBodyId world_body_id);
+		void addPointReferenceToChunk(ChunkId chunk_id, PointId point_id);
+		void addVolumeCellToChunk(ChunkId chunk_id, VolumeCellId cell_id);
+		void addPointComponentSlotToChunk(ChunkId chunk_id, PointComponentSlotId slot_id);
 		PointComponentSlotId createPointComponentSlot(
 			PointId point_id,
 			PointComponentTypeId type_id,

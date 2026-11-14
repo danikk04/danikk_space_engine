@@ -134,7 +134,7 @@ namespace danikk_space_engine
 				extruded_cell.points[point_index] = base_point_ids[point_index];
 				extruded_cell.points[point_count + point_index] = extruded_point_ids[point_index];
 			}
-			chunk.volume_cell_ids.push(extruded_cell_id);
+			data.addVolumeCellToChunk(face.chunk_id, extruded_cell_id);
 			result.push(FacePtr{face.chunk_id, extruded_cell_id, 1});
 
 			bool already_modified = false;

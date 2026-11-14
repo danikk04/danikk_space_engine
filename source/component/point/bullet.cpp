@@ -66,10 +66,11 @@ namespace danikk_space_engine
 		const float step_distance = glm::length(displacement);
 		if(step_distance > 0.000001f)
 		{
-			const RaycastHit hit = world.raycast(start_position, bullet.velocity, step_distance);
+			const glm::dvec3 start_world_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
+			const RaycastHit hit = world.raycast(start_world_position, bullet.velocity, step_distance);
 			if(hit.hit)
 			{
-				point.position = hit.position;
+				point.position = vec3(hit.position - world.getChunkWorldPosition(slot.chunk_id));
 				bullet.destruction_queued = true;
 				world.deferPointDestruction(slot.point_id);
 				return;
@@ -117,8 +118,10 @@ namespace danikk_space_engine
 
 		white_texture.bind();
 		setDrawColor(vec4(1.0f, 0.78f, 0.28f, 1.0f));
+		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 		setWorldMatrix(
-			glm::translate(mat4(1.0f), position)
+			chunk.createWorldMatrix(world)
+			* glm::translate(mat4(1.0f), position)
 			* orientation
 			* glm::scale(mat4(1.0f), vec3(0.18f, 0.025f, 0.025f)));
 		static_asset_collection.low_poly_sphere_mesh.draw();

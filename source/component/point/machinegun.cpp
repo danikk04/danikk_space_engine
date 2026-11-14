@@ -47,7 +47,7 @@ namespace danikk_space_engine
 				point_id,
 				PointComponentTypeId::bullet,
 				&bullet);
-			world.data.getChunk(chunk_id).addPointComponentSlot(bullet_slot_id);
+			world.data.addPointComponentSlotToChunk(chunk_id, bullet_slot_id);
 		}
 	}
 
@@ -161,9 +161,11 @@ namespace danikk_space_engine
 		const MachinegunComponent& machinegun = *static_cast<const MachinegunComponent*>(slot.getData());
 		white_texture.bind();
 		setDrawColor(vec4(0.4f, 0.4f, 0.4f, 1.0f));
-		const mat4 world_matrix = glm::translate(
-			mat4(1.0f),
-			world.data.getPoint(slot.point_id).position)
+		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
+		const mat4 world_matrix = chunk.createWorldMatrix(world)
+			* glm::translate(
+				mat4(1.0f),
+				world.data.getPoint(slot.point_id).position)
 			* glm::rotate(mat4(1.0f), -machinegun.rotation.x, vec3(0.0f, 1.0f, 0.0f))
 			* glm::rotate(mat4(1.0f), machinegun.rotation.y, vec3(0.0f, 0.0f, 1.0f))
 			* glm::rotate(mat4(1.0f), machinegun.rotation.z, vec3(1.0f, 0.0f, 0.0f))

@@ -69,8 +69,9 @@ namespace danikk_space_engine
 
 	Chunk::Chunk(Chunk&& other) noexcept
 		: mesh(other.mesh), shared_face_masks(static_cast<DynamicArray<uint8>&&>(other.shared_face_masks)),
-		mesh_dirty(other.mesh_dirty), position(other.position),
+		mesh_dirty(other.mesh_dirty), chunk_id(other.chunk_id), world_body_id(other.world_body_id), position(other.position),
 		volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids)),
+		point_ids(static_cast<DynamicArray<PointId>&&>(other.point_ids)),
 		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids)),
 		graph_component_slot_ids(static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids))
 	{
@@ -86,8 +87,11 @@ namespace danikk_space_engine
 
 		destroyMesh();
 		mesh_dirty = other.mesh_dirty;
+		chunk_id = other.chunk_id;
+		world_body_id = other.world_body_id;
 		position = other.position;
 		volume_cell_ids = static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids);
+		point_ids = static_cast<DynamicArray<PointId>&&>(other.point_ids);
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
 		graph_component_slot_ids = static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids);
 		shared_face_masks = static_cast<DynamicArray<uint8>&&>(other.shared_face_masks);
@@ -393,12 +397,13 @@ namespace danikk_space_engine
 		return cell_index < shared_face_masks.size() ? shared_face_masks[cell_index] : 0;
 	}
 
-	mat4 Chunk::createWorldMatrix() const
+	mat4 Chunk::createWorldMatrix(const World& world) const
 	{
-		return glm::translate(mat4(1.0f), position);
+		const glm::dvec3 relative_position = world.getChunkWorldPosition(chunk_id) - world.getCameraWorldPosition();
+		return glm::translate(mat4(1.0f), vec3(relative_position));
 	}
 
-	void Chunk::draw()
+	void Chunk::draw(World& world)
 	{
 		if(mesh == nullptr || volume_cell_ids.size() == 0)
 		{
@@ -421,7 +426,7 @@ namespace danikk_space_engine
 		}
 
 		setDrawColor(vec4(material.color, 1.0f));
-		setWorldMatrix(createWorldMatrix());
+		setWorldMatrix(createWorldMatrix(world));
 		mesh->draw();
 	}
 }

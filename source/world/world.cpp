@@ -13,7 +13,7 @@ namespace danikk_space_engine
 	// Casts a ray through every triangulated face in each chunk and returns the nearest hit.
 	// Normalizes the direction, transforms cell points to world space, intersects each triangle,
 	// and keeps the closest hit together with its FacePtr and triangle point IDs.
-	RaycastHit World::raycast(const vec3& origin, const vec3& direction, float max_distance) const
+	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
 		RaycastHit result;
 		const float direction_length = glm::length(direction);
@@ -23,7 +23,7 @@ namespace danikk_space_engine
 		}
 
 		const vec3 normalized_direction = direction / direction_length;
-		const Ray ray{origin, normalized_direction};
+		const Ray ray{vec3(0.0f), normalized_direction};
 		float nearest_distance = max_distance;
 
 		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
@@ -32,7 +32,7 @@ namespace danikk_space_engine
 			for(ChunkId chunk_id : body.chunk_ids)
 			{
 				const Chunk& chunk = data.getChunk(chunk_id);
-				const mat4 chunk_world_matrix = chunk.createWorldMatrix();
+				const vec3 chunk_relative_position = vec3(getChunkWorldPosition(chunk_id) - origin);
 				for(size_t cell_index = 0; cell_index < chunk.volume_cell_ids.size(); cell_index++)
 				{
 					const VolumeCellId cell_id = chunk.volume_cell_ids[cell_index];
@@ -47,16 +47,16 @@ namespace danikk_space_engine
 						const PointId point_ids[3]{cell.points[triangle.points[0]], cell.points[triangle.points[1]], cell.points[triangle.points[2]]};
 						if(!data.isPointActive(point_ids[0]) || !data.isPointActive(point_ids[1]) || !data.isPointActive(point_ids[2])) continue;
 
-						const vec3 world_a = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[0]).position, 1.0f));
-						const vec3 world_b = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[1]).position, 1.0f));
-						const vec3 world_c = vec3(chunk_world_matrix * vec4(data.getPoint(point_ids[2]).position, 1.0f));
+						const vec3 world_a = chunk_relative_position + data.getPoint(point_ids[0]).position;
+						const vec3 world_b = chunk_relative_position + data.getPoint(point_ids[1]).position;
+						const vec3 world_c = chunk_relative_position + data.getPoint(point_ids[2]).position;
 						const RayTriangleIntersection intersection = intersectRayTriangle(ray, world_a, world_b, world_c);
 						if(!intersection.hit || intersection.distance > nearest_distance) continue;
 
 						nearest_distance = intersection.distance;
 						result.hit = true;
 						result.distance = intersection.distance;
-						result.position = origin + normalized_direction * intersection.distance;
+						result.position = origin + glm::dvec3(normalized_direction) * static_cast<double>(intersection.distance);
 						result.normal = intersection.normal;
 						result.face = FacePtr{chunk_id, cell_id, topology.triangle_face_indices[triangle_index]};
 						result.triangle_index = triangle_index;
@@ -85,7 +85,7 @@ namespace danikk_space_engine
 		{
 			return RaycastHit{};
 		}
-		return raycast(data.getPoint(camera_slot.point_id).position, getCameraComponent().getFront(), max_distance);
+		return raycast(getCameraWorldPosition(), getCameraComponent().getFront(), max_distance);
 	}
 
 	PointComponentSlot& World::getCameraSlot()
@@ -116,6 +116,23 @@ namespace danikk_space_engine
 	const Point& World::getCameraPoint() const
 	{
 		return data.getPoint(getCameraSlot().point_id);
+	}
+
+	glm::dvec3 World::getCameraWorldPosition() const
+	{
+		const PointComponentSlot& camera_slot = getCameraSlot();
+		return getPointWorldPosition(camera_slot.chunk_id, camera_slot.point_id);
+	}
+
+	glm::dvec3 World::getChunkWorldPosition(ChunkId chunk_id) const
+	{
+		const Chunk& chunk = data.getChunk(chunk_id);
+		return data.getWorldBody(chunk.world_body_id).position + chunk.position;
+	}
+
+	glm::dvec3 World::getPointWorldPosition(ChunkId chunk_id, PointId point_id) const
+	{
+		return getChunkWorldPosition(chunk_id) + glm::dvec3(data.getPoint(point_id).position);
 	}
 
 	LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent()
@@ -157,10 +174,9 @@ namespace danikk_space_engine
 	void World::frame()
 	{
 		static_asset_collection.base3d_shader.use();
-		const vec3 camera_position = getCameraPoint().position;
 		const CameraComponent& camera = getCameraComponent();
 		const vec3 camera_front = camera.getFront();
-		const mat4 view = glm::lookAt(camera_position, camera_position + camera_front, camera.getUp());
+		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera.getUp());
 		setViewMatrix(view);
 		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
@@ -175,7 +191,7 @@ namespace danikk_space_engine
 		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = data.getWorldBody(body_id);
-			for(ChunkId chunk_id : body.chunk_ids) data.getChunk(chunk_id).draw();
+			for(ChunkId chunk_id : body.chunk_ids) data.getChunk(chunk_id).draw(*this);
 		}
 		drawPolygonHighlights(*this);
 	}

@@ -10,6 +10,7 @@
 namespace danikk_space_engine
 {
 	using ChunkId = uint32;
+	using WorldBodyId = uint32;
 	class World;
 
 	class Chunk
@@ -19,8 +20,11 @@ namespace danikk_space_engine
 
 	public:
 		bool mesh_dirty = true;
-		vec3 position = vec3(0.0f);
+		ChunkId chunk_id = 0;
+		WorldBodyId world_body_id = 0;
+		glm::dvec3 position = glm::dvec3(0.0);
 		DynamicArray<VolumeCellId> volume_cell_ids;
+		DynamicArray<PointId> point_ids;
 		DynamicArray<PointComponentSlotId> point_component_slot_ids;
 		DynamicArray<GraphComponentSlotId> graph_component_slot_ids;
 
@@ -37,9 +41,9 @@ namespace danikk_space_engine
 		void tick(World& world);
 		bool hasSharedFace(VolumeCellId cell_id, uint8 face_index) const;
 		uint8 getSharedFaceMask(size_t cell_index) const;
-	void frame(World& world);
-		mat4 createWorldMatrix() const;
-		void draw();
+		void frame(World& world);
+		mat4 createWorldMatrix(const World& world) const;
+		void draw(World& world);
 		void destroyMesh();
 		void invalidateMesh();
 	};

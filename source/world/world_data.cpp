@@ -101,8 +101,11 @@ namespace danikk_space_engine
 			const ChunkId id = freed_chunk_ids.pop();
 			result_id = id;
 			Chunk& chunk = chunks[id];
-			chunk.position = vec3(0.0f);
+			chunk.chunk_id = id;
+			chunk.world_body_id = world_body_id;
+			chunk.position = glm::dvec3(0.0);
 			chunk.volume_cell_ids.clear();
+			chunk.point_ids.clear();
 			chunk.point_component_slot_ids.clear();
 			chunk.graph_component_slot_ids.clear();
 			chunk.invalidateMesh();
@@ -113,12 +116,78 @@ namespace danikk_space_engine
 		{
 			Chunk& chunk = chunks.pushCtor();
 			const ChunkId id = static_cast<ChunkId>(chunks.size() - 1);
+			chunk.chunk_id = id;
+			chunk.world_body_id = world_body_id;
 			result_id = id;
 			insertSortedId(used_chunk_ids, id);
 			result = &chunk;
 		}
 		getWorldBody(world_body_id).addChunk(result_id);
 		return *result;
+	}
+
+	void WorldData::addPointReferenceToChunk(ChunkId chunk_id, PointId point_id)
+	{
+		if(!isChunkActive(chunk_id) || !isPointActive(point_id))
+		{
+			danikk_engine::formatFatalError("Cannot attach point % to invalid chunk %", point_id, chunk_id);
+		}
+
+		Chunk& chunk = getChunk(chunk_id);
+		const size_t point_index = findSortedId(chunk.point_ids, point_id);
+		if(point_index < chunk.point_ids.size() && chunk.point_ids[point_index] == point_id) return;
+
+		Point& point = getPoint(point_id);
+		if(point.chunk_reference_count >= 100)
+		{
+			danikk_engine::formatFatalError("Point % exceeds the maximum of 100 chunk references", point_id);
+		}
+		insertSortedId(chunk.point_ids, point_id);
+		point.chunk_reference_count++;
+	}
+
+	void WorldData::addVolumeCellToChunk(ChunkId chunk_id, VolumeCellId cell_id)
+	{
+		if(!isChunkActive(chunk_id) || !isVolumeCellActive(cell_id))
+		{
+			danikk_engine::formatFatalError("Cannot attach volume cell % to invalid chunk %", cell_id, chunk_id);
+		}
+		Chunk& chunk = getChunk(chunk_id);
+		for(VolumeCellId existing_cell_id : chunk.volume_cell_ids)
+		{
+			if(existing_cell_id == cell_id)
+			{
+				danikk_engine::formatFatalError("Volume cell % is already attached to chunk %", cell_id, chunk_id);
+			}
+		}
+
+		const VolumeCell& cell = getVolumeCell(cell_id);
+		const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
+		for(uint8 point_index = 0; point_index < topology.point_count; point_index++)
+		{
+			addPointReferenceToChunk(chunk_id, cell.points[point_index]);
+		}
+		chunk.volume_cell_ids.push(cell_id);
+		chunk.invalidateMesh();
+	}
+
+	void WorldData::addPointComponentSlotToChunk(ChunkId chunk_id, PointComponentSlotId slot_id)
+	{
+		if(!isChunkActive(chunk_id) || !isPointComponentSlotActive(slot_id))
+		{
+			danikk_engine::formatFatalError("Cannot attach point component % to invalid chunk %", slot_id, chunk_id);
+		}
+		Chunk& chunk = getChunk(chunk_id);
+		for(PointComponentSlotId existing_slot_id : chunk.point_component_slot_ids)
+		{
+			if(existing_slot_id == slot_id)
+			{
+				danikk_engine::formatFatalError("Point component % is already attached to chunk %", slot_id, chunk_id);
+			}
+		}
+		addPointReferenceToChunk(chunk_id, getPointComponentSlot(slot_id).point_id);
+		chunk.addPointComponentSlot(slot_id);
+		getPointComponentSlot(slot_id).chunk_id = chunk_id;
 	}
 
 	PointComponentSlotId WorldData::createPointComponentSlot(
@@ -155,6 +224,7 @@ namespace danikk_space_engine
 		}
 		PointComponentSlot& slot = *slot_pointer;
 		slot.point_id = point_id;
+		slot.chunk_id = static_cast<uint32>(-1);
 		slot.type_id = type_id;
 		slot.uses_external_data = !type.inline_relocatable
 			|| type.data_size > PointComponentSlot::inline_data_capacity;
@@ -226,13 +296,36 @@ namespace danikk_space_engine
 		}
 		type.construct(slot.getData(), init_data);
 		insertSortedId(used_graph_component_slot_ids, id);
-		getChunk(chunk_id).addGraphComponentSlot(id);
+		Chunk& chunk = getChunk(chunk_id);
+		addPointReferenceToChunk(chunk_id, point_a);
+		addPointReferenceToChunk(chunk_id, point_b);
+		chunk.addGraphComponentSlot(id);
 		return id;
 	}
 
 	void WorldData::destroyPoint(PointId id)
 	{
 		if(!isPointActive(id)) return;
+
+		// Explicit destruction invalidates all chunk references before cascading to cells and components.
+		for(ChunkId chunk_id : used_chunk_ids)
+		{
+			Chunk& chunk = chunks[chunk_id];
+			for(size_t point_index = 0; point_index < chunk.point_ids.size();)
+			{
+				if(chunk.point_ids[point_index] != id)
+				{
+					point_index++;
+					continue;
+				}
+				for(size_t shift_index = point_index; shift_index + 1 < chunk.point_ids.size(); shift_index++)
+				{
+					chunk.point_ids[shift_index] = chunk.point_ids[shift_index + 1];
+				}
+				chunk.point_ids.resize(chunk.point_ids.size() - 1);
+			}
+		}
+		points[id].chunk_reference_count = 0;
 
 		for(size_t slot_index = 0; slot_index < used_point_component_slot_ids.size();)
 		{
@@ -321,7 +414,21 @@ namespace danikk_space_engine
 			destroyVolumeCell(chunk.volume_cell_ids[chunk.volume_cell_ids.size() - 1]);
 		}
 		chunk.destroyMesh();
-		chunk.position = vec3(0.0f);
+		while(chunk.point_ids.size() > 0)
+		{
+			const PointId point_id = chunk.point_ids[chunk.point_ids.size() - 1];
+			chunk.point_ids.resize(chunk.point_ids.size() - 1);
+			if(!isPointActive(point_id)) continue;
+			Point& point = getPoint(point_id);
+			if(point.chunk_reference_count == 0)
+			{
+				danikk_engine::formatFatalError("Point % has no chunk references while releasing chunk %", point_id, id);
+			}
+			point.chunk_reference_count--;
+			if(point.chunk_reference_count == 0) destroyPoint(point_id);
+		}
+		chunk.world_body_id = 0;
+		chunk.position = glm::dvec3(0.0);
 		chunk.mesh_dirty = false;
 		eraseSortedId(used_chunk_ids, id);
 		freed_chunk_ids.push(id);
@@ -378,6 +485,7 @@ namespace danikk_space_engine
 			slot.external_data = nullptr;
 		}
 		slot.point_id = 0;
+		slot.chunk_id = static_cast<uint32>(-1);
 		slot.type_id = PointComponentTypeId::none;
 		slot.uses_external_data = false;
 		eraseSortedId(used_point_component_slot_ids, id);

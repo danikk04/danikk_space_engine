@@ -5,4 +5,5 @@ sources += files(
 	'world.cpp',
 	'world_data.cpp',
 	'world_body.cpp',
+	'planet.cpp',
 )

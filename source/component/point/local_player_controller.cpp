@@ -16,7 +16,7 @@ namespace danikk_space_engine
 				|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
 		}
 
-		Chunk* findOwningChunk(PointComponentSlot& slot, World& world)
+		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
 			for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
 			{
@@ -27,28 +27,29 @@ namespace danikk_space_engine
 					for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 					{
 						if(world.data.isPointComponentSlotActive(slot_id)
-							&& &world.data.getPointComponentSlot(slot_id) == &slot) return &chunk;
+							&& &world.data.getPointComponentSlot(slot_id) == &slot) return chunk_id;
 					}
 				}
 			}
-			return nullptr;
+			return static_cast<ChunkId>(-1);
 		}
 
 		void duplicateControllerPointWithMachinegun(
 			const Point& source_point,
 			const vec3& rotation,
-			Chunk& chunk,
+			ChunkId chunk_id,
 			World& world)
 		{
 			const PointId point_id = world.data.createPoint();
 			world.data.getPoint(point_id) = source_point;
+			world.data.getPoint(point_id).chunk_reference_count = 0;
 			MachinegunComponent machinegun;
 			machinegun.rotation = rotation;
 			const PointComponentSlotId machinegun_slot_id = world.data.createPointComponentSlot(
 				point_id,
 				PointComponentTypeId::machine_gun,
 				&machinegun);
-			chunk.addPointComponentSlot(machinegun_slot_id);
+		world.data.addPointComponentSlotToChunk(chunk_id, machinegun_slot_id);
 		}
 	}
 
@@ -99,7 +100,7 @@ namespace danikk_space_engine
 		const bool spawn_machinegun = isAltDown() && machinegun_state == button_states::press;
 		Point source_point;
 		vec3 source_rotation(0.0f);
-		Chunk* owner_chunk = nullptr;
+		ChunkId owner_chunk_id = static_cast<ChunkId>(-1);
 		if(spawn_machinegun)
 		{
 			if(!world.data.isPointActive(slot.point_id))
@@ -108,8 +109,8 @@ namespace danikk_space_engine
 			}
 			source_point = world.data.getPoint(slot.point_id);
 			source_rotation = world.getCameraComponent().rotation;
-			owner_chunk = findOwningChunk(slot, world);
-			if(owner_chunk == nullptr)
+			owner_chunk_id = findOwningChunkId(slot, world);
+			if(owner_chunk_id == static_cast<ChunkId>(-1))
 			{
 				danikk_engine::formatFatalError("Local player controller is not registered in a chunk");
 			}
@@ -118,7 +119,7 @@ namespace danikk_space_engine
 		static_cast<LocalPlayerControllerComponent*>(slot.getData())->tick(world);
 		if(spawn_machinegun)
 		{
-			duplicateControllerPointWithMachinegun(source_point, source_rotation, *owner_chunk, world);
+			duplicateControllerPointWithMachinegun(source_point, source_rotation, owner_chunk_id, world);
 		}
 	}
 
