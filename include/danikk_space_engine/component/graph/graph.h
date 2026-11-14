@@ -60,5 +60,10 @@ namespace danikk_space_engine
 		{
 			return uses_external_data ? external_data : inline_data;
 		}
+
+		void dispose()
+		{
+			*this = GraphComponentSlot();
+		}
 	};
 }

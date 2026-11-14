@@ -63,5 +63,10 @@ using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& w
 		{
 			return uses_external_data ? external_data : inline_data;
 		}
+
+		void dispose()
+		{
+			*this = PointComponentSlot();
+		}
 	};
 }

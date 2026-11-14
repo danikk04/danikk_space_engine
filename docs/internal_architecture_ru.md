@@ -104,6 +104,7 @@ classDiagram
         +bool uses_external_data
         +uint8 inline_data[32]
         +void* external_data
+        +dispose()
     }
 
     class CameraComponent {
@@ -253,7 +254,7 @@ classDiagram
       - `destroyVolumeCell(id)` и `destroyGroundTriangle(id)` — удаляют ресурс из чанков, инвалидируют их меши и освобождают ID.
       - `destroyChunk(id)` — удаляет чанк из `WorldBody`, уничтожает его компоненты, ячейки и треугольники, освобождает ссылки на точки и уничтожает точки, у которых не осталось чанков-владельцев.
       - `destroyWorldBody(id)` — уничтожает все чанки тела, затем освобождает само тело.
-      - `destroyPointComponentSlot(id)` и `destroyGraphComponentSlot(id)` — отсоединяют компонент от чанков, вызывают его деструктор, освобождают внешний payload при его наличии и освобождают ID.
+      - `destroyPointComponentSlot(id)` и `destroyGraphComponentSlot(id)` — отсоединяют компонент от чанков, уничтожают payload, вызывают `dispose()` слота и освобождают ID.
     - Запросы и доступ:
       - `isPointActive(id)` и соответствующие `is...Active(id)` для остальных шести ресурсов — проверяют, активен ли ID.
       - `getUsedPointIds()` и соответствующие `getUsed...Ids()` — возвращают массив ID активных ресурсов для итерации.
@@ -286,8 +287,14 @@ classDiagram
     - `inline_data` — встроенное хранилище до 32 байт для inline-перемещаемых типов.
     - `external_data` — указатель на внешнее хранилище для большего payload.
     - `uses_external_data` — указывает, какое хранилище используется.
+  - `dispose()` — возвращает поля слота и хранилище данных к исходному состоянию после уничтожения payload.
 
 `WorldData` владеет массивом `PointComponentSlot`. Типы `camera` и `local_player_controller_component` зарегистрированы; `machine_gun` и `engine` пока имеют пустые записи. Payload контроллера хранится снаружи, поскольку содержит `DynamicArray`.
+
+## component/graph/graph.h:
+
+- `GraphComponentSlot` — хранит тип graph-компонента, ID двух связанных точек и inline либо внешний payload.
+  - `dispose()` — возвращает слот к исходному состоянию после уничтожения payload.
 
 ## component/camera.h:
 
