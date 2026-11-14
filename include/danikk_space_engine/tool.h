@@ -13,7 +13,7 @@ namespace danikk_space_engine
 		none = 0,
 		select,
 		expand,
-		delete_faces,
+		erase_faces,
 		create,
 		count
 	};
@@ -59,7 +59,7 @@ namespace danikk_space_engine
 		World& world,
 		const DynamicArray<FacePtr>& faces,
 		bool using_selection);
-	ToolApplyResult applyDeleteTool(
+	ToolApplyResult applyEraseTool(
 		World& world,
 		const DynamicArray<FacePtr>& faces,
 		bool using_selection);

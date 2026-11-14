@@ -27,7 +27,7 @@ namespace danikk_space_engine
 			case ToolId::none: return "None";
 			case ToolId::select: return "Select";
 			case ToolId::expand: return "Expand";
-			case ToolId::delete_faces: return "Delete";
+			case ToolId::erase_faces: return "Erase";
 			case ToolId::create: return "Create";
 			case ToolId::count: break;
 		}
@@ -62,20 +62,20 @@ namespace danikk_space_engine
 			case ToolId::select:
 				return applySelectTool(selected_faces, selected_face_count, has_hovered_face, hovered_face);
 			case ToolId::expand:
-			case ToolId::delete_faces:
+			case ToolId::erase_faces:
 			{
 				if(selected_face_count > 0)
 				{
 					return tool == ToolId::expand
 						? applyExpandTool(world, selected_faces, true)
-						: applyDeleteTool(world, selected_faces, true);
+						: applyEraseTool(world, selected_faces, true);
 				}
 				if(!has_hovered_face) return ToolApplyResult();
 				DynamicArray<FacePtr> hovered_faces;
 				hovered_faces.push(hovered_face);
 				return tool == ToolId::expand
 					? applyExpandTool(world, hovered_faces, false)
-					: applyDeleteTool(world, hovered_faces, false);
+					: applyEraseTool(world, hovered_faces, false);
 			}
 			case ToolId::create:
 				return applyCreateTool(world, hit, create_object);

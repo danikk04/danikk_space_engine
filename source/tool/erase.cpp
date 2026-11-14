@@ -3,7 +3,7 @@
 
 namespace danikk_space_engine
 {
-	ToolApplyResult applyDeleteTool(
+	ToolApplyResult applyEraseTool(
 		World& world,
 		const DynamicArray<FacePtr>& faces,
 		bool using_selection)

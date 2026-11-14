@@ -3,6 +3,6 @@ sources += files(
 	'none.cpp',
 	'select.cpp',
 	'expand.cpp',
-	'delete.cpp',
+	'erase.cpp',
 	'create.cpp',
 )
