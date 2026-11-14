@@ -29,7 +29,6 @@ namespace danikk_space_engine
 		material_list.pushCtor("void", 0x000000, nullptr);
 		material_list.pushCtor("grass", 0xFFFFFF, "grass_32x32");
 		material_list.pushCtor("stone", 0xFFFFFF, "stone_32x32");
-		material_list.pushCtor("ore", 0xFFFFFF, "ore_32x32");
 		material_list.pushCtor("lava", 0xFFFFFF, "lava_32x32");
 		material_list.pushCtor("water", 0xFFFFFF, "water_32x32");
 	}

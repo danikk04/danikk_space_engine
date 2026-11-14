@@ -12,9 +12,8 @@ namespace danikk_space_engine
 		constexpr inline MaterialId void_material = 0;
 		constexpr inline MaterialId grass = 1;
 		constexpr inline MaterialId stone = 2;
-		constexpr inline MaterialId ore = 3;
-		constexpr inline MaterialId lava = 4;
-		constexpr inline MaterialId water = 5;
+		constexpr inline MaterialId lava = 3;
+		constexpr inline MaterialId water = 4;
 	}
 
 	struct MaterialDefinition
