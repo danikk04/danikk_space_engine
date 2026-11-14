@@ -34,6 +34,9 @@ namespace danikk_space_engine
 
 	struct VolumeCell
 	{
+		static constexpr uint32 no_chunk = static_cast<uint32>(-1);
+		uint32 chunk_id = no_chunk;
+		size_t index_in_chunk = static_cast<size_t>(-1);
 		PointId points[8]{};
 		// Vertex order: prism has bottom 0..2 and corresponding top 3..5;
 		// bipyramid has equator 0..2 and apices 3,4; octahedron has equator

@@ -1,3 +1,4 @@
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/default.h>
@@ -36,12 +37,20 @@ namespace danikk_engine_game
 
     void frame()
     {
-    	gui.frame();
-		if(getKeyboardState(keyboard_buttons::escape) == button_states::press)
+		profiler.beginTick();
 		{
-			exit();
+			Watcher frame_watcher("frame");
+			{
+				Watcher gui_scope("GUI::frame");
+				gui.frame();
+			}
+			if(getKeyboardState(keyboard_buttons::escape) == button_states::press)
+			{
+				exit();
+			}
+			world.tick();
+			world.frame();
 		}
-    	world.tick();
-    	world.frame();
+		profiler.endTick();
     }
 }

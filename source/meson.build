@@ -4,6 +4,7 @@ sources = files(
 	'localization.cpp', 
 	'main.cpp', 
 	'material.cpp',
+	'profiler.cpp',
 )
 
 subdir('effects')

@@ -23,6 +23,7 @@ namespace danikk_space_engine
 		none = 0,
 		machinegun,
 		volume_cell,
+		terrain,
 		count
 	};
 

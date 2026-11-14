@@ -1,3 +1,4 @@
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/data.h>
 
 #include <cstdlib>
@@ -98,6 +99,7 @@ namespace danikk_space_engine
 	// active ID shifts into that position. The point slot is freed after dependents.
 	void WorldData::destroyPoint(PointId id)
 	{
+		Watcher watcher("WorldData::destroyPoint");
 		if(!isPointActive(id)) return;
 
 		eraseIdFromChunks(*this, chunks.usedIds(), id, &Chunk::point_ids);
@@ -133,14 +135,59 @@ namespace danikk_space_engine
 	void WorldData::destroyVolumeCell(VolumeCellId id)
 	{
 		if(!isVolumeCellActive(id)) return;
-		eraseIdFromChunks(*this, chunks.usedIds(), id, &Chunk::volume_cell_ids, true);
+		VolumeCell& cell = volume_cells[id];
+		if(cell.chunk_id != VolumeCell::no_chunk)
+		{
+			if(!isChunkActive(cell.chunk_id))
+			{
+				danikk_engine::formatFatalError("Volume cell % references invalid chunk %", id, cell.chunk_id);
+			}
+			Chunk& chunk = getChunk(cell.chunk_id);
+			const size_t index = cell.index_in_chunk;
+			if(index >= chunk.volume_cell_ids.size() || chunk.volume_cell_ids[index] != id)
+			{
+				danikk_engine::formatFatalError("Volume cell % has an invalid chunk index", id);
+			}
+			const size_t last_index = chunk.volume_cell_ids.size() - 1;
+			if(index != last_index)
+			{
+				const VolumeCellId moved_id = chunk.volume_cell_ids[last_index];
+				chunk.volume_cell_ids[index] = moved_id;
+				volume_cells[moved_id].index_in_chunk = index;
+			}
+			chunk.volume_cell_ids.resize(last_index);
+			chunk.invalidateMesh();
+		}
 		volume_cells.free(id);
 	}
 
 	void WorldData::destroyGroundTriangle(GroundTriangleId id)
 	{
+		Watcher watcher("WorldData::destroyGroundTriangle");
 		if(!isGroundTriangleActive(id)) return;
-		eraseIdFromChunks(*this, chunks.usedIds(), id, &Chunk::ground_triangle_ids, true);
+		GroundTriangle& triangle = ground_triangles[id];
+		if(triangle.chunk_id != GroundTriangle::no_chunk)
+		{
+			if(!isChunkActive(triangle.chunk_id))
+			{
+				danikk_engine::formatFatalError("Ground triangle % references invalid chunk %", id, triangle.chunk_id);
+			}
+			Chunk& chunk = getChunk(triangle.chunk_id);
+			const size_t index = triangle.index_in_chunk;
+			if(index >= chunk.ground_triangle_ids.size() || chunk.ground_triangle_ids[index] != id)
+			{
+				danikk_engine::formatFatalError("Ground triangle % has an invalid chunk index", id);
+			}
+			const size_t last_index = chunk.ground_triangle_ids.size() - 1;
+			if(index != last_index)
+			{
+				const GroundTriangleId moved_id = chunk.ground_triangle_ids[last_index];
+				chunk.ground_triangle_ids[index] = moved_id;
+				ground_triangles[moved_id].index_in_chunk = index;
+			}
+			chunk.ground_triangle_ids.resize(last_index);
+			chunk.invalidateMesh();
+		}
 		ground_triangles.free(id);
 	}
 
@@ -149,6 +196,7 @@ namespace danikk_space_engine
 	// chunk owners are cascaded through destroyPoint() before the chunk slot is freed.
 	void WorldData::destroyChunk(ChunkId id)
 	{
+		Watcher watcher("WorldData::destroyChunk");
 		if(!isChunkActive(id)) return;
 
 		Chunk& chunk = chunks[id];
@@ -173,7 +221,12 @@ namespace danikk_space_engine
 				danikk_engine::formatFatalError("Point % has no chunk references while releasing chunk %", point_id, id);
 			}
 			point.chunk_reference_count--;
-			if(point.chunk_reference_count == 0) destroyPoint(point_id);
+			if(point.chunk_reference_count == 0)
+			{
+				// All components and geometry owned by this chunk were destroyed above.
+				// A zero chunk reference count means no other chunk can still use this point.
+				points.free(point_id);
+			}
 		}
 		chunk.world_body_id = 0;
 		chunk.grid_coordinate = glm::ivec3(0);

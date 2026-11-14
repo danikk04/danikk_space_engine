@@ -1,5 +1,6 @@
 #include <utility>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/bullet.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/asset.h>
@@ -51,6 +52,7 @@ namespace danikk_space_engine
 	// tunneling through world cells, and queues the point for cleanup on impact or timeout.
 	void tickBulletComponent(PointComponentSlot& slot, World& world)
 	{
+		Watcher watcher("BulletComponent::tick");
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Bullet component tick received null data");

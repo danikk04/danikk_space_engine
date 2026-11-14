@@ -34,10 +34,14 @@ namespace danikk_space_engine
 		PointComponentSlotId local_player_controller_component_slot_id = 0;
 		uint64 chunk_loader_generation_id = 0;
 		DynamicArray<ChunkGenerationRequest> chunk_generation_requests;
+		bool chunk_generation_requests_dirty = false;
 
 		void tick();
 		void deferPointDestruction(PointId point_id);
-		void queueChunkGenerationRequest(ChunkGenerationRequest request);
+		void replaceChunkGenerationRequests(
+			WorldBodyComponentSlotId component_slot_id,
+			const DynamicArray<ChunkGenerationRequest>& requests);
+		void removeChunkGenerationRequest(WorldBodyComponentSlotId component_slot_id, const glm::ivec3& grid_coordinate);
 
 		void frame();
 

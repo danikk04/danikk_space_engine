@@ -1,6 +1,7 @@
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/machinegun.h>
+#include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_framework/random.h>
 
 namespace danikk_space_engine
@@ -135,6 +136,9 @@ namespace danikk_space_engine
 				break;
 			case CreateObjectId::volume_cell:
 				createVolumeCellAtHit(world, hit);
+				break;
+			case CreateObjectId::terrain:
+				if(hit.face.is_ground_triangle) editPlanetGround(world, hit.face, 6.0, true);
 				break;
 			case CreateObjectId::count:
 				break;

@@ -1,3 +1,4 @@
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/world/world.h>
@@ -83,6 +84,7 @@ namespace danikk_space_engine
 
 	void tickLocalPlayerControllerComponent(PointComponentSlot& slot, World& world)
 	{
+		Watcher watcher("tickLocalPlayerControllerComponent");
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Local player controller tick received null data");
@@ -119,6 +121,7 @@ namespace danikk_space_engine
 	// while rendering gets both selection and hover state from the same array.
 	void LocalPlayerControllerComponent::tick(World& world)
 	{
+		Watcher watcher("LocalPlayerControllerComponent::tick");
 		if(selected_faces.size() > selected_face_count)
 		{
 			selected_faces.resize(selected_face_count);

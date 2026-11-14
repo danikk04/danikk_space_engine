@@ -1,5 +1,6 @@
 #include <utility>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/world.h>
 
@@ -126,6 +127,7 @@ namespace danikk_space_engine
 
 	void tickCameraComponent(PointComponentSlot& slot, World& world)
 	{
+		Watcher watcher("CameraComponent::tick");
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Camera component tick received null data");

@@ -14,6 +14,7 @@ namespace danikk_space_engine
 	{
 		DynamicArray<resource_t> slots;
 		DynamicArray<id_t> active_ids;
+		DynamicArray<size_t> active_indices;
 		DynamicArray<id_t> free_ids;
 
 	public:
@@ -23,26 +24,38 @@ namespace danikk_space_engine
 			{
 				const id_t id = free_ids.pop();
 				slots[id] = resource_t();
-				insertWorldResourceId(active_ids, static_cast<uint32>(id));
+				active_indices[id] = active_ids.size();
+				active_ids.push(id);
 				return id;
 			}
 			const id_t id = static_cast<id_t>(slots.size());
 			slots.pushCtor();
-			insertWorldResourceId(active_ids, static_cast<uint32>(id));
+			active_indices.push(active_ids.size());
+			active_ids.push(id);
 			return id;
 		}
 
 		bool free(id_t id)
 		{
 			if(!isActive(id)) return false;
-			eraseWorldResourceId(active_ids, static_cast<uint32>(id));
+			const size_t active_index = active_indices[id];
+			const size_t last_index = active_ids.size() - 1;
+			if(active_index != last_index)
+			{
+				const id_t moved_id = active_ids[last_index];
+				active_ids[active_index] = moved_id;
+				active_indices[moved_id] = active_index;
+			}
+			active_ids.resize(last_index);
+			active_indices[id] = static_cast<size_t>(-1);
 			free_ids.push(id);
 			return true;
 		}
 
 		bool isActive(id_t id) const
 		{
-			const size_t index = findWorldResourceId(active_ids, static_cast<uint32>(id));
+			if(id >= active_indices.size()) return false;
+			const size_t index = active_indices[id];
 			return index < active_ids.size() && active_ids[index] == id;
 		}
 
@@ -55,6 +68,7 @@ namespace danikk_space_engine
 		{
 			slots.clear();
 			active_ids.clear();
+			active_indices.clear();
 			free_ids.clear();
 		}
 
@@ -63,6 +77,7 @@ namespace danikk_space_engine
 			clear();
 			slots = DynamicArray<resource_t>();
 			active_ids = DynamicArray<id_t>();
+			active_indices = DynamicArray<size_t>();
 			free_ids = DynamicArray<id_t>();
 		}
 	};

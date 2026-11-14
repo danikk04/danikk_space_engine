@@ -3,6 +3,7 @@
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/default.h>
 #include <danikk_framework/dynamic_array.h>
+#include <danikk_space_engine/component/world_body/planet/terrain.h>
 #include <glm/glm.hpp>
 
 namespace danikk_space_engine
@@ -16,16 +17,14 @@ namespace danikk_space_engine
 		WorldBodyId world_body_id = 0;
 		WorldBodyComponentSlotId component_slot_id = 0;
 		uint64 component_generation_id = 0;
+		uint64 terrain_revision = 0;
 		double planet_radius = 0.0;
+		double chunk_width = 32.0;
+		double voxel_size = 4.0;
 		uint64 noise_seed = 0;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 chunk_position = glm::dvec3(0.0);
-		glm::dvec3 up = glm::dvec3(0.0, 0.0, 1.0);
-		glm::dvec3 east = glm::dvec3(1.0, 0.0, 0.0);
-		glm::dvec3 north = glm::dvec3(0.0, 1.0, 0.0);
-		double x0 = 0.0;
-		double y0 = 0.0;
-		double width = 0.0;
+		DynamicArray<PlanetTerrainEdit> terrain_edits;
 	};
 
 	struct GeneratedChunkData
@@ -34,6 +33,7 @@ namespace danikk_space_engine
 		WorldBodyId world_body_id = 0;
 		WorldBodyComponentSlotId component_slot_id = 0;
 		uint64 component_generation_id = 0;
+		uint64 terrain_revision = 0;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 chunk_position = glm::dvec3(0.0);
 		DynamicArray<vec3> point_positions;

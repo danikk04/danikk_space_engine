@@ -15,6 +15,7 @@ namespace danikk_space_engine
 	{
 		std::mutex mutex;
 		std::condition_variable order_available;
+		std::condition_variable result_space_available;
 		DynamicArray<ChunkGenerationRequest> requests;
 		DynamicArray<GeneratedChunkData> completed;
 		std::thread worker;

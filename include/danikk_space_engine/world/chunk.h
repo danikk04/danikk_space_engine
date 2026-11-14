@@ -26,9 +26,12 @@ namespace danikk_space_engine
 		Mesh* mesh = nullptr;
 		DynamicArray<uint8> shared_face_masks;
 		DynamicArray<ChunkMaterialRange> material_ranges;
+		bool bounds_valid = false;
 
 	public:
 		bool mesh_dirty = true;
+		vec3 bounds_center = vec3(0.0f);
+		float bounds_radius = 0.0f;
 		ChunkId chunk_id = 0;
 		WorldBodyId world_body_id = 0;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
@@ -57,5 +60,6 @@ namespace danikk_space_engine
 		void draw(World& world);
 		void destroyMesh();
 		void invalidateMesh();
+		bool hasValidBounds() const { return bounds_valid; }
 	};
 }

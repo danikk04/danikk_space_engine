@@ -1,5 +1,6 @@
 #include <utility>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
 #include <danikk_space_engine/world/world.h>
@@ -100,6 +101,7 @@ namespace danikk_space_engine
 	// then creates one moving bullet point for every elapsed 0.25-second firing interval.
 	void tickMachinegunComponent(PointComponentSlot& slot, World& world)
 	{
+		Watcher watcher("MachinegunComponent::tick");
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Machinegun component tick received null data");

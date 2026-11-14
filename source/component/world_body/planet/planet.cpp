@@ -1,58 +1,88 @@
 #include <cmath>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/component/world_body/planet/chunk_cache.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
-#include <danikk_space_engine/component/world_body/planet/terrain.h>
+#include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
 {
 	namespace
 	{
-		constexpr int planet_chunks_per_face = 32;
-		constexpr double chunk_update_distance = 8.0;
-
-		struct PlanetCubeFace
-		{
-			glm::dvec3 normal;
-			glm::dvec3 right;
-			glm::dvec3 up;
-		};
-
-		PlanetCubeFace getPlanetCubeFace(int face_index)
-		{
-			switch(face_index)
-			{
-				case 0: return {glm::dvec3( 1, 0, 0), glm::dvec3( 0, 1, 0), glm::dvec3(0, 0, 1)};
-				case 1: return {glm::dvec3(-1, 0, 0), glm::dvec3( 0,-1, 0), glm::dvec3(0, 0, 1)};
-				case 2: return {glm::dvec3( 0, 1, 0), glm::dvec3(-1, 0, 0), glm::dvec3(0, 0, 1)};
-				case 3: return {glm::dvec3( 0,-1, 0), glm::dvec3( 1, 0, 0), glm::dvec3(0, 0, 1)};
-				case 4: return {glm::dvec3( 0, 0, 1), glm::dvec3( 1, 0, 0), glm::dvec3(0, 1, 0)};
-				default:return {glm::dvec3( 0, 0,-1), glm::dvec3(-1, 0, 0), glm::dvec3(0, 1, 0)};
-			}
-		}
+		constexpr double chunk_update_distance = planet_voxel_size * 2.0;
+		constexpr double terrain_edit_radius = 6.0;
+		constexpr double invalid_chunk_diagonal = planet_voxel_size * 1.75;
+		constexpr uint8 empty_bucket = 0;
+		constexpr uint8 occupied_bucket = 1;
+		constexpr uint8 deleted_bucket = 2;
 
 		bool sameChunkKey(const glm::ivec3& left, const glm::ivec3& right)
 		{
 			return left.x == right.x && left.y == right.y && left.z == right.z;
 		}
 
-		bool hasChunk(const DynamicArray<PlanetChunkRecord>& chunks, const glm::ivec3& key)
+		uint64 hashChunkKey(const glm::ivec3& key)
 		{
-			for(const PlanetChunkRecord& chunk : chunks)
+			uint64 hash = 1469598103934665603ull;
+			for(int32 coordinate : {key.x, key.y, key.z})
 			{
-				if(sameChunkKey(chunk.grid_coordinate, key)) return true;
+				hash ^= static_cast<uint32>(coordinate);
+				hash *= 1099511628211ull;
 			}
-			return false;
+			hash ^= hash >> 30;
+			hash *= 0xbf58476d1ce4e5b9ull;
+			hash ^= hash >> 27;
+			hash *= 0x94d049bb133111ebull;
+			return hash ^ (hash >> 31);
 		}
 
-		bool hasKey(const DynamicArray<glm::ivec3>& keys, const glm::ivec3& key)
+		size_t findChunkBucket(
+			const DynamicArray<PlanetChunkLookupEntry>& entries,
+			const glm::ivec3& key,
+			bool find_deleted_bucket)
 		{
-			for(const glm::ivec3& existing : keys)
+			if(entries.size() == 0) return static_cast<size_t>(-1);
+			const size_t mask = entries.size() - 1;
+			size_t index = static_cast<size_t>(hashChunkKey(key)) & mask;
+			size_t first_deleted = static_cast<size_t>(-1);
+			for(size_t checked = 0; checked < entries.size(); checked++)
 			{
-				if(sameChunkKey(existing, key)) return true;
+				const PlanetChunkLookupEntry& entry = entries[index];
+				if(entry.state == empty_bucket)
+				{
+					return find_deleted_bucket && first_deleted != static_cast<size_t>(-1)
+						? first_deleted
+						: index;
+				}
+				if(entry.state == occupied_bucket && sameChunkKey(entry.grid_coordinate, key)) return index;
+				if(find_deleted_bucket && entry.state == deleted_bucket && first_deleted == static_cast<size_t>(-1))
+				{
+					first_deleted = index;
+				}
+				index = (index + 1) & mask;
 			}
-			return false;
+			return first_deleted;
+		}
+
+		void ensureChunkLookupCapacity(PlanetChunkLookup& lookup)
+		{
+			if(lookup.entries.size() != 0
+				&& (lookup.used_bucket_count + 1) * 10 < lookup.entries.size() * 7) return;
+
+			const size_t new_capacity = lookup.entries.size() == 0 ? 16 : lookup.entries.size() * 2;
+			DynamicArray<PlanetChunkLookupEntry> new_entries;
+			new_entries.resize(new_capacity);
+			for(const PlanetChunkLookupEntry& old_entry : lookup.entries)
+			{
+				if(old_entry.state != occupied_bucket) continue;
+				size_t index = static_cast<size_t>(hashChunkKey(old_entry.grid_coordinate)) & (new_capacity - 1);
+				while(new_entries[index].state == occupied_bucket) index = (index + 1) & (new_capacity - 1);
+				new_entries[index] = old_entry;
+			}
+			lookup.entries = static_cast<DynamicArray<PlanetChunkLookupEntry>&&>(new_entries);
+			lookup.used_bucket_count = lookup.entry_count;
 		}
 
 		template<typename value_t>
@@ -67,112 +97,216 @@ namespace danikk_space_engine
 
 		void queuePlanetRequests(PlanetComponent& planet, World& world, const WorldBodyComponentSlot& slot)
 		{
+			Watcher watcher("Planet::queueRequests");
 			for(ChunkGenerationRequest& request : planet.pending_requests)
 			{
 				request.world_body_id = slot.world_body_id;
 				request.component_slot_id = slot.slot_id;
 				request.component_generation_id = slot.generation_id;
-				world.queueChunkGenerationRequest(request);
 			}
+			world.replaceChunkGenerationRequests(slot.slot_id, planet.pending_requests);
 		}
 
 		void unloadChunksOutsideDesiredSet(PlanetComponent& planet, World& world)
 		{
+			Watcher watcher("Planet::unloadChunks");
 			for(size_t index = 0; index < planet.chunks.size();)
 			{
-				PlanetChunkRecord& record = planet.chunks[index];
-				if(hasKey(planet.desired_chunk_keys, record.grid_coordinate))
+				const PlanetChunkRecord& record = planet.chunks[index];
+				if(planet.chunk_lookup.isDesired(record.grid_coordinate))
 				{
 					index++;
 					continue;
 				}
-				if(world.data.isChunkActive(record.chunk_id)) world.data.destroyChunk(record.chunk_id);
+				if(record.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(record.chunk_id))
+				{
+					world.data.destroyChunk(record.chunk_id);
+				}
+				planet.chunk_lookup.remove(record.grid_coordinate);
 				eraseAt(planet.chunks, index);
 			}
 		}
 
 		void clearFaceSelection(World& world)
 		{
+			Watcher watcher("Planet::clearFaceSelection");
 			if(!world.data.isPointComponentSlotActive(world.local_player_controller_component_slot_id)) return;
 			LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
 			controller.selected_faces.clear();
 			controller.selected_face_count = 0;
 		}
 
+		/*
+		 * Builds the desired set of planet-local Cartesian chunks intersecting the camera's load sphere.
+		 * Existing chunks are retained, missing keys receive immutable generation requests, and loaded
+		 * chunks outside the new set are released. Terrain edits are copied into each request snapshot.
+		 */
 		void updatePlanetChunks(
 			PlanetComponent& planet,
 			WorldBodyComponentSlot& slot,
 			World& world,
-			const glm::dvec3& camera_direction)
+			const glm::dvec3& camera_position)
 		{
-			// Rebuild the desired cube-sphere tile set around the camera direction, retain already loaded tiles,
-			// queue only missing tiles, and unload tiles outside the new set. Each request carries a snapshot
-			// of the planet generation parameters so the worker does not access component or world state.
-			planet.last_chunk_update_direction = camera_direction;
+			Watcher watcher("Planet chunk set update");
+			planet.last_chunk_update_position = camera_position;
+			planet.last_chunk_update_revision = planet.terrain_revision;
 			planet.chunk_set_initialized = true;
 			planet.chunk_loading_active = true;
-			const double chunk_width = 2.0 * planet.radius / planet_chunks_per_face;
-			const double tile_radius = chunk_width * 0.72;
-			const double max_center_distance = planet.chunk_load_radius + tile_radius;
-			const double min_center_dot = std::cos(max_center_distance / planet.radius);
-			DynamicArray<glm::ivec3> desired_keys;
+			const double chunk_width = planet_chunk_width;
+			const glm::dvec3 range(planet.chunk_load_radius);
+			const glm::ivec3 minimum_key(
+				static_cast<int>(std::floor((camera_position.x - range.x) / chunk_width)),
+				static_cast<int>(std::floor((camera_position.y - range.y) / chunk_width)),
+				static_cast<int>(std::floor((camera_position.z - range.z) / chunk_width)));
+			const glm::ivec3 maximum_key(
+				static_cast<int>(std::floor((camera_position.x + range.x) / chunk_width)),
+				static_cast<int>(std::floor((camera_position.y + range.y) / chunk_width)),
+				static_cast<int>(std::floor((camera_position.z + range.z) / chunk_width)));
+			const double radius_squared = planet.chunk_load_radius * planet.chunk_load_radius;
 			DynamicArray<ChunkGenerationRequest> requests;
+			planet.chunk_lookup.clearDesired();
 
-			for(int face_index = 0; face_index < 6; face_index++)
+			for(int z = minimum_key.z; z <= maximum_key.z; z++)
 			{
-				const PlanetCubeFace face = getPlanetCubeFace(face_index);
-				for(int chunk_y = 0; chunk_y < planet_chunks_per_face; chunk_y++)
+				for(int y = minimum_key.y; y <= maximum_key.y; y++)
 				{
-					for(int chunk_x = 0; chunk_x < planet_chunks_per_face; chunk_x++)
+					for(int x = minimum_key.x; x <= maximum_key.x; x++)
 					{
-						const double x0 = -planet.radius + chunk_x * chunk_width;
-						const double y0 = -planet.radius + chunk_y * chunk_width;
-						const double center_x = x0 + chunk_width * 0.5;
-						const double center_y = y0 + chunk_width * 0.5;
-						const glm::dvec3 center_direction = glm::normalize(
-							face.normal * planet.radius
-								+ face.right * center_x
-								+ face.up * center_y);
-						if(glm::dot(center_direction, camera_direction) < min_center_dot) continue;
+						const glm::ivec3 key(x, y, z);
+						const glm::dvec3 chunk_minimum = glm::dvec3(key) * chunk_width;
+						const glm::dvec3 chunk_maximum = chunk_minimum + glm::dvec3(chunk_width);
+						const glm::dvec3 closest = glm::clamp(camera_position, chunk_minimum, chunk_maximum);
+						if(glm::dot(camera_position - closest, camera_position - closest) > radius_squared) continue;
 
-						const glm::ivec3 key(chunk_x, chunk_y, face_index);
-						desired_keys.push(key);
-						if(hasChunk(planet.chunks, key)) continue;
+						planet.chunk_lookup.markDesired(key);
+						if(planet.chunk_lookup.hasChunk(key)) continue;
 
-						const glm::dvec3 direction = glm::normalize(
-							face.normal * planet.radius
-								+ face.right * center_x
-								+ face.up * center_y);
-						const glm::dvec3 surface_sample = direction * planet.radius;
-						const double height = samplePlanetScalarField(surface_sample, planet.radius, planet.noise_seed);
 						ChunkGenerationRequest request;
 						request.world_body_id = slot.world_body_id;
 						request.component_slot_id = slot.slot_id;
 						request.component_generation_id = slot.generation_id;
+						request.terrain_revision = planet.terrain_revision;
 						request.planet_radius = planet.radius;
+						request.chunk_width = chunk_width;
+						request.voxel_size = planet_voxel_size;
 						request.noise_seed = planet.noise_seed;
 						request.grid_coordinate = key;
-						request.chunk_position = direction * (planet.radius + height);
-						request.up = face.normal;
-						request.east = face.right;
-						request.north = face.up;
-						request.x0 = x0;
-						request.y0 = y0;
-						request.width = chunk_width;
+						request.chunk_position = chunk_minimum;
+						request.terrain_edits = planet.terrain_edits;
 						requests.push(request);
 					}
 				}
 			}
 
-			planet.desired_chunk_keys = static_cast<DynamicArray<glm::ivec3>&&>(desired_keys);
 			planet.pending_requests = static_cast<DynamicArray<ChunkGenerationRequest>&&>(requests);
 			unloadChunksOutsideDesiredSet(planet, world);
 			clearFaceSelection(world);
 		}
+
+		void invalidateChunksAroundEdit(PlanetComponent& planet, World& world, const glm::dvec3& center, double radius)
+		{
+			Watcher watcher("Planet::invalidateChunks");
+			for(size_t index = 0; index < planet.chunks.size();)
+			{
+				const PlanetChunkRecord& record = planet.chunks[index];
+				const glm::dvec3 minimum = glm::dvec3(record.grid_coordinate) * planet_chunk_width;
+				const glm::dvec3 maximum = minimum + glm::dvec3(planet_chunk_width);
+				const glm::dvec3 closest = glm::clamp(center, minimum, maximum);
+				const double invalidation_radius = radius + planet_voxel_size * 2.0;
+				if(glm::dot(center - closest, center - closest) > invalidation_radius * invalidation_radius)
+				{
+					index++;
+					continue;
+				}
+				if(record.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(record.chunk_id))
+				{
+					world.data.destroyChunk(record.chunk_id);
+				}
+				planet.chunk_lookup.remove(record.grid_coordinate);
+				eraseAt(planet.chunks, index);
+			}
+		}
+	}
+
+	void PlanetChunkLookup::clearDesired()
+	{
+		for(PlanetChunkLookupEntry& entry : entries)
+		{
+			if(entry.state != occupied_bucket) continue;
+			entry.desired = false;
+			if(entry.has_record) continue;
+			entry.state = deleted_bucket;
+			entry_count--;
+		}
+		if(entry_count == 0)
+		{
+			entries.clear();
+			used_bucket_count = 0;
+		}
+	}
+
+	void PlanetChunkLookup::markDesired(const glm::ivec3& grid_coordinate)
+	{
+		ensureChunkLookupCapacity(*this);
+		const size_t index = findChunkBucket(entries, grid_coordinate, true);
+		PlanetChunkLookupEntry& entry = entries[index];
+		if(entry.state != occupied_bucket)
+		{
+			if(entry.state == empty_bucket) used_bucket_count++;
+			entry.grid_coordinate = grid_coordinate;
+			entry.chunk_id = static_cast<ChunkId>(-1);
+			entry.has_record = false;
+			entry.desired = false;
+			entry.state = occupied_bucket;
+			entry_count++;
+		}
+		entry.desired = true;
+	}
+
+	void PlanetChunkLookup::setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id)
+	{
+		ensureChunkLookupCapacity(*this);
+		const size_t index = findChunkBucket(entries, grid_coordinate, true);
+		PlanetChunkLookupEntry& entry = entries[index];
+		if(entry.state != occupied_bucket)
+		{
+			if(entry.state == empty_bucket) used_bucket_count++;
+			entry.grid_coordinate = grid_coordinate;
+			entry.desired = false;
+			entry.state = occupied_bucket;
+			entry_count++;
+		}
+		entry.chunk_id = chunk_id;
+		entry.has_record = true;
+	}
+
+	void PlanetChunkLookup::remove(const glm::ivec3& grid_coordinate)
+	{
+		const size_t index = findChunkBucket(entries, grid_coordinate, false);
+		if(index == static_cast<size_t>(-1)) return;
+		PlanetChunkLookupEntry& entry = entries[index];
+		entry.has_record = false;
+		entry.chunk_id = static_cast<ChunkId>(-1);
+		if(entry.desired) return;
+		entry.state = deleted_bucket;
+		entry_count--;
+	}
+
+	bool PlanetChunkLookup::isDesired(const glm::ivec3& grid_coordinate) const
+	{
+		const size_t index = findChunkBucket(entries, grid_coordinate, false);
+		return index != static_cast<size_t>(-1) && entries[index].desired;
+	}
+
+	bool PlanetChunkLookup::hasChunk(const glm::ivec3& grid_coordinate) const
+	{
+		const size_t index = findChunkBucket(entries, grid_coordinate, false);
+		return index != static_cast<size_t>(-1) && entries[index].has_record;
 	}
 
 	void constructPlanetComponent(void* destination, const void* init_data)
 	{
+		Watcher watcher("constructPlanetComponent");
 		if(destination == nullptr) danikk_engine::formatFatalError("Planet component construction received null destination");
 		new (destination) PlanetComponent();
 		if(init_data != nullptr)
@@ -187,6 +321,7 @@ namespace danikk_space_engine
 
 	void movePlanetComponent(void* destination, void* source)
 	{
+		Watcher watcher("movePlanetComponent");
 		if(destination == nullptr || source == nullptr)
 		{
 			danikk_engine::formatFatalError("Planet component move received null memory");
@@ -198,34 +333,44 @@ namespace danikk_space_engine
 
 	void destroyPlanetComponent(void* data)
 	{
+		Watcher watcher("destroyPlanetComponent");
 		if(data == nullptr) danikk_engine::formatFatalError("Planet component destruction received null data");
 		static_cast<PlanetComponent*>(data)->~PlanetComponent();
 	}
 
 	void framePlanetComponent(WorldBodyComponentSlot& slot, World& world)
 	{
-		// Track the camera relative to this body. Outside the chunk loading range, discard loaded tiles;
-		// inside it, refresh the desired tile set only after the camera moves far enough, then re-submit its
-		// pending requests to the loader, which deduplicates requests already queued or being generated.
+		Watcher watcher("Planet component frame");
+		// Keep 3D chunks around the camera while it is within reach of the planet. Update the set after
+		// movement or terrain edits; the field itself remains defined throughout the planet volume.
 		if(!world.data.isWorldBodyActive(slot.world_body_id)
 			|| !world.data.isPointComponentSlotActive(world.camera_component_slot_id)) return;
 
 		PlanetComponent& planet = *static_cast<PlanetComponent*>(slot.getData());
+		if(!planet.terrain_edits_loaded)
+		{
+			loadPlanetTerrainEdits(
+				slot.world_body_id,
+				planet.radius,
+				planet.noise_seed,
+				planet.terrain_edits,
+				planet.terrain_revision);
+			planet.terrain_edits_loaded = true;
+			planet.processed_edit_count = planet.terrain_edits.size();
+		}
 		const glm::dvec3 body_position = world.data.getWorldBody(slot.world_body_id).position;
-		const glm::dvec3 radial = world.getCameraWorldPosition() - body_position;
-		const double radial_length = glm::length(radial);
-		if(radial_length <= 0.000001) return;
-		const double chunk_width = 2.0 * planet.radius / planet_chunks_per_face;
-		const double tile_radius = chunk_width * 0.72;
-		const bool in_chunk_range = std::abs(radial_length - planet.radius)
-			<= planet.chunk_load_radius + tile_radius;
+		const glm::dvec3 camera_position = world.getCameraWorldPosition() - body_position;
+		const double distance_from_center = glm::length(camera_position);
+		const bool in_chunk_range = distance_from_center
+			<= planet.radius + planet.chunk_load_radius + planet_chunk_width;
 		if(!in_chunk_range)
 		{
 			if(planet.chunk_loading_active)
 			{
-				planet.desired_chunk_keys.clear();
+				planet.chunk_lookup.clearDesired();
 				planet.pending_requests.clear();
 				unloadChunksOutsideDesiredSet(planet, world);
+				queuePlanetRequests(planet, world, slot);
 				planet.chunk_loading_active = false;
 				planet.chunk_set_initialized = false;
 				clearFaceSelection(world);
@@ -233,16 +378,21 @@ namespace danikk_space_engine
 			return;
 		}
 
-		const glm::dvec3 camera_direction = radial / radial_length;
-		bool update_chunks = !planet.chunk_set_initialized;
-		if(planet.chunk_set_initialized)
+		while(planet.processed_edit_count < planet.terrain_edits.size())
 		{
-			const double direction_dot = glm::clamp(glm::dot(camera_direction, planet.last_chunk_update_direction), -1.0, 1.0);
-			const double surface_distance = std::acos(direction_dot) * planet.radius;
-			update_chunks = surface_distance > chunk_update_distance;
+			const PlanetTerrainEdit& edit = planet.terrain_edits[planet.processed_edit_count++];
+			invalidateChunksAroundEdit(planet, world, edit.center, edit.radius);
 		}
-		if(update_chunks) updatePlanetChunks(planet, slot, world, camera_direction);
-		queuePlanetRequests(planet, world, slot);
+
+		const double moved_distance = glm::length(camera_position - planet.last_chunk_update_position);
+		const bool update_chunks = !planet.chunk_set_initialized
+			|| moved_distance > chunk_update_distance
+			|| planet.last_chunk_update_revision != planet.terrain_revision;
+		if(update_chunks)
+		{
+			updatePlanetChunks(planet, slot, world, camera_position);
+			queuePlanetRequests(planet, world, slot);
+		}
 	}
 
 	void acceptPlanetGeneratedChunk(
@@ -250,48 +400,91 @@ namespace danikk_space_engine
 		World& world,
 		const GeneratedChunkData& generated_chunk)
 	{
-		// Reject stale or no-longer-needed results, then materialize the generated local point positions and
-		// triangle indices as WorldData resources owned by a new chunk. Finally record the chunk and remove
-		// its request from the component's pending list so subsequent frames do not resubmit it.
+		Watcher watcher("Accept generated planet chunk");
+		// Reject stale asynchronous results. Empty chunks are recorded without a WorldData allocation so
+		// the loader does not repeatedly generate known-empty space; non-empty results become ground triangles.
 		PlanetComponent& planet = *static_cast<PlanetComponent*>(slot.getData());
-		if(!hasKey(planet.desired_chunk_keys, generated_chunk.grid_coordinate)
-			|| hasChunk(planet.chunks, generated_chunk.grid_coordinate)) return;
+		if(generated_chunk.terrain_revision != planet.terrain_revision
+			|| !planet.chunk_lookup.isDesired(generated_chunk.grid_coordinate)
+			|| planet.chunk_lookup.hasChunk(generated_chunk.grid_coordinate)) return;
 
-		Chunk& chunk = world.data.createChunk(slot.world_body_id);
-		const ChunkId chunk_id = chunk.chunk_id;
-		chunk.grid_coordinate = generated_chunk.grid_coordinate;
-		chunk.position = generated_chunk.chunk_position;
-		DynamicArray<PointId> point_ids;
-		point_ids.reserve(generated_chunk.point_positions.size());
-		for(const vec3& position : generated_chunk.point_positions)
+		ChunkId chunk_id = static_cast<ChunkId>(-1);
+		if(generated_chunk.triangle_point_indices.size() > 0)
 		{
-			const PointId point_id = world.data.createPoint();
-			world.data.getPoint(point_id).position = position;
-			point_ids.push(point_id);
-		}
-		for(PointId point_id : point_ids) world.data.addPointReferenceToChunk(chunk_id, point_id);
-		for(size_t index = 0; index + 2 < generated_chunk.triangle_point_indices.size(); index += 3)
-		{
-			const uint32 point_a_index = generated_chunk.triangle_point_indices[index];
-			const uint32 point_b_index = generated_chunk.triangle_point_indices[index + 1];
-			const uint32 point_c_index = generated_chunk.triangle_point_indices[index + 2];
-			if(point_a_index >= point_ids.size() || point_b_index >= point_ids.size() || point_c_index >= point_ids.size())
+			Chunk& chunk = world.data.createChunk(slot.world_body_id);
+			chunk_id = chunk.chunk_id;
+			chunk.grid_coordinate = generated_chunk.grid_coordinate;
+			chunk.position = generated_chunk.chunk_position;
+			DynamicArray<PointId> point_ids;
+			point_ids.reserve(generated_chunk.point_positions.size());
+			for(const vec3& position : generated_chunk.point_positions)
 			{
-				danikk_engine::formatFatalError("Generated planet chunk has an invalid point index");
+				const PointId point_id = world.data.createPoint();
+				world.data.getPoint(point_id).position = position;
+				point_ids.push(point_id);
 			}
-			const GroundTriangleId triangle_id = world.data.createGroundTriangle();
-			GroundTriangle& triangle = world.data.getGroundTriangle(triangle_id);
-			triangle.points[0] = point_ids[point_a_index];
-			triangle.points[1] = point_ids[point_b_index];
-			triangle.points[2] = point_ids[point_c_index];
-			world.data.addGroundTriangleToChunk(chunk_id, triangle_id);
+			for(PointId point_id : point_ids) world.data.addPointReferenceToChunk(chunk_id, point_id);
+			for(size_t index = 0; index + 2 < generated_chunk.triangle_point_indices.size(); index += 3)
+			{
+				const uint32 point_a_index = generated_chunk.triangle_point_indices[index];
+				const uint32 point_b_index = generated_chunk.triangle_point_indices[index + 1];
+				const uint32 point_c_index = generated_chunk.triangle_point_indices[index + 2];
+				if(point_a_index >= point_ids.size() || point_b_index >= point_ids.size() || point_c_index >= point_ids.size())
+				{
+					danikk_engine::formatFatalError("Generated planet chunk has an invalid point index");
+				}
+				const GroundTriangleId triangle_id = world.data.createGroundTriangle();
+				GroundTriangle& triangle = world.data.getGroundTriangle(triangle_id);
+				triangle.points[0] = point_ids[point_a_index];
+				triangle.points[1] = point_ids[point_b_index];
+				triangle.points[2] = point_ids[point_c_index];
+				world.data.addGroundTriangleToChunk(chunk_id, triangle_id);
+			}
 		}
 		planet.chunks.pushMove(PlanetChunkRecord{generated_chunk.grid_coordinate, chunk_id});
+		planet.chunk_lookup.setChunk(generated_chunk.grid_coordinate, chunk_id);
+		world.removeChunkGenerationRequest(slot.slot_id, generated_chunk.grid_coordinate);
 		for(size_t index = 0; index < planet.pending_requests.size(); index++)
 		{
 			if(!sameChunkKey(planet.pending_requests[index].grid_coordinate, generated_chunk.grid_coordinate)) continue;
 			eraseAt(planet.pending_requests, index);
 			break;
 		}
+	}
+
+	bool editPlanetGround(World& world, const FacePtr& face, double radius, bool add_material)
+	{
+		Watcher watcher("editPlanetGround");
+		if(!face.is_ground_triangle || !world.data.isChunkActive(face.chunk_id)
+			|| !world.data.isGroundTriangleActive(face.ground_triangle_id)) return false;
+		Chunk& chunk = world.data.getChunk(face.chunk_id);
+		if(!world.data.isWorldBodyActive(chunk.world_body_id)) return false;
+		WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+		const GroundTriangle& triangle = world.data.getGroundTriangle(face.ground_triangle_id);
+		glm::dvec3 center = chunk.position;
+		for(PointId point_id : triangle.points)
+		{
+			if(!world.data.isPointActive(point_id)) return false;
+			center += glm::dvec3(world.data.getPoint(point_id).position) / 3.0;
+		}
+
+		for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
+		{
+			if(!world.data.isWorldBodyComponentSlotActive(slot_id)) continue;
+			WorldBodyComponentSlot& slot = world.data.getWorldBodyComponentSlot(slot_id);
+			if(slot.type_id != WorldBodyComponentTypeId::planet) continue;
+			PlanetComponent& planet = *static_cast<PlanetComponent*>(slot.getData());
+			planet.terrain_edits.pushMove(PlanetTerrainEdit{center, radius, add_material});
+			planet.terrain_revision++;
+			if(planet.terrain_revision == 0) planet.terrain_revision++;
+			savePlanetTerrainEdits(
+				slot.world_body_id,
+				planet.radius,
+				planet.noise_seed,
+				planet.terrain_edits,
+				planet.terrain_revision);
+			return true;
+		}
+		return false;
 	}
 }

@@ -1,5 +1,6 @@
 #include <danikk_framework/glm.h>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
@@ -9,6 +10,18 @@
 namespace danikk_space_engine
 {
 	World world;
+
+	namespace
+	{
+		const char* worldBodyComponentName(WorldBodyComponentTypeId type_id)
+		{
+			switch(type_id)
+			{
+				case WorldBodyComponentTypeId::planet: return "Planet";
+				default: return "Unknown world body component";
+			}
+		}
+	}
 
 	PointComponentSlot& World::getCameraSlot()
 	{
@@ -71,17 +84,28 @@ namespace danikk_space_engine
 
 	void World::tick()
 	{
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+		Watcher tick_scope("tick");
 		{
-			const WorldBody& body = data.getWorldBody(body_id);
-			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
+			Watcher world_body_components_scope("WorldBody components");
+			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
-				if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
-				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
-				if(type.tick != nullptr) type.tick(slot, *this);
+				const WorldBody& body = data.getWorldBody(body_id);
+				for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
+				{
+					if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
+					WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
+					const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
+					if(type.tick != nullptr)
+					{
+						Watcher component_scope(worldBodyComponentName(slot.type_id));
+						type.tick(slot, *this);
+					}
+				}
+				for(ChunkId chunk_id : body.chunk_ids)
+				{
+					data.getChunk(chunk_id).tick(*this);
+				}
 			}
-			for(ChunkId chunk_id : body.chunk_ids) data.getChunk(chunk_id).tick(*this);
 		}
 		for(PointId point_id : pending_point_destruction_ids)
 		{
@@ -100,27 +124,80 @@ namespace danikk_space_engine
 		pending_point_destruction_ids.push(point_id);
 	}
 
-	void World::queueChunkGenerationRequest(ChunkGenerationRequest request)
+	void World::replaceChunkGenerationRequests(
+		WorldBodyComponentSlotId component_slot_id,
+		const DynamicArray<ChunkGenerationRequest>& requests)
 	{
-		request.generation_id = chunk_loader_generation_id;
-		chunk_generation_requests.pushMove(request);
+		for(size_t index = 0; index < chunk_generation_requests.size();)
+		{
+			if(chunk_generation_requests[index].component_slot_id != component_slot_id)
+			{
+				index++;
+				continue;
+			}
+			for(size_t shift = index + 1; shift < chunk_generation_requests.size(); shift++)
+			{
+				chunk_generation_requests[shift - 1] = static_cast<ChunkGenerationRequest&&>(chunk_generation_requests[shift]);
+			}
+			chunk_generation_requests.resize(chunk_generation_requests.size() - 1);
+		}
+		for(const ChunkGenerationRequest& request : requests)
+		{
+			ChunkGenerationRequest queued_request = request;
+			queued_request.generation_id = chunk_loader_generation_id;
+			chunk_generation_requests.pushMove(queued_request);
+		}
+		chunk_generation_requests_dirty = true;
+	}
+
+	void World::removeChunkGenerationRequest(
+		WorldBodyComponentSlotId component_slot_id,
+		const glm::ivec3& grid_coordinate)
+	{
+		for(size_t index = 0; index < chunk_generation_requests.size(); index++)
+		{
+			const ChunkGenerationRequest& request = chunk_generation_requests[index];
+			if(request.component_slot_id != component_slot_id
+				|| request.grid_coordinate.x != grid_coordinate.x
+				|| request.grid_coordinate.y != grid_coordinate.y
+				|| request.grid_coordinate.z != grid_coordinate.z) continue;
+			for(size_t shift = index + 1; shift < chunk_generation_requests.size(); shift++)
+			{
+				chunk_generation_requests[shift - 1] = static_cast<ChunkGenerationRequest&&>(chunk_generation_requests[shift]);
+			}
+			chunk_generation_requests.resize(chunk_generation_requests.size() - 1);
+			chunk_generation_requests_dirty = true;
+			return;
+		}
 	}
 
 	void World::frame()
 	{
-		chunk_generation_requests.clear();
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+		Watcher frame_scope("World::frame");
 		{
-			const WorldBody& body = data.getWorldBody(body_id);
-			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
+			Watcher world_body_components_scope("WorldBody components");
+			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
-				if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
-				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
-				if(type.frame != nullptr) type.frame(slot, *this);
+				const WorldBody& body = data.getWorldBody(body_id);
+				for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
+				{
+					if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
+					WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
+					const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
+					if(type.frame != nullptr)
+					{
+						Watcher component_scope(worldBodyComponentName(slot.type_id));
+						type.frame(slot, *this);
+					}
+				}
 			}
 		}
-		chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
+		if(chunk_generation_requests_dirty)
+		{
+			Watcher request_update_scope("ChunkLoader::updatePendingRequests");
+			chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
+			chunk_generation_requests_dirty = false;
+		}
 
 		GeneratedChunkData generated_chunk;
 		if(chunk_loader.tryTakeCompleted(generated_chunk)
@@ -135,6 +212,7 @@ namespace danikk_space_engine
 				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
 				if(type.accept_generated_chunk != nullptr)
 				{
+					Watcher accept_scope("Accept generated chunk");
 					type.accept_generated_chunk(slot, *this, generated_chunk);
 				}
 			}
@@ -144,23 +222,29 @@ namespace danikk_space_engine
 		const vec3 camera_front = camera.getFront();
 		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera.getUp());
 		setViewMatrix(view);
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
-			const WorldBody& body = data.getWorldBody(body_id);
-			for(ChunkId chunk_id : body.chunk_ids)
+			Watcher chunk_frame_scope("Chunk mesh and component frame");
+			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
-				Chunk& chunk = data.getChunk(chunk_id);
-				if(chunk.mesh_dirty) chunk.createMesh();
-				chunk.frame(*this);
+				const WorldBody& body = data.getWorldBody(body_id);
+				for(ChunkId chunk_id : body.chunk_ids)
+				{
+					Chunk& chunk = data.getChunk(chunk_id);
+					if(chunk.mesh_dirty) chunk.createMesh();
+					chunk.frame(*this);
+				}
 			}
 		}
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
-			const WorldBody& body = data.getWorldBody(body_id);
-			for(ChunkId chunk_id : body.chunk_ids)
+			Watcher chunk_draw_scope("Chunk draw");
+			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
-				Chunk& chunk = data.getChunk(chunk_id);
-				chunk.draw(*this);
+				const WorldBody& body = data.getWorldBody(body_id);
+				for(ChunkId chunk_id : body.chunk_ids)
+				{
+					Chunk& chunk = data.getChunk(chunk_id);
+					chunk.draw(*this);
+				}
 			}
 		}
 		drawPolygonHighlights(*this);
@@ -172,6 +256,7 @@ namespace danikk_space_engine
 		chunk_loader_generation_id++;
 		if(chunk_loader_generation_id == 0) chunk_loader_generation_id++;
 		chunk_generation_requests.clear();
+		chunk_generation_requests_dirty = false;
 		chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
 		pending_point_destruction_ids.clear();
 		startBaseScenario(*this);
@@ -182,6 +267,7 @@ namespace danikk_space_engine
 		chunk_loader.stop();
 		chunk_loader_generation_id++;
 		chunk_generation_requests.clear();
+		chunk_generation_requests_dirty = false;
 		data.release();
 		pending_point_destruction_ids.clear();
 	}

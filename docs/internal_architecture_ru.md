@@ -103,6 +103,9 @@ classDiagram
         +double chunk_load_radius
         +uint32 noise_seed
         +DynamicArray~PlanetChunkRecord~ chunks
+        +PlanetChunkLookup chunk_lookup
+        +DynamicArray~PlanetTerrainEdit~ terrain_edits
+        +uint64 terrain_revision
         +frame()
         +acceptGeneratedChunk()
     }
@@ -114,6 +117,14 @@ classDiagram
         +stop()
         +updatePendingRequests()
         +tryTakeCompleted()
+    }
+
+    class PlanetChunkLookup {
+        +markDesired(grid_coordinate)
+        +setChunk(grid_coordinate, chunk_id)
+        +isDesired(grid_coordinate)
+        +hasChunk(grid_coordinate)
+        +remove(grid_coordinate)
     }
 
     class ChunkGenerationRequest
@@ -311,26 +322,30 @@ classDiagram
 
 ## component/world_body/planet/planet.h:
 
-- `PlanetComponentSettings` — начальные параметры планеты: радиус, радиус стриминга и seed шума.
-- `PlanetComponent` — состояние процедурной планеты и стриминга её чанков.
-  - Хранит параметры генерации, направление последнего обновления, требуемые ключи чанков, очередь запросов и записи загруженных чанков.
-  - `framePlanetComponent(slot, world)` — вычисляет направление камеры относительно тела; при выходе из диапазона выгружает чанки, а при смещении камеры пересобирает набор нужных ключей и ставит отсутствующие чанки в очередь `ChunkLoader`.
+- `PlanetComponentSettings` — начальные параметры планеты: радиус, радиус загрузки чанков и seed шума.
+- `PlanetComponent` — состояние процедурной планеты и её 3D-чанков.
+  - Хранит параметры генерации, последнюю позицию обновления, очередь запросов, записи загруженных чанков, хеш-таблицу координат и редактирующие штампы поля.
+  - `framePlanetComponent(slot, world)` — держит 3D-чанки вокруг камеры, пересчитывает нужный набор после её перемещения или правки поля и ставит отсутствующие чанки в очередь `ChunkLoader`.
   - `acceptPlanetGeneratedChunk(slot, world, generated_chunk)` — проверяет актуальность ключа, создаёт чанк и его точки/треугольники из результата фоновой генерации, затем регистрирует чанк в компоненте.
+  - `editPlanetGround(world, face, radius, add_material)` — добавляет вычитающий или добавляющий сферический штамп, сохраняет его и увеличивает ревизию поля.
+- `PlanetChunkLookup` — открытая адресация по целочисленной координате чанка; за среднее `O(1)` проверяет, желателен ли чанк и есть ли для него запись в `PlanetComponent::chunks`.
 
 ## component/world_body/planet/terrain.h:
 
-- `samplePlanetScalarField(position, radius, noise_seed)` — возвращает скалярное поле планеты: положительное значение внутри, ноль на поверхности и отрицательное снаружи. Шум задаёт рельеф.
+- `PlanetTerrainEdit` — сферический штамп вычитания или добавления материала в координатах относительно центра тела.
+- `samplePlanetScalarField(position, radius, noise_seed, edits)` — возвращает плотность объёмного поля: положительную внутри грунта, отрицательную в воздухе. Поле объединяет радиальную основу, шум рельефа, сеть пещер и накопленные штампы.
 
 ## component/world_body/planet/chunk_generator.h:
 
-- `ChunkGenerationRequest` — снимок параметров одного чанка поверхности для фонового потока; содержит ориентацию участка, координаты сетки, радиус и seed.
-- `GeneratedChunkData` — результат фоновой генерации: локальные координаты вершин и индексы треугольников, а также идентификаторы владельца и запроса.
-- `generatePlanetChunk(request)` — сначала проверяет кэш, а при промахе строит сетку участка кубической сферы, деформирует вершины скалярным полем и сохраняет результат.
+- `ChunkGenerationRequest` — снимок параметров 3D-чанка для фонового потока: координаты сетки, размеры вокселей, радиус, seed и копия правок грунта.
+- `GeneratedChunkData` — результат фоновой генерации: локальные координаты поверхности и индексы треугольников, а также ID владельца, запроса и ревизии поля.
+- `generatePlanetChunk(request)` — сначала проверяет кэш, а при промахе сэмплирует плотность в объёмной сетке и извлекает поверхность marching tetrahedra; результат сохраняется в кэш.
 
 ## component/world_body/planet/chunk_cache.h:
 
 - `loadPlanetChunkCache(request, result)` — загружает и проверяет кэшированную геометрию чанка.
-- `savePlanetChunkCache(request, result)` — сохраняет локальные вершины и индексы треугольников в `cache/planet_surface`.
+- `savePlanetChunkCache(request, result)` — сохраняет локальные вершины и индексы треугольников в `cache/planet_surface`; формат учитывает координаты, размер вокселя, seed и ревизию правок.
+- `loadPlanetTerrainEdits(...)` / `savePlanetTerrainEdits(...)` — восстанавливают и сохраняют список штампов грунта отдельно от кэша мешей.
 
 ## world/chunk_loader.h:
 

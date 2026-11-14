@@ -1,3 +1,4 @@
+#include <danikk_space_engine/profiler.h>
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/world/world.h>
@@ -5,11 +6,24 @@
 
 namespace danikk_space_engine
 {
+	static bool rayIntersectsSphere(const vec3& center, float radius, const vec3& direction, float max_distance)
+	{
+		const float projection = glm::dot(center, direction);
+		const float center_distance_squared = glm::dot(center, center);
+		const float perpendicular_distance_squared = center_distance_squared - projection * projection;
+		const float radius_squared = radius * radius;
+		if(perpendicular_distance_squared > radius_squared) return false;
+
+		const float half_chord = glm::sqrt(glm::max(0.0f, radius_squared - perpendicular_distance_squared));
+		return projection + half_chord >= 0.0f && projection - half_chord <= max_distance;
+	}
+
 	// Casts a ray through every triangulated face in each chunk and returns the nearest hit.
 	// Normalizes the direction, transforms cell points to world space, intersects each triangle,
 	// and keeps the closest hit together with its FacePtr and triangle point IDs.
 	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
+		Watcher watcher("World::raycast");
 		RaycastHit result;
 		const float direction_length = glm::length(direction);
 		if(direction_length <= 0.000001f || max_distance < 0.0f)
@@ -28,6 +42,12 @@ namespace danikk_space_engine
 			{
 				const Chunk& chunk = data.getChunk(chunk_id);
 				const vec3 chunk_relative_position = vec3(getChunkWorldPosition(chunk_id) - origin);
+				if(chunk.hasValidBounds() && !chunk.mesh_dirty
+					&& !rayIntersectsSphere(chunk_relative_position + chunk.bounds_center,
+						chunk.bounds_radius, normalized_direction, nearest_distance))
+				{
+					continue;
+				}
 				for(size_t cell_index = 0; cell_index < chunk.volume_cell_ids.size(); cell_index++)
 				{
 					const VolumeCellId cell_id = chunk.volume_cell_ids[cell_index];

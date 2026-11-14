@@ -3,6 +3,7 @@
 #include <limits>
 #include <new>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/world/chunk.h>
@@ -82,6 +83,7 @@ namespace danikk_space_engine
 	// only visible triangles, reserves the output buffers, uploads them, and sets attributes.
 	Mesh& Chunk::createMesh()
 	{
+		Watcher watcher("Chunk::createMesh");
 		if(mesh == nullptr)
 		{
 			void* memory = malloc(sizeof(Mesh));
@@ -227,6 +229,31 @@ namespace danikk_space_engine
 				vertices.pushCtor(positions[corner], normal, projectToUV(positions[corner], normal));
 				material_ranges.peek().index_count++;
 			}
+		}
+
+		if(vertices.size() == 0)
+		{
+			bounds_center = vec3(0.0f);
+			bounds_radius = 0.0f;
+			bounds_valid = false;
+		}
+		else
+		{
+			vec3 minimum = vertices[0].pos;
+			vec3 maximum = vertices[0].pos;
+			for(const DefaultVertex& vertex : vertices)
+			{
+				minimum = glm::min(minimum, vertex.pos);
+				maximum = glm::max(maximum, vertex.pos);
+			}
+			bounds_center = (minimum + maximum) * 0.5f;
+			bounds_radius = 0.0f;
+			for(const DefaultVertex& vertex : vertices)
+			{
+				bounds_radius = glm::max(bounds_radius, glm::length(vertex.pos - bounds_center));
+			}
+			bounds_radius += 0.0001f;
+			bounds_valid = true;
 		}
 
 		mesh->setData(

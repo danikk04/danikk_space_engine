@@ -63,6 +63,11 @@ namespace danikk_space_engine
 
 	void WorldData::addVolumeCellToChunk(ChunkId chunk_id, VolumeCellId cell_id)
 	{
+		VolumeCell& cell = getVolumeCell(cell_id);
+		if(cell.chunk_id != VolumeCell::no_chunk)
+		{
+			danikk_engine::formatFatalError("Volume cell % already belongs to chunk %", cell_id, cell.chunk_id);
+		}
 		addUniqueResourceToChunk(*this, chunk_id, cell_id, isVolumeCellActive(cell_id), "volume cell",
 			&Chunk::volume_cell_ids,
 			[this, chunk_id, cell_id]
@@ -72,10 +77,18 @@ namespace danikk_space_engine
 				for(uint8 i = 0; i < topology.point_count; i++) addPointReferenceToChunk(chunk_id, cell.points[i]);
 			},
 			true);
+		Chunk& chunk = getChunk(chunk_id);
+		cell.chunk_id = chunk_id;
+		cell.index_in_chunk = chunk.volume_cell_ids.size() - 1;
 	}
 
 	void WorldData::addGroundTriangleToChunk(ChunkId chunk_id, GroundTriangleId triangle_id)
 	{
+		GroundTriangle& triangle = getGroundTriangle(triangle_id);
+		if(triangle.chunk_id != GroundTriangle::no_chunk)
+		{
+			danikk_engine::formatFatalError("Ground triangle % already belongs to chunk %", triangle_id, triangle.chunk_id);
+		}
 		addUniqueResourceToChunk(*this, chunk_id, triangle_id, isGroundTriangleActive(triangle_id), "ground triangle",
 			&Chunk::ground_triangle_ids,
 			[this, chunk_id, triangle_id]
@@ -84,6 +97,9 @@ namespace danikk_space_engine
 				for(PointId point_id : triangle.points) addPointReferenceToChunk(chunk_id, point_id);
 			},
 			true);
+		Chunk& chunk = getChunk(chunk_id);
+		triangle.chunk_id = chunk_id;
+		triangle.index_in_chunk = chunk.ground_triangle_ids.size() - 1;
 	}
 
 	void WorldData::addPointComponentSlotToChunk(ChunkId chunk_id, PointComponentSlotId slot_id)

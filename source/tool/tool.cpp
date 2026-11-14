@@ -41,6 +41,7 @@ namespace danikk_space_engine
 			case CreateObjectId::none: return "None";
 			case CreateObjectId::machinegun: return "Machinegun";
 			case CreateObjectId::volume_cell: return "VolumeCell";
+			case CreateObjectId::terrain: return "Terrain";
 			case CreateObjectId::count: break;
 		}
 		return "Unknown";

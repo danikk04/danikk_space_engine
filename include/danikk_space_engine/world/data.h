@@ -53,7 +53,7 @@ namespace danikk_space_engine
 
 		// Point deletion also destroys attached components and cells that reference it.
 		void destroyPoint(PointId id);
-		// Cell deletion removes its ID from every chunk that contains it.
+		// Cells and triangles store their owner chunk and slot for direct removal.
 		void destroyVolumeCell(VolumeCellId id);
 		void destroyGroundTriangle(GroundTriangleId id);
 		// Chunk deletion destroys its component slots and volume cells, but leaves shared points.

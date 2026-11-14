@@ -1,6 +1,7 @@
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/component/world_body/planet/planet.h>
 
 namespace danikk_space_engine
 {
@@ -164,11 +165,25 @@ namespace danikk_space_engine
 	void World::deleteVolumeCells(const DynamicArray<FacePtr>& faces)
 	{
 		DynamicArray<VolumeCellId> deleted_cell_ids;
+		DynamicArray<GroundTriangleId> deleted_ground_triangle_ids;
 		DynamicArray<ChunkId> modified_chunk_ids;
 
 		for(const FacePtr& face : faces)
 		{
-			if(face.is_ground_triangle || !data.isChunkActive(face.chunk_id) || !data.isVolumeCellActive(face.cell_id))
+			if(face.is_ground_triangle)
+			{
+				bool already_edited = false;
+				for(GroundTriangleId edited_id : deleted_ground_triangle_ids)
+				{
+					if(edited_id == face.ground_triangle_id) already_edited = true;
+				}
+				if(!already_edited && editPlanetGround(*this, face, 6.0, false))
+				{
+					deleted_ground_triangle_ids.push(face.ground_triangle_id);
+				}
+				continue;
+			}
+			if(!data.isChunkActive(face.chunk_id) || !data.isVolumeCellActive(face.cell_id))
 			{
 				continue;
 			}
