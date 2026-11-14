@@ -129,11 +129,15 @@ namespace danikk_space_engine
 
 		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
+		const int left_mouse_state = getMouseState(mouse_buttons::left);
+		const bool left_mouse_down = left_mouse_state == button_states::press
+			|| left_mouse_state == button_states::hold;
+		const float mouse_scroll_delta = getMouseScrollDelta();
 		const bool alt_pressed = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
-		if(alt_pressed)
+		if(!(active_tool == ToolId::drag && left_mouse_down) && alt_pressed)
 		{
-			build_action_scroll_accumulator += getMouseScrollDelta();
+			build_action_scroll_accumulator += mouse_scroll_delta;
 			while(build_action_scroll_accumulator >= 1.0f)
 			{
 				selected_build_action = stepBuildAction(selected_build_action, 1);
@@ -145,9 +149,9 @@ namespace danikk_space_engine
 				build_action_scroll_accumulator += 1.0f;
 			}
 		}
-		else
+		else if(!(active_tool == ToolId::drag && left_mouse_down))
 		{
-			tool_scroll_accumulator += getMouseScrollDelta();
+			tool_scroll_accumulator += mouse_scroll_delta;
 			while(tool_scroll_accumulator >= 1.0f)
 			{
 				active_tool = stepTool(active_tool, 1);
@@ -161,23 +165,35 @@ namespace danikk_space_engine
 		}
 
 		RaycastHit hit = world.raycastFromCamera();
-		if(active_tool != ToolId::none && getMouseState(mouse_buttons::left) == button_states::press)
+		if(active_tool == ToolId::drag)
 		{
-			ToolApplyResult result = applyTool(
-				active_tool,
-				world,
-				selected_faces,
-				selected_face_count,
-				hit.hit,
-				hit.face,
-				hit,
-				selected_build_action);
-			if(result.replace_selected_faces)
+			tickDragTool(
+				world, *this, hit, true, left_mouse_state,
+				left_mouse_down ? mouse_scroll_delta : 0.0f,
+				alt_pressed,
+				getCursorDelta() * getMouseSensivity());
+		}
+		else
+		{
+			tickDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false, vec2(0.0f));
+			if(active_tool != ToolId::none && left_mouse_state == button_states::press)
 			{
-				selected_faces = static_cast<DynamicArray<FacePtr>&&>(result.selected_faces);
-				selected_face_count = selected_faces.size();
+				ToolApplyResult result = applyTool(
+					active_tool,
+					world,
+					selected_faces,
+					selected_face_count,
+					hit.hit,
+					hit.face,
+					hit,
+					selected_build_action);
+				if(result.replace_selected_faces)
+				{
+					selected_faces = static_cast<DynamicArray<FacePtr>&&>(result.selected_faces);
+					selected_face_count = selected_faces.size();
+				}
+				hit = world.raycastFromCamera();
 			}
-			hit = world.raycastFromCamera();
 		}
 
 		if(hit.hit)

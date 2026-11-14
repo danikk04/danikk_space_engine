@@ -6,12 +6,14 @@
 namespace danikk_space_engine
 {
 	class World;
+	class LocalPlayerControllerComponent;
 	struct RaycastHit;
 
 	enum class ToolId : uint8
 	{
 		none = 0,
 		select,
+		drag,
 		build,
 		erase_faces,
 		count
@@ -73,4 +75,13 @@ namespace danikk_space_engine
 		const RaycastHit& hit,
 		BuildActionId action);
 	ToolApplyResult applyBuildPlacementTool(World& world, const RaycastHit& hit, BuildActionId action);
+	void tickDragTool(
+		World& world,
+		LocalPlayerControllerComponent& controller,
+		const RaycastHit& hit,
+		bool enabled,
+		int mouse_state,
+		float scroll_delta,
+		bool alt_pressed,
+		const vec2& cursor_delta);
 }

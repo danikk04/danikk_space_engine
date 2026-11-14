@@ -26,6 +26,7 @@ namespace danikk_space_engine
 		{
 			case ToolId::none: return "None";
 			case ToolId::select: return "Select";
+			case ToolId::drag: return "Drag";
 			case ToolId::build: return "Build";
 			case ToolId::erase_faces: return "Erase";
 			case ToolId::count: break;
@@ -62,6 +63,8 @@ namespace danikk_space_engine
 			case ToolId::none: return applyNoneTool(world, selected_faces, false);
 			case ToolId::select:
 				return applySelectTool(selected_faces, selected_face_count, has_hovered_face, hovered_face);
+			case ToolId::drag:
+				return ToolApplyResult();
 			case ToolId::erase_faces:
 			{
 				if(selected_face_count > 0)

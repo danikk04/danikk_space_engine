@@ -63,12 +63,16 @@ namespace danikk_space_engine
 	glm::dvec3 World::getChunkWorldPosition(ChunkId chunk_id) const
 	{
 		const Chunk& chunk = data.getChunk(chunk_id);
-		return data.getWorldBody(chunk.world_body_id).position + chunk.position;
+		const WorldBody& body = data.getWorldBody(chunk.world_body_id);
+		return body.position + body.rotation * chunk.position;
 	}
 
 	glm::dvec3 World::getPointWorldPosition(ChunkId chunk_id, PointId point_id) const
 	{
-		return getChunkWorldPosition(chunk_id) + glm::dvec3(data.getPoint(point_id).position);
+		const Chunk& chunk = data.getChunk(chunk_id);
+		const WorldBody& body = data.getWorldBody(chunk.world_body_id);
+		return body.position + body.rotation
+			* (chunk.position + glm::dvec3(data.getPoint(point_id).position));
 	}
 
 	LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent()

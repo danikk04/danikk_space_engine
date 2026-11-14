@@ -14,7 +14,9 @@ namespace danikk_space_engine
 		if(!hit.hit || !world.data.isChunkActive(hit.face.chunk_id)) return;
 
 		const Chunk& chunk = world.data.getChunk(hit.face.chunk_id);
-		vec3 up = hit.normal;
+		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+		const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
+		vec3 up = vec3(inverse_body_rotation * glm::dvec3(hit.normal));
 		const float up_length = glm::length(up);
 		if(up_length < 0.0001f) return;
 		up /= up_length;
@@ -22,8 +24,9 @@ namespace danikk_space_engine
 			? vec3(0.0f, 1.0f, 0.0f) : vec3(0.0f, 0.0f, 1.0f);
 		const vec3 right = glm::normalize(glm::cross(reference, up));
 		const vec3 forward = glm::normalize(glm::cross(up, right));
-		const glm::dvec3 chunk_origin = world.getChunkWorldPosition(hit.face.chunk_id);
-		const vec3 base_position = vec3(hit.position + glm::dvec3(up * 0.03f) - chunk_origin);
+		const glm::dvec3 local_hit_position = inverse_body_rotation
+			* (hit.position - world.getChunkWorldPosition(hit.face.chunk_id));
+		const vec3 base_position = vec3(local_hit_position + glm::dvec3(up * 0.03f));
 		constexpr float half_extent = 0.5f;
 		constexpr float height = 1.0f;
 		const vec3 local_vertices[8]

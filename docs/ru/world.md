@@ -27,7 +27,7 @@
 
 ## `world/body.h` и `component/world_body/world_body.h`
 
-- `WorldBody` задаёт мировую позицию и хранит ID своих чанков и компонентов тела.
+- `WorldBody` задаёт мировую позицию и ориентацию, хранит ID своих чанков и компонентов тела.
 - `WorldBodyComponentType` описывает функции жизненного цикла, `tick`, `frame` и приёма результата генерации.
 - `WorldBodyComponentSlot` связывает компонент с телом; payload хранится inline до 32 байт либо во внешней памяти.
 

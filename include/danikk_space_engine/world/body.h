@@ -11,6 +11,7 @@ namespace danikk_space_engine
 	{
 	public:
 		glm::dvec3 position = glm::dvec3(0.0);
+		glm::dquat rotation = glm::dquat(1.0, 0.0, 0.0, 0.0);
 		DynamicArray<ChunkId> chunk_ids;
 		DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
 

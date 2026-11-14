@@ -31,8 +31,12 @@ namespace danikk_space_engine
 				? vec3(0.0f, 1.0f, 0.0f) : vec3(0.0f, 0.0f, 1.0f);
 			const vec3 right = glm::normalize(glm::cross(reference, up));
 			const vec3 forward = glm::normalize(glm::cross(up, right));
-			const glm::dvec3 chunk_origin = world.getChunkWorldPosition(hit.face.chunk_id);
-			const vec3 base_position = vec3(hit.position + glm::dvec3(up * 0.03f) - chunk_origin);
+
+			const WorldBodyId body_id = world.data.createWorldBody();
+			world.data.getWorldBody(body_id).position = hit.position + glm::dvec3(up * 0.03f);
+			Chunk& chunk = world.data.createChunk(body_id);
+			const ChunkId chunk_id = chunk.chunk_id;
+			const vec3 base_position(0.0f);
 
 			const VolumeCellId cell_id = world.data.createVolumeCell();
 			VolumeCell& cell = world.data.getVolumeCell(cell_id);
@@ -50,20 +54,24 @@ namespace danikk_space_engine
 					+ up * local_vertices[i].z;
 				cell.points[i] = point_id;
 			}
-			world.data.addVolumeCellToChunk(hit.face.chunk_id, cell_id);
+			world.data.addVolumeCellToChunk(chunk_id, cell_id);
 		}
 
 		void createMachinegunAtHit(World& world, const RaycastHit& hit)
 		{
 			const PointId point_id = world.data.createPoint();
 			Point& point = world.data.getPoint(point_id);
-			point.position = vec3(hit.position + glm::dvec3(hit.normal * 0.03f)
-				- world.getChunkWorldPosition(hit.face.chunk_id));
+			const Chunk& chunk = world.data.getChunk(hit.face.chunk_id);
+			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+			const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
+			point.position = vec3(inverse_body_rotation
+				* (hit.position + glm::dvec3(hit.normal * 0.03f)
+				- world.getChunkWorldPosition(hit.face.chunk_id)));
 
 			MachinegunComponent machinegun;
-			machinegun.forward = world.getCameraComponent().getFront();
-			machinegun.up = world.getCameraComponent().getUp();
-			machinegun.right = world.getCameraComponent().getRight();
+			machinegun.forward = vec3(inverse_body_rotation * glm::dvec3(world.getCameraComponent().getFront()));
+			machinegun.up = vec3(inverse_body_rotation * glm::dvec3(world.getCameraComponent().getUp()));
+			machinegun.right = vec3(inverse_body_rotation * glm::dvec3(world.getCameraComponent().getRight()));
 			const PointComponentSlotId slot_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::machine_gun, &machinegun);
 			world.data.addPointComponentSlotToChunk(hit.face.chunk_id, slot_id);
@@ -71,8 +79,8 @@ namespace danikk_space_engine
 	}
 
 	// Applies Build actions that use the raycast position. Placement creates either a camera-aligned
-	// machinegun component or a one-meter hexahedral VolumeCell attached to the hit chunk. Terrain
-	// addition records a solid-terrain edit and lets the affected chunk rebuild the surface.
+	// machinegun component or a one-meter hexahedral VolumeCell in its own WorldBody and Chunk.
+	// Terrain addition records a solid-terrain edit and lets the affected chunk rebuild the surface.
 	ToolApplyResult applyBuildPlacementTool(World& world, const RaycastHit& hit, BuildActionId action)
 	{
 		if(!hit.hit)

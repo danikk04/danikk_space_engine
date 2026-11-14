@@ -5,5 +5,6 @@ sources += files(
 	'select.cpp',
 	'extrude.cpp',
 	'erase.cpp',
+	'drag.cpp',
 	'build_placement.cpp',
 )

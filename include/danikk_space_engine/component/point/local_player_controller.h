@@ -18,6 +18,9 @@ namespace danikk_space_engine
 		float tool_scroll_accumulator = 0.0f;
 		BuildActionId selected_build_action = BuildActionId::none;
 		float build_action_scroll_accumulator = 0.0f;
+		WorldBodyId dragged_world_body_id = static_cast<WorldBodyId>(-1);
+		double dragged_body_distance = 0.0;
+		glm::dvec3 dragged_hit_offset = glm::dvec3(0.0);
 
 		void tick(World& world);
 	};

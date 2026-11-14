@@ -42,8 +42,9 @@ namespace danikk_space_engine
 			{
 				const Chunk& chunk = data.getChunk(chunk_id);
 				const vec3 chunk_relative_position = vec3(getChunkWorldPosition(chunk_id) - origin);
+				const vec3 rotated_bounds_center = vec3(body.rotation * glm::dvec3(chunk.bounds_center));
 				if(chunk.hasValidBounds() && !chunk.mesh_dirty
-					&& !rayIntersectsSphere(chunk_relative_position + chunk.bounds_center,
+					&& !rayIntersectsSphere(chunk_relative_position + rotated_bounds_center,
 						chunk.bounds_radius, normalized_direction, nearest_distance))
 				{
 					continue;
@@ -62,9 +63,12 @@ namespace danikk_space_engine
 						const PointId point_ids[3]{cell.points[triangle.points[0]], cell.points[triangle.points[1]], cell.points[triangle.points[2]]};
 						if(!data.isPointActive(point_ids[0]) || !data.isPointActive(point_ids[1]) || !data.isPointActive(point_ids[2])) continue;
 
-						const vec3 world_a = chunk_relative_position + data.getPoint(point_ids[0]).position;
-						const vec3 world_b = chunk_relative_position + data.getPoint(point_ids[1]).position;
-						const vec3 world_c = chunk_relative_position + data.getPoint(point_ids[2]).position;
+						const vec3 world_a = chunk_relative_position
+							+ vec3(body.rotation * glm::dvec3(data.getPoint(point_ids[0]).position));
+						const vec3 world_b = chunk_relative_position
+							+ vec3(body.rotation * glm::dvec3(data.getPoint(point_ids[1]).position));
+						const vec3 world_c = chunk_relative_position
+							+ vec3(body.rotation * glm::dvec3(data.getPoint(point_ids[2]).position));
 						const RayTriangleIntersection intersection = intersectRayTriangle(ray, world_a, world_b, world_c);
 						if(!intersection.hit || intersection.distance > nearest_distance) continue;
 
@@ -84,9 +88,12 @@ namespace danikk_space_engine
 				{
 					if(!data.isGroundTriangleActive(triangle_id)) continue;
 					const GroundTriangle& triangle = data.getGroundTriangle(triangle_id);
-					const vec3 a = chunk_relative_position + data.getPoint(triangle.points[0]).position;
-					const vec3 b = chunk_relative_position + data.getPoint(triangle.points[1]).position;
-					const vec3 c = chunk_relative_position + data.getPoint(triangle.points[2]).position;
+					const vec3 a = chunk_relative_position
+						+ vec3(body.rotation * glm::dvec3(data.getPoint(triangle.points[0]).position));
+					const vec3 b = chunk_relative_position
+						+ vec3(body.rotation * glm::dvec3(data.getPoint(triangle.points[1]).position));
+					const vec3 c = chunk_relative_position
+						+ vec3(body.rotation * glm::dvec3(data.getPoint(triangle.points[2]).position));
 					const RayTriangleIntersection intersection = intersectRayTriangle(ray, a, b, c);
 					if(!intersection.hit || intersection.distance > nearest_distance) continue;
 					nearest_distance = intersection.distance;
