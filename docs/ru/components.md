@@ -4,12 +4,12 @@
 
 ## `id.h`
 
-- Содержит целочисленные алиасы ID точек, чанков, тел мира, треугольников и слотов компонентов.
+- Содержит целочисленные алиасы ID точек, чанков, тел мира, треугольников, материалов, форм, скинов, типов/определений предметов и слотов компонентов.
 - Enum-типы компонентов остаются в заголовках своих подсистем.
 
 ## `component/point/point.h`
 
-- `PointComponentTypeId` — типы `camera`, `local_player_controller_component`, `machine_gun`, `bullet`, зарезервированный `engine`, а также `human` и `npc_controller`.
+- `PointComponentTypeId` — типы `camera`, `local_player_controller_component`, `machine_gun`, `bullet`, зарезервированный `engine`, а также `human`, `npc_controller` и `inventory`.
 - `PointComponentType` — размер/выравнивание данных и callbacks `construct`, `move`, `destroy`, `tick`, `frame`.
 - `PointComponentSlot` — привязка к `PointId`, `ChunkId`, типу и области хранения payload; `dispose()` возвращает слот в исходное состояние.
 - `getPointComponentType()` возвращает описание типа.
@@ -34,6 +34,7 @@
 - `component/point/bullet.h` — скорость, возраст, время жизни и состояние отложенного удаления; tick двигает пулю и проверяет столкновения, frame отображает её след.
 - `component/point/human/human.h` — `HumanComponent` хранит ориентацию, команду движения, здоровье, позу и вложенный `HumanAppearance`; там же объявлены тип отображения и ID скина. Общая геометрия задаётся `HumanDefinition`.
 - `component/point/human/npc_controller.h` — `NpcControllerComponent` выдаёт команды персонажу и поворачивает голову к камере. Подробности и ограничения: [персонажи](humans.md).
+- `component/point/inventory.h` — `InventoryComponent` хранит массив `InventorySlot` с `ItemDefinitionId`, количеством и 64-битным состоянием экземпляра. ID 0 означает пустой слот. Каталог предметов описан в [items](items.md).
 
 ## Владение и обновление
 

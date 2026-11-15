@@ -11,6 +11,8 @@ namespace danikk_space_engine
 	using MaterialId = uint32;
 	using ShapeId = uint32;
 	using HumanSkinId = uint32;
+	using ItemTypeId = uint32;
+	using ItemDefinitionId = uint32;
 
 	using PointComponentSlotId = uint32;
 	using GraphComponentSlotId = uint32;

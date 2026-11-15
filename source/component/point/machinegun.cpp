@@ -3,12 +3,10 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
+#include <danikk_space_engine/item.h>
 #include <danikk_space_engine/world/world.h>
-#include <danikk_space_engine/asset.h>
 
 #include <danikk_engine/danikk_engine.h>
-#include <danikk_engine/texture.h>
-#include <danikk_engine/texture_methods.h>
 #include <danikk_framework/glm.h>
 
 namespace danikk_space_engine
@@ -162,14 +160,7 @@ namespace danikk_space_engine
 		{
 			danikk_engine::formatFatalError("Machinegun component references invalid point %", slot.point_id);
 		}
-		if(static_asset_collection.mg42_mesh.isNull())
-		{
-			danikk_engine::formatFatalError("Machinegun component has no loaded MG-42 mesh");
-		}
-
 		const MachinegunComponent& machinegun = *static_cast<const MachinegunComponent*>(slot.getData());
-		white_texture.bind();
-		setDrawColor(vec4(0.4f, 0.4f, 0.4f, 1.0f));
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 		const mat4 world_matrix = chunk.createWorldMatrix(world)
 			* glm::translate(
@@ -177,7 +168,6 @@ namespace danikk_space_engine
 				world.data.getPoint(slot.point_id).position)
 			* getOrientationMatrix(machinegun)
 			* glm::scale(mat4(1.0f), vec3(machinegun.scale));
-		setWorldMatrix(world_matrix);
-		static_asset_collection.mg42_mesh.draw();
+		drawItem(item_definition_ids::mg42, world_matrix);
 	}
 }

@@ -3,6 +3,7 @@ sources += files(
 	'bullet.cpp',
 	'local_player_controller.cpp',
 	'machinegun.cpp',
+	'inventory.cpp',
 	'point.cpp',
 )
 

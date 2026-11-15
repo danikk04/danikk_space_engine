@@ -3,6 +3,7 @@
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
+#include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 
@@ -63,6 +64,11 @@ namespace danikk_space_engine
 				sizeof(NpcControllerComponent), alignof(NpcControllerComponent), true,
 				constructNpcControllerComponent, moveNpcControllerComponent, destroyNpcControllerComponent,
 				tickNpcControllerComponent, nullptr
+			},
+			{
+				sizeof(InventoryComponent), alignof(InventoryComponent), false,
+				constructInventoryComponent, moveInventoryComponent, destroyInventoryComponent,
+				nullptr, nullptr
 			}
 		};
 		static_assert(sizeof(point_component_types) / sizeof(point_component_types[0])

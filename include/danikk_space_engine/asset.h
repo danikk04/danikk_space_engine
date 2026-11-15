@@ -19,10 +19,10 @@ namespace danikk_space_engine
 		Font base_font;
 		Mesh low_poly_sphere_mesh;
 		Mesh cube_mesh;
-		Mesh mg42_mesh;
 		HumanDefinition human_definition;
 		// Skin 0 is the default coloured appearance; other entries are shared 64x64 textures.
 		DynamicArray<Texture> minecraft_skins;
+		HumanSkinId usmc_marpat_woodland_skin_id = 0;
 
 		Texture border_texture;
 		Texture container_texture;

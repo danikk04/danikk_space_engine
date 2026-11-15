@@ -2,7 +2,9 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/item.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
@@ -67,6 +69,40 @@ namespace danikk_space_engine
 			else
 			{
 				point.position += human.up * vertical_displacement;
+			}
+		}
+
+		// Draws equipped MG-42 items attached to the soldier's weapon-ready pose. The OBJ's X/Y/Z
+		// axes map to character forward/up/right; the attachment offset is expressed in body-height units.
+		void drawEquippedWeapons(const PointComponentSlot& human_slot, const HumanComponent& human,
+			const mat4& body_matrix, World& world)
+		{
+			if(human.arm_pose != HumanArmPose::weapon_ready) return;
+			const Chunk& chunk = world.data.getChunk(human_slot.chunk_id);
+			for(PointComponentSlotId component_slot_id : chunk.point_component_slot_ids)
+			{
+				if(!world.data.isPointComponentSlotActive(component_slot_id)) continue;
+				const PointComponentSlot& component_slot = world.data.getPointComponentSlot(component_slot_id);
+				if(component_slot.point_id != human_slot.point_id
+					|| component_slot.type_id != PointComponentTypeId::inventory) continue;
+				const InventoryComponent& inventory = *static_cast<const InventoryComponent*>(component_slot.getData());
+				for(const InventorySlot& inventory_slot : inventory.slots)
+				{
+					if(!inventory_slot.is_equipped || inventory_slot.isEmpty()) continue;
+					if(inventory_slot.item_definition_id != item_definition_ids::mg42) continue;
+
+					mat4 weapon_orientation(1.0f);
+					weapon_orientation[0] = vec4(0, 1, 0, 0);
+					weapon_orientation[1] = vec4(0, 0, 1, 0);
+					weapon_orientation[2] = vec4(1, 0, 0, 0);
+					const vec3 attachment_position = vec3(0.11f, 0.37f, 0.72f) * human.height;
+					const mat4 weapon_matrix = body_matrix
+						* glm::translate(mat4(1.0f), attachment_position)
+						* weapon_orientation
+						* glm::scale(mat4(1.0f), vec3(0.25f));
+					drawItem(inventory_slot.item_definition_id, weapon_matrix);
+				}
+				return;
 			}
 		}
 	}
@@ -166,8 +202,9 @@ namespace danikk_space_engine
 		orientation[1] = vec4(forward, 0);
 		orientation[2] = vec4(up, 0);
 		const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
-		const mat4 base = glm::translate(mat4(1.0f), vec3(position - world.getCameraWorldPosition()))
-			* orientation * glm::scale(mat4(1.0f), vec3(human.height));
-		drawHumanAppearance(human, base);
+		const mat4 body_matrix = glm::translate(mat4(1.0f), vec3(position - world.getCameraWorldPosition()))
+			* orientation;
+		drawHumanAppearance(human, body_matrix * glm::scale(mat4(1.0f), vec3(human.height)));
+		drawEquippedWeapons(slot, human, body_matrix, world);
 	}
 }

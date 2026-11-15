@@ -2,6 +2,7 @@ sources = files(
 	'asset.cpp', 
 	'config.cpp',
 	'gui.cpp', 
+	'item.cpp',
 	'localization.cpp', 
 	'main.cpp', 
 	'material.cpp',

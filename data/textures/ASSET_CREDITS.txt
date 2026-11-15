@@ -4,3 +4,9 @@ grass_32x32.png, stone_32x32.png, lava_32x32.png, water_32x32.png
 From "N64 Texture Pack" by n64guy.
 License: CC0 (public domain).
 Source: https://opengameart.org/node/170403
+
+medium-loadout-marpat-woodland-14906056-e1810.png
+"USMC Marpat Woodland Infantry with IOTV vest" by Dr William Woods, incorporating helmet design by Box_1105.
+License: CC BY 4.0.
+Source: https://www.planetminecraft.com/skin/usmc-marpat-woodland-infantry-with-iotv-vest/
+License: https://creativecommons.org/licenses/by/4.0/

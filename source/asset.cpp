@@ -1,4 +1,5 @@
 #include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/item.h>
 #include <danikk_framework/static_string.h>
 #include <danikk_engine/dynamic_mesh.h>
 
@@ -16,10 +17,12 @@ namespace danikk_space_engine
     	setDefaultFont(base_font);
 
     	low_poly_sphere_mesh = Mesh(NULL, "sphere");
-		mg42_mesh.loadObj("MG-42", "MG-42");
+		loadItemCatalog();
 		loadHumanDefinition(human_definition);
 		minecraft_skins.clear();
 		minecraft_skins.pushCtor();
+		usmc_marpat_woodland_skin_id = loadMinecraftSkin(
+			"minecraft_skins/medium-loadout-marpat-woodland-14906056-e1810");
     	container_texture = Texture("container");
 	}
 

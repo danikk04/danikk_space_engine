@@ -26,12 +26,13 @@ namespace danikk_space_engine
 	enum class HumanArmPose : uint8
 	{
 		relaxed,
-		extended_forward
+		weapon_ready
 	};
 
 	struct HumanPartDefinition
 	{
 		Mesh mesh;
+		Mesh overlay_mesh;
 		vec3 size = vec3(1.0f);
 		vec3 pivot = vec3(0.0f);
 		vec3 center_offset = vec3(0.0f);
@@ -63,6 +64,8 @@ namespace danikk_space_engine
 	};
 
 	void loadHumanDefinition(HumanDefinition& definition);
+	PointComponentSlotId createHumanSoldier(World& world, WorldBodyId world_body_id,
+		const glm::dvec3& position, const vec3& up, const vec3& forward);
 	void constructHumanComponent(void* destination, const void* init_data);
 	void moveHumanComponent(void* destination, void* source);
 	void destroyHumanComponent(void* data);

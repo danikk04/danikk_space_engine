@@ -49,10 +49,12 @@ namespace danikk_space_engine
 	}
 
 	// Loads shared meshes and defines proportions, pivots and fallback colours in units of body height.
-	// Skin rectangles use separate left/right limb areas of a 64x64 texture, without the clothing layer.
+	// Builds both base and outer-layer UV meshes from the classic 64x64 Minecraft skin layout.
 	void loadHumanDefinition(HumanDefinition& definition)
 	{
 		const glm::ivec2 origins[] = {{0, 0}, {16, 16}, {40, 16}, {32, 48}, {0, 16}, {16, 48}};
+		const glm::ivec2 overlay_origins[] = {
+			{32, 0}, {16, 32}, {40, 32}, {48, 48}, {0, 32}, {0, 48}};
 		for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
 		{
 			HumanPartDefinition& part = definition.parts[index];
@@ -62,6 +64,8 @@ namespace danikk_space_engine
 			const int height = head ? 8 : 12;
 			const int depth = head ? 8 : 4;
 			loadPartMesh(part.mesh, origins[index].x, origins[index].y, width, height, depth);
+			loadPartMesh(part.overlay_mesh,
+				overlay_origins[index].x, overlay_origins[index].y, width, height, depth);
 			part.size = vec3(width, depth, height) / 32.0f;
 			part.pivot = vec3(0.0f, 0.0f, head || index < 4 ? 0.75f : 0.375f);
 			part.center_offset = vec3(0.0f, 0.0f, head ? 0.125f : -0.1875f);

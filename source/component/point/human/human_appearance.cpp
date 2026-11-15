@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include <danikk_framework/log.h>
+#include <danikk_engine/texture_methods.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/asset.h>
 
@@ -8,8 +9,8 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		// Draws the shared six-part model with a skin selected by ID. Joint rotations consume
-		// the common pose state, while mesh dimensions and fallback colours belong to shared assets.
+		// Draws the base body meshes first, then the UV-mapped outer skin layer with a slight shell
+		// expansion. The overlay pass disables depth writes so transparent pixels reveal the base.
 		void drawMinecraftHuman(const HumanComponent& human, const mat4& base, HumanSkinId skin_id)
 		{
 			HumanDefinition& definition = static_asset_collection.human_definition;
@@ -18,6 +19,7 @@ namespace danikk_space_engine
 			if(has_skin) skin.bind();
 			else white_texture.bind();
 			const float swing = std::sin(human.walk_phase) * human.walk_amplitude;
+			mat4 joint_matrices[static_cast<size_t>(HumanPart::count)];
 			for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
 			{
 				HumanPartDefinition& part = definition.parts[index];
@@ -30,17 +32,38 @@ namespace danikk_space_engine
 				else if(index >= 2)
 				{
 					float angle = index == 2 || index == 5 ? swing : -swing;
-					if(human.arm_pose == HumanArmPose::extended_forward
-						&& (index == static_cast<size_t>(HumanPart::right_arm)
-							|| index == static_cast<size_t>(HumanPart::left_arm)))
-						angle = 1.570796327f;
+					if(human.arm_pose == HumanArmPose::weapon_ready)
+					{
+						if(index == static_cast<size_t>(HumanPart::right_arm))
+							angle = 1.570796327f;
+						else if(index == static_cast<size_t>(HumanPart::left_arm))
+						{
+							// Turn the left arm inward across the chest, then raise it toward the weapon.
+							joint = glm::rotate(joint, -0.610865238f, vec3(0, 0, 1));
+							angle = 1.570796327f;
+						}
+					}
 					joint = glm::rotate(joint, angle, vec3(1, 0, 0));
 				}
+				joint_matrices[index] = joint;
 				setDrawColor(vec4(has_skin ? vec3(1.0f) : part.color, 1.0f));
 				setWorldMatrix(base * glm::translate(mat4(1.0f), part.pivot) * joint
 					* glm::translate(mat4(1.0f), part.center_offset) * glm::scale(mat4(1.0f), part.size));
 				part.mesh.draw();
 			}
+
+			if(!has_skin) return;
+			setDepthWriteEnabled(false);
+			for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
+			{
+				HumanPartDefinition& part = definition.parts[index];
+				setDrawColor(vec4(1.0f));
+				setWorldMatrix(base * glm::translate(mat4(1.0f), part.pivot) * joint_matrices[index]
+					* glm::translate(mat4(1.0f), part.center_offset)
+					* glm::scale(mat4(1.0f), part.size * 1.04f));
+				part.overlay_mesh.draw();
+			}
+			setDepthWriteEnabled(true);
 		}
 	}
 

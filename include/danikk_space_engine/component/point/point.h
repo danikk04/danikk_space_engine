@@ -18,6 +18,7 @@ namespace danikk_space_engine
 		engine,
 		human,
 		npc_controller,
+		inventory,
 		count
 	};
 
