@@ -1,15 +1,14 @@
 #include <cmath>
-#include <limits>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/world/world.h>
+#include "internal.h"
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/component/world_body/planet/terrain.h>
-#include <danikk_space_engine/component/point/local_player_controller.h>
-#include <danikk_engine/danikk_engine.h>
 
 namespace danikk_space_engine
 {
+	using namespace collision_internal;
+
 	namespace
 	{
 		struct PlanetCollisionTarget
@@ -31,25 +30,7 @@ namespace danikk_space_engine
 			uint32 support_point_count = 0;
 		};
 
-		struct BodyMassProperties
-		{
-			double mass = 0.0;
-			glm::dvec3 local_center_of_mass = glm::dvec3(0.0);
-			double scalar_inertia = 0.0;
-		};
-
-		void resolveContact(WorldBody& body, const BodyMassProperties& mass_properties,
-			const glm::dvec3& outward_direction, double penetration,
-			const glm::dvec3& support_point_local);
-		void applyContactImpulse(WorldBody& body, const BodyMassProperties& mass_properties,
-			const glm::dvec3& outward_direction, const glm::dvec3& support_point_local);
-
-		/*
-		 * Resolves a moving mesh against the planet's continuous scalar field rather than its
-		 * triangulated render mesh. The field gradient gives contact normals and density divided by
-		 * gradient magnitude approximates penetration depth. Nearly parallel vertex contacts are
-		 * merged into support manifolds before position and impulse solving.
-		 */
+		// Samples the field gradient at mesh points, groups similar normals and resolves support contacts.
 		void collideChunkSurfaceWithPlanet(World& world, WorldBody& moving_body,
 			const Chunk& moving_chunk, const BodyMassProperties& mass_properties,
 			const PlanetCollisionTarget& target)
@@ -155,21 +136,7 @@ namespace danikk_space_engine
 			}
 		}
 
-		BodyMassProperties calculateMassProperties(const WorldBody& body)
-		{
-			BodyMassProperties properties;
-			if(body.collision_radius <= 0.0) return properties;
-			properties.mass = body.mass > 0.0 ? body.mass : 1.0;
-			properties.scalar_inertia = glm::max(
-				0.4 * properties.mass * body.collision_radius * body.collision_radius,
-				0.000001);
-			properties.scalar_inertia = glm::max(properties.scalar_inertia, 0.000001);
-			return properties;
-		}
-
-		void applyImpulse(WorldBody& body, const BodyMassProperties& mass_properties,
-			const glm::dvec3& contact_offset, const glm::dvec3& impulse);
-
+		// Samples the scalar field and its gradient to find a sphere fallback contact.
 		bool getPlanetSurfaceContact(const PlanetComponent& planet, const glm::dvec3& field_position,
 			double collider_radius, glm::dvec3& outward_direction, double& penetration)
 		{
@@ -204,148 +171,9 @@ namespace danikk_space_engine
 			outward_direction /= direction_length;
 			return true;
 		}
-
-		void applyContactImpulse(WorldBody& body, const BodyMassProperties& mass_properties,
-			const glm::dvec3& outward_direction, const glm::dvec3& support_point_local)
-		{
-			const glm::dvec3 world_center_of_mass = body.position
-				+ body.rotation * mass_properties.local_center_of_mass;
-			const glm::dvec3 contact_point = body.position + body.rotation * support_point_local;
-			const glm::dvec3 contact_offset = contact_point - world_center_of_mass;
-			const double inverse_mass = 1.0 / mass_properties.mass;
-			const double inverse_inertia = 1.0 / mass_properties.scalar_inertia;
-			const glm::dvec3 contact_velocity = body.linear_velocity
-				+ glm::cross(body.angular_velocity, contact_offset);
-			const double inward_speed = glm::dot(contact_velocity, outward_direction);
-			if(inward_speed >= 0.0) return;
-
-			const glm::dvec3 normal_arm = glm::cross(contact_offset, outward_direction);
-			const double normal_effective_mass = inverse_mass
-				+ glm::dot(normal_arm, normal_arm) * inverse_inertia;
-			const double normal_impulse_magnitude = -inward_speed / normal_effective_mass;
-			applyImpulse(body, mass_properties, contact_offset,
-				outward_direction * normal_impulse_magnitude);
-
-			const glm::dvec3 post_normal_velocity = body.linear_velocity
-				+ glm::cross(body.angular_velocity, contact_offset);
-			const glm::dvec3 tangent_velocity = post_normal_velocity
-				- outward_direction * glm::dot(post_normal_velocity, outward_direction);
-			const double tangent_speed = glm::length(tangent_velocity);
-			if(tangent_speed <= 0.000001) return;
-			const glm::dvec3 tangent_direction = tangent_velocity / tangent_speed;
-			const glm::dvec3 tangent_arm = glm::cross(contact_offset, tangent_direction);
-			const double tangent_effective_mass = inverse_mass
-				+ glm::dot(tangent_arm, tangent_arm) * inverse_inertia;
-			constexpr double friction_coefficient = 0.9;
-			const double friction_impulse_magnitude = glm::clamp(
-				-tangent_speed / tangent_effective_mass,
-				-friction_coefficient * normal_impulse_magnitude,
-				friction_coefficient * normal_impulse_magnitude);
-			applyImpulse(body, mass_properties, contact_offset,
-				tangent_direction * friction_impulse_magnitude);
-		}
-
-		void resolveContact(WorldBody& body, const BodyMassProperties& mass_properties,
-			const glm::dvec3& outward_direction, double penetration,
-			const glm::dvec3& support_point_local)
-		{
-			body.position += outward_direction * (penetration + 0.001);
-			applyContactImpulse(body, mass_properties, outward_direction, support_point_local);
-		}
-
-		void applyImpulse(WorldBody& body, const BodyMassProperties& mass_properties,
-			const glm::dvec3& contact_offset, const glm::dvec3& impulse)
-		{
-			body.linear_velocity += impulse / mass_properties.mass;
-			body.angular_velocity += glm::cross(contact_offset, impulse) / mass_properties.scalar_inertia;
-		}
-
-		WorldBodyId getDraggedWorldBodyId(const World& world)
-		{
-			if(world.local_player_controller_component_slot_id >= world.data.getPointComponentSlotCount()
-				|| !world.data.isPointComponentSlotActive(world.local_player_controller_component_slot_id))
-			{
-				return static_cast<WorldBodyId>(-1);
-			}
-			const PointComponentSlot& slot = world.data.getPointComponentSlot(
-				world.local_player_controller_component_slot_id);
-			return static_cast<const LocalPlayerControllerComponent*>(slot.getData())->dragged_world_body_id;
-		}
 	}
 
-	// Applies each planet's gravity to every other non-planet body and integrates linear velocity
-	// with the engine's fixed frame step. Acceleration is 9.8 m/s^2 at the surface and follows an
-	// inverse-square falloff outside the planet; bodies inside use a linear falloff toward the core.
-	void World::integrateWorldBodyMotion()
-	{
-		Watcher watcher("World::body motion");
-		const float delta_time = danikk_engine::getTargetFrameDelay();
-		if(delta_time <= 0.0f) return;
-
-		DynamicArray<PlanetCollisionTarget> planets;
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
-		{
-			const WorldBody& body = data.getWorldBody(body_id);
-			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
-			{
-				if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				const WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
-				if(slot.type_id != WorldBodyComponentTypeId::planet) continue;
-				planets.push(PlanetCollisionTarget{
-					body_id,
-					static_cast<const PlanetComponent*>(slot.getData())});
-			}
-		}
-
-		const WorldBodyId dragged_body_id = getDraggedWorldBodyId(*this);
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
-		{
-			if(body_id == dragged_body_id) continue;
-			bool is_planet = false;
-			for(const PlanetCollisionTarget& target : planets)
-			{
-				if(target.body_id == body_id)
-				{
-					is_planet = true;
-					break;
-				}
-			}
-			if(is_planet) continue;
-
-			WorldBody& body = data.getWorldBody(body_id);
-			glm::dvec3 acceleration(0.0);
-			for(const PlanetCollisionTarget& target : planets)
-			{
-				if(target.body_id == body_id || target.planet->surface_gravity <= 0.0
-					|| target.planet->radius <= 0.0) continue;
-
-				const glm::dvec3 toward_planet = data.getWorldBody(target.body_id).position - body.position;
-				const double distance = glm::length(toward_planet);
-				if(distance <= 0.000001) continue;
-				const double radius = target.planet->radius;
-				const double distance_ratio = radius / distance;
-				const double gravity = distance > radius
-					? target.planet->surface_gravity * distance_ratio * distance_ratio
-					: target.planet->surface_gravity * distance_ratio;
-				acceleration += toward_planet / distance * gravity;
-			}
-
-			body.linear_velocity += acceleration * static_cast<double>(delta_time);
-			body.position += body.linear_velocity * static_cast<double>(delta_time);
-
-			const double angular_speed = glm::length(body.angular_velocity);
-			if(angular_speed > 0.000001)
-			{
-				const glm::dquat rotation_delta = glm::angleAxis(
-					angular_speed * static_cast<double>(delta_time),
-					body.angular_velocity / angular_speed);
-				body.rotation = glm::normalize(rotation_delta * body.rotation);
-			}
-		}
-	}
-
-	// Finds planet components once, then resolves sphere fallback contacts and mesh-surface
-	// contacts against their scalar fields. Contact impulses update body motion.
+	// Collects planet targets and resolves sphere or mesh contacts for each moving body.
 	void World::resolvePlanetCollisions()
 	{
 		Watcher watcher("World::planet collisions");
@@ -421,7 +249,7 @@ namespace danikk_space_engine
 					if(target.body_id == moving_body_id) continue;
 					collideChunkSurfaceWithPlanet(*this, moving_body, chunk, mass_properties, target);
 				}
-				}
 			}
 		}
+	}
 }
