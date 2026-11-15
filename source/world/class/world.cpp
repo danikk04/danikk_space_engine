@@ -278,8 +278,8 @@ namespace danikk_space_engine
 		if(settings.show_face_highlight) drawPolygonHighlights(*this);
 		const LocalPlayerControllerComponent& controller = getLocalPlayerControllerComponent();
 		if(settings.show_world_body_preview
-			&& controller.active_tool == ToolId::build
-			&& controller.selected_build_action == BuildActionId::create_world_body)
+			&& controller.active_tool == ToolId::place
+			&& controller.selected_tool_action == ToolActionId::create_body)
 		{
 			const RaycastHit hit = raycastFromCamera();
 			drawWorldBodyPlacementPreview(*this, hit);

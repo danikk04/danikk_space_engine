@@ -12,19 +12,20 @@ namespace danikk_space_engine
 	enum class ToolId : uint8
 	{
 		none = 0,
-		select,
-		drag,
-		build,
-		erase_faces,
+		terrain,
+		body,
+		place,
 		count
 	};
 
-	enum class BuildActionId : uint8
+	enum class ToolActionId : uint8
 	{
 		none = 0,
-		place_machinegun,
-		create_world_body,
-		extrude_terrain,
+		extrude,
+		erase,
+		drag,
+		machinegun,
+		create_body,
 		count
 	};
 
@@ -35,37 +36,29 @@ namespace danikk_space_engine
 	};
 
 	ToolId stepTool(ToolId current, int direction);
-	BuildActionId stepBuildAction(BuildActionId current, int direction);
+	ToolActionId getFirstToolAction(ToolId tool);
+	ToolActionId stepToolAction(ToolId tool, ToolActionId current, int direction);
 	const char* getToolName(ToolId tool);
-	const char* getBuildActionName(BuildActionId action);
+	const char* getToolActionName(ToolActionId action);
 	ToolApplyResult applyTool(
 		ToolId tool,
+		ToolActionId action,
 		World& world,
 		const DynamicArray<FacePtr>& selected_faces,
 		size_t selected_face_count,
 		bool has_hovered_face,
 		const FacePtr& hovered_face,
-		const RaycastHit& hit,
-		BuildActionId build_action);
-	ToolApplyResult applySelectTool(
+		const RaycastHit& hit);
+	ToolApplyResult applyTerrainTool(World& world, ToolActionId action, const RaycastHit& hit);
+	ToolApplyResult applyBodyTool(
+		World& world,
+		ToolActionId action,
 		const DynamicArray<FacePtr>& selected_faces,
 		size_t selected_face_count,
 		bool has_hovered_face,
 		const FacePtr& hovered_face);
-
-	ToolApplyResult applyNoneTool(
-		World& world,
-		const DynamicArray<FacePtr>& faces,
-		bool using_selection);
-	ToolApplyResult applyEraseTool(
-		World& world,
-		const DynamicArray<FacePtr>& faces,
-		bool using_selection);
-	ToolApplyResult applyBuildTool(
-		World& world,
-		const RaycastHit& hit,
-		BuildActionId action);
-	ToolApplyResult applyBuildPlacementTool(World& world, const RaycastHit& hit, BuildActionId action);
+	ToolApplyResult applyPlaceTool(World& world, const RaycastHit& hit, ToolActionId action);
+	ToolApplyResult applyBodyExtrudeTool(World& world, const FacePtr& face, double distance);
 	void tickDragTool(
 		World& world,
 		LocalPlayerControllerComponent& controller,

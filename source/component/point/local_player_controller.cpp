@@ -135,37 +135,41 @@ namespace danikk_space_engine
 		const float mouse_scroll_delta = getMouseScrollDelta();
 		const bool alt_pressed = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
-		if(!(active_tool == ToolId::drag && left_mouse_down) && alt_pressed)
+		const bool dragging = active_tool == ToolId::body
+			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
+		if(!dragging && alt_pressed)
 		{
-			build_action_scroll_accumulator += mouse_scroll_delta;
-			while(build_action_scroll_accumulator >= 1.0f)
+			tool_action_scroll_accumulator += mouse_scroll_delta;
+			while(tool_action_scroll_accumulator >= 1.0f)
 			{
-				selected_build_action = stepBuildAction(selected_build_action, 1);
-				build_action_scroll_accumulator -= 1.0f;
+				selected_tool_action = stepToolAction(active_tool, selected_tool_action, 1);
+				tool_action_scroll_accumulator -= 1.0f;
 			}
-			while(build_action_scroll_accumulator <= -1.0f)
+			while(tool_action_scroll_accumulator <= -1.0f)
 			{
-				selected_build_action = stepBuildAction(selected_build_action, -1);
-				build_action_scroll_accumulator += 1.0f;
+				selected_tool_action = stepToolAction(active_tool, selected_tool_action, -1);
+				tool_action_scroll_accumulator += 1.0f;
 			}
 		}
-		else if(!(active_tool == ToolId::drag && left_mouse_down))
+		else if(!dragging)
 		{
 			tool_scroll_accumulator += mouse_scroll_delta;
 			while(tool_scroll_accumulator >= 1.0f)
 			{
 				active_tool = stepTool(active_tool, 1);
+				selected_tool_action = getFirstToolAction(active_tool);
 				tool_scroll_accumulator -= 1.0f;
 			}
 			while(tool_scroll_accumulator <= -1.0f)
 			{
 				active_tool = stepTool(active_tool, -1);
+				selected_tool_action = getFirstToolAction(active_tool);
 				tool_scroll_accumulator += 1.0f;
 			}
 		}
 
 		RaycastHit hit = world.raycastFromCamera();
-		if(active_tool == ToolId::drag)
+		if(active_tool == ToolId::body && selected_tool_action == ToolActionId::drag)
 		{
 			tickDragTool(
 				world, *this, hit, true, left_mouse_state,
@@ -180,13 +184,13 @@ namespace danikk_space_engine
 			{
 				ToolApplyResult result = applyTool(
 					active_tool,
+					selected_tool_action,
 					world,
 					selected_faces,
 					selected_face_count,
 					hit.hit,
 					hit.face,
-					hit,
-					selected_build_action);
+					hit);
 				if(result.replace_selected_faces)
 				{
 					selected_faces = static_cast<DynamicArray<FacePtr>&&>(result.selected_faces);

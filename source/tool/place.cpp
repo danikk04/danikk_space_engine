@@ -74,26 +74,24 @@ namespace danikk_space_engine
 
 	}
 
-	// Applies Build actions that use the raycast position. Placement creates either a camera-aligned
-	// machinegun component or a centered cube mesh and collider in a dedicated WorldBody.
-	// Terrain extrusion edits the planet scalar field; ordinary mesh WorldBodies are unchanged.
-	ToolApplyResult applyBuildPlacementTool(World& world, const RaycastHit& hit, BuildActionId action)
+	// Applies placement actions at the raycast position. A machinegun is attached to the hit chunk;
+	// a new cube mesh is placed in its own WorldBody.
+	ToolApplyResult applyPlaceTool(World& world, const RaycastHit& hit, ToolActionId action)
 	{
 		if(!hit.hit) return ToolApplyResult();
 		switch(action)
 		{
-			case BuildActionId::none:
-				break;
-			case BuildActionId::place_machinegun:
+			case ToolActionId::machinegun:
 				createMachinegunAtHit(world, hit);
 				break;
-			case BuildActionId::create_world_body:
+			case ToolActionId::create_body:
 				createWorldBodyCubeAtHit(world, hit);
 				break;
-			case BuildActionId::extrude_terrain:
-				editPlanetGround(world, hit.face, 6.0, true);
-				break;
-			case BuildActionId::count:
+			case ToolActionId::none:
+			case ToolActionId::extrude:
+			case ToolActionId::erase:
+			case ToolActionId::drag:
+			case ToolActionId::count:
 				break;
 		}
 		return ToolApplyResult();
