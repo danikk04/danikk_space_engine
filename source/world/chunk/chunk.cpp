@@ -21,6 +21,8 @@ namespace danikk_space_engine
 				case PointComponentTypeId::machine_gun: return "Machinegun";
 				case PointComponentTypeId::bullet: return "Bullet";
 				case PointComponentTypeId::engine: return "Engine";
+				case PointComponentTypeId::character: return "Character";
+				case PointComponentTypeId::npc_controller: return "NPC controller";
 				default: return "Unknown point component";
 			}
 		}

@@ -7,7 +7,7 @@ namespace danikk_space_engine
 	{
 		constexpr ToolActionId terrain_actions[] = {ToolActionId::extrude, ToolActionId::erase};
 		constexpr ToolActionId body_actions[] = {ToolActionId::extrude, ToolActionId::erase, ToolActionId::drag};
-		constexpr ToolActionId place_actions[] = {ToolActionId::machinegun, ToolActionId::create_body};
+		constexpr ToolActionId place_actions[] = {ToolActionId::machinegun, ToolActionId::create_body, ToolActionId::npc};
 
 		const ToolActionId* getActions(ToolId tool, size_t& count)
 		{
@@ -88,6 +88,7 @@ namespace danikk_space_engine
 			case ToolActionId::drag: return "Drag";
 			case ToolActionId::machinegun: return "Machinegun";
 			case ToolActionId::create_body: return "Body";
+			case ToolActionId::npc: return "NPC";
 			case ToolActionId::count: break;
 		}
 		return "Unknown";

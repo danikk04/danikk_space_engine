@@ -26,6 +26,7 @@ namespace danikk_space_engine
 		drag,
 		machinegun,
 		create_body,
+		npc,
 		count
 	};
 

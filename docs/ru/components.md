@@ -4,7 +4,7 @@
 
 ## `component/point/point.h`
 
-- `PointComponentTypeId` — типы `camera`, `local_player_controller_component`, `machine_gun`, `bullet` и `engine`.
+- `PointComponentTypeId` — типы `camera`, `local_player_controller_component`, `machine_gun`, `bullet`, зарезервированный `engine`, а также `character` и `npc_controller`.
 - `PointComponentType` — размер/выравнивание данных и callbacks `construct`, `move`, `destroy`, `tick`, `frame`.
 - `PointComponentSlot` — привязка к `PointId`, `ChunkId`, типу и области хранения payload; `dispose()` возвращает слот в исходное состояние.
 - `getPointComponentType()` возвращает описание типа.
@@ -27,6 +27,8 @@
 - `component/point/local_player_controller.h` — активный инструмент, выбранный объект, скролл-аккумуляторы и массив `selected_faces`. В `tick()` выполняются raycast, ввод и применение инструмента.
 - `component/point/machinegun.h` — ориентация модели и таймер стрельбы; tick создаёт пули, frame рисует модель.
 - `component/point/bullet.h` — скорость, возраст, время жизни и состояние отложенного удаления; tick двигает пулю и проверяет столкновения, frame отображает её след.
+- `component/point/character.h` — `CharacterComponent` хранит ориентацию, команду движения, здоровье, позу и вложенный `CharacterAppearance`. Общая геометрия задаётся `CharacterDefinition`; `component/point/character_appearance.h` определяет тип отображения и ID скина.
+- `component/point/npc_controller.h` — `NpcControllerComponent` выдаёт команды персонажу и поворачивает голову к камере. Подробности и ограничения: [персонажи](characters.md).
 
 ## Владение и обновление
 

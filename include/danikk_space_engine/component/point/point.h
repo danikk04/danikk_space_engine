@@ -18,6 +18,8 @@ namespace danikk_space_engine
 		machine_gun,
 		bullet,
 		engine,
+		character,
+		npc_controller,
 		count
 	};
 

@@ -17,7 +17,24 @@ namespace danikk_space_engine
 
     	low_poly_sphere_mesh = Mesh(NULL, "sphere");
 		mg42_mesh.loadObj("MG-42", "MG-42");
+		loadCharacterDefinition(character_definition);
+		minecraft_skins.clear();
+		minecraft_skins.pushCtor();
     	container_texture = Texture("container");
+	}
+
+	CharacterSkinId StaticAssetCollection::loadMinecraftSkin(const char* texture_name)
+	{
+		if(minecraft_skins.size() == 0) minecraft_skins.pushCtor();
+		const CharacterSkinId id = static_cast<CharacterSkinId>(minecraft_skins.size());
+		minecraft_skins.pushCtor(texture_name, texture_filters::nearest);
+		return id;
+	}
+
+	Texture& StaticAssetCollection::getMinecraftSkin(CharacterSkinId skin_id)
+	{
+		if(skin_id >= minecraft_skins.size()) formatFatalError("Invalid Minecraft character skin ID %", skin_id);
+		return minecraft_skins[skin_id];
 	}
 
 	/*Texture& BlockAtlas::getAtlas(uint index)

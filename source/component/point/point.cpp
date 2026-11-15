@@ -3,6 +3,8 @@
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
+#include <danikk_space_engine/component/point/character.h>
+#include <danikk_space_engine/component/point/npc_controller.h>
 
 namespace danikk_space_engine
 {
@@ -51,8 +53,20 @@ namespace danikk_space_engine
 				tickBulletComponent,
 				frameBulletComponent
 			},
-			{}  // reserved engine type; no component implementation is registered yet
+			{}, // reserved engine type; no component implementation is registered yet
+			{
+				sizeof(CharacterComponent), alignof(CharacterComponent), true,
+				constructCharacterComponent, moveCharacterComponent, destroyCharacterComponent,
+				tickCharacterComponent, frameCharacterComponent
+			},
+			{
+				sizeof(NpcControllerComponent), alignof(NpcControllerComponent), true,
+				constructNpcControllerComponent, moveNpcControllerComponent, destroyNpcControllerComponent,
+				tickNpcControllerComponent, nullptr
+			}
 		};
+		static_assert(sizeof(point_component_types) / sizeof(point_component_types[0])
+			== static_cast<size_t>(PointComponentTypeId::count));
 	}
 
 	const PointComponentType& getPointComponentType(PointComponentTypeId type_id)
