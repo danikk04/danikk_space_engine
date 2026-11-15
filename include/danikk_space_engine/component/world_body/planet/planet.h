@@ -49,6 +49,7 @@ namespace danikk_space_engine
 		bool isDesired(const glm::ivec3& grid_coordinate) const;
 		// True when a generation record exists, including a known-empty coordinate with no WorldData chunk.
 		bool isGenerated(const glm::ivec3& grid_coordinate) const;
+		bool getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const;
 	};
 
 	struct PlanetComponent

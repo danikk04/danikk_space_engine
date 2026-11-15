@@ -151,4 +151,14 @@ namespace danikk_space_engine
 		const size_t index = findChunkBucket(entries, grid_coordinate, false);
 		return index != static_cast<size_t>(-1) && entries[index].has_record;
 	}
+
+	bool PlanetChunkLookup::getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const
+	{
+		const size_t index = findChunkBucket(entries, grid_coordinate, false);
+		if(index == static_cast<size_t>(-1)) return false;
+		const PlanetChunkLookupEntry& entry = entries[index];
+		if(!entry.has_record || entry.chunk_id == static_cast<ChunkId>(-1)) return false;
+		chunk_id = entry.chunk_id;
+		return true;
+	}
 }
