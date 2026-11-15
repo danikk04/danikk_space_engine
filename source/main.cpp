@@ -2,6 +2,7 @@
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/config.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/localization.h>
 #include <danikk_space_engine/material.h>
@@ -20,12 +21,14 @@ namespace danikk_engine_game
 
 	void end()
 	{
+		config.save();
 		world.shutdown();
 	}
 
     void begin()
     {
 		setWindowTitle("Danikk Space Engine");
+		config.load();
 		launchCheckRSSDiff(static_asset_collection.load());
 		loadMaterials();
 		gui.define();

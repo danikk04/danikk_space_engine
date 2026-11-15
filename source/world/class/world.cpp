@@ -6,6 +6,7 @@
 #include <danikk_space_engine/effects/chunk_boundaries.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/config.h>
 #include <danikk_space_engine/effects/polygon_highlight.h>
 #include <danikk_space_engine/scenario/base.h>
 
@@ -253,10 +254,11 @@ namespace danikk_space_engine
 				}
 			}
 		}
-		drawChunkBoundaries(*this);
-		drawPolygonHighlights(*this);
+		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
+		if(settings.show_face_highlight) drawPolygonHighlights(*this);
 		const LocalPlayerControllerComponent& controller = getLocalPlayerControllerComponent();
-		if(controller.active_tool == ToolId::build
+		if(settings.show_volume_cell_preview
+			&& controller.active_tool == ToolId::build
 			&& controller.selected_build_action == BuildActionId::place_volume_cell)
 		{
 			const RaycastHit hit = raycastFromCamera();
