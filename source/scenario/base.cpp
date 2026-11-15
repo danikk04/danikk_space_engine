@@ -2,8 +2,8 @@
 
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/component/world_body/planet/chunk_save.h>
-#include <danikk_space_engine/component/point/character.h>
-#include <danikk_space_engine/component/point/npc_controller.h>
+#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine

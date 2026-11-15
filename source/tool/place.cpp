@@ -2,7 +2,7 @@
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/world/cube_mesh.h>
 #include <danikk_space_engine/component/point/machinegun.h>
-#include <danikk_space_engine/component/point/npc_controller.h>
+#include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 
 #include <cmath>
@@ -12,7 +12,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		// Converts the hit to body-local coordinates and places an NPC in a dedicated component chunk.
-		// Planet characters stand along radial up; steep or underside surfaces are rejected.
+		// Planet humans stand along radial up; steep or underside surfaces are rejected.
 		void createNpcAtHit(World& world, const RaycastHit& hit)
 		{
 			if(!world.data.isChunkActive(hit.face.chunk_id)) return;

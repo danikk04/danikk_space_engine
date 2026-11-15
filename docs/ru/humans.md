@@ -1,22 +1,23 @@
-# Персонажи и управление НПС
+# Люди и управление НПС
 
-## `component/point/character.h`
+## `component/point/human/human.h`
 
-- `CharacterComponent` привязан к точке ног персонажа; координаты точки, `forward`, `up` и `desired_velocity` относятся к системе владельца-чанка.
-- `appearance` — вложенная структура `CharacterAppearance`, выбирающая тип отображения и ID внешности. Прямого указателя на определение мешей в компоненте нет.
+- `HumanComponent` привязан к точке ног персонажа; координаты точки, `forward`, `up` и `desired_velocity` относятся к системе владельца-чанка.
+- `appearance` — вложенная структура `HumanAppearance`, выбирающая тип отображения и ID внешности. Прямого указателя на определение мешей в компоненте нет.
 - `height` — высота в метрах, по умолчанию 1.8; `health` — здоровье, `movement_speed` — предел скорости.
 - `desired_velocity` — команда на один тик. После чтения обнуляется, поэтому контроллер должен выдавать её регулярно.
 - `head_rotation` — поворот головы относительно корпуса; `walk_phase` и `walk_amplitude` задают анимацию ходьбы.
+- `arm_pose` выбирает позу рук: `relaxed` сохраняет обычный мах при ходьбе, `extended_forward` вытягивает обе руки вперёд для будущего удержания оружия. Поза задаётся явно через `HumanComponent` и пока не связана с компонентом оружия.
 - `follow_ground` по умолчанию включён: перед шагом проверяется опора. Фаза ходьбы зависит от фактического касательного перемещения, при блокировке шага не увеличивается. Корпус поворачивается к направлению движения со скоростью до 4 радиан в секунду.
 - `grounded` показывает наличие опоры, `vertical_speed` хранит скорость вдоль `up` (отрицательную при падении). При потере опоры скорость накапливается под гравитацией; при приземлении сбрасывается. `gravity_acceleration` по умолчанию равна 9.8 м/с² и используется для тела без компонента Planet; на планете берётся `PlanetComponent::surface_gravity`.
-- `CharacterDefinition` хранит шесть `CharacterPartDefinition`: голова, корпус, правая/левая рука, правая/левая нога.
-- `CharacterPartDefinition` содержит общий меш, размеры, положение сустава, смещение центра части относительно сустава и цвет без скина. Размеры и смещения задаются в долях полной высоты персонажа.
+- `HumanDefinition` хранит шесть `HumanPartDefinition`: голова, корпус, правая/левая рука, правая/левая нога.
+- `HumanPartDefinition` содержит общий меш, размеры, положение сустава, смещение центра части относительно сустава и цвет без скина. Размеры и смещения задаются в долях полной высоты персонажа.
 
-### Внешность персонажа (`character.h`)
+### Внешность персонажа (`human.h`)
 
-- `CharacterRenderType` — `minecraft_style` и зарезервированный для будущих моделей `model_3d`.
-- `CharacterAppearance::render_type` по умолчанию равен `minecraft_style`.
-- `CharacterAppearance::skin_id` имеет тип `CharacterSkinId` (`uint32`). Значение интерпретируется только в рамках выбранного типа отображения.
+- `HumanRenderType` — `minecraft_style` и зарезервированный для будущих моделей `model_3d`.
+- `HumanAppearance::render_type` по умолчанию равен `minecraft_style`.
+- `HumanAppearance::skin_id` имеет тип `HumanSkinId` (`uint32`). Значение интерпретируется только в рамках выбранного типа отображения.
 - Для `minecraft_style` это индекс в `static_asset_collection.minecraft_skins`, массиве `DynamicArray<Texture>`. Индекс 0 зарезервирован под стандартную одноцветную внешность; в этой записи пустая текстура, поэтому применяются белая текстура и цвета частей.
 - `StaticAssetCollection::loadMinecraftSkin(name)` загружает текстуру через обычный загрузчик с фильтрацией nearest и возвращает ID. Имя задаётся относительно `data/textures`, без расширения `.png`. Ожидается формат 64×64, руки шириной 4 пикселя, только основной слой.
 - `StaticAssetCollection::getMinecraftSkin(id)` проверяет границы массива и возвращает текстуру. Недействительный ID — критическая ошибка.
@@ -26,13 +27,13 @@
 Пример выбора загруженного скина после загрузки общих ассетов:
 
 ```cpp
-character.appearance.render_type = CharacterRenderType::minecraft_style;
-character.appearance.skin_id = static_asset_collection.loadMinecraftSkin("characters/worker");
+human.appearance.render_type = HumanRenderType::minecraft_style;
+human.appearance.skin_id = static_asset_collection.loadMinecraftSkin("humans/worker");
 ```
 
-## `component/point/npc_controller.h`
+## `component/point/human/npc_controller.h`
 
-- `NpcControllerComponent::character_slot_id` ссылается на компонент персонажа на той же точке и в том же чанке.
+- `NpcControllerComponent::human_slot_id` ссылается на компонент персонажа на той же точке и в том же чанке.
 - `moveTo(position)` устанавливает цель в локальных координатах чанка; `stop()` снимает цель. Оба метода отключают случайные прогулки.
 - `has_movement_target` включает прямое движение к цели по касательной плоскости; вертикальная часть направления игнорируется.
 - `wander_enabled` по умолчанию включён. `wander_center` запоминает место появления, `wander_radius` ограничивает область случайных целей (по умолчанию 4 м). `wander_timer` чередует прогулки и паузы, а также ограничивает время попытки достичь заблокированной цели.
@@ -45,7 +46,7 @@ character.appearance.skin_id = static_asset_collection.loadMinecraftSkin("charac
 
 ```text
 StaticAssetCollection::load(): подготовить общий внешний вид
-    loadCharacterDefinition(): задать размеры, суставы и цвета частей
+    loadHumanDefinition(): задать размеры, суставы и цвета частей
         loadPartMesh(): построить шесть граней куба с UV соответствующего участка скина
 
 startBaseScenario(): создать камеру и тестового НПС
@@ -60,7 +61,7 @@ applyPlaceTool(): применить действие размещения
             createNpc(): создать НПС в отдельном чанке
 
 Chunk::tick(): обновить компоненты точки
-    tickCharacterComponent(): исполнить предыдущую команду движения и обновить позу
+    tickHumanComponent(): исполнить предыдущую команду движения и обновить позу
         [для владельца с Planet: выбрать радиальное направление вверх]
         [ограничить скорость и убрать движение вдоль up]
         moveWithGround(): двигаться по опоре либо интегрировать вертикальное падение
@@ -71,7 +72,7 @@ Chunk::tick(): обновить компоненты точки
                     World::raycast(): найти пересечение с поверхностью на пути вниз
         [обновить точку, направление корпуса и анимацию по пройденному расстоянию]
     tickNpcControllerComponent(): подготовить следующую команду
-        [проверить совпадение точки и чанка с CharacterComponent]
+        [проверить совпадение точки и чанка с HumanComponent]
         updateWandering(): чередовать случайные цели и паузы, прерывать слишком долгие попытки
             randomUnit(): получить псевдослучайное число из состояния данного НПС
         [направить персонажа к цели с ограничением шага до цели]
@@ -81,22 +82,22 @@ Chunk::tick(): обновить компоненты точки
                 randomUnit(): выбрать направление и длительность взгляда
 
 Chunk::frame(): отрисовать компоненты
-    frameCharacterComponent(): построить общий трансформ персонажа
+    frameHumanComponent(): построить общий трансформ персонажа
         World::getPointWorldPosition(): получить позицию ног с учётом WorldBody
         World::getCameraWorldPosition(): перевести позицию в координаты относительно камеры
         [применить базис тела и высоту]
-        drawCharacterAppearance(): выбрать способ отображения по appearance.render_type
+        drawHumanAppearance(): выбрать способ отображения по appearance.render_type
             [для minecraft_style]
-                drawMinecraftCharacter(): нарисовать шесть частей с позой и выбранным скином
+                drawMinecraftHuman(): нарисовать шесть частей с позой и выбранным скином
                     StaticAssetCollection::getMinecraftSkin(): получить текстуру по appearance.skin_id
             [для model_3d: предупредить и нарисовать стандартного персонажа с ID 0]
 ```
 
-- `source/component/point/character.cpp` — жизненный цикл, движение и подготовка общего трансформа.
-- `source/component/point/character_appearance.cpp` — выбор отрисовщика и отображение частей с выбранной текстурой.
-- `source/component/point/character_mesh.cpp` — общая кубическая геометрия и UV 64×64.
-- `source/component/point/npc_controller.cpp` — жизненный цикл и команды НПС.
-- `source/component/point/npc_spawn.cpp` — общая функция создания НПС.
+- `source/component/point/human/human.cpp` — жизненный цикл, движение и подготовка общего трансформа.
+- `source/component/point/human/human_appearance.cpp` — выбор отрисовщика и отображение частей с выбранной текстурой.
+- `source/component/point/human/human_mesh.cpp` — общая кубическая геометрия и UV 64×64.
+- `source/component/point/human/npc_controller.cpp` — жизненный цикл и команды НПС.
+- `source/component/point/human/npc_spawn.cpp` — общая функция создания НПС.
 - `source/component/point/point.cpp` — регистрация обоих типов и callbacks.
 - `source/scenario/base.cpp` — создание одного гуляющего НПС возле места появления камеры.
 

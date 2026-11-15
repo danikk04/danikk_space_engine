@@ -2,9 +2,14 @@
 
 Компоненты хранятся в слотах `WorldData`, а таблицы типов предоставляют функции жизненного цикла и обновления. Слот содержит ID владельца, тип и payload: inline до 32 байт или отдельно выделенная память.
 
+## `id.h`
+
+- Содержит целочисленные алиасы ID точек, чанков, тел мира, треугольников и слотов компонентов.
+- Enum-типы компонентов остаются в заголовках своих подсистем.
+
 ## `component/point/point.h`
 
-- `PointComponentTypeId` — типы `camera`, `local_player_controller_component`, `machine_gun`, `bullet`, зарезервированный `engine`, а также `character` и `npc_controller`.
+- `PointComponentTypeId` — типы `camera`, `local_player_controller_component`, `machine_gun`, `bullet`, зарезервированный `engine`, а также `human` и `npc_controller`.
 - `PointComponentType` — размер/выравнивание данных и callbacks `construct`, `move`, `destroy`, `tick`, `frame`.
 - `PointComponentSlot` — привязка к `PointId`, `ChunkId`, типу и области хранения payload; `dispose()` возвращает слот в исходное состояние.
 - `getPointComponentType()` возвращает описание типа.
@@ -27,8 +32,8 @@
 - `component/point/local_player_controller.h` — активный инструмент, выбранный объект, скролл-аккумуляторы и массив `selected_faces`. В `tick()` выполняются raycast, ввод и применение инструмента.
 - `component/point/machinegun.h` — ориентация модели и таймер стрельбы; tick создаёт пули, frame рисует модель.
 - `component/point/bullet.h` — скорость, возраст, время жизни и состояние отложенного удаления; tick двигает пулю и проверяет столкновения, frame отображает её след.
-- `component/point/character.h` — `CharacterComponent` хранит ориентацию, команду движения, здоровье, позу и вложенный `CharacterAppearance`; там же объявлены тип отображения и ID скина. Общая геометрия задаётся `CharacterDefinition`.
-- `component/point/npc_controller.h` — `NpcControllerComponent` выдаёт команды персонажу и поворачивает голову к камере. Подробности и ограничения: [персонажи](characters.md).
+- `component/point/human/human.h` — `HumanComponent` хранит ориентацию, команду движения, здоровье, позу и вложенный `HumanAppearance`; там же объявлены тип отображения и ID скина. Общая геометрия задаётся `HumanDefinition`.
+- `component/point/human/npc_controller.h` — `NpcControllerComponent` выдаёт команды персонажу и поворачивает голову к камере. Подробности и ограничения: [персонажи](humans.md).
 
 ## Владение и обновление
 

@@ -7,7 +7,7 @@ namespace danikk_space_engine
 	class World;
 	class WorldPhysics;
 
-	struct CharacterComponent;
+	struct HumanComponent;
 	struct FacePtr;
 	struct GeneratedChunkData;
 	struct GraphComponentSlot;

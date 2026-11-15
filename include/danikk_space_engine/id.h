@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	using GroundTriangleId = uint32;
 	using MaterialId = uint32;
 	using ShapeId = uint32;
-	using CharacterSkinId = uint32;
+	using HumanSkinId = uint32;
 
 	using PointComponentSlotId = uint32;
 	using GraphComponentSlotId = uint32;

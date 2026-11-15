@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/component/point/character.h>
+#include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/world/world.h>
 
@@ -31,79 +31,79 @@ namespace danikk_space_engine
 		// Keeps horizontal steps on supported slopes. Once support under the current feet is lost,
 		// integrates vertical speed and sweeps the entire downward travel before accepting a landing.
 		void moveWithGround(World& world, const Chunk& chunk, const WorldBody& body,
-			CharacterComponent& character, Point& point, const vec3& velocity, float gravity, float dt)
+			HumanComponent& human, Point& point, const vec3& velocity, float gravity, float dt)
 		{
-			if(!character.follow_ground)
+			if(!human.follow_ground)
 			{
 				point.position += velocity * dt;
-				character.vertical_speed = 0.0f;
-				character.grounded = false;
+				human.vertical_speed = 0.0f;
+				human.grounded = false;
 				return;
 			}
 			vec3 support;
-			if(character.vertical_speed <= 0.0f
-				&& findGroundPosition(world, chunk, body, character.up, point.position, support)
-				&& std::abs(glm::dot(support - point.position, character.up)) <= 0.08f)
+			if(human.vertical_speed <= 0.0f
+				&& findGroundPosition(world, chunk, body, human.up, point.position, support)
+				&& std::abs(glm::dot(support - point.position, human.up)) <= 0.08f)
 			{
 				point.position = support;
-				if(findGroundPosition(world, chunk, body, character.up, point.position + velocity * dt, support))
+				if(findGroundPosition(world, chunk, body, human.up, point.position + velocity * dt, support))
 					point.position = support;
-				character.vertical_speed = 0.0f;
-				character.grounded = true;
+				human.vertical_speed = 0.0f;
+				human.grounded = true;
 				return;
 			}
 
-			character.grounded = false;
-			const float vertical_displacement = character.vertical_speed * dt - 0.5f * gravity * dt * dt;
-			character.vertical_speed -= gravity * dt;
+			human.grounded = false;
+			const float vertical_displacement = human.vertical_speed * dt - 0.5f * gravity * dt * dt;
+			human.vertical_speed -= gravity * dt;
 			if(vertical_displacement <= 0.0f
-				&& findGroundPosition(world, chunk, body, character.up, point.position, support,
+				&& findGroundPosition(world, chunk, body, human.up, point.position, support,
 					0.0f, -vertical_displacement + 0.02f))
 			{
 				point.position = support;
-				character.vertical_speed = 0.0f;
-				character.grounded = true;
+				human.vertical_speed = 0.0f;
+				human.grounded = true;
 			}
 			else
 			{
-				point.position += character.up * vertical_displacement;
+				point.position += human.up * vertical_displacement;
 			}
 		}
 	}
 
-	void constructCharacterComponent(void* destination, const void* init_data)
+	void constructHumanComponent(void* destination, const void* init_data)
 	{
-		if(destination == nullptr) formatFatalError("Character construction received null destination");
-		new (destination) CharacterComponent(init_data == nullptr
-			? CharacterComponent() : *static_cast<const CharacterComponent*>(init_data));
+		if(destination == nullptr) formatFatalError("Human construction received null destination");
+		new (destination) HumanComponent(init_data == nullptr
+			? HumanComponent() : *static_cast<const HumanComponent*>(init_data));
 	}
 
-	void moveCharacterComponent(void* destination, void* source)
+	void moveHumanComponent(void* destination, void* source)
 	{
-		if(destination == nullptr || source == nullptr) formatFatalError("Character move received null memory");
-		new (destination) CharacterComponent(*static_cast<CharacterComponent*>(source));
-		static_cast<CharacterComponent*>(source)->~CharacterComponent();
+		if(destination == nullptr || source == nullptr) formatFatalError("Human move received null memory");
+		new (destination) HumanComponent(*static_cast<HumanComponent*>(source));
+		static_cast<HumanComponent*>(source)->~HumanComponent();
 	}
 
-	void destroyCharacterComponent(void* data)
+	void destroyHumanComponent(void* data)
 	{
-		if(data == nullptr) formatFatalError("Character destruction received null data");
-		static_cast<CharacterComponent*>(data)->~CharacterComponent();
+		if(data == nullptr) formatFatalError("Human destruction received null data");
+		static_cast<HumanComponent*>(data)->~HumanComponent();
 	}
 
 	// Consumes a chunk-local movement command, updates the point and advances walking by distance.
 	// Planet ownership supplies radial up and gravity. Lost support triggers swept vertical falling;
 	// walking animation follows actual horizontal movement, not the fall distance.
-	void tickCharacterComponent(PointComponentSlot& slot, World& world)
+	void tickHumanComponent(PointComponentSlot& slot, World& world)
 	{
-		Watcher watcher("CharacterComponent::tick");
+		Watcher watcher("HumanComponent::tick");
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id))
-			formatFatalError("Character references an invalid point or chunk");
-		CharacterComponent& character = *static_cast<CharacterComponent*>(slot.getData());
+			formatFatalError("Human references an invalid point or chunk");
+		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
 		Point& point = world.data.getPoint(slot.point_id);
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
-		float gravity = glm::max(character.gravity_acceleration, 0.0f);
+		float gravity = glm::max(human.gravity_acceleration, 0.0f);
 		for(WorldBodyComponentSlotId component_id : body.component_slot_ids)
 		{
 			if(!world.data.isWorldBodyComponentSlotActive(component_id)) continue;
@@ -112,54 +112,54 @@ namespace danikk_space_engine
 				world.data.getWorldBodyComponentSlot(component_id).getData());
 			gravity = static_cast<float>(glm::max(planet.surface_gravity, 0.0));
 			const glm::dvec3 radial = chunk.position + glm::dvec3(point.position);
-			if(glm::length(radial) > 1e-6) character.up = vec3(glm::normalize(radial));
+			if(glm::length(radial) > 1e-6) human.up = vec3(glm::normalize(radial));
 			break;
 		}
-		if(glm::length(character.up) < 1e-6f) character.up = vec3(0, 0, 1);
-		character.up = glm::normalize(character.up);
+		if(glm::length(human.up) < 1e-6f) human.up = vec3(0, 0, 1);
+		human.up = glm::normalize(human.up);
 		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
-		vec3 velocity = character.health > 0.0f ? character.desired_velocity : vec3(0.0f);
-		character.desired_velocity = vec3(0.0f);
-		velocity -= character.up * glm::dot(velocity, character.up);
+		vec3 velocity = human.health > 0.0f ? human.desired_velocity : vec3(0.0f);
+		human.desired_velocity = vec3(0.0f);
+		velocity -= human.up * glm::dot(velocity, human.up);
 		const float speed = glm::length(velocity);
-		const float max_speed = glm::max(character.movement_speed, 0.0f);
+		const float max_speed = glm::max(human.movement_speed, 0.0f);
 		if(speed > max_speed && speed > 0.0f) velocity *= max_speed / speed;
 		const vec3 old_position = point.position;
-		moveWithGround(world, chunk, body, character, point, velocity, gravity, dt);
+		moveWithGround(world, chunk, body, human, point, velocity, gravity, dt);
 		vec3 displacement = point.position - old_position;
-		displacement -= character.up * glm::dot(displacement, character.up);
+		displacement -= human.up * glm::dot(displacement, human.up);
 		const float distance = glm::length(displacement);
-		character.forward -= character.up * glm::dot(character.forward, character.up);
-		if(glm::length(character.forward) < 1e-6f)
+		human.forward -= human.up * glm::dot(human.forward, human.up);
+		if(glm::length(human.forward) < 1e-6f)
 		{
-			const vec3 reference = std::abs(character.up.y) < 0.9f ? vec3(0, 1, 0) : vec3(1, 0, 0);
-			character.forward = reference - character.up * glm::dot(reference, character.up);
+			const vec3 reference = std::abs(human.up.y) < 0.9f ? vec3(0, 1, 0) : vec3(1, 0, 0);
+			human.forward = reference - human.up * glm::dot(reference, human.up);
 		}
-		character.forward = glm::normalize(character.forward);
+		human.forward = glm::normalize(human.forward);
 		if(distance > 1e-6f)
 		{
 			const vec3 heading = displacement / distance;
-			const float angle = std::atan2(glm::dot(character.up, glm::cross(character.forward, heading)),
-				glm::clamp(glm::dot(character.forward, heading), -1.0f, 1.0f));
-			character.forward = glm::angleAxis(glm::clamp(angle, -dt * 4.0f, dt * 4.0f), character.up)
-				* character.forward;
+			const float angle = std::atan2(glm::dot(human.up, glm::cross(human.forward, heading)),
+				glm::clamp(glm::dot(human.forward, heading), -1.0f, 1.0f));
+			human.forward = glm::angleAxis(glm::clamp(angle, -dt * 4.0f, dt * 4.0f), human.up)
+				* human.forward;
 		}
-		character.walk_phase = std::fmod(character.walk_phase + distance * 6.0f, 6.283185307f);
+		human.walk_phase = std::fmod(human.walk_phase + distance * 6.0f, 6.283185307f);
 		const float actual_speed = dt > 0.0f ? distance / dt : 0.0f;
 		const float target_amplitude = max_speed > 0.0f ? glm::min(actual_speed / max_speed, 1.0f) * 0.6f : 0.0f;
-		character.walk_amplitude = glm::mix(character.walk_amplitude, target_amplitude, glm::min(dt * 10.0f, 1.0f));
+		human.walk_amplitude = glm::mix(human.walk_amplitude, target_amplitude, glm::min(dt * 10.0f, 1.0f));
 	}
 
-	// Builds the common character transform and dispatches rendering through its appearance type.
+	// Builds the common human transform and dispatches rendering through its appearance type.
 	// World translation is camera-relative in double before conversion to the float render matrix.
-	void frameCharacterComponent(PointComponentSlot& slot, World& world)
+	void frameHumanComponent(PointComponentSlot& slot, World& world)
 	{
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id)) return;
-		const CharacterComponent& character = *static_cast<const CharacterComponent*>(slot.getData());
+		const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
-		const vec3 up = vec3(body.rotation * glm::dvec3(character.up));
-		const vec3 forward = vec3(body.rotation * glm::dvec3(character.forward));
+		const vec3 up = vec3(body.rotation * glm::dvec3(human.up));
+		const vec3 forward = vec3(body.rotation * glm::dvec3(human.forward));
 		const vec3 right = glm::normalize(glm::cross(forward, up));
 		mat4 orientation(1.0f);
 		orientation[0] = vec4(right, 0);
@@ -167,7 +167,7 @@ namespace danikk_space_engine
 		orientation[2] = vec4(up, 0);
 		const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 		const mat4 base = glm::translate(mat4(1.0f), vec3(position - world.getCameraWorldPosition()))
-			* orientation * glm::scale(mat4(1.0f), vec3(character.height));
-		drawCharacterAppearance(character, base);
+			* orientation * glm::scale(mat4(1.0f), vec3(human.height));
+		drawHumanAppearance(human, base);
 	}
 }

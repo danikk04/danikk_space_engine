@@ -8,7 +8,7 @@
 #include <danikk_engine/style.h>
 #include <danikk_engine/mesh.h>
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/component/point/character.h>
+#include <danikk_space_engine/component/point/human/human.h>
 
 namespace danikk_space_engine
 {
@@ -20,7 +20,7 @@ namespace danikk_space_engine
 		Mesh low_poly_sphere_mesh;
 		Mesh cube_mesh;
 		Mesh mg42_mesh;
-		CharacterDefinition character_definition;
+		HumanDefinition human_definition;
 		// Skin 0 is the default coloured appearance; other entries are shared 64x64 textures.
 		DynamicArray<Texture> minecraft_skins;
 
@@ -28,8 +28,8 @@ namespace danikk_space_engine
 		Texture container_texture;
 
 		void load();
-		CharacterSkinId loadMinecraftSkin(const char* texture_name);
-		Texture& getMinecraftSkin(CharacterSkinId skin_id);
+		HumanSkinId loadMinecraftSkin(const char* texture_name);
+		Texture& getMinecraftSkin(HumanSkinId skin_id);
 	};
 
 	/*class BlockAtlas

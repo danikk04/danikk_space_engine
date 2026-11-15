@@ -6,24 +6,30 @@
 
 namespace danikk_space_engine
 {
-	enum class CharacterRenderType : uint8
+	enum class HumanRenderType : uint8
 	{
 		minecraft_style,
 		model_3d
 	};
 
-	struct CharacterAppearance
+	struct HumanAppearance
 	{
-		CharacterRenderType render_type = CharacterRenderType::minecraft_style;
-		CharacterSkinId skin_id = 0;
+		HumanRenderType render_type = HumanRenderType::minecraft_style;
+		HumanSkinId skin_id = 0;
 	};
 
-	enum class CharacterPart : uint8
+	enum class HumanPart : uint8
 	{
 		head, torso, right_arm, left_arm, right_leg, left_leg, count
 	};
 
-	struct CharacterPartDefinition
+	enum class HumanArmPose : uint8
+	{
+		relaxed,
+		extended_forward
+	};
+
+	struct HumanPartDefinition
 	{
 		Mesh mesh;
 		vec3 size = vec3(1.0f);
@@ -32,14 +38,15 @@ namespace danikk_space_engine
 		vec3 color = vec3(1.0f);
 	};
 
-	struct CharacterDefinition
+	struct HumanDefinition
 	{
-		CharacterPartDefinition parts[static_cast<size_t>(CharacterPart::count)];
+		HumanPartDefinition parts[static_cast<size_t>(HumanPart::count)];
 	};
 
-	struct CharacterComponent
+	struct HumanComponent
 	{
-		CharacterAppearance appearance;
+		HumanAppearance appearance;
+		HumanArmPose arm_pose = HumanArmPose::relaxed;
 		vec3 forward = vec3(0.0f, 1.0f, 0.0f);
 		vec3 up = vec3(0.0f, 0.0f, 1.0f);
 		vec3 desired_velocity = vec3(0.0f); // Owner-chunk coordinates, metres per second.
@@ -55,11 +62,11 @@ namespace danikk_space_engine
 		bool follow_ground = true;
 	};
 
-	void loadCharacterDefinition(CharacterDefinition& definition);
-	void constructCharacterComponent(void* destination, const void* init_data);
-	void moveCharacterComponent(void* destination, void* source);
-	void destroyCharacterComponent(void* data);
-	void tickCharacterComponent(PointComponentSlot& slot, World& world);
-	void frameCharacterComponent(PointComponentSlot& slot, World& world);
-	void drawCharacterAppearance(const CharacterComponent& character, const mat4& world_matrix);
+	void loadHumanDefinition(HumanDefinition& definition);
+	void constructHumanComponent(void* destination, const void* init_data);
+	void moveHumanComponent(void* destination, void* source);
+	void destroyHumanComponent(void* data);
+	void tickHumanComponent(PointComponentSlot& slot, World& world);
+	void frameHumanComponent(PointComponentSlot& slot, World& world);
+	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix);
 }

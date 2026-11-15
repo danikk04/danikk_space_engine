@@ -7,8 +7,8 @@ namespace danikk_space_engine
 {
 	struct NpcControllerComponent
 	{
-		PointComponentSlotId character_slot_id = static_cast<PointComponentSlotId>(-1);
-		vec3 target_position = vec3(0.0f); // Same chunk-local coordinates as the character point.
+		PointComponentSlotId human_slot_id = static_cast<PointComponentSlotId>(-1);
+		vec3 target_position = vec3(0.0f); // Same chunk-local coordinates as the human point.
 		bool has_movement_target = false;
 		bool look_at_camera = false;
 		bool enabled = true;

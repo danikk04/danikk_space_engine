@@ -3,8 +3,8 @@
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
-#include <danikk_space_engine/component/point/character.h>
-#include <danikk_space_engine/component/point/npc_controller.h>
+#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/human/npc_controller.h>
 
 namespace danikk_space_engine
 {
@@ -55,9 +55,9 @@ namespace danikk_space_engine
 			},
 			{}, // reserved engine type; no component implementation is registered yet
 			{
-				sizeof(CharacterComponent), alignof(CharacterComponent), true,
-				constructCharacterComponent, moveCharacterComponent, destroyCharacterComponent,
-				tickCharacterComponent, frameCharacterComponent
+				sizeof(HumanComponent), alignof(HumanComponent), true,
+				constructHumanComponent, moveHumanComponent, destroyHumanComponent,
+				tickHumanComponent, frameHumanComponent
 			},
 			{
 				sizeof(NpcControllerComponent), alignof(NpcControllerComponent), true,

@@ -1,4 +1,4 @@
-#include <danikk_space_engine/component/point/character.h>
+#include <danikk_space_engine/component/point/human/human.h>
 
 namespace danikk_space_engine
 {
@@ -50,14 +50,14 @@ namespace danikk_space_engine
 
 	// Loads shared meshes and defines proportions, pivots and fallback colours in units of body height.
 	// Skin rectangles use separate left/right limb areas of a 64x64 texture, without the clothing layer.
-	void loadCharacterDefinition(CharacterDefinition& definition)
+	void loadHumanDefinition(HumanDefinition& definition)
 	{
 		const glm::ivec2 origins[] = {{0, 0}, {16, 16}, {40, 16}, {32, 48}, {0, 16}, {16, 48}};
-		for(size_t index = 0; index < static_cast<size_t>(CharacterPart::count); index++)
+		for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
 		{
-			CharacterPartDefinition& part = definition.parts[index];
-			const bool head = index == static_cast<size_t>(CharacterPart::head);
-			const bool torso = index == static_cast<size_t>(CharacterPart::torso);
+			HumanPartDefinition& part = definition.parts[index];
+			const bool head = index == static_cast<size_t>(HumanPart::head);
+			const bool torso = index == static_cast<size_t>(HumanPart::torso);
 			const int width = head || torso ? 8 : 4;
 			const int height = head ? 8 : 12;
 			const int depth = head ? 8 : 4;

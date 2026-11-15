@@ -4,7 +4,7 @@
 
 ## `shape/shape.h`
 
-- `ShapeId` — ID формы.
+- `ShapeId` из `id.h` — ID формы.
 - `ShapeType` — типы `none`, `cube`, `sphere`.
 - `ShapeDefinition` — фабрика меша и кэш `ShapeMesh` для размеров.
 - `initShapeTable()`, `findShape()` и `clearShapeMeshCache()` управляют таблицей форм и кэшем.
