@@ -94,10 +94,27 @@ namespace danikk_space_engine
 		Watcher tick_scope("tick");
 		{
 			Watcher world_body_components_scope("WorldBody components");
-			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+			const DynamicArray<WorldBodyId> world_body_ids(data.getUsedWorldBodyIds());
+			DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
+			DynamicArray<ChunkId> chunk_ids;
+			for(WorldBodyId body_id : world_body_ids)
 			{
-				const WorldBody& body = data.getWorldBody(body_id);
-				for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
+				if(!data.isWorldBodyActive(body_id)) continue;
+				component_slot_ids.clear();
+				chunk_ids.clear();
+				{
+					const WorldBody& body = data.getWorldBody(body_id);
+					for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
+					{
+						component_slot_ids.push(slot_id);
+					}
+					for(ChunkId chunk_id : body.chunk_ids)
+					{
+						chunk_ids.push(chunk_id);
+					}
+				}
+
+				for(WorldBodyComponentSlotId slot_id : component_slot_ids)
 				{
 					if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
 					WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
@@ -108,8 +125,9 @@ namespace danikk_space_engine
 						type.tick(slot, *this);
 					}
 				}
-				for(ChunkId chunk_id : body.chunk_ids)
+				for(ChunkId chunk_id : chunk_ids)
 				{
+					if(!data.isChunkActive(chunk_id)) continue;
 					data.getChunk(chunk_id).tick(*this);
 				}
 			}
@@ -119,6 +137,8 @@ namespace danikk_space_engine
 			if(data.isPointActive(point_id)) data.destroyPoint(point_id);
 		}
 		pending_point_destruction_ids.clear();
+		integrateWorldBodyMotion();
+		resolvePlanetCollisions();
 	}
 
 	void World::deferPointDestruction(PointId point_id)

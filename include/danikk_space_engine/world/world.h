@@ -37,6 +37,8 @@ namespace danikk_space_engine
 		bool chunk_generation_requests_dirty = false;
 
 		void tick();
+		void integrateWorldBodyMotion();
+		void resolvePlanetCollisions();
 		void deferPointDestruction(PointId point_id);
 		void replaceChunkGenerationRequests(
 			WorldBodyComponentSlotId component_slot_id,

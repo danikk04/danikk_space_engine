@@ -5,6 +5,7 @@ sources += files(
 	'edit.cpp',
 	'volume_cell.cpp',
 	'class/world.cpp',
+	'class/collision.cpp',
 	'data/create.cpp',
 	'data/add.cpp',
 	'data/destroy.cpp',

@@ -17,6 +17,7 @@ namespace danikk_space_engine
 	{
 		double radius = default_planet_radius;
 		double chunk_load_radius = planet_chunk_load_radius;
+		double surface_gravity = 9.8;
 		uint64 noise_seed = 0;
 	};
 
@@ -56,6 +57,7 @@ namespace danikk_space_engine
 	{
 		double radius = default_planet_radius;
 		double chunk_load_radius = planet_chunk_load_radius;
+		double surface_gravity = 9.8;
 		uint64 noise_seed = 0;
 		glm::dvec3 last_chunk_update_position = glm::dvec3(0.0);
 		uint64 terrain_revision = 0;

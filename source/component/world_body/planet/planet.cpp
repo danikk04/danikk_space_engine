@@ -23,6 +23,7 @@ namespace danikk_space_engine
 			PlanetComponent& planet = *static_cast<PlanetComponent*>(destination);
 			planet.radius = settings.radius;
 			planet.chunk_load_radius = settings.chunk_load_radius;
+			planet.surface_gravity = settings.surface_gravity;
 			planet.noise_seed = settings.noise_seed;
 		}
 	}
