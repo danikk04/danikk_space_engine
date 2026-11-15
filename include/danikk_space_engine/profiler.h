@@ -26,6 +26,8 @@ namespace danikk_space_engine
 		danikk_framework::DynamicArray<Node> nodes;
 		uint64 report_tick_count = 0;
 		uint64 report_interval_milliseconds = 1000;
+		bool report_has_slow_tick = false;
+		std::chrono::steady_clock::time_point tick_start_time;
 		std::chrono::steady_clock::time_point report_start_time;
 
 		uint32 beginScope(const char* name);

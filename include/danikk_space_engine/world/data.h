@@ -15,13 +15,13 @@ namespace danikk_space_engine
 {
 	class WorldData
 	{
-		WorldResourcePool<Point, PointId> points;
-		WorldResourcePool<GroundTriangle, GroundTriangleId> ground_triangles;
-		WorldResourcePool<Chunk, ChunkId> chunks;
-		WorldResourcePool<WorldBody, WorldBodyId> world_bodies;
-		WorldResourcePool<WorldBodyComponentSlot, WorldBodyComponentSlotId> world_body_components;
-		WorldResourcePool<PointComponentSlot, PointComponentSlotId> point_components;
-		WorldResourcePool<GraphComponentSlot, GraphComponentSlotId> graph_components;
+		WorldResourcePool<Point, PointId> points{"Point"};
+		WorldResourcePool<GroundTriangle, GroundTriangleId> ground_triangles{"GroundTriangle"};
+		WorldResourcePool<Chunk, ChunkId> chunks{"Chunk"};
+		WorldResourcePool<WorldBody, WorldBodyId> world_bodies{"WorldBody"};
+		WorldResourcePool<WorldBodyComponentSlot, WorldBodyComponentSlotId> world_body_components{"WorldBodyComponentSlot"};
+		WorldResourcePool<PointComponentSlot, PointComponentSlotId> point_components{"PointComponentSlot"};
+		WorldResourcePool<GraphComponentSlot, GraphComponentSlotId> graph_components{"GraphComponentSlot"};
 		uint64 next_world_body_component_generation_id = 1;
 
 	public:

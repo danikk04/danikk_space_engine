@@ -7,19 +7,50 @@ namespace danikk_space_engine
 	size_t findWorldResourceId(const DynamicArray<uint32>& ids, uint32 id);
 	void insertWorldResourceId(DynamicArray<uint32>& ids, uint32 id);
 	bool eraseWorldResourceId(DynamicArray<uint32>& ids, uint32 id);
+	void logWorldResourceCapacityChange(const char* resource_name, const char* array_name,
+		size_t old_capacity, size_t new_capacity);
 
 	/* Owns stable indexed slots and the active/free ID lists for one resource type. */
 	template<typename resource_t, typename id_t>
 	class WorldResourcePool
 	{
+		const char* resource_name;
 		DynamicArray<resource_t> slots;
 		DynamicArray<id_t> active_ids;
 		DynamicArray<size_t> active_indices;
 		DynamicArray<id_t> free_ids;
 
+		// Captures all backing arrays so implicit growth in push/pop/resize is covered too.
+		struct CapacityWatcher
+		{
+			const WorldResourcePool& pool;
+			size_t slots_capacity;
+			size_t active_ids_capacity;
+			size_t active_indices_capacity;
+			size_t free_ids_capacity;
+
+			explicit CapacityWatcher(const WorldResourcePool& pool)
+				: pool(pool), slots_capacity(pool.slots.capacity()),
+				  active_ids_capacity(pool.active_ids.capacity()),
+				  active_indices_capacity(pool.active_indices.capacity()),
+				  free_ids_capacity(pool.free_ids.capacity()) {}
+
+			~CapacityWatcher()
+			{
+				logWorldResourceCapacityChange(pool.resource_name, "slots", slots_capacity, pool.slots.capacity());
+				logWorldResourceCapacityChange(pool.resource_name, "active_ids", active_ids_capacity, pool.active_ids.capacity());
+				logWorldResourceCapacityChange(pool.resource_name, "active_indices", active_indices_capacity, pool.active_indices.capacity());
+				logWorldResourceCapacityChange(pool.resource_name, "free_ids", free_ids_capacity, pool.free_ids.capacity());
+			}
+		};
+
 	public:
+		// The name is retained by the pool; use a string literal or another static string.
+		explicit WorldResourcePool(const char* resource_name) : resource_name(resource_name) {}
+
 		id_t create()
 		{
+			CapacityWatcher capacity_watcher(*this);
 			if(free_ids.size() > 0)
 			{
 				const id_t id = free_ids.pop();
@@ -38,6 +69,7 @@ namespace danikk_space_engine
 		bool free(id_t id)
 		{
 			if(!isActive(id)) return false;
+			CapacityWatcher capacity_watcher(*this);
 			const size_t active_index = active_indices[id];
 			const size_t last_index = active_ids.size() - 1;
 			if(active_index != last_index)
@@ -66,6 +98,7 @@ namespace danikk_space_engine
 
 		void clear()
 		{
+			CapacityWatcher capacity_watcher(*this);
 			slots.clear();
 			active_ids.clear();
 			active_indices.clear();
@@ -74,6 +107,7 @@ namespace danikk_space_engine
 
 		void releaseMemory()
 		{
+			CapacityWatcher capacity_watcher(*this);
 			clear();
 			slots = DynamicArray<resource_t>();
 			active_ids = DynamicArray<id_t>();

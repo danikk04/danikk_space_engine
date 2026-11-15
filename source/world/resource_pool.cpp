@@ -1,7 +1,16 @@
+#include <danikk_framework/log.h>
 #include <danikk_space_engine/world/resource_pool.h>
 
 namespace danikk_space_engine
 {
+	void logWorldResourceCapacityChange(const char* resource_name, const char* array_name,
+		size_t old_capacity, size_t new_capacity)
+	{
+		if(old_capacity == new_capacity) return;
+		formatLogInfo("WorldData pool % (%): capacity % -> %",
+			resource_name, array_name, old_capacity, new_capacity);
+	}
+
 	size_t findWorldResourceId(const DynamicArray<uint32>& ids, uint32 id)
 	{
 		size_t first = 0;

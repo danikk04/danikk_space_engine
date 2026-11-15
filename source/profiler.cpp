@@ -78,16 +78,22 @@ namespace danikk_space_engine
 	{
 		// Tick counters are cleared by endTick so worker-thread scopes finishing between
 		// consecutive main-thread frames are included in the next report interval.
+		tick_start_time = std::chrono::steady_clock::now();
 	}
 
+	// Accumulates scope totals for the reporting interval and records any tick over 30 ms.
+	// At the interval boundary, logs only if FPS is below 20 or a slow tick occurred.
+	// Every interval resets its counters, including intervals whose reports are suppressed.
 	void Profiler::endTick()
 	{
 		DynamicArray<Node> report_nodes;
 		uint64 ticks_in_report = 0;
 		uint64 elapsed_milliseconds = 0;
+		bool should_log = false;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			const auto now = std::chrono::steady_clock::now();
+			if(now - tick_start_time > std::chrono::milliseconds(30)) report_has_slow_tick = true;
 			report_tick_count++;
 			for(Node& node : nodes)
 			{
@@ -105,7 +111,12 @@ namespace danikk_space_engine
 			if(elapsed_milliseconds < report_interval_milliseconds) return;
 
 			ticks_in_report = report_tick_count;
-			report_nodes = nodes;
+			const auto elapsed_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
+				now - report_start_time).count();
+			should_log = report_has_slow_tick
+				|| static_cast<double>(ticks_in_report) * 1000000000.0
+					< static_cast<double>(elapsed_nanoseconds) * 20.0;
+			if(should_log) report_nodes = nodes;
 			for(Node& node : nodes)
 			{
 				node.total_nanoseconds = 0;
@@ -113,8 +124,10 @@ namespace danikk_space_engine
 				node.total_calls = 0;
 			}
 			report_tick_count = 0;
+			report_has_slow_tick = false;
 			report_start_time = now;
 		}
+		if(!should_log) return;
 
 		formatLogInfo(
 			"CPU profile: % ticks in % ms",

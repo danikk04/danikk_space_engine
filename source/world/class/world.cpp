@@ -139,6 +139,7 @@ namespace danikk_space_engine
 		pending_point_destruction_ids.clear();
 		integrateWorldBodyMotion();
 		resolvePlanetCollisions();
+		resolveBodyCollisions();
 	}
 
 	void World::deferPointDestruction(PointId point_id)

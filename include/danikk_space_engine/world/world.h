@@ -39,6 +39,7 @@ namespace danikk_space_engine
 		void tick();
 		void integrateWorldBodyMotion();
 		void resolvePlanetCollisions();
+		void resolveBodyCollisions();
 		void deferPointDestruction(PointId point_id);
 		void replaceChunkGenerationRequests(
 			WorldBodyComponentSlotId component_slot_id,
