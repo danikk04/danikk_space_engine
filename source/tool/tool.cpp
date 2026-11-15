@@ -40,9 +40,8 @@ namespace danikk_space_engine
 		{
 			case BuildActionId::none: return "None";
 			case BuildActionId::place_machinegun: return "Place Machinegun";
-			case BuildActionId::place_volume_cell: return "Create VolumeCell";
-			case BuildActionId::extrude_face: return "Extrude Face";
-			case BuildActionId::add_terrain: return "Add Terrain";
+			case BuildActionId::create_world_body: return "Create WorldBody";
+			case BuildActionId::extrude_terrain: return "Extrude Terrain";
 			case BuildActionId::count: break;
 		}
 		return "Unknown";
@@ -77,9 +76,7 @@ namespace danikk_space_engine
 				return applyEraseTool(world, hovered_faces, false);
 			}
 			case ToolId::build:
-				return applyBuildTool(
-					world, selected_faces, selected_face_count,
-					has_hovered_face, hovered_face, hit, build_action);
+				return applyBuildTool(world, hit, build_action);
 			case ToolId::count: break;
 		}
 		return ToolApplyResult();

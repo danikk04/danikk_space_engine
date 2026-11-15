@@ -37,13 +37,11 @@ namespace danikk_space_engine
 	}
 
 	Chunk::Chunk(Chunk&& other) noexcept
-		: mesh(other.mesh), shared_face_masks(static_cast<DynamicArray<uint8>&&>(other.shared_face_masks)),
-		material_ranges(static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges)),
+		: mesh(other.mesh), material_ranges(static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges)),
 		bounds_valid(other.bounds_valid), mesh_dirty(other.mesh_dirty),
 		bounds_center(other.bounds_center), bounds_radius(other.bounds_radius),
 		chunk_id(other.chunk_id), world_body_id(other.world_body_id),
 		grid_coordinate(other.grid_coordinate), position(other.position),
-		volume_cell_ids(static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids)),
 		ground_triangle_ids(static_cast<DynamicArray<GroundTriangleId>&&>(other.ground_triangle_ids)),
 		point_ids(static_cast<DynamicArray<PointId>&&>(other.point_ids)),
 		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids)),
@@ -68,12 +66,10 @@ namespace danikk_space_engine
 		world_body_id = other.world_body_id;
 		grid_coordinate = other.grid_coordinate;
 		position = other.position;
-		volume_cell_ids = static_cast<DynamicArray<VolumeCellId>&&>(other.volume_cell_ids);
 		ground_triangle_ids = static_cast<DynamicArray<GroundTriangleId>&&>(other.ground_triangle_ids);
 		point_ids = static_cast<DynamicArray<PointId>&&>(other.point_ids);
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
 		graph_component_slot_ids = static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids);
-		shared_face_masks = static_cast<DynamicArray<uint8>&&>(other.shared_face_masks);
 		material_ranges = static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges);
 		mesh = other.mesh;
 		other.mesh = nullptr;
@@ -101,7 +97,6 @@ namespace danikk_space_engine
 	{
 		mesh_dirty = true;
 		bounds_valid = false;
-		shared_face_masks.clear();
 		material_ranges.clear();
 	}
 
@@ -222,39 +217,6 @@ namespace danikk_space_engine
 				}
 			}
 		}
-	}
-
-
-
-	bool Chunk::hasSharedFace(VolumeCellId cell_id, uint8 face_index) const
-	{
-		if(!world.data.isVolumeCellActive(cell_id))
-		{
-			return false;
-		}
-		const VolumeCell& cell = world.data.getVolumeCell(cell_id);
-		for(VolumeCellId other_cell_id : volume_cell_ids)
-		{
-			if(other_cell_id == cell_id || !world.data.isVolumeCellActive(other_cell_id))
-			{
-				continue;
-			}
-			const VolumeCell& other_cell = world.data.getVolumeCell(other_cell_id);
-			const VolumeCellTopologyDefinition& other_topology = getVolumeCellTopologyDefinition(other_cell.topology);
-			for(uint8 other_face = 0; other_face < other_topology.face_count; other_face++)
-			{
-				if(volumeCellFacesSharePoints(cell, face_index, other_cell, other_face))
-				{
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	uint8 Chunk::getSharedFaceMask(size_t cell_index) const
-	{
-		return cell_index < shared_face_masks.size() ? shared_face_masks[cell_index] : 0;
 	}
 
 	mat4 Chunk::createWorldMatrix(const World& world) const

@@ -2,7 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/world.h>
-#include <danikk_space_engine/effects/volume_cell_preview.h>
+#include <danikk_space_engine/effects/world_body_preview.h>
 #include <danikk_space_engine/effects/chunk_boundaries.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
@@ -277,12 +277,12 @@ namespace danikk_space_engine
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
 		if(settings.show_face_highlight) drawPolygonHighlights(*this);
 		const LocalPlayerControllerComponent& controller = getLocalPlayerControllerComponent();
-		if(settings.show_volume_cell_preview
+		if(settings.show_world_body_preview
 			&& controller.active_tool == ToolId::build
-			&& controller.selected_build_action == BuildActionId::place_volume_cell)
+			&& controller.selected_build_action == BuildActionId::create_world_body)
 		{
 			const RaycastHit hit = raycastFromCamera();
-			drawVolumeCellPlacementPreview(*this, hit);
+			drawWorldBodyPlacementPreview(*this, hit);
 		}
 	}
 

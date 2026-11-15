@@ -72,42 +72,6 @@ namespace danikk_space_engine
 					&& !rayIntersectsSphere(chunk_relative_position + rotated_bounds_center,
 						chunk.bounds_radius, normalized_direction, nearest_distance)) return;
 
-				for(size_t cell_index = 0; cell_index < chunk.volume_cell_ids.size(); cell_index++)
-				{
-					const VolumeCellId cell_id = chunk.volume_cell_ids[cell_index];
-					if(!data.isVolumeCellActive(cell_id)) continue;
-					const VolumeCell& cell = data.getVolumeCell(cell_id);
-					const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
-					const uint8 shared_face_mask = chunk.getSharedFaceMask(cell_index);
-					for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
-					{
-						if((shared_face_mask & static_cast<uint8>(1u << topology.triangle_face_indices[triangle_index])) != 0) continue;
-						const VolumeCellTriangle& triangle = topology.triangles[triangle_index];
-						const PointId point_ids[3]
-							{cell.points[triangle.points[0]], cell.points[triangle.points[1]], cell.points[triangle.points[2]]};
-						if(!data.isPointActive(point_ids[0]) || !data.isPointActive(point_ids[1])
-							|| !data.isPointActive(point_ids[2])) continue;
-
-						const vec3 a = chunk_relative_position
-							+ vec3(body.rotation * glm::dvec3(data.getPoint(point_ids[0]).position));
-						const vec3 b = chunk_relative_position
-							+ vec3(body.rotation * glm::dvec3(data.getPoint(point_ids[1]).position));
-						const vec3 c = chunk_relative_position
-							+ vec3(body.rotation * glm::dvec3(data.getPoint(point_ids[2]).position));
-						const RayTriangleIntersection intersection = intersectRayTriangle(ray, a, b, c);
-						if(!intersection.hit || intersection.distance > nearest_distance) continue;
-
-						nearest_distance = intersection.distance;
-						result.hit = true;
-						result.distance = intersection.distance;
-						result.position = origin + glm::dvec3(normalized_direction) * static_cast<double>(intersection.distance);
-						result.normal = intersection.normal;
-						result.face = FacePtr{chunk_id, cell_id, topology.triangle_face_indices[triangle_index]};
-						result.triangle_index = triangle_index;
-						for(uint8 point_index = 0; point_index < 3; point_index++) result.points[point_index] = point_ids[point_index];
-					}
-				}
-
 				for(GroundTriangleId triangle_id : chunk.ground_triangle_ids)
 				{
 					if(!data.isGroundTriangleActive(triangle_id)) continue;
@@ -126,7 +90,7 @@ namespace danikk_space_engine
 					result.distance = intersection.distance;
 					result.position = origin + glm::dvec3(normalized_direction) * static_cast<double>(intersection.distance);
 					result.normal = intersection.normal;
-					result.face = FacePtr{chunk_id, 0, 0, triangle_id, true};
+					result.face = FacePtr{chunk_id, triangle_id};
 					result.triangle_index = 0;
 					for(uint8 point_index = 0; point_index < 3; point_index++) result.points[point_index] = triangle.points[point_index];
 				}

@@ -23,7 +23,6 @@ namespace danikk_space_engine
 	}
 
 	bool WorldData::isPointActive(PointId id) const { return points.isActive(id); }
-	bool WorldData::isVolumeCellActive(VolumeCellId id) const { return volume_cells.isActive(id); }
 	bool WorldData::isGroundTriangleActive(GroundTriangleId id) const { return ground_triangles.isActive(id); }
 	bool WorldData::isChunkActive(ChunkId id) const { return chunks.isActive(id); }
 	bool WorldData::isWorldBodyActive(WorldBodyId id) const { return world_bodies.isActive(id); }
@@ -32,7 +31,6 @@ namespace danikk_space_engine
 	bool WorldData::isGraphComponentSlotActive(GraphComponentSlotId id) const { return graph_components.isActive(id); }
 
 	const DynamicArray<PointId>& WorldData::getUsedPointIds() const { return points.usedIds(); }
-	const DynamicArray<VolumeCellId>& WorldData::getUsedVolumeCellIds() const { return volume_cells.usedIds(); }
 	const DynamicArray<GroundTriangleId>& WorldData::getUsedGroundTriangleIds() const { return ground_triangles.usedIds(); }
 	const DynamicArray<ChunkId>& WorldData::getUsedChunkIds() const { return chunks.usedIds(); }
 	const DynamicArray<WorldBodyId>& WorldData::getUsedWorldBodyIds() const { return world_bodies.usedIds(); }
@@ -42,8 +40,6 @@ namespace danikk_space_engine
 
 	Point& WorldData::getPoint(PointId id) { return getCheckedResource(points, id, "point"); }
 	const Point& WorldData::getPoint(PointId id) const { return getCheckedResource(points, id, "point"); }
-	VolumeCell& WorldData::getVolumeCell(VolumeCellId id) { return getCheckedResource(volume_cells, id, "volume cell"); }
-	const VolumeCell& WorldData::getVolumeCell(VolumeCellId id) const { return getCheckedResource(volume_cells, id, "volume cell"); }
 	GroundTriangle& WorldData::getGroundTriangle(GroundTriangleId id) { return getCheckedResource(ground_triangles, id, "ground triangle"); }
 	const GroundTriangle& WorldData::getGroundTriangle(GroundTriangleId id) const { return getCheckedResource(ground_triangles, id, "ground triangle"); }
 	Chunk& WorldData::getChunk(ChunkId id) { return getCheckedResource(chunks, id, "chunk"); }
@@ -58,7 +54,6 @@ namespace danikk_space_engine
 	const GraphComponentSlot& WorldData::getGraphComponentSlot(GraphComponentSlotId id) const { return getCheckedResource(graph_components, id, "graph component slot"); }
 
 	size_t WorldData::getPointSlotCount() const { return points.size(); }
-	size_t WorldData::getVolumeCellSlotCount() const { return volume_cells.size(); }
 	size_t WorldData::getGroundTriangleSlotCount() const { return ground_triangles.size(); }
 	size_t WorldData::getChunkSlotCount() const { return chunks.size(); }
 	size_t WorldData::getWorldBodySlotCount() const { return world_bodies.size(); }

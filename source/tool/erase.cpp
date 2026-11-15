@@ -9,7 +9,7 @@ namespace danikk_space_engine
 		bool using_selection)
 	{
 		(void)using_selection;
-		world.deleteVolumeCells(faces);
+		world.deleteFaces(faces);
 		return ToolApplyResult();
 	}
 }

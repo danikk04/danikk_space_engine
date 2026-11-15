@@ -63,8 +63,7 @@ namespace danikk_space_engine
 		glm::dvec3 getPointWorldPosition(ChunkId chunk_id, PointId point_id) const;
 		LocalPlayerControllerComponent& getLocalPlayerControllerComponent();
 		const LocalPlayerControllerComponent& getLocalPlayerControllerComponent() const;
-		DynamicArray<FacePtr> extrudeFaces(const DynamicArray<FacePtr>& faces, float distance);
-		void deleteVolumeCells(const DynamicArray<FacePtr>& faces);
+		void deleteFaces(const DynamicArray<FacePtr>& faces);
 	};
 
 	extern World world;

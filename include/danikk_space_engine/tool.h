@@ -23,9 +23,8 @@ namespace danikk_space_engine
 	{
 		none = 0,
 		place_machinegun,
-		place_volume_cell,
-		extrude_face,
-		add_terrain,
+		create_world_body,
+		extrude_terrain,
 		count
 	};
 
@@ -58,20 +57,12 @@ namespace danikk_space_engine
 		World& world,
 		const DynamicArray<FacePtr>& faces,
 		bool using_selection);
-	ToolApplyResult applyExtrudeTool(
-		World& world,
-		const DynamicArray<FacePtr>& faces,
-		bool using_selection);
 	ToolApplyResult applyEraseTool(
 		World& world,
 		const DynamicArray<FacePtr>& faces,
 		bool using_selection);
 	ToolApplyResult applyBuildTool(
 		World& world,
-		const DynamicArray<FacePtr>& faces,
-		size_t selected_face_count,
-		bool has_hovered_face,
-		const FacePtr& hovered_face,
 		const RaycastHit& hit,
 		BuildActionId action);
 	ToolApplyResult applyBuildPlacementTool(World& world, const RaycastHit& hit, BuildActionId action);

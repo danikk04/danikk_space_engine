@@ -42,7 +42,6 @@ namespace danikk_space_engine
 	}
 
 	PointId WorldData::createPoint() { return points.create(); }
-	VolumeCellId WorldData::createVolumeCell() { return volume_cells.create(); }
 	GroundTriangleId WorldData::createGroundTriangle() { return ground_triangles.create(); }
 	WorldBodyId WorldData::createWorldBody() { return world_bodies.create(); }
 

@@ -5,8 +5,8 @@
 
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/component/graph/graph.h>
-#include <danikk_space_engine/world/volume_cell.h>
 #include <danikk_space_engine/world/ground_triangle.h>
+#include <danikk_space_engine/material.h>
 
 namespace danikk_space_engine
 {
@@ -24,7 +24,6 @@ namespace danikk_space_engine
 	class Chunk
 	{
 		Mesh* mesh = nullptr;
-		DynamicArray<uint8> shared_face_masks;
 		DynamicArray<ChunkMaterialRange> material_ranges;
 		bool bounds_valid = false;
 
@@ -36,7 +35,6 @@ namespace danikk_space_engine
 		WorldBodyId world_body_id = 0;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 position = glm::dvec3(0.0);
-		DynamicArray<VolumeCellId> volume_cell_ids;
 		DynamicArray<GroundTriangleId> ground_triangle_ids;
 		DynamicArray<PointId> point_ids;
 		DynamicArray<PointComponentSlotId> point_component_slot_ids;
@@ -53,8 +51,6 @@ namespace danikk_space_engine
 		void addPointComponentSlot(PointComponentSlotId slot_id);
 		void addGraphComponentSlot(GraphComponentSlotId slot_id);
 		void tick(World& world);
-		bool hasSharedFace(VolumeCellId cell_id, uint8 face_index) const;
-		uint8 getSharedFaceMask(size_t cell_index) const;
 		void frame(World& world);
 		mat4 createWorldMatrix(const World& world) const;
 		void draw(World& world);

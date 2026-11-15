@@ -1,6 +1,5 @@
 #pragma once
 
-#include <danikk_space_engine/world/volume_cell.h>
 #include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/fwd.h>
 

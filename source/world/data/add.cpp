@@ -61,27 +61,6 @@ namespace danikk_space_engine
 		point.referencing_chunk_count++;
 	}
 
-	void WorldData::addVolumeCellToChunk(ChunkId chunk_id, VolumeCellId cell_id)
-	{
-		VolumeCell& cell = getVolumeCell(cell_id);
-		if(cell.chunk_id != VolumeCell::no_chunk)
-		{
-			danikk_engine::formatFatalError("Volume cell % already belongs to chunk %", cell_id, cell.chunk_id);
-		}
-		addUniqueResourceToChunk(*this, chunk_id, cell_id, isVolumeCellActive(cell_id), "volume cell",
-			&Chunk::volume_cell_ids,
-			[this, chunk_id, cell_id]
-			{
-				const VolumeCell& cell = getVolumeCell(cell_id);
-				const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
-				for(uint8 i = 0; i < topology.point_count; i++) addPointReferenceToChunk(chunk_id, cell.points[i]);
-			},
-			true);
-		Chunk& chunk = getChunk(chunk_id);
-		cell.chunk_id = chunk_id;
-		cell.index_in_chunk = chunk.volume_cell_ids.size() - 1;
-	}
-
 	void WorldData::addGroundTriangleToChunk(ChunkId chunk_id, GroundTriangleId triangle_id)
 	{
 		GroundTriangle& triangle = getGroundTriangle(triangle_id);

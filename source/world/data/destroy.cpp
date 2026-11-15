@@ -108,17 +108,6 @@ namespace danikk_space_engine
 		destroyMatchingResources(point_components,
 			[id](const PointComponentSlot& slot) { return slot.point_id == id; },
 			[this](PointComponentSlotId slot_id) { destroyPointComponentSlot(slot_id); });
-		destroyMatchingResources(volume_cells,
-			[id](const VolumeCell& cell)
-			{
-				const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
-				for(uint8 point_index = 0; point_index < topology.point_count; point_index++)
-				{
-					if(cell.points[point_index] == id) return true;
-				}
-				return false;
-			},
-			[this](VolumeCellId cell_id) { destroyVolumeCell(cell_id); });
 		destroyMatchingResources(ground_triangles,
 			[id](const GroundTriangle& triangle)
 			{
@@ -130,35 +119,6 @@ namespace danikk_space_engine
 			[this](GraphComponentSlotId graph_id) { destroyGraphComponentSlot(graph_id); });
 
 		points.free(id);
-	}
-
-	void WorldData::destroyVolumeCell(VolumeCellId id)
-	{
-		if(!isVolumeCellActive(id)) return;
-		VolumeCell& cell = volume_cells[id];
-		if(cell.chunk_id != VolumeCell::no_chunk)
-		{
-			if(!isChunkActive(cell.chunk_id))
-			{
-				danikk_engine::formatFatalError("Volume cell % references invalid chunk %", id, cell.chunk_id);
-			}
-			Chunk& chunk = getChunk(cell.chunk_id);
-			const size_t index = cell.index_in_chunk;
-			if(index >= chunk.volume_cell_ids.size() || chunk.volume_cell_ids[index] != id)
-			{
-				danikk_engine::formatFatalError("Volume cell % has an invalid chunk index", id);
-			}
-			const size_t last_index = chunk.volume_cell_ids.size() - 1;
-			if(index != last_index)
-			{
-				const VolumeCellId moved_id = chunk.volume_cell_ids[last_index];
-				chunk.volume_cell_ids[index] = moved_id;
-				volume_cells[moved_id].index_in_chunk = index;
-			}
-			chunk.volume_cell_ids.resize(last_index);
-			chunk.invalidateMesh();
-		}
-		volume_cells.free(id);
 	}
 
 	void WorldData::destroyGroundTriangle(GroundTriangleId id)
@@ -205,8 +165,6 @@ namespace danikk_space_engine
 			[this](PointComponentSlotId slot_id) { destroyPointComponentSlot(slot_id); });
 		destroyLastUntilEmpty(chunk.graph_component_slot_ids,
 			[this](GraphComponentSlotId slot_id) { destroyGraphComponentSlot(slot_id); });
-		destroyLastUntilEmpty(chunk.volume_cell_ids,
-			[this](VolumeCellId cell_id) { destroyVolumeCell(cell_id); });
 		destroyLastUntilEmpty(chunk.ground_triangle_ids,
 			[this](GroundTriangleId triangle_id) { destroyGroundTriangle(triangle_id); });
 		chunk.destroyMesh();
@@ -290,12 +248,12 @@ namespace danikk_space_engine
 			[this](PointComponentSlotId id) { destroyPointComponentSlot(id); });
 		destroyLastUntilEmpty(graph_components.usedIds(),
 			[this](GraphComponentSlotId id) { destroyGraphComponentSlot(id); });
-		clearPools(point_components, graph_components, world_body_components, chunks, world_bodies, points, volume_cells, ground_triangles);
+		clearPools(point_components, graph_components, world_body_components, chunks, world_bodies, points, ground_triangles);
 	}
 
 	void WorldData::release()
 	{
 		clear();
-		releasePools(points, volume_cells, ground_triangles, chunks, world_bodies, world_body_components, point_components, graph_components);
+		releasePools(points, ground_triangles, chunks, world_bodies, world_body_components, point_components, graph_components);
 	}
 }

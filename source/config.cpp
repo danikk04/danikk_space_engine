@@ -15,7 +15,7 @@ namespace danikk_space_engine
 		path.setFileName("settings.cfg");
 		values.bind("show_chunk_bounds", settings.show_chunk_bounds);
 		values.bind("show_face_highlight", settings.show_face_highlight);
-		values.bind("show_volume_cell_preview", settings.show_volume_cell_preview);
+		values.bind("show_world_body_preview", settings.show_world_body_preview);
 	}
 
 	bool Config::load()
@@ -72,7 +72,7 @@ namespace danikk_space_engine
 		danikk_framework::String contents;
 		contents << "show_chunk_bounds=" << (settings.show_chunk_bounds ? "true" : "false") << '\n';
 		contents << "show_face_highlight=" << (settings.show_face_highlight ? "true" : "false") << '\n';
-		contents << "show_volume_cell_preview=" << (settings.show_volume_cell_preview ? "true" : "false") << '\n';
+		contents << "show_world_body_preview=" << (settings.show_world_body_preview ? "true" : "false") << '\n';
 
 		std::FILE* file = std::fopen(path.c_string(), "wb");
 		if(file == nullptr)

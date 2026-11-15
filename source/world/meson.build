@@ -3,7 +3,6 @@ sources += files(
 	'chunk/create_mesh.cpp',
 	'chunk_loader.cpp',
 	'edit.cpp',
-	'volume_cell.cpp',
 	'class/world.cpp',
 	'class/collision.cpp',
 	'data/create.cpp',
@@ -13,4 +12,5 @@ sources += files(
 	'resource_pool.cpp',
 	'body.cpp',
 	'class/raycast.cpp',
+	'cube_mesh.cpp',
 )

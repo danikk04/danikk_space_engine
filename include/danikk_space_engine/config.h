@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	{
 		bool show_chunk_bounds = true;
 		bool show_face_highlight = true;
-		bool show_volume_cell_preview = true;
+		bool show_world_body_preview = true;
 	};
 
 	class Config

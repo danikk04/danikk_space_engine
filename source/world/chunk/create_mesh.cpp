@@ -1,7 +1,5 @@
-#include <algorithm>
-#include <cstdlib>
 #include <limits>
-#include <new>
+#include <cstdlib>
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_framework/glm.h>
@@ -13,74 +11,25 @@
 
 namespace danikk_space_engine
 {
-	struct MaterialTriangleReference
+	namespace
 	{
-		PointId points[3]{};
-		MaterialId material_id = default_materials::void_material;
-	};
-
-	static bool materialTriangleLess(const MaterialTriangleReference& left, const MaterialTriangleReference& right)
-	{
-		return left.material_id < right.material_id;
-	}
-
-	struct FaceReference
-	{
-		PointId point_ids[4]{};
-		uint8 point_count = 0;
-		size_t cell_index = 0;
-		uint8 face_index = 0;
-	};
-
-	static bool faceReferenceLess(const FaceReference& left, const FaceReference& right)
-	{
-		if(left.point_count != right.point_count)
+		vec2 projectToUV(const vec3& position, const vec3& normal)
 		{
-			return left.point_count < right.point_count;
-		}
-		for(uint8 i = 0; i < left.point_count; i++)
-		{
-			if(left.point_ids[i] != right.point_ids[i])
+			const vec3 absolute_normal = glm::abs(normal);
+			if(absolute_normal.x >= absolute_normal.y && absolute_normal.x >= absolute_normal.z)
 			{
-				return left.point_ids[i] < right.point_ids[i];
+				return vec2(position.z, position.y);
 			}
-		}
-		return false;
-	}
-
-	static bool sameFaceReference(const FaceReference& left, const FaceReference& right)
-	{
-		if(left.point_count != right.point_count)
-		{
-			return false;
-		}
-		for(uint8 i = 0; i < left.point_count; i++)
-		{
-			if(left.point_ids[i] != right.point_ids[i])
+			if(absolute_normal.y >= absolute_normal.z)
 			{
-				return false;
+				return vec2(position.x, position.z);
 			}
+			return vec2(position.x, position.y);
 		}
-		return true;
 	}
 
-	static vec2 projectToUV(const vec3& position, const vec3& normal)
-	{
-		const vec3 absolute_normal = glm::abs(normal);
-		if(absolute_normal.x >= absolute_normal.y && absolute_normal.x >= absolute_normal.z)
-		{
-			return vec2(position.z, position.y);
-		}
-		if(absolute_normal.y >= absolute_normal.z)
-		{
-			return vec2(position.x, position.z);
-		}
-		return vec2(position.x, position.y);
-	}
-
-	// Builds a triangle mesh for all volume cells owned by this chunk.
-	// Sorts canonicalized face point IDs to identify shared faces in O(F log F), then emits
-	// only visible triangles, reserves the output buffers, uploads them, and sets attributes.
+	// Builds the chunk mesh from its ground triangles, computes a bounding sphere,
+	// uploads vertex and index data, and creates one material range for the mesh.
 	Mesh& Chunk::createMesh()
 	{
 		Watcher watcher("Chunk::createMesh");
@@ -93,99 +42,9 @@ namespace danikk_space_engine
 
 		DynamicArray<DefaultVertex> vertices;
 		DynamicArray<gl_point_index_t> indices;
-		DynamicArray<FaceReference> face_references;
-		DynamicArray<MaterialTriangleReference> triangles;
-		shared_face_masks.clear();
 		material_ranges.clear();
-		shared_face_masks.reserve(volume_cell_ids.size());
-		face_references.reserve(volume_cell_ids.size() * 8);
-		size_t max_triangle_count = 0;
-
-		for(size_t cell_index = 0; cell_index < volume_cell_ids.size(); cell_index++)
-		{
-			const VolumeCellId cell_id = volume_cell_ids[cell_index];
-			if(!world.data.isVolumeCellActive(cell_id))
-			{
-				shared_face_masks.push(0);
-				continue;
-			}
-			const VolumeCell& cell = world.data.getVolumeCell(cell_id);
-			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
-			max_triangle_count += topology.triangle_count;
-			shared_face_masks.push(0);
-			for(uint8 face_index = 0; face_index < topology.face_count; face_index++)
-			{
-				FaceReference reference;
-				reference.point_count = getVolumeCellFacePointIds(cell, face_index, reference.point_ids);
-				reference.cell_index = cell_index;
-				reference.face_index = face_index;
-				for(uint8 point_index = 1; point_index < reference.point_count; point_index++)
-				{
-					const PointId point_id = reference.point_ids[point_index];
-					uint8 insert_index = point_index;
-					while(insert_index > 0 && reference.point_ids[insert_index - 1] > point_id)
-					{
-						reference.point_ids[insert_index] = reference.point_ids[insert_index - 1];
-						insert_index--;
-					}
-					reference.point_ids[insert_index] = point_id;
-				}
-				face_references.push(reference);
-			}
-		}
-
-		std::sort(face_references.begin(), face_references.end(), faceReferenceLess);
-		for(size_t face_index = 0; face_index < face_references.size();)
-		{
-			size_t group_end = face_index + 1;
-			while(group_end < face_references.size()
-				&& sameFaceReference(face_references[face_index], face_references[group_end]))
-			{
-				group_end++;
-			}
-			if(group_end - face_index > 1)
-			{
-				for(size_t reference_index = face_index; reference_index < group_end; reference_index++)
-				{
-					const FaceReference& reference = face_references[reference_index];
-					shared_face_masks[reference.cell_index] |= static_cast<uint8>(1u << reference.face_index);
-				}
-			}
-			face_index = group_end;
-		}
-
-		triangles.reserve(max_triangle_count + ground_triangle_ids.size());
-		for(size_t cell_index = 0; cell_index < volume_cell_ids.size(); cell_index++)
-		{
-			const VolumeCellId cell_id = volume_cell_ids[cell_index];
-			if(!world.data.isVolumeCellActive(cell_id)) continue;
-			const VolumeCell& cell = world.data.getVolumeCell(cell_id);
-			const VolumeCellTopologyDefinition& topology = getVolumeCellTopologyDefinition(cell.topology);
-			const uint8 shared_face_mask = shared_face_masks[cell_index];
-			for(uint8 triangle_index = 0; triangle_index < topology.triangle_count; triangle_index++)
-			{
-				if((shared_face_mask & static_cast<uint8>(1u << topology.triangle_face_indices[triangle_index])) != 0)
-				{
-					continue;
-				}
-				const VolumeCellTriangle& triangle = topology.triangles[triangle_index];
-				const PointId point_ids[3]
-				{
-					cell.points[triangle.points[0]],
-					cell.points[triangle.points[1]],
-					cell.points[triangle.points[2]]
-				};
-
-				if(!world.data.isPointActive(point_ids[0])
-					|| !world.data.isPointActive(point_ids[1])
-					|| !world.data.isPointActive(point_ids[2]))
-				{
-					std::abort();
-				}
-
-				triangles.pushCtor(MaterialTriangleReference{{point_ids[0], point_ids[1], point_ids[2]}, cell.material});
-			}
-		}
+		vertices.reserve(ground_triangle_ids.size() * 3);
+		indices.reserve(ground_triangle_ids.size() * 3);
 
 		for(GroundTriangleId triangle_id : ground_triangle_ids)
 		{
@@ -194,16 +53,7 @@ namespace danikk_space_engine
 			if(!world.data.isPointActive(triangle.points[0])
 				|| !world.data.isPointActive(triangle.points[1])
 				|| !world.data.isPointActive(triangle.points[2])) continue;
-			triangles.pushCtor(MaterialTriangleReference{
-				{triangle.points[0], triangle.points[1], triangle.points[2]},
-				default_materials::stone});
-		}
 
-		std::sort(triangles.begin(), triangles.end(), materialTriangleLess);
-		vertices.reserve(triangles.size() * 3);
-		indices.reserve(triangles.size() * 3);
-		for(const MaterialTriangleReference& triangle : triangles)
-		{
 			if(vertices.size() + 3 > static_cast<size_t>(std::numeric_limits<gl_point_index_t>::max()) + 1)
 			{
 				std::abort();
@@ -214,20 +64,12 @@ namespace danikk_space_engine
 			const vec3 cross_product = glm::cross(b - a, c - a);
 			const float normal_length = glm::length(cross_product);
 			if(normal_length <= 0.000001f) continue;
-			if(material_ranges.size() == 0 || material_ranges.peek().material_id != triangle.material_id)
-			{
-				material_ranges.push(ChunkMaterialRange{
-					triangle.material_id,
-					static_cast<uint32>(indices.size()),
-					0});
-			}
 			const vec3 normal = cross_product / normal_length;
 			const vec3 positions[3] = {a, b, c};
 			for(uint8 corner = 0; corner < 3; corner++)
 			{
 				indices.push(static_cast<gl_point_index_t>(vertices.size()));
 				vertices.pushCtor(positions[corner], normal, projectToUV(positions[corner], normal));
-				material_ranges.peek().index_count++;
 			}
 		}
 
@@ -254,6 +96,10 @@ namespace danikk_space_engine
 			}
 			bounds_radius += 0.0001f;
 			bounds_valid = true;
+			material_ranges.push(ChunkMaterialRange{
+				default_materials::stone,
+				0,
+				static_cast<uint32>(indices.size())});
 		}
 
 		mesh->setData(
