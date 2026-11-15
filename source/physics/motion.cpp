@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/world_physics.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 
@@ -28,20 +29,20 @@ namespace danikk_space_engine
 	}
 
 	// Applies planetary gravity, integrates linear velocity, then updates body rotation.
-	void World::integrateWorldBodyMotion()
+	void WorldPhysics::integrateMotion(World& world)
 	{
 		Watcher watcher("World::body motion");
 		const float delta_time = danikk_engine::getTargetFrameDelay();
 		if(delta_time <= 0.0f) return;
 
 		DynamicArray<PlanetCollisionTarget> planets;
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
 		{
-			const WorldBody& body = data.getWorldBody(body_id);
+			const WorldBody& body = world.data.getWorldBody(body_id);
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
-				if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				const WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
+				if(!world.data.isWorldBodyComponentSlotActive(slot_id)) continue;
+				const WorldBodyComponentSlot& slot = world.data.getWorldBodyComponentSlot(slot_id);
 				if(slot.type_id != WorldBodyComponentTypeId::planet) continue;
 				planets.push(PlanetCollisionTarget{
 					body_id,
@@ -49,8 +50,8 @@ namespace danikk_space_engine
 			}
 		}
 
-		const WorldBodyId dragged_body_id = getDraggedWorldBodyId(*this);
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+		const WorldBodyId dragged_body_id = getDraggedWorldBodyId(world);
+		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
 		{
 			if(body_id == dragged_body_id) continue;
 			bool is_planet = false;
@@ -64,14 +65,14 @@ namespace danikk_space_engine
 			}
 			if(is_planet) continue;
 
-			WorldBody& body = data.getWorldBody(body_id);
+			WorldBody& body = world.data.getWorldBody(body_id);
 			glm::dvec3 acceleration(0.0);
 			for(const PlanetCollisionTarget& target : planets)
 			{
 				if(target.body_id == body_id || target.planet->surface_gravity <= 0.0
 					|| target.planet->radius <= 0.0) continue;
 
-				const glm::dvec3 toward_planet = data.getWorldBody(target.body_id).position - body.position;
+				const glm::dvec3 toward_planet = world.data.getWorldBody(target.body_id).position - body.position;
 				const double distance = glm::length(toward_planet);
 				if(distance <= 0.000001) continue;
 				const double radius = target.planet->radius;

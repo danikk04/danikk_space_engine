@@ -4,4 +4,5 @@ namespace danikk_space_engine
 {
 	class GameObject;
 	class World;
+	class WorldPhysics;
 }

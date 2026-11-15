@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/world_physics.h>
 #include "internal.h"
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/component/world_body/planet/terrain.h>
@@ -174,17 +175,17 @@ namespace danikk_space_engine
 	}
 
 	// Collects planet targets and resolves sphere or mesh contacts for each moving body.
-	void World::resolvePlanetCollisions()
+	void WorldPhysics::resolvePlanetCollisions(World& world)
 	{
 		Watcher watcher("World::planet collisions");
 		DynamicArray<PlanetCollisionTarget> planets;
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
 		{
-			const WorldBody& body = data.getWorldBody(body_id);
+			const WorldBody& body = world.data.getWorldBody(body_id);
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
-				if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				const WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
+				if(!world.data.isWorldBodyComponentSlotActive(slot_id)) continue;
+				const WorldBodyComponentSlot& slot = world.data.getWorldBodyComponentSlot(slot_id);
 				if(slot.type_id != WorldBodyComponentTypeId::planet) continue;
 				planets.push(PlanetCollisionTarget{
 					body_id,
@@ -193,10 +194,10 @@ namespace danikk_space_engine
 		}
 		if(planets.size() == 0) return;
 
-		for(WorldBodyId moving_body_id : data.getUsedWorldBodyIds())
+		for(WorldBodyId moving_body_id : world.data.getUsedWorldBodyIds())
 		{
-			if(!data.isWorldBodyActive(moving_body_id)) continue;
-			WorldBody& moving_body = data.getWorldBody(moving_body_id);
+			if(!world.data.isWorldBodyActive(moving_body_id)) continue;
+			WorldBody& moving_body = world.data.getWorldBody(moving_body_id);
 			bool is_planet_body = false;
 			for(const PlanetCollisionTarget& target : planets)
 			{
@@ -212,8 +213,8 @@ namespace danikk_space_engine
 			bool has_surface_mesh = false;
 			for(ChunkId chunk_id : moving_body.chunk_ids)
 			{
-				if(data.isChunkActive(chunk_id)
-					&& data.getChunk(chunk_id).ground_triangle_ids.size() > 0)
+				if(world.data.isChunkActive(chunk_id)
+					&& world.data.getChunk(chunk_id).ground_triangle_ids.size() > 0)
 				{
 					has_surface_mesh = true;
 					break;
@@ -224,8 +225,8 @@ namespace danikk_space_engine
 			{
 				for(const PlanetCollisionTarget& target : planets)
 				{
-					if(target.body_id == moving_body_id || !data.isWorldBodyActive(target.body_id)) continue;
-					const WorldBody& planet_body = data.getWorldBody(target.body_id);
+					if(target.body_id == moving_body_id || !world.data.isWorldBodyActive(target.body_id)) continue;
+					const WorldBody& planet_body = world.data.getWorldBody(target.body_id);
 					const glm::dvec3 field_position = glm::conjugate(planet_body.rotation)
 						* (moving_body.position - planet_body.position);
 					glm::dvec3 local_outward(0.0);
@@ -242,12 +243,12 @@ namespace danikk_space_engine
 
 			for(ChunkId chunk_id : moving_body.chunk_ids)
 			{
-				if(!data.isChunkActive(chunk_id)) continue;
-				const Chunk& chunk = data.getChunk(chunk_id);
+				if(!world.data.isChunkActive(chunk_id)) continue;
+				const Chunk& chunk = world.data.getChunk(chunk_id);
 				for(const PlanetCollisionTarget& target : planets)
 				{
 					if(target.body_id == moving_body_id) continue;
-					collideChunkSurfaceWithPlanet(*this, moving_body, chunk, mass_properties, target);
+					collideChunkSurfaceWithPlanet(world, moving_body, chunk, mass_properties, target);
 				}
 			}
 		}

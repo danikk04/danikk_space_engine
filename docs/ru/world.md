@@ -6,14 +6,17 @@
 - `data` — `WorldData`, владеет пулами ресурсов.
 - `chunk_loader` — worker для генерации планетарных чанков.
 - `tick()`, `frame()` — выполняют игровой тик и кадр отрисовки.
-- `integrateWorldBodyMotion()` применяет гравитацию и интегрирует скорости тел.
-- `resolvePlanetCollisions()` обрабатывает контакты тел со скалярным полем планеты.
-- `resolveBodyCollisions()` обрабатывает взаимные столкновения мешевых тел.
+- `physics` — экземпляр `WorldPhysics`; `World::tick()` вызывает `physics.tick(*this)` после компонентов и отложенного удаления точек.
 - `raycast(origin, direction, max_distance)` / `raycastFromCamera()` — находят ближайшую грань; результат — `RaycastHit`.
 - `deleteFaces()` — удаляет выбранные треугольники мешей либо вычитает грунт планеты.
 - `getCameraWorldPosition()`, `getChunkWorldPosition()`, `getPointWorldPosition()` — преобразуют координаты камеры, чанка и точки в мировые.
 
 Деревья вызовов с назначением функций, условиями и путями реализации: [движение и коллизии](world_physics.md).
+
+## `world_physics.h`
+
+- `WorldPhysics` управляет движением и коллизиями; основной исходник — `source/world_physics.cpp`, реализации этапов и помощники — в `source/physics/`.
+- `tick(World&)` запускает приватные этапы `integrateMotion()`, `resolvePlanetCollisions()` и `resolveBodyCollisions()` в указанном порядке. Данные тел хранятся в переданном мире.
 
 ## `world/data.h`
 

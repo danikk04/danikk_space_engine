@@ -6,15 +6,21 @@
 
 ## Файлы
 
-- `include/danikk_space_engine/world/world.h` — объявления методов `World`.
+- `include/danikk_space_engine/world/world.h` — владелец `WorldPhysics` и объявление `World::tick()`.
+- `include/danikk_space_engine/world_physics.h` — объявление `WorldPhysics` и его физических этапов.
+- `source/world_physics.cpp` — `WorldPhysics::tick()`, задающий порядок физических этапов.
 - `source/world/class/world.cpp` — `World::tick()`, запускающий физические этапы.
-- `source/world/class/motion.cpp` — интеграция движения и локальный `getDraggedWorldBodyId()`.
-- `source/world/class/collision/planet.cpp` — контакты с планетой, локальные `getPlanetSurfaceContact()` и `collideChunkSurfaceWithPlanet()`.
-- `source/world/class/collision/body.cpp` — обход пар тел и локальный `isPlanetBody()`.
-- `source/world/class/collision/convex.cpp` — построение коллайдеров, SAT и локальные `addDirection()`, `testAxis()`, `supportCenter()`.
-- `source/world/class/collision/impulse.cpp` — параметры массы и разрешение контактов; локальные `applyImpulse()`, `applyPairImpulse()`, `effectiveInverseMass()`.
-- `source/world/class/collision/internal.h` — общие структуры и объявления в `danikk_space_engine::collision_internal`.
+- `source/physics/motion.cpp` — интеграция движения и локальный `getDraggedWorldBodyId()`.
+- `source/physics/planet.cpp` — контакты с планетой, локальные `getPlanetSurfaceContact()` и `collideChunkSurfaceWithPlanet()`.
+- `source/physics/body.cpp` — обход пар тел и локальный `isPlanetBody()`.
+- `source/physics/convex.cpp` — построение коллайдеров, SAT и локальные `addDirection()`, `testAxis()`, `supportCenter()`.
+- `source/physics/impulse.cpp` — параметры массы и разрешение контактов; локальные `applyImpulse()`, `applyPairImpulse()`, `effectiveInverseMass()`.
+- `source/physics/internal.h` — общие структуры и объявления в `danikk_space_engine::collision_internal`.
 - `include/danikk_space_engine/component/world_body/planet/terrain.h` — объявление `samplePlanetScalarField()`.
+
+## Владение и зависимости
+
+`World` хранит `WorldPhysics physics` и вызывает `physics.tick(*this)` после обновления компонентов и отложенного удаления ресурсов. Физические этапы — приватные методы `WorldPhysics`; постоянная ссылка на мир и собственные данные в классе пока отсутствуют. Заголовок `world_physics.h` использует предварительное объявление `World` из `fwd.h`. Общий `Watcher` «WorldPhysics::tick» объединяет существующие замеры движения и коллизий.
 
 ## Порядок физических этапов
 
@@ -22,17 +28,18 @@
 
 ```text
 World::tick(): обновить мир за тик
-    integrateWorldBodyMotion(): применить гравитацию, переместить и повернуть тела
-    resolvePlanetCollisions(): исправить контакты тел с планетами
-    resolveBodyCollisions(): исправить взаимные контакты мешевых тел
+    WorldPhysics::tick(): выполнить физические этапы для переданного World
+        integrateMotion(): применить гравитацию, переместить и повернуть тела
+        resolvePlanetCollisions(): исправить контакты тел с планетами
+        resolveBodyCollisions(): исправить взаимные контакты мешевых тел
 ```
 
 Этапы выполняются в указанном порядке. Исправления позиции после взаимных коллизий не запускают повторную проверку планеты в том же тике.
 
-## World::integrateWorldBodyMotion()
+## WorldPhysics::integrateMotion()
 
 ```text
-World::integrateWorldBodyMotion(): интегрировать движение с шагом движка
+WorldPhysics::integrateMotion(): интегрировать движение с шагом движка
     getTargetFrameDelay(): получить длительность шага
     [если шаг <= 0: завершить функцию]
     [собрать активные компоненты Planet в список источников гравитации]
@@ -48,10 +55,10 @@ World::integrateWorldBodyMotion(): интегрировать движение �
 
 Гравитация снаружи планеты пропорциональна `(radius / distance)²`, внутри — `radius / distance`. Почти нулевое расстояние до центра пропускается. Это описание текущей формулы, а не модель равномерно плотной планеты.
 
-## World::resolvePlanetCollisions()
+## WorldPhysics::resolvePlanetCollisions()
 
 ```text
-World::resolvePlanetCollisions(): обработать контакты непланетных тел с планетами
+WorldPhysics::resolvePlanetCollisions(): обработать контакты непланетных тел с планетами
     [собрать активные компоненты Planet; если планет нет: завершить функцию]
     [для каждого активного непланетного тела]
         calculateMassProperties(): получить массу и приближённый скалярный момент инерции
@@ -83,10 +90,10 @@ World::resolvePlanetCollisions(): обработать контакты непл
 
 В мешевой ветке нормаль берётся против градиента, а глубина — как плотность, делённая на длину градиента. Контакты объединяются при скалярном произведении нормалей не меньше `0.98`; глубины больше `planet_voxel_size * 2` отбрасываются. Положение и скорости меняются только у движущегося тела; планета ответный импульс не получает.
 
-## World::resolveBodyCollisions()
+## WorldPhysics::resolveBodyCollisions()
 
 ```text
-World::resolveBodyCollisions(): обработать взаимные контакты мешевых тел
+WorldPhysics::resolveBodyCollisions(): обработать взаимные контакты мешевых тел
     [если слот контроллера активен]
         getLocalPlayerControllerComponent(): прочитать ID тела, удерживаемого Drag
     [для каждого используемого WorldBody]

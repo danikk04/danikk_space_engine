@@ -137,9 +137,7 @@ namespace danikk_space_engine
 			if(data.isPointActive(point_id)) data.destroyPoint(point_id);
 		}
 		pending_point_destruction_ids.clear();
-		integrateWorldBodyMotion();
-		resolvePlanetCollisions();
-		resolveBodyCollisions();
+		physics.tick(*this);
 	}
 
 	void World::deferPointDestruction(PointId point_id)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/world_physics.h>
 
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point/camera.h>
@@ -28,6 +29,7 @@ namespace danikk_space_engine
 	{
 	public:
 		WorldData data;
+		WorldPhysics physics;
 		ChunkLoader chunk_loader;
 		DynamicArray<PointId> pending_point_destruction_ids;
 		PointComponentSlotId camera_component_slot_id = 0;
@@ -37,9 +39,6 @@ namespace danikk_space_engine
 		bool chunk_generation_requests_dirty = false;
 
 		void tick();
-		void integrateWorldBodyMotion();
-		void resolvePlanetCollisions();
-		void resolveBodyCollisions();
 		void deferPointDestruction(PointId point_id);
 		void replaceChunkGenerationRequests(
 			WorldBodyComponentSlotId component_slot_id,
