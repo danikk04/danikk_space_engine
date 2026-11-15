@@ -4,8 +4,8 @@
 
 namespace danikk_space_engine
 {
-	bool loadPlanetChunkCache(const ChunkGenerationRequest& request, GeneratedChunkData& result);
-	void savePlanetChunkCache(const ChunkGenerationRequest& request, const GeneratedChunkData& result);
+	bool loadPlanetChunk(const ChunkGenerationRequest& request, GeneratedChunkData& result);
+	void savePlanetChunk(const ChunkGenerationRequest& request, const GeneratedChunkData& result);
 	bool loadPlanetTerrainEdits(
 		WorldBodyId world_body_id,
 		double planet_radius,

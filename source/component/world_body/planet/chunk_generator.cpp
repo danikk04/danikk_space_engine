@@ -3,6 +3,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/world_body/planet/chunk_generator.h>
+#include <danikk_space_engine/component/world_body/planet/chunk_save.h>
 
 namespace danikk_space_engine
 {
@@ -43,7 +44,7 @@ namespace danikk_space_engine
 		 * tetrahedra, and caches edge intersections so neighboring tetrahedra share mesh vertices.
 		 * Triangle winding is oriented from solid density toward air, including cave walls.
 		 */
-		GeneratedChunkData generatePlanetChunkUncached(const ChunkGenerationRequest& request)
+		GeneratedChunkData generatePlanetChunkGeometry(const ChunkGenerationRequest& request)
 		{
 			GeneratedChunkData result;
 			result.generation_id = request.generation_id;
@@ -237,6 +238,10 @@ namespace danikk_space_engine
 	GeneratedChunkData generatePlanetChunk(const ChunkGenerationRequest& request)
 	{
 		Watcher watcher("Generate planet chunk");
-		return generatePlanetChunkUncached(request);
+		GeneratedChunkData result;
+		if(loadPlanetChunk(request, result)) return result;
+		result = generatePlanetChunkGeometry(request);
+		savePlanetChunk(request, result);
+		return result;
 	}
 }

@@ -3,18 +3,20 @@
 #include <string>
 #include <cmath>
 
-#include <danikk_space_engine/component/world_body/planet/chunk_cache.h>
+#include <danikk_framework/path_buffer.h>
+#include <danikk_framework/log.h>
+#include <danikk_space_engine/component/world_body/planet/chunk_save.h>
 
 namespace danikk_space_engine
 {
 	namespace
 	{
-		constexpr uint32 chunk_cache_magic = 0x4443484Bu;
-		constexpr uint32 chunk_cache_version = 6;
+		constexpr uint32 chunk_save_magic = 0x4443484Bu;
+		constexpr uint32 chunk_save_version = 6;
 		constexpr uint32 terrain_edits_magic = 0x44504544u;
 		constexpr uint32 terrain_edits_version = 1;
 
-		struct ChunkCacheHeader
+		struct ChunkSaveHeader
 		{
 			uint32 magic;
 			uint32 version;
@@ -40,9 +42,15 @@ namespace danikk_space_engine
 			uint32 edit_count;
 		};
 
-		std::filesystem::path cacheFilePath(const ChunkGenerationRequest& request)
+		std::filesystem::path terrainSaveDirectory()
 		{
-			return std::filesystem::current_path() / "cache" / "planet_surface"
+			return std::filesystem::path(danikk_framework::getExecutableDirectory().c_string())
+				/ "saves" / "default" / "terrain";
+		}
+
+		std::filesystem::path chunkSaveFilePath(const ChunkGenerationRequest& request)
+		{
+			return terrainSaveDirectory()
 				/ ("v6_" + std::to_string(request.world_body_id) + "_" + std::to_string(request.noise_seed)
 					+ "_" + std::to_string(request.terrain_revision)
 					+ "_" + std::to_string(request.grid_coordinate.x)
@@ -52,23 +60,23 @@ namespace danikk_space_engine
 
 		std::filesystem::path terrainEditsFilePath(WorldBodyId world_body_id, uint64 noise_seed)
 		{
-			return std::filesystem::current_path() / "cache" / "planet_surface"
+			return terrainSaveDirectory()
 				/ ("edits_" + std::to_string(world_body_id) + "_" + std::to_string(noise_seed) + ".bin");
 		}
 	}
 
 	/*
-	 * Loads a chunk cache entry only when its version, grid key, planet parameters, array sizes, and
+	 * Loads a saved chunk only when its version, grid key, planet parameters, array sizes, and
 	 * every triangle index are valid. Geometry is first read into temporary arrays, so a corrupt or
 	 * truncated file leaves the caller's result unchanged and can safely fall back to regeneration.
 	 */
-	bool loadPlanetChunkCache(const ChunkGenerationRequest& request, GeneratedChunkData& result)
+	bool loadPlanetChunk(const ChunkGenerationRequest& request, GeneratedChunkData& result)
 	{
-		std::ifstream input(cacheFilePath(request), std::ios::binary);
+		std::ifstream input(chunkSaveFilePath(request), std::ios::binary);
 		if(!input) return false;
-		ChunkCacheHeader header{};
+		ChunkSaveHeader header{};
 		input.read(reinterpret_cast<char*>(&header), sizeof(header));
-		if(!input || header.magic != chunk_cache_magic || header.version != chunk_cache_version
+		if(!input || header.magic != chunk_save_magic || header.version != chunk_save_version
 			|| header.x != request.grid_coordinate.x || header.y != request.grid_coordinate.y
 			|| header.z != request.grid_coordinate.z
 			|| header.planet_radius != request.planet_radius || header.noise_seed != request.noise_seed
@@ -98,24 +106,38 @@ namespace danikk_space_engine
 		}
 		result.point_positions = static_cast<DynamicArray<vec3>&&>(point_positions);
 		result.triangle_point_indices = static_cast<DynamicArray<uint32>&&>(triangle_point_indices);
+		result.generation_id = request.generation_id;
+		result.world_body_id = request.world_body_id;
+		result.component_slot_id = request.component_slot_id;
+		result.component_generation_id = request.component_generation_id;
 		result.terrain_revision = request.terrain_revision;
+		result.grid_coordinate = request.grid_coordinate;
+		result.chunk_position = request.chunk_position;
 		return true;
 	}
 
 	/*
-	 * Writes the generated local-space geometry with its cache key and format version. Directory or
-	 * file errors simply skip caching; they do not prevent the generated chunk from being returned.
+	 * Saves generated local-space geometry with its planet parameters, revision and format version.
+	 * Write failures are logged; generated geometry remains available to the running world.
 	 */
-	void savePlanetChunkCache(const ChunkGenerationRequest& request, const GeneratedChunkData& result)
+	void savePlanetChunk(const ChunkGenerationRequest& request, const GeneratedChunkData& result)
 	{
 		std::error_code error;
-		const std::filesystem::path file_path = cacheFilePath(request);
+		const std::filesystem::path file_path = chunkSaveFilePath(request);
 		std::filesystem::create_directories(file_path.parent_path(), error);
-		if(error) return;
+		if(error)
+		{
+			formatLogError("Unable to create terrain save directory: %", file_path.parent_path().string().c_str());
+			return;
+		}
 		std::ofstream output(file_path, std::ios::binary | std::ios::trunc);
-		if(!output) return;
-		const ChunkCacheHeader header{
-			chunk_cache_magic, chunk_cache_version,
+		if(!output)
+		{
+			formatLogError("Unable to open chunk save: %", file_path.string().c_str());
+			return;
+		}
+		const ChunkSaveHeader header{
+			chunk_save_magic, chunk_save_version,
 			request.grid_coordinate.x, request.grid_coordinate.y, request.grid_coordinate.z,
 			static_cast<uint32>(result.point_positions.size()),
 			static_cast<uint32>(result.triangle_point_indices.size()),
@@ -130,6 +152,8 @@ namespace danikk_space_engine
 		}
 		output.write(reinterpret_cast<const char*>(result.triangle_point_indices.data()),
 			static_cast<std::streamsize>(result.triangle_point_indices.size() * sizeof(uint32)));
+		output.close();
+		if(!output) formatLogError("Unable to write chunk save: %", file_path.string().c_str());
 	}
 
 	/*
@@ -184,9 +208,17 @@ namespace danikk_space_engine
 		std::error_code error;
 		const std::filesystem::path file_path = terrainEditsFilePath(world_body_id, noise_seed);
 		std::filesystem::create_directories(file_path.parent_path(), error);
-		if(error) return;
+		if(error)
+		{
+			formatLogError("Unable to create terrain save directory: %", file_path.parent_path().string().c_str());
+			return;
+		}
 		std::ofstream output(file_path, std::ios::binary | std::ios::trunc);
-		if(!output) return;
+		if(!output)
+		{
+			formatLogError("Unable to open terrain edits save: %", file_path.string().c_str());
+			return;
+		}
 		const TerrainEditsHeader header{
 			terrain_edits_magic, terrain_edits_version, planet_radius, noise_seed,
 			terrain_revision, static_cast<uint32>(edits.size())};
@@ -200,5 +232,7 @@ namespace danikk_space_engine
 			output.write(reinterpret_cast<const char*>(&edit.radius), sizeof(double));
 			output.write(reinterpret_cast<const char*>(&adds_solid_terrain), sizeof(adds_solid_terrain));
 		}
+		output.close();
+		if(!output) formatLogError("Unable to write terrain edits save: %", file_path.string().c_str());
 	}
 }
