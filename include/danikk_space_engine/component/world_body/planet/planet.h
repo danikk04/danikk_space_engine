@@ -1,13 +1,12 @@
 #pragma once
 
 #include <danikk_framework/dynamic_array.h>
+#include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/component/world_body/planet/chunk_generator.h>
 
 namespace danikk_space_engine
 {
-	struct FacePtr;
-
 	inline constexpr double default_planet_radius = 5000.0;
 	inline constexpr double planet_chunk_load_radius = 100.0;
 	inline constexpr double planet_chunk_width = 32.0;

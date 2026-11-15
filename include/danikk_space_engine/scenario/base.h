@@ -1,8 +1,8 @@
 #pragma once
 
+#include <danikk_space_engine/fwd.h>
+
 namespace danikk_space_engine
 {
-	class World;
-
 	void startBaseScenario(World& world);
 }

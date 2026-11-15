@@ -1,14 +1,11 @@
 #pragma once
 
 #include <danikk_space_engine/world/face_ptr.h>
+#include <danikk_space_engine/fwd.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
 {
-	class World;
-	class LocalPlayerControllerComponent;
-	struct RaycastHit;
-
 	enum class ToolId : uint8
 	{
 		none = 0,

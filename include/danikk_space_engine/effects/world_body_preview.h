@@ -1,9 +1,8 @@
 #pragma once
 
+#include <danikk_space_engine/fwd.h>
+
 namespace danikk_space_engine
 {
-	class World;
-	struct RaycastHit;
-
 	void drawWorldBodyPlacementPreview(World& world, const RaycastHit& hit);
 }

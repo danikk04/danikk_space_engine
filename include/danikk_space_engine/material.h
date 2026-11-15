@@ -1,12 +1,11 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/id.h>
 #include <danikk_engine/texture.h>
 
 namespace danikk_space_engine
 {
-	using MaterialId = uint32;
-
 	namespace default_materials
 	{
 		constexpr inline MaterialId void_material = 0;

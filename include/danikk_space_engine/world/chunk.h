@@ -6,7 +6,9 @@
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/component/graph/graph.h>
 #include <danikk_space_engine/world/ground_triangle.h>
+#include <danikk_space_engine/id.h>
 #include <danikk_space_engine/material.h>
+#include <danikk_space_engine/fwd.h>
 
 namespace danikk_space_engine
 {
@@ -16,10 +18,6 @@ namespace danikk_space_engine
 		uint32 first_index = 0;
 		uint32 index_count = 0;
 	};
-
-	using ChunkId = uint32;
-	using WorldBodyId = uint32;
-	class World;
 
 	class Chunk
 	{

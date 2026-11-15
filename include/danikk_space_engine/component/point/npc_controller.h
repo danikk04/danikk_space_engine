@@ -1,11 +1,10 @@
 #pragma once
 
+#include <danikk_space_engine/id.h>
 #include <danikk_space_engine/component/point/point.h>
 
 namespace danikk_space_engine
 {
-	using WorldBodyId = uint32;
-
 	struct NpcControllerComponent
 	{
 		PointComponentSlotId character_slot_id = static_cast<PointComponentSlotId>(-1);

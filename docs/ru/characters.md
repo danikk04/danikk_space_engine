@@ -12,7 +12,7 @@
 - `CharacterDefinition` хранит шесть `CharacterPartDefinition`: голова, корпус, правая/левая рука, правая/левая нога.
 - `CharacterPartDefinition` содержит общий меш, размеры, положение сустава, смещение центра части относительно сустава и цвет без скина. Размеры и смещения задаются в долях полной высоты персонажа.
 
-## `component/point/character_appearance.h`
+### Внешность персонажа (`character.h`)
 
 - `CharacterRenderType` — `minecraft_style` и зарезервированный для будущих моделей `model_3d`.
 - `CharacterAppearance::render_type` по умолчанию равен `minecraft_style`.

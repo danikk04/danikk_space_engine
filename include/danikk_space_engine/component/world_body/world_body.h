@@ -2,15 +2,12 @@
 
 #include <cstddef>
 
+#include <danikk_space_engine/fwd.h>
+#include <danikk_space_engine/id.h>
 #include <danikk_space_engine/default.h>
 
 namespace danikk_space_engine
 {
-	class World;
-	struct GeneratedChunkData;
-	struct WorldBodyComponentSlot;
-	using WorldBodyComponentSlotId = uint32;
-
 	enum class WorldBodyComponentTypeId : uint32
 	{
 		none = 0,

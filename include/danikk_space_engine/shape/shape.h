@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/id.h>
 #include <danikk_engine/mesh.h>
 #include <danikk_framework/dynamic_array.h>
 
@@ -15,8 +16,6 @@ namespace danikk_space_engine
 		vec3 normal = vec3(0.0f);
 		float penetration = 0.0f;
 	};
-
-	typedef uint32 ShapeId;
 
 	struct ShapeType
 	{

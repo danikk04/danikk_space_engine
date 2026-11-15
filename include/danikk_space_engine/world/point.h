@@ -1,11 +1,10 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/id.h>
 
 namespace danikk_space_engine
 {
-	using PointId = uint32;
-
 	struct Point
 	{
 		vec3 position = vec3(0.0f);

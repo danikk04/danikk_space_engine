@@ -1,5 +1,6 @@
 #pragma once
 
+#include <danikk_space_engine/id.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/default.h>
 #include <danikk_framework/dynamic_array.h>
@@ -8,9 +9,6 @@
 
 namespace danikk_space_engine
 {
-	using ChunkId = uint32;
-	using WorldBodyId = uint32;
-
 	struct ChunkGenerationRequest
 	{
 		uint64 generation_id = 0;

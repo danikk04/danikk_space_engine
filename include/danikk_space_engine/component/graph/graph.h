@@ -2,14 +2,12 @@
 
 #include <cstddef>
 
+#include <danikk_space_engine/fwd.h>
+#include <danikk_space_engine/id.h>
 #include <danikk_space_engine/world/point.h>
 
 namespace danikk_space_engine
 {
-	class World;
-	struct GraphComponentSlot;
-	using GraphComponentSlotId = uint32;
-
 	enum class GraphComponentTypeId : uint32
 	{
 		none = 0,

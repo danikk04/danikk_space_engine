@@ -1,11 +1,23 @@
 #pragma once
 
 #include <danikk_space_engine/component/point/point.h>
-#include <danikk_space_engine/component/point/character_appearance.h>
+#include <danikk_space_engine/id.h>
 #include <danikk_engine/mesh.h>
 
 namespace danikk_space_engine
 {
+	enum class CharacterRenderType : uint8
+	{
+		minecraft_style,
+		model_3d
+	};
+
+	struct CharacterAppearance
+	{
+		CharacterRenderType render_type = CharacterRenderType::minecraft_style;
+		CharacterSkinId skin_id = 0;
+	};
+
 	enum class CharacterPart : uint8
 	{
 		head, torso, right_arm, left_arm, right_leg, left_leg, count
@@ -49,4 +61,5 @@ namespace danikk_space_engine
 	void destroyCharacterComponent(void* data);
 	void tickCharacterComponent(PointComponentSlot& slot, World& world);
 	void frameCharacterComponent(PointComponentSlot& slot, World& world);
+	void drawCharacterAppearance(const CharacterComponent& character, const mat4& world_matrix);
 }

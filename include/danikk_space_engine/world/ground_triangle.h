@@ -1,11 +1,10 @@
 #pragma once
 
 #include <danikk_space_engine/world/point.h>
+#include <danikk_space_engine/id.h>
 
 namespace danikk_space_engine
 {
-	using GroundTriangleId = uint32;
-
 	struct GroundTriangle
 	{
 		static constexpr uint32 no_chunk = static_cast<uint32>(-1);

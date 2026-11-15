@@ -27,7 +27,7 @@
 - `component/point/local_player_controller.h` — активный инструмент, выбранный объект, скролл-аккумуляторы и массив `selected_faces`. В `tick()` выполняются raycast, ввод и применение инструмента.
 - `component/point/machinegun.h` — ориентация модели и таймер стрельбы; tick создаёт пули, frame рисует модель.
 - `component/point/bullet.h` — скорость, возраст, время жизни и состояние отложенного удаления; tick двигает пулю и проверяет столкновения, frame отображает её след.
-- `component/point/character.h` — `CharacterComponent` хранит ориентацию, команду движения, здоровье, позу и вложенный `CharacterAppearance`. Общая геометрия задаётся `CharacterDefinition`; `component/point/character_appearance.h` определяет тип отображения и ID скина.
+- `component/point/character.h` — `CharacterComponent` хранит ориентацию, команду движения, здоровье, позу и вложенный `CharacterAppearance`; там же объявлены тип отображения и ID скина. Общая геометрия задаётся `CharacterDefinition`.
 - `component/point/npc_controller.h` — `NpcControllerComponent` выдаёт команды персонажу и поворачивает голову к камере. Подробности и ограничения: [персонажи](characters.md).
 
 ## Владение и обновление
