@@ -15,7 +15,7 @@ namespace danikk_engine_game
 	using namespace danikk_space_engine;
 
     /**
-     * @brief Performs the pre begin operation.
+     * @brief Loads the application configuration before engine initialization.
      */
     void pre_begin()
     {
@@ -23,7 +23,7 @@ namespace danikk_engine_game
     }
 
 	/**
-	 * @brief Performs the end operation.
+	 * @brief Shuts down the world and engine services in dependency-safe order.
 	 */
 	void end()
 	{
@@ -32,7 +32,7 @@ namespace danikk_engine_game
 	}
 
     /**
-     * @brief Performs the begin operation.
+     * @brief Initializes engine services, loads assets, configures the GUI, and creates the starting world.
      */
     void begin()
     {
@@ -48,7 +48,7 @@ namespace danikk_engine_game
     }
 
     /**
-     * @brief Performs the frame operation.
+     * @brief Runs one application frame, including profiling, GUI update, and world rendering.
      */
     void frame()
     {

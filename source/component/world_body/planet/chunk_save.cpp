@@ -17,7 +17,7 @@ namespace danikk_space_engine
 		constexpr uint32 terrain_edits_version = 1;
 
 		/**
-		 * @brief Represents chunk save header data and behavior.
+		 * @brief Stores the signature and version used to validate a saved terrain chunk.
 		 */
 		struct ChunkSaveHeader
 		{
@@ -37,7 +37,7 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Represents terrain edits header data and behavior.
+		 * @brief Stores the signature and version used to validate a saved terrain-edit file.
 		 */
 		struct TerrainEditsHeader
 		{
@@ -59,7 +59,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the world body terrain directory operation.
+		 * @brief Returns the save directory unique to the specified world body.
 		 */
 		std::filesystem::path worldBodyTerrainDirectory(WorldBodyId world_body_id)
 		{
@@ -67,7 +67,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the chunk save file name operation.
+		 * @brief Formats the chunk grid coordinate as its save filename.
 		 */
 		std::filesystem::path chunkSaveFileName(
 			const ChunkGenerationRequest& request,
@@ -86,7 +86,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the chunk save file path operation.
+		 * @brief Returns the chunk file path beneath the owning world body’s terrain directory.
 		 */
 		std::filesystem::path chunkSaveFilePath(const ChunkGenerationRequest& request)
 		{
@@ -95,7 +95,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the versioned chunk save file path operation.
+		 * @brief Returns the current-version chunk file path for the request coordinate.
 		 */
 		std::filesystem::path versionedChunkSaveFilePath(const ChunkGenerationRequest& request)
 		{
@@ -104,7 +104,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the legacy chunk save file path operation.
+		 * @brief Returns the legacy chunk file path used before per-body terrain saves.
 		 */
 		std::filesystem::path legacyChunkSaveFilePath(const ChunkGenerationRequest& request)
 		{
@@ -113,7 +113,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the terrain edits file path operation.
+		 * @brief Returns the current terrain-edit file path for the body and noise seed.
 		 */
 		std::filesystem::path terrainEditsFilePath(WorldBodyId world_body_id, uint64 noise_seed)
 		{
@@ -122,7 +122,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the legacy terrain edits file path operation.
+		 * @brief Returns the terrain-edit path used by the older save layout.
 		 */
 		std::filesystem::path legacyTerrainEditsFilePath(WorldBodyId world_body_id, uint64 noise_seed)
 		{

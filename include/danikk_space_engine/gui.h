@@ -9,7 +9,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents gui data and behavior.
+	 * @brief Owns the debug text label and updates its displayed runtime information.
 	 */
 	class GUI
 	{
@@ -19,17 +19,17 @@ namespace danikk_space_engine
 	public:
 
 		/**
-		 * @brief Performs the define operation.
+		 * @brief Configures the debug label’s font, multiline layout, character size, and position.
 		 */
 		void define();
 
 		/**
-		 * @brief Performs the compose operation.
+		 * @brief Adds the debug information label to the GUI root.
 		 */
 		void compose();
 
 		/**
-		 * @brief Performs the frame operation.
+		 * @brief Runs one application frame, including profiling, GUI update, and world rendering.
 		 */
 		void frame();
 	};

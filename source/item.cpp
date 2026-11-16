@@ -20,7 +20,7 @@ namespace danikk_space_engine
 		bool item_catalog_loaded = false;
 
 		/**
-		 * @brief Returns human at point.
+		 * @brief Scans active point-component slots and returns the human component attached to the requested point, or nullptr if none exists.
 		 */
 		HumanComponent* getHumanAtPoint(World& world, PointId point_id)
 		{
@@ -35,7 +35,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the equip weapon operation.
+		 * @brief Sets the human arm pose to weapon-ready; it does not create a separate weapon component.
 		 */
 		bool equipWeapon(World& world, PointId owner_point_id, const ItemDefinition&)
 		{
@@ -46,7 +46,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the unequip weapon operation.
+		 * @brief Restores the human relaxed arm pose when the equipped weapon is removed.
 		 */
 		bool unequipWeapon(World& world, PointId owner_point_id, const ItemDefinition&)
 		{
@@ -57,7 +57,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Draws weapon.
+		 * @brief Binds the item texture and render color, sets the supplied world matrix, and draws the item mesh.
 		 */
 		void drawWeapon(ItemDefinition& definition, const mat4& world_matrix)
 		{
@@ -71,7 +71,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the validate item catalog operation.
+		 * @brief Checks that each item definition references a known type and that weapon definitions have the callbacks and assets they require.
 		 */
 		void validateItemCatalog()
 		{
@@ -95,7 +95,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns item type.
+	 * @brief Returns the registered item behavior table for the type ID.
 	 */
 	const ItemType& getItemType(ItemTypeId id)
 	{
@@ -104,7 +104,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns item definition.
+	 * @brief Returns the item definition stored at the requested item definition ID.
 	 */
 	const ItemDefinition& getItemDefinition(ItemDefinitionId id)
 	{
@@ -115,7 +115,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns weapon item parameters.
+	 * @brief Returns the weapon parameter record after confirming that the definition is a weapon.
 	 */
 	const WeaponItemParameters& getWeaponItemParameters(ItemDefinitionId id)
 	{
@@ -126,7 +126,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the use item operation.
+	 * @brief Invokes the item type’s use callback for the selected inventory stack.
 	 */
 	bool useItem(World& world, PointId owner_point_id, InventorySlot& slot)
 	{
@@ -137,7 +137,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the equip item operation.
+	 * @brief Equips the selected stack and invokes the item type’s equip callback.
 	 */
 	bool equipItem(World& world, PointId owner_point_id, ItemDefinitionId id)
 	{
@@ -147,7 +147,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the unequip item operation.
+	 * @brief Unequips the item and invokes the item type’s unequip callback.
 	 */
 	bool unequipItem(World& world, PointId owner_point_id, ItemDefinitionId id)
 	{

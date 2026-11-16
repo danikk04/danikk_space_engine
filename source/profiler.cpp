@@ -14,7 +14,7 @@ namespace danikk_space_engine
 		thread_local DynamicArray<uint32> scope_stack;
 
 		/**
-		 * @brief Represents scope cache entry data and behavior.
+		 * @brief Caches a profiler scope name and parent/node IDs for repeated scope lookup.
 		 */
 		struct ScopeCacheEntry
 		{
@@ -188,7 +188,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Starts timing a named profiler scope.
+	 * @brief Begins a profiler timing scope and records its parent scope for hierarchical reporting.
 	 */
 	Watcher::Watcher(const char* name)
 		: node_id(profiler.beginScope(name == nullptr ? "(unnamed)" : name)),

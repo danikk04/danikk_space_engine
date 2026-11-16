@@ -9,7 +9,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Performs the same chunk key operation.
+		 * @brief Compares all three integer coordinate components.
 		 */
 		bool sameChunkKey(const glm::ivec3& left, const glm::ivec3& right)
 		{

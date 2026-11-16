@@ -131,189 +131,189 @@ namespace danikk_space_engine
 		void destroyGraphComponentSlot(GraphComponentSlotId id);
 
 		/**
-		 * @brief Reports whether point active.
+		 * @brief Checks whether the point ID currently refers to an allocated point.
 		 */
 		bool isPointActive(PointId id) const;
 
 		/**
-		 * @brief Reports whether ground triangle active.
+		 * @brief Checks whether the triangle ID currently refers to an allocated ground triangle.
 		 */
 		bool isGroundTriangleActive(GroundTriangleId id) const;
 
 		/**
-		 * @brief Reports whether chunk active.
+		 * @brief Checks whether the chunk ID currently refers to an allocated chunk.
 		 */
 		bool isChunkActive(ChunkId id) const;
 
 		/**
-		 * @brief Reports whether world body active.
+		 * @brief Checks whether the world-body ID currently refers to an allocated body.
 		 */
 		bool isWorldBodyActive(WorldBodyId id) const;
 
 		/**
-		 * @brief Reports whether world body component slot active.
+		 * @brief Checks whether the ID refers to an allocated world-body component slot.
 		 */
 		bool isWorldBodyComponentSlotActive(WorldBodyComponentSlotId id) const;
 
 		/**
-		 * @brief Reports whether point component slot active.
+		 * @brief Checks whether the ID refers to an allocated point component slot.
 		 */
 		bool isPointComponentSlotActive(PointComponentSlotId id) const;
 
 		/**
-		 * @brief Reports whether graph component slot active.
+		 * @brief Checks whether the ID refers to an allocated graph component slot.
 		 */
 		bool isGraphComponentSlotActive(GraphComponentSlotId id) const;
 
 		/**
-		 * @brief Returns used point ids.
+		 * @brief Returns the pool-owned list of active point IDs; do not retain it across pool mutations.
 		 */
 		const DynamicArray<PointId>& getUsedPointIds() const;
 
 		/**
-		 * @brief Returns used ground triangle ids.
+		 * @brief Returns the pool-owned list of active terrain-triangle IDs; do not retain it across pool mutations.
 		 */
 		const DynamicArray<GroundTriangleId>& getUsedGroundTriangleIds() const;
 
 		/**
-		 * @brief Returns used chunk ids.
+		 * @brief Returns the pool-owned list of active chunk IDs; do not retain it across pool mutations.
 		 */
 		const DynamicArray<ChunkId>& getUsedChunkIds() const;
 
 		/**
-		 * @brief Returns used world body ids.
+		 * @brief Returns the pool-owned list of active world-body IDs; do not retain it across pool mutations.
 		 */
 		const DynamicArray<WorldBodyId>& getUsedWorldBodyIds() const;
 
 		/**
-		 * @brief Returns used world body component slot ids.
+		 * @brief Returns the pool-owned list of active world-body component slot IDs.
 		 */
 		const DynamicArray<WorldBodyComponentSlotId>& getUsedWorldBodyComponentSlotIds() const;
 
 		/**
-		 * @brief Returns used point component slot ids.
+		 * @brief Returns the pool-owned list of active point component slot IDs.
 		 */
 		const DynamicArray<PointComponentSlotId>& getUsedPointComponentSlotIds() const;
 
 		/**
-		 * @brief Returns used graph component slot ids.
+		 * @brief Returns the pool-owned list of active graph component slot IDs.
 		 */
 		const DynamicArray<GraphComponentSlotId>& getUsedGraphComponentSlotIds() const;
 
 		/**
-		 * @brief Returns point.
+		 * @brief Returns a checked reference to an active point; an invalid ID raises a fatal error.
 		 */
 		Point& getPoint(PointId id);
 
 		/**
-		 * @brief Returns point.
+		 * @brief Returns a checked reference to an active point; an invalid ID raises a fatal error.
 		 */
 		const Point& getPoint(PointId id) const;
 
 		/**
-		 * @brief Returns ground triangle.
+		 * @brief Returns a checked reference to an active ground triangle; an invalid ID raises a fatal error.
 		 */
 		GroundTriangle& getGroundTriangle(GroundTriangleId id);
 
 		/**
-		 * @brief Returns ground triangle.
+		 * @brief Returns a checked reference to an active ground triangle; an invalid ID raises a fatal error.
 		 */
 		const GroundTriangle& getGroundTriangle(GroundTriangleId id) const;
 
 		/**
-		 * @brief Returns chunk.
+		 * @brief Returns a checked reference to an active chunk; an invalid ID raises a fatal error.
 		 */
 		Chunk& getChunk(ChunkId id);
 
 		/**
-		 * @brief Returns chunk.
+		 * @brief Returns a checked reference to an active chunk; an invalid ID raises a fatal error.
 		 */
 		const Chunk& getChunk(ChunkId id) const;
 
 		/**
-		 * @brief Returns world body.
+		 * @brief Returns a checked reference to an active world body; an invalid ID raises a fatal error.
 		 */
 		WorldBody& getWorldBody(WorldBodyId id);
 
 		/**
-		 * @brief Returns world body.
+		 * @brief Returns a checked reference to an active world body; an invalid ID raises a fatal error.
 		 */
 		const WorldBody& getWorldBody(WorldBodyId id) const;
 
 		/**
-		 * @brief Returns world body component slot.
+		 * @brief Returns a checked reference to an active world-body component slot.
 		 */
 		WorldBodyComponentSlot& getWorldBodyComponentSlot(WorldBodyComponentSlotId id);
 
 		/**
-		 * @brief Returns world body component slot.
+		 * @brief Returns a checked reference to an active world-body component slot.
 		 */
 		const WorldBodyComponentSlot& getWorldBodyComponentSlot(WorldBodyComponentSlotId id) const;
 
 		/**
-		 * @brief Returns point component slot.
+		 * @brief Returns a checked reference to an active point component slot.
 		 */
 		PointComponentSlot& getPointComponentSlot(PointComponentSlotId id);
 
 		/**
-		 * @brief Returns point component slot.
+		 * @brief Returns a checked reference to an active point component slot.
 		 */
 		const PointComponentSlot& getPointComponentSlot(PointComponentSlotId id) const;
 
 		/**
-		 * @brief Returns graph component slot.
+		 * @brief Returns a checked reference to an active graph component slot.
 		 */
 		GraphComponentSlot& getGraphComponentSlot(GraphComponentSlotId id);
 
 		/**
-		 * @brief Returns graph component slot.
+		 * @brief Returns a checked reference to an active graph component slot.
 		 */
 		const GraphComponentSlot& getGraphComponentSlot(GraphComponentSlotId id) const;
 
 		// These counts are total slot-array lengths, including free slots.
 
 		/**
-		 * @brief Returns point slot count.
+		 * @brief Returns the total point-pool slot count, including slots available for reuse.
 		 */
 		size_t getPointSlotCount() const;
 
 		/**
-		 * @brief Returns ground triangle slot count.
+		 * @brief Returns the total ground-triangle pool slot count, including reusable slots.
 		 */
 		size_t getGroundTriangleSlotCount() const;
 
 		/**
-		 * @brief Returns chunk slot count.
+		 * @brief Returns the total chunk-pool slot count, including reusable slots.
 		 */
 		size_t getChunkSlotCount() const;
 
 		/**
-		 * @brief Returns world body slot count.
+		 * @brief Returns the total world-body pool slot count, including reusable slots.
 		 */
 		size_t getWorldBodySlotCount() const;
 
 		/**
-		 * @brief Returns world body component slot count.
+		 * @brief Returns the total world-body component pool slot count.
 		 */
 		size_t getWorldBodyComponentSlotCount() const;
 
 		/**
-		 * @brief Returns point component slot count.
+		 * @brief Returns the total point-component pool slot count.
 		 */
 		size_t getPointComponentSlotCount() const;
 
 		/**
-		 * @brief Returns graph component slot count.
+		 * @brief Returns the total graph-component pool slot count.
 		 */
 		size_t getGraphComponentSlotCount() const;
 
 		/**
-		 * @brief Performs the clear operation.
+		 * @brief Resets the inventory slot to its empty, unequipped state.
 		 */
 		void clear();
 
 		/**
-		 * @brief Performs the release operation.
+		 * @brief Releases the backing storage after destroying all resources in the pool.
 		 */
 		void release();
 	};

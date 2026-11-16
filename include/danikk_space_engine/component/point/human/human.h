@@ -13,7 +13,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents human appearance data and behavior.
+	 * @brief Selects a human rendering style and the skin or model used by that style.
 	 */
 	struct HumanAppearance
 	{
@@ -33,7 +33,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents human part definition data and behavior.
+	 * @brief Describes one human body part mesh and its local transform.
 	 */
 	struct HumanPartDefinition
 	{
@@ -46,7 +46,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents human definition data and behavior.
+	 * @brief Stores the shared mesh parts and dimensions used to render human characters.
 	 */
 	struct HumanDefinition
 	{
@@ -82,7 +82,7 @@ namespace danikk_space_engine
 	void loadHumanDefinition(HumanDefinition& definition);
 
 	/**
-	 * @brief Creates human soldier.
+	 * @brief Creates a human with the soldier appearance, inventory, and default MG-42 equipment.
 	 */
 	PointComponentSlotId createHumanSoldier(World& world, WorldBodyId world_body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward);
@@ -108,12 +108,12 @@ namespace danikk_space_engine
 	void tickHumanComponent(PointComponentSlot& slot, World& world);
 
 	/**
-	 * @brief Processes one frame for human component.
+	 * @brief Updates the human’s appearance transform and draws its body and equipped item.
 	 */
 	void frameHumanComponent(PointComponentSlot& slot, World& world);
 
 	/**
-	 * @brief Draws human appearance.
+	 * @brief Draws the selected human appearance, including body parts, skin layers, and equipped item rendering.
 	 */
 	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix);
 }

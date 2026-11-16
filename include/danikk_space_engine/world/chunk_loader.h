@@ -29,7 +29,7 @@ namespace danikk_space_engine
 		uint64 current_generation_id = 0;
 
 		/**
-		 * @brief Performs the run operation.
+		 * @brief Waits for chunk requests, runs generation jobs, and publishes completed data to the main thread.
 		 */
 		void run();
 	public:
@@ -39,12 +39,12 @@ namespace danikk_space_engine
 		~ChunkLoader();
 
 		/**
-		 * @brief Performs the start operation.
+		 * @brief Starts the chunk worker and prepares its request and result queues.
 		 */
 		void start();
 
 		/**
-		 * @brief Performs the stop operation.
+		 * @brief Signals the chunk worker to stop and waits for its thread to finish.
 		 */
 		void stop();
 

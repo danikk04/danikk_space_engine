@@ -7,7 +7,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents npc controller component data and behavior.
+	 * @brief Stores the NPC movement, look direction, and autonomous behavior state.
 	 */
 	struct NpcControllerComponent
 	{
@@ -36,7 +36,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the stop operation.
+		 * @brief Signals the chunk worker to stop and waits for its thread to finish.
 		 */
 		void stop()
 		{
@@ -46,7 +46,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Creates npc.
+	 * @brief Creates a human character, then attaches the autonomous NPC controller to its point.
 	 */
 	PointComponentSlotId createNpc(World& world, WorldBodyId world_body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward);

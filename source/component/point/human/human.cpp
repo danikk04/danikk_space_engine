@@ -292,7 +292,7 @@ namespace danikk_space_engine
 	// World translation is camera-relative in double before conversion to the float render matrix.
 
 	/**
-	 * @brief Processes one frame for human component.
+	 * @brief Updates the human’s appearance transform and draws its body and equipped item.
 	 */
 	void frameHumanComponent(PointComponentSlot& slot, World& world)
 	{

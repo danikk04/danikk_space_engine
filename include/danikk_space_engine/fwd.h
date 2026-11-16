@@ -4,7 +4,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents game object data and behavior.
+	 * @brief Provides the legacy object transform, shape, and collision interface.
 	 */
 	class GameObject;
 
@@ -39,7 +39,7 @@ namespace danikk_space_engine
 	struct FacePtr;
 
 	/**
-	 * @brief Represents generated chunk data data and behavior.
+	 * @brief Holds worker-generated chunk coordinates, vertices, indices, and material data before world resources are created.
 	 */
 	struct GeneratedChunkData;
 
@@ -59,12 +59,12 @@ namespace danikk_space_engine
 	struct RaycastHit;
 
 	/**
-	 * @brief Represents radiation sample data and behavior.
+	 * @brief Returns a radiation dose rate together with a flag indicating whether the field is available.
 	 */
 	struct RadiationSample;
 
 	/**
-	 * @brief Represents temperature sample data and behavior.
+	 * @brief Returns a temperature in kelvin together with a flag indicating whether the field is available.
 	 */
 	struct TemperatureSample;
 

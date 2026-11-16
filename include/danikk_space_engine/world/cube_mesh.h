@@ -7,7 +7,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents cube triangle data and behavior.
+	 * @brief Stores one triangle generated for a face of the cube-based planet surface.
 	 */
 	struct CubeTriangle
 	{

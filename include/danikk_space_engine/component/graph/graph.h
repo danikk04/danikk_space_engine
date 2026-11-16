@@ -22,7 +22,7 @@ namespace danikk_space_engine
 	using GraphComponentUpdateFunction = void (*)(GraphComponentSlot& slot, World& world);
 
 	/**
-	 * @brief Represents graph component type data and behavior.
+	 * @brief Defines graph-component storage size and lifecycle, tick, and frame callbacks.
 	 */
 	struct GraphComponentType
 	{
@@ -59,7 +59,7 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Returns data.
+		 * @brief Returns the component payload, selecting inline storage or the external allocation recorded by the slot.
 		 */
 		void* getData()
 		{
@@ -67,7 +67,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Returns data.
+		 * @brief Returns the component payload, selecting inline storage or the external allocation recorded by the slot.
 		 */
 		const void* getData() const
 		{
@@ -75,7 +75,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the dispose operation.
+		 * @brief Returns the component slot to its default unused state.
 		 */
 		void dispose()
 		{

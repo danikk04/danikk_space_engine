@@ -8,7 +8,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents oriented box data and behavior.
+	 * @brief Stores the center, axes, and half-extents used by oriented-box collision tests.
 	 */
 	struct OrientedBox
 	{

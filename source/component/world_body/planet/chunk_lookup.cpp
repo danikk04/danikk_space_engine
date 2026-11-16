@@ -9,7 +9,7 @@ namespace danikk_space_engine
 		constexpr uint8 deleted_bucket = 2;
 
 		/**
-		 * @brief Performs the same chunk key operation.
+		 * @brief Compares all three integer coordinate components.
 		 */
 		bool sameChunkKey(const glm::ivec3& left, const glm::ivec3& right)
 		{
@@ -17,7 +17,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Reports whether h chunk key.
+		 * @brief Computes a deterministic 64-bit hash from all three signed grid coordinates for the chunk lookup table.
 		 */
 		uint64 hashChunkKey(const glm::ivec3& key)
 		{
@@ -35,7 +35,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Finds chunk bucket.
+		 * @brief Uses linear probing to find a matching coordinate or the first available bucket.
 		 */
 		size_t findChunkBucket(
 			const DynamicArray<PlanetChunkLookupEntry>& entries,
@@ -66,7 +66,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the ensure chunk lookup capacity operation.
+		 * @brief Keeps the open-addressing table below its load threshold and rehashes occupied entries when it grows.
 		 */
 		void ensureChunkLookupCapacity(PlanetChunkLookup& lookup)
 		{
@@ -89,7 +89,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Clears desired.
+	 * @brief Clears desired flags and tombstones entries that no longer own loaded chunks.
 	 */
 	void PlanetChunkLookup::clearDesired()
 	{
@@ -109,7 +109,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the mark desired operation.
+	 * @brief Marks this coordinate as needed in the current streaming update.
 	 */
 	void PlanetChunkLookup::markDesired(const glm::ivec3& grid_coordinate)
 	{
@@ -150,7 +150,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the remove operation.
+	 * @brief Removes a loaded coordinate from the lookup table and clears its chunk record.
 	 */
 	void PlanetChunkLookup::remove(const glm::ivec3& grid_coordinate)
 	{
@@ -165,7 +165,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Reports whether desired.
+	 * @brief Reports whether the grid coordinate is in the current desired chunk set.
 	 */
 	bool PlanetChunkLookup::isDesired(const glm::ivec3& grid_coordinate) const
 	{
@@ -174,7 +174,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Reports whether generated.
+	 * @brief Reports whether generation has produced a chunk for the grid coordinate.
 	 */
 	bool PlanetChunkLookup::isGenerated(const glm::ivec3& grid_coordinate) const
 	{
@@ -183,7 +183,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns chunk.
+	 * @brief Returns a checked reference to an active chunk; an invalid ID raises a fatal error.
 	 */
 	bool PlanetChunkLookup::getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const
 	{

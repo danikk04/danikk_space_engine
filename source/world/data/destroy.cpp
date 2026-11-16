@@ -297,7 +297,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the clear operation.
+	 * @brief Destroys active resources while retaining the allocated capacity of each pool.
 	 */
 	void WorldData::clear()
 	{
@@ -311,7 +311,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the release operation.
+	 * @brief Destroys active resources and releases the backing memory of every pool.
 	 */
 	void WorldData::release()
 	{

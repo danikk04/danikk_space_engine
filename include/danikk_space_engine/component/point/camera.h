@@ -18,17 +18,17 @@ namespace danikk_space_engine
 		float far_clip_distance = 10000.0f;
 
 		/**
-		 * @brief Returns front.
+		 * @brief Builds the camera forward vector from its surface-up basis, yaw reference, and pitch.
 		 */
 		vec3 getFront() const;
 
 		/**
-		 * @brief Returns up.
+		 * @brief Builds the camera up vector from forward and roll, preserving the surface-oriented camera basis.
 		 */
 		vec3 getUp() const;
 
 		/**
-		 * @brief Returns right.
+		 * @brief Returns the normalized right axis perpendicular to the camera forward and up vectors.
 		 */
 		vec3 getRight() const;
 	};

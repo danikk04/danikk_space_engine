@@ -16,7 +16,7 @@ namespace danikk_space_engine
 		constexpr PointComponentSlotId no_human_slot = static_cast<PointComponentSlotId>(-1);
 
 		/**
-		 * @brief Performs the ray intersects human capsule operation.
+		 * @brief Tests the ray against the human capsule formed by its vertical segment and radius.
 		 */
 		bool rayIntersectsHumanCapsule(const glm::dvec3& origin, const glm::dvec3& direction,
 			const glm::dvec3& center, const glm::dvec3& up, double height, double radius,

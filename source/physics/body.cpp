@@ -12,7 +12,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Reports whether planet body.
+		 * @brief Checks whether the world body has an active planet component.
 		 */
 		bool isPlanetBody(const World& world, const WorldBody& body)
 		{

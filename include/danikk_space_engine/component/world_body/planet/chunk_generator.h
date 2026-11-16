@@ -11,7 +11,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents chunk generation request data and behavior.
+	 * @brief Identifies a planet chunk generation job by component, grid coordinate, and terrain revision.
 	 */
 	struct ChunkGenerationRequest
 	{
@@ -31,7 +31,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents generated chunk data data and behavior.
+	 * @brief Holds worker-generated chunk coordinates, vertices, indices, and material data before world resources are created.
 	 */
 	struct GeneratedChunkData
 	{

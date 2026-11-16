@@ -11,7 +11,7 @@ namespace danikk_space_engine
 		constexpr ToolActionId human_actions[] = {ToolActionId::drag, ToolActionId::create_human};
 
 		/**
-		 * @brief Returns actions.
+		 * @brief Returns the supported action array for the selected tool and its length.
 		 */
 		const ToolActionId* getActions(ToolId tool, size_t& count)
 		{
@@ -40,7 +40,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Advances tool.
+	 * @brief Moves to the previous or next tool and wraps at either end of the tool list.
 	 */
 	ToolId stepTool(ToolId current, int direction)
 	{
@@ -52,7 +52,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns first tool action.
+	 * @brief Returns the first supported action for a tool, or ToolActionId::none when the tool has no actions.
 	 */
 	ToolActionId getFirstToolAction(ToolId tool)
 	{
@@ -62,7 +62,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Advances tool action.
+	 * @brief Moves within the selected tool’s supported actions, wrapping at the ends and falling back to the first action if current is invalid.
 	 */
 	ToolActionId stepToolAction(ToolId tool, ToolActionId current, int direction)
 	{
@@ -82,7 +82,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns tool name.
+	 * @brief Returns the user-facing name for a tool ID, using “Unknown” for an unsupported value.
 	 */
 	const char* getToolName(ToolId tool)
 	{
@@ -99,7 +99,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns tool action name.
+	 * @brief Returns the user-facing name for an action ID, using “Unknown” for an unsupported value.
 	 */
 	const char* getToolActionName(ToolActionId action)
 	{

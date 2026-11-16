@@ -48,17 +48,17 @@ namespace danikk_space_engine
 		bool chunk_generation_requests_dirty = false;
 
 		/**
-		 * @brief Performs the tick operation.
+		 * @brief Advances the world simulation by one fixed update step.
 		 */
 		void tick();
 
 		/**
-		 * @brief Performs the defer point destruction operation.
+		 * @brief Adds a point ID to the deferred-destruction queue if it is not already queued.
 		 */
 		void deferPointDestruction(PointId point_id);
 
 		/**
-		 * @brief Performs the replace chunk generation requests operation.
+		 * @brief Replaces pending generation work and removes requests made for stale component generations.
 		 */
 		void replaceChunkGenerationRequests(
 			WorldBodyComponentSlotId component_slot_id,
@@ -70,22 +70,22 @@ namespace danikk_space_engine
 		void removeChunkGenerationRequest(WorldBodyComponentSlotId component_slot_id, const glm::ivec3& grid_coordinate);
 
 		/**
-		 * @brief Performs the frame operation.
+		 * @brief Runs one application frame, including profiling, GUI update, and world rendering.
 		 */
 		void frame();
 
 		/**
-		 * @brief Performs the init operation.
+		 * @brief Initializes the current world instance and its starting scenario.
 		 */
 		void init();
 
 		/**
-		 * @brief Performs the shutdown operation.
+		 * @brief Stops current world activity and releases its owned resources.
 		 */
 		void shutdown();
 
 		/**
-		 * @brief Performs the raycast operation.
+		 * @brief Rejects chunks using their bounding spheres, tests remaining triangles, and returns the nearest hit.
 		 */
 		RaycastHit raycast(const glm::dvec3& origin, const vec3& direction, float max_distance = 10000.0f) const;
 
@@ -95,57 +95,57 @@ namespace danikk_space_engine
 		RaycastHit raycastFromCamera(float max_distance = 10000.0f) const;
 
 		/**
-		 * @brief Returns camera slot.
+		 * @brief Returns the active point-component slot that owns the camera.
 		 */
 		PointComponentSlot& getCameraSlot();
 
 		/**
-		 * @brief Returns camera slot.
+		 * @brief Returns the active point-component slot that owns the camera.
 		 */
 		const PointComponentSlot& getCameraSlot() const;
 
 		/**
-		 * @brief Returns camera component.
+		 * @brief Returns the camera component stored in the camera slot.
 		 */
 		CameraComponent& getCameraComponent();
 
 		/**
-		 * @brief Returns camera component.
+		 * @brief Returns the camera component stored in the camera slot.
 		 */
 		const CameraComponent& getCameraComponent() const;
 
 		/**
-		 * @brief Returns camera point.
+		 * @brief Returns the active point that defines the camera’s local position.
 		 */
 		Point& getCameraPoint();
 
 		/**
-		 * @brief Returns camera point.
+		 * @brief Returns the active point that defines the camera’s local position.
 		 */
 		const Point& getCameraPoint() const;
 
 		/**
-		 * @brief Returns camera world position.
+		 * @brief Transforms the camera point through its chunk and world body into world-space coordinates.
 		 */
 		glm::dvec3 getCameraWorldPosition() const;
 
 		/**
-		 * @brief Returns chunk world position.
+		 * @brief Transforms the chunk origin through its owning world body into world-space coordinates.
 		 */
 		glm::dvec3 getChunkWorldPosition(ChunkId chunk_id) const;
 
 		/**
-		 * @brief Returns point world position.
+		 * @brief Transforms a point’s chunk-local position through the chunk and body transforms.
 		 */
 		glm::dvec3 getPointWorldPosition(ChunkId chunk_id, PointId point_id) const;
 
 		/**
-		 * @brief Returns local player controller component.
+		 * @brief Returns the controller component attached to the configured controller slot.
 		 */
 		LocalPlayerControllerComponent& getLocalPlayerControllerComponent();
 
 		/**
-		 * @brief Returns local player controller component.
+		 * @brief Returns the controller component attached to the configured controller slot.
 		 */
 		const LocalPlayerControllerComponent& getLocalPlayerControllerComponent() const;
 

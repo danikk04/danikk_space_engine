@@ -12,7 +12,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents collision info data and behavior.
+	 * @brief Stores whether two shapes overlap and, when they do, the collision direction and penetration.
 	 */
 	struct CollisionInfo
 	{
@@ -22,7 +22,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents shape type data and behavior.
+	 * @brief Defines shape IDs and the count used to size collision dispatch tables.
 	 */
 	struct ShapeType
 	{
@@ -58,7 +58,7 @@ namespace danikk_space_engine
 		DynamicArray<ShapeMesh> meshes;
 
 		/**
-		 * @brief Returns mesh entry.
+		 * @brief Finds a mesh cache entry for the exact requested dimensions or generates and stores one on a cache miss.
 		 */
 		ShapeMesh* getMeshEntry(vec3 size);
 	};

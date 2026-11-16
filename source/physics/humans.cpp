@@ -12,7 +12,7 @@ namespace danikk_space_engine
 		constexpr double minimum_ground_normal_dot = 0.2;
 
 		/**
-		 * @brief Represents human collider data and behavior.
+		 * @brief Stores a human capsule’s world position, up axis, and dimensions for collision resolution.
 		 */
 		struct HumanCollider
 		{
@@ -27,7 +27,7 @@ namespace danikk_space_engine
 		// Finds closest points on two standing capsule axes, including degenerate endpoint cases.
 
 		/**
-		 * @brief Performs the closest segment points operation.
+		 * @brief Computes the pair of points with minimum distance on two finite segments.
 		 */
 		void closestSegmentPoints(const glm::dvec3& a0, const glm::dvec3& a1,
 			const glm::dvec3& b0, const glm::dvec3& b1,
@@ -98,7 +98,7 @@ namespace danikk_space_engine
 		// afterward and lift it back to the supporting surface, never snapping it farther down.
 
 		/**
-		 * @brief Performs the restore human ground clearance operation.
+		 * @brief Moves a human outward along the terrain normal until its feet clear the surface.
 		 */
 		void restoreHumanGroundClearance(World& world, HumanCollider& human)
 		{

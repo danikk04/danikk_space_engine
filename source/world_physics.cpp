@@ -5,7 +5,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Performs the tick operation.
+	 * @brief Integrates body motion, resolves planet contacts, resolves body-to-body contacts, and removes core-crossing entities.
 	 */
 	void WorldPhysics::tick(World& world)
 	{

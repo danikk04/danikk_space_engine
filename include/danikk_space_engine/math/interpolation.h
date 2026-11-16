@@ -6,17 +6,17 @@ namespace danikk_space_engine::math
 {
 
 	/**
-	 * @brief Performs the linear interpolate operation.
+	 * @brief Returns the linear blend of start and end using amount without clamping the amount.
 	 */
 	double linearInterpolate(double start, double end, double amount);
 
 	/**
-	 * @brief Performs the quintic fade operation.
+	 * @brief Computes the quintic fade polynomial used to smooth interpolation at cell boundaries.
 	 */
 	double quinticFade(double value);
 
 	/**
-	 * @brief Performs the smooth step operation.
+	 * @brief Clamps the normalized value between edges, then applies the cubic smooth-step curve.
 	 */
 	double smoothStep(double edge0, double edge1, double value);
 }

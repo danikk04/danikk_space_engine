@@ -13,7 +13,7 @@ namespace danikk_space_engine
 		constexpr WorldBodyId no_dragged_body = static_cast<WorldBodyId>(-1);
 
 		/**
-		 * @brief Reports whether drag world body.
+		 * @brief Checks whether the body is eligible for the drag tool and has loaded geometry.
 		 */
 		bool canDragWorldBody(const World& world, WorldBodyId body_id)
 		{

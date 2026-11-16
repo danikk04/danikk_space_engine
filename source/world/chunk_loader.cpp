@@ -7,7 +7,7 @@ namespace danikk_space_engine
 		constexpr size_t max_completed_chunks = 2;
 
 		/**
-		 * @brief Performs the same request key operation.
+		 * @brief Compares the component-generation identity and grid coordinate, ignoring output payload.
 		 */
 		bool sameRequestKey(const ChunkGenerationRequest& left, const ChunkGenerationRequest& right)
 		{
@@ -20,7 +20,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the request has completed result operation.
+		 * @brief Checks whether the completed-result queue contains the specified generation request.
 		 */
 		bool requestHasCompletedResult(
 			const ChunkGenerationRequest& request,
@@ -48,7 +48,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the start operation.
+	 * @brief Starts the worker thread that processes chunk-generation requests.
 	 */
 	void ChunkLoader::start()
 	{
@@ -59,7 +59,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the stop operation.
+	 * @brief Signals the worker to stop, wakes it, and joins the thread.
 	 */
 	void ChunkLoader::stop()
 	{
@@ -148,7 +148,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the run operation.
+	 * @brief Waits for generation requests, generates chunks on the worker thread, and queues completed results.
 	 */
 	void ChunkLoader::run()
 	{

@@ -14,7 +14,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Performs the point component name operation.
+		 * @brief Returns the profiler display name for the point-component type, or the fallback label for an unknown type.
 		 */
 		const char* pointComponentName(PointComponentTypeId type_id)
 		{
@@ -33,7 +33,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the graph component name operation.
+		 * @brief Returns the profiler display name for a graph-component type, or the fallback label for an unknown type.
 		 */
 		const char* graphComponentName(GraphComponentTypeId type_id)
 		{
@@ -142,7 +142,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the tick operation.
+	 * @brief Runs tick callbacks for the active point and graph components attached to the chunk.
 	 */
 	void Chunk::tick(World& world)
 	{
@@ -214,7 +214,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the frame operation.
+	 * @brief Runs frame callbacks for the active point and graph components attached to the chunk.
 	 */
 	void Chunk::frame(World& world)
 	{
@@ -303,7 +303,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the draw operation.
+	 * @brief Binds material ranges and draws the chunk mesh with the world transform.
 	 */
 	void Chunk::draw(World& world)
 	{

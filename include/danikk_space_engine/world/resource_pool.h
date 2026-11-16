@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	size_t findWorldResourceId(const DynamicArray<uint32>& ids, uint32 id);
 
 	/**
-	 * @brief Performs the insert world resource id operation.
+	 * @brief Adds an ID to the active resource list without creating a duplicate.
 	 */
 	void insertWorldResourceId(DynamicArray<uint32>& ids, uint32 id);
 
@@ -43,7 +43,7 @@ namespace danikk_space_engine
 		// Captures all backing arrays so implicit growth in push/pop/resize is covered too.
 
 		/**
-		 * @brief Represents capacity watcher data and behavior.
+		 * @brief Captures a resource pool’s backing-array capacities and reports any growth when it leaves scope.
 		 */
 		struct CapacityWatcher
 		{
@@ -79,7 +79,7 @@ namespace danikk_space_engine
 		explicit WorldResourcePool(const char* resource_name) : resource_name(resource_name) {}
 
 		/**
-		 * @brief Performs the create operation.
+		 * @brief Reuses a freed slot or appends a slot, then registers its ID as active.
 		 */
 		id_t create()
 		{
@@ -106,7 +106,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the free operation.
+		 * @brief Removes an ID from the active set and returns its slot to the reusable free list.
 		 */
 		bool free(id_t id)
 		{
@@ -131,7 +131,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Reports whether active.
+		 * @brief Checks the reverse active-index table to determine whether the ID is currently allocated.
 		 */
 		bool isActive(id_t id) const
 		{
@@ -159,7 +159,7 @@ namespace danikk_space_engine
 		const DynamicArray<id_t>& usedIds() const { return active_ids; }
 
 		/**
-		 * @brief Performs the clear operation.
+		 * @brief Resets the inventory slot to its empty, unequipped state.
 		 */
 		void clear()
 		{

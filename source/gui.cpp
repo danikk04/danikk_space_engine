@@ -13,7 +13,7 @@ namespace danikk_space_engine
 	TextStyle debug_info_label_style;
 
 	/**
-	 * @brief Performs the define operation.
+	 * @brief Configures the debug label’s font, multiline layout, character size, and position.
 	 */
 	void GUI::define()
 	{
@@ -31,7 +31,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the compose operation.
+	 * @brief Adds the debug information label to the GUI hierarchy.
 	 */
 	void GUI::compose()
 	{
@@ -39,7 +39,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the frame operation.
+	 * @brief Refreshes the memory sample and formats FPS, memory, tool, speed, and camera position.
 	 */
 	void GUI::frame()
 	{

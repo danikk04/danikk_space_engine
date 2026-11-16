@@ -7,7 +7,7 @@ namespace danikk_space_engine
 
 		template<typename component_type_t, typename type_id_t>
 		/**
-		 * @brief Performs the validate component type operation.
+		 * @brief Raises a fatal error when component callbacks or in-place storage requirements are invalid.
 		 */
 		void validateComponentType(const component_type_t& type, type_id_t type_id, const char* component_name)
 		{

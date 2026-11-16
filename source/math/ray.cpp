@@ -9,7 +9,7 @@ namespace danikk_space_engine
 	// parallel, outside, or behind-origin intersections before returning distance and normal.
 
 	/**
-	 * @brief Performs the intersect ray triangle operation.
+	 * @brief Tests a ray against a triangle and returns distance and barycentric coordinates on a hit.
 	 */
 	RayTriangleIntersection intersectRayTriangle(
 		const Ray& ray,

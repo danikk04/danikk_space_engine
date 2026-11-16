@@ -36,12 +36,12 @@ namespace danikk_space_engine
 		Config();
 
 		/**
-		 * @brief Performs the load operation.
+		 * @brief Reads and validates configuration entries, retaining the in-memory defaults for missing keys.
 		 */
 		bool load();
 
 		/**
-		 * @brief Performs the save operation.
+		 * @brief Writes the current bound settings values to the configuration file.
 		 */
 		bool save() const;
 	};

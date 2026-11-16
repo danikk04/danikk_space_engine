@@ -77,7 +77,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns mesh entry.
+	 * @brief Finds a mesh cache entry for the exact requested dimensions or generates and stores one on a cache miss.
 	 */
 	ShapeMesh* ShapeDefinition::getMeshEntry(vec3 size)
 	{

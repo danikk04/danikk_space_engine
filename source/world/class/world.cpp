@@ -18,7 +18,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Performs the world body component name operation.
+		 * @brief Returns the profiler display name for the component type, or “Unknown world body component” for an unsupported type.
 		 */
 		const char* worldBodyComponentName(WorldBodyComponentTypeId type_id)
 		{
@@ -31,7 +31,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns camera slot.
+	 * @brief Returns the active point-component slot that owns the camera.
 	 */
 	PointComponentSlot& World::getCameraSlot()
 	{
@@ -39,7 +39,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns camera slot.
+	 * @brief Returns the active point-component slot that owns the camera.
 	 */
 	const PointComponentSlot& World::getCameraSlot() const
 	{
@@ -47,7 +47,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns camera component.
+	 * @brief Returns the camera component stored in the camera slot.
 	 */
 	CameraComponent& World::getCameraComponent()
 	{
@@ -55,7 +55,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns camera component.
+	 * @brief Returns the camera component stored in the camera slot.
 	 */
 	const CameraComponent& World::getCameraComponent() const
 	{
@@ -63,7 +63,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns camera point.
+	 * @brief Returns the active point that defines the camera’s local position.
 	 */
 	Point& World::getCameraPoint()
 	{
@@ -71,7 +71,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns camera point.
+	 * @brief Returns the active point that defines the camera’s local position.
 	 */
 	const Point& World::getCameraPoint() const
 	{
@@ -79,7 +79,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns camera world position.
+	 * @brief Transforms the camera point through its chunk and world body into world-space coordinates.
 	 */
 	glm::dvec3 World::getCameraWorldPosition() const
 	{
@@ -88,7 +88,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns chunk world position.
+	 * @brief Transforms the chunk origin through its owning world body into world-space coordinates.
 	 */
 	glm::dvec3 World::getChunkWorldPosition(ChunkId chunk_id) const
 	{
@@ -98,7 +98,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns point world position.
+	 * @brief Transforms a point’s chunk-local position through the chunk and body transforms.
 	 */
 	glm::dvec3 World::getPointWorldPosition(ChunkId chunk_id, PointId point_id) const
 	{
@@ -109,7 +109,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns local player controller component.
+	 * @brief Returns the controller component attached to the configured controller slot.
 	 */
 	LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent()
 	{
@@ -118,7 +118,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns local player controller component.
+	 * @brief Returns the controller component attached to the configured controller slot.
 	 */
 	const LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent() const
 	{
@@ -127,7 +127,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the tick operation.
+	 * @brief Runs world-body and chunk component ticks, applies deferred point deletion, then advances physics.
 	 */
 	void World::tick()
 	{
@@ -190,7 +190,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the defer point destruction operation.
+	 * @brief Queues a point for destruction after component and chunk iteration completes.
 	 */
 	void World::deferPointDestruction(PointId point_id)
 	{
@@ -203,7 +203,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the replace chunk generation requests operation.
+	 * @brief Replaces pending generation work and removes requests made for stale component generations.
 	 */
 	void World::replaceChunkGenerationRequests(
 		WorldBodyComponentSlotId component_slot_id,
@@ -256,7 +256,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the frame operation.
+	 * @brief Accepts generated chunks, runs frame callbacks, updates meshes, and renders world bodies.
 	 */
 	void World::frame()
 	{
@@ -368,7 +368,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the init operation.
+	 * @brief Initializes the camera, world data, physics, and the selected starting scenario.
 	 */
 	void World::init()
 	{
@@ -383,7 +383,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the shutdown operation.
+	 * @brief Stops chunk generation and releases world-owned resources.
 	 */
 	void World::shutdown()
 	{

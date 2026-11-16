@@ -32,7 +32,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Performs the insert world resource id operation.
+	 * @brief Adds an ID to the active resource list without creating a duplicate.
 	 */
 	void insertWorldResourceId(DynamicArray<uint32>& ids, uint32 id)
 	{

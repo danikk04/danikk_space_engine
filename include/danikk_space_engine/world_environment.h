@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	class World;
 
 	/**
-	 * @brief Represents temperature sample data and behavior.
+	 * @brief Returns a temperature in kelvin together with a flag indicating whether the field is available.
 	 */
 	struct TemperatureSample
 	{
@@ -20,7 +20,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents radiation sample data and behavior.
+	 * @brief Returns a radiation dose rate together with a flag indicating whether the field is available.
 	 */
 	struct RadiationSample
 	{

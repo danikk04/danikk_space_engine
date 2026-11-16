@@ -15,7 +15,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Performs the project to uv operation.
+		 * @brief Projects a face-local position onto a stable tangent basis to produce texture coordinates.
 		 */
 		vec2 projectToUV(const vec3& position, const vec3& normal)
 		{

@@ -14,7 +14,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Performs the ray intersects sphere operation.
+		 * @brief Returns whether a finite ray intersects the supplied sphere.
 		 */
 		bool rayIntersectsSphere(const vec3& center, float radius, const vec3& direction, float max_distance)
 		{
@@ -29,7 +29,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Returns planet component.
+		 * @brief Returns the planet settings and streaming state attached to this body, or nullptr if the body has no planet component.
 		 */
 		const PlanetComponent* getPlanetComponent(const WorldData& data, const WorldBody& body)
 		{
@@ -51,7 +51,7 @@ namespace danikk_space_engine
 	// irregular/non-planet bodies retain the existing per-body chunk scan.
 
 	/**
-	 * @brief Performs the raycast operation.
+	 * @brief Rejects chunks using their bounding spheres, tests remaining triangles, and returns the nearest hit.
 	 */
 	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{

@@ -8,7 +8,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents inventory slot data and behavior.
+	 * @brief Stores an item definition, stack count, instance state, and equipment status.
 	 */
 	struct InventorySlot
 	{
@@ -21,7 +21,7 @@ namespace danikk_space_engine
 
 		bool isEmpty() const { return item_definition_id == empty_item_definition_id; }
 		/**
-		 * @brief Resets the inventory slot to its empty state.
+		 * @brief Resets the inventory slot to its empty, unequipped state.
 		 */
 		void clear() { *this = InventorySlot(); }
 	};

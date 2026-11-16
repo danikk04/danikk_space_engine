@@ -21,7 +21,7 @@ namespace danikk_space_engine
 	inline constexpr double planet_voxel_size = 4.0;
 
 	/**
-	 * @brief Represents planet component settings data and behavior.
+	 * @brief Stores a named planet preset including radii, gravity, and terrain-generation seed.
 	 */
 	struct PlanetComponentSettings
 	{
@@ -34,7 +34,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents planet chunk lookup entry data and behavior.
+	 * @brief Maps a planet grid coordinate to its chunk ID and desired/generated state.
 	 */
 	struct PlanetChunkLookupEntry
 	{
@@ -55,12 +55,12 @@ namespace danikk_space_engine
 		size_t used_bucket_count = 0;
 
 		/**
-		 * @brief Clears desired.
+		 * @brief Clears desired flags and tombstones entries that no longer own loaded chunks.
 		 */
 		void clearDesired();
 
 		/**
-		 * @brief Performs the mark desired operation.
+		 * @brief Marks this coordinate as needed in the current streaming update.
 		 */
 		void markDesired(const glm::ivec3& grid_coordinate);
 
@@ -70,23 +70,23 @@ namespace danikk_space_engine
 		void setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id);
 
 		/**
-		 * @brief Performs the remove operation.
+		 * @brief Removes a loaded coordinate from the lookup table and clears its chunk record.
 		 */
 		void remove(const glm::ivec3& grid_coordinate);
 
 		/**
-		 * @brief Reports whether desired.
+		 * @brief Reports whether the grid coordinate is in the current desired chunk set.
 		 */
 		bool isDesired(const glm::ivec3& grid_coordinate) const;
 		// True when a generation record exists, including a known-empty coordinate with no WorldData chunk.
 
 		/**
-		 * @brief Reports whether generated.
+		 * @brief Reports whether generation has produced a chunk for the grid coordinate.
 		 */
 		bool isGenerated(const glm::ivec3& grid_coordinate) const;
 
 		/**
-		 * @brief Returns chunk.
+		 * @brief Returns a checked reference to an active chunk; an invalid ID raises a fatal error.
 		 */
 		bool getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const;
 	};
@@ -148,7 +148,7 @@ namespace danikk_space_engine
 		const GeneratedChunkData& generated_chunk);
 
 	/**
-	 * @brief Performs the edit planet ground operation.
+	 * @brief Records a terrain stamp for the selected planet face and invalidates affected chunks.
 	 */
 	bool editPlanetGround(World& world, const FacePtr& face, double radius, bool adds_solid_terrain);
 }

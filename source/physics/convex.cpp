@@ -27,7 +27,7 @@ namespace danikk_space_engine::collision_internal
 		// the smallest translation needed to separate overlapping intervals.
 
 		/**
-		 * @brief Performs the test axis operation.
+		 * @brief Projects both convex colliders onto an axis and rejects the pair if the intervals do not overlap.
 		 */
 		bool testAxis(const ConvexChunkCollider& a, const ConvexChunkCollider& b,
 			const glm::dvec3& translation, glm::dvec3 axis, BodyContact& contact)
@@ -61,7 +61,7 @@ namespace danikk_space_engine::collision_internal
 		}
 
 		/**
-		 * @brief Performs the support center operation.
+		 * @brief Returns the extreme point of a convex collider in the requested direction.
 		 */
 		glm::dvec3 supportCenter(const ConvexChunkCollider& shape, const glm::dvec3& normal)
 		{

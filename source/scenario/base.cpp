@@ -83,7 +83,7 @@ namespace danikk_space_engine
 	// Clears the world and creates the planet with the camera and its controller.
 
 	/**
-	 * @brief Performs the start base scenario operation.
+	 * @brief Creates the default planet, camera, and starting world content.
 	 */
 	void startBaseScenario(World& world)
 	{

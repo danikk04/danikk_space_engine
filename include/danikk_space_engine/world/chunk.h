@@ -14,7 +14,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents chunk material range data and behavior.
+	 * @brief Maps a contiguous index range in a chunk mesh to one material.
 	 */
 	struct ChunkMaterialRange
 	{
@@ -68,12 +68,12 @@ namespace danikk_space_engine
 		void addGraphComponentSlot(GraphComponentSlotId slot_id);
 
 		/**
-		 * @brief Performs the tick operation.
+		 * @brief Advances the world simulation by one fixed update step.
 		 */
 		void tick(World& world);
 
 		/**
-		 * @brief Performs the frame operation.
+		 * @brief Runs one application frame, including profiling, GUI update, and world rendering.
 		 */
 		void frame(World& world);
 
@@ -83,7 +83,7 @@ namespace danikk_space_engine
 		mat4 createWorldMatrix(const World& world) const;
 
 		/**
-		 * @brief Performs the draw operation.
+		 * @brief Binds material ranges and draws the chunk mesh with the world transform.
 		 */
 		void draw(World& world);
 

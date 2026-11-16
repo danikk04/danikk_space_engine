@@ -29,7 +29,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents tool apply result data and behavior.
+	 * @brief Reports whether a tool action changed the world and carries any resulting selection state.
 	 */
 	struct ToolApplyResult
 	{
@@ -38,27 +38,27 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Advances tool.
+	 * @brief Moves to the previous or next tool and wraps at either end of the tool list.
 	 */
 	ToolId stepTool(ToolId current, int direction);
 
 	/**
-	 * @brief Returns first tool action.
+	 * @brief Returns the first supported action for a tool, or ToolActionId::none when the tool has no actions.
 	 */
 	ToolActionId getFirstToolAction(ToolId tool);
 
 	/**
-	 * @brief Advances tool action.
+	 * @brief Moves within the selected tool’s supported actions, wrapping at the ends and falling back to the first action if current is invalid.
 	 */
 	ToolActionId stepToolAction(ToolId tool, ToolActionId current, int direction);
 
 	/**
-	 * @brief Returns tool name.
+	 * @brief Returns the user-facing name for a tool ID, using “Unknown” for an unsupported value.
 	 */
 	const char* getToolName(ToolId tool);
 
 	/**
-	 * @brief Returns tool action name.
+	 * @brief Returns the user-facing name for an action ID, using “Unknown” for an unsupported value.
 	 */
 	const char* getToolActionName(ToolActionId action);
 

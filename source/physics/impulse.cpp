@@ -31,7 +31,7 @@ namespace danikk_space_engine::collision_internal
 		}
 
 		/**
-		 * @brief Performs the effective inverse mass operation.
+		 * @brief Computes the inverse mass contribution of a contact point, including rotational inertia.
 		 */
 		double effectiveInverseMass(const BodyCollider& a, const BodyCollider& b,
 			const BodyContact& contact, const glm::dvec3& direction)

@@ -9,7 +9,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents planet terrain edit data and behavior.
+	 * @brief Stores a persistent spherical terrain edit with position, radius, and add/remove operation.
 	 */
 	struct PlanetTerrainEdit
 	{

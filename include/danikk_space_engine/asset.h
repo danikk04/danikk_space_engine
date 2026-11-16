@@ -14,7 +14,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Represents static asset collection data and behavior.
+	 * @brief Owns shared shaders, fonts, meshes, textures, and human appearance assets.
 	 */
 	struct StaticAssetCollection
 	{
@@ -32,7 +32,7 @@ namespace danikk_space_engine
 		Texture container_texture;
 
 		/**
-		 * @brief Performs the load operation.
+		 * @brief Reads and validates configuration entries, retaining the in-memory defaults for missing keys.
 		 */
 		void load();
 
@@ -42,7 +42,7 @@ namespace danikk_space_engine
 		HumanSkinId loadMinecraftSkin(const char* texture_name);
 
 		/**
-		 * @brief Returns minecraft skin.
+		 * @brief Returns the shared skin texture at the requested ID; terminates with a fatal error when the ID is invalid.
 		 */
 		Texture& getMinecraftSkin(HumanSkinId skin_id);
 	};

@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Performs the random unit operation.
+		 * @brief Advances the NPC’s deterministic random state and returns a value in the unit interval.
 		 */
 		float randomUnit(NpcControllerComponent& controller)
 		{

@@ -17,7 +17,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Represents material definition data and behavior.
+	 * @brief Associates a material name and display color with its texture asset.
 	 */
 	struct MaterialDefinition
 	{
@@ -34,17 +34,17 @@ namespace danikk_space_engine
 	void loadMaterials();
 
 	/**
-	 * @brief Returns material id.
+	 * @brief Looks up a material name and returns its table index, falling back to the default material when absent.
 	 */
 	MaterialId getMaterialID(const char* name);
 
 	/**
-	 * @brief Returns material count.
+	 * @brief Returns the number of entries in the material definition table.
 	 */
 	size_t getMaterialCount();
 
 	/**
-	 * @brief Returns material.
+	 * @brief Returns the material at an ID after checking that the ID is in range.
 	 */
 	MaterialDefinition& getMaterial(MaterialId id);
 }

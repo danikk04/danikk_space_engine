@@ -23,7 +23,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Represents weapon item parameters data and behavior.
+	 * @brief Stores the damage, armor penetration, and firing values used by a weapon item.
 	 */
 	struct WeaponItemParameters
 	{
@@ -34,7 +34,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents food item parameters data and behavior.
+	 * @brief Stores the health and nourishment values restored by a food item.
 	 */
 	struct FoodItemParameters
 	{
@@ -43,7 +43,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents armor item parameters data and behavior.
+	 * @brief Stores damage resistance and movement penalty values for armor.
 	 */
 	struct ArmorItemParameters
 	{
@@ -103,32 +103,32 @@ namespace danikk_space_engine
 	void loadItemCatalog();
 
 	/**
-	 * @brief Returns item type.
+	 * @brief Returns the registered item behavior table for the type ID.
 	 */
 	const ItemType& getItemType(ItemTypeId id);
 
 	/**
-	 * @brief Returns item definition.
+	 * @brief Returns the item definition stored at the requested item definition ID.
 	 */
 	const ItemDefinition& getItemDefinition(ItemDefinitionId id);
 
 	/**
-	 * @brief Returns weapon item parameters.
+	 * @brief Returns the weapon parameter record after confirming that the definition is a weapon.
 	 */
 	const WeaponItemParameters& getWeaponItemParameters(ItemDefinitionId id);
 
 	/**
-	 * @brief Performs the use item operation.
+	 * @brief Invokes the item type’s use callback for the selected inventory stack.
 	 */
 	bool useItem(World& world, PointId owner_point_id, InventorySlot& slot);
 
 	/**
-	 * @brief Performs the equip item operation.
+	 * @brief Equips the selected stack and invokes the item type’s equip callback.
 	 */
 	bool equipItem(World& world, PointId owner_point_id, ItemDefinitionId id);
 
 	/**
-	 * @brief Performs the unequip item operation.
+	 * @brief Unequips the item and invokes the item type’s unequip callback.
 	 */
 	bool unequipItem(World& world, PointId owner_point_id, ItemDefinitionId id);
 

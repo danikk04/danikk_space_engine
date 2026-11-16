@@ -14,7 +14,7 @@ namespace danikk_space_engine
 			planet_core_death_radius * planet_core_death_radius;
 
 		/**
-		 * @brief Represents planet core target data and behavior.
+		 * @brief Pairs a planetary core with the radius used to remove entities that cross it.
 		 */
 		struct PlanetCoreTarget
 		{
@@ -23,7 +23,7 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Reports whether inside any planet core.
+		 * @brief Checks whether the body position lies inside any configured planet core radius.
 		 */
 		bool isInsideAnyPlanetCore(const glm::dvec3& position,
 			const DynamicArray<PlanetCoreTarget>& planets)
@@ -37,7 +37,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Reports whether planet body.
+		 * @brief Checks whether the world body has an active planet component.
 		 */
 		bool isPlanetBody(const World& world, const WorldBody& body)
 		{

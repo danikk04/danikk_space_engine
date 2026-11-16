@@ -34,7 +34,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the duplicate controller point with machinegun operation.
+		 * @brief Creates a point at the controller location and attaches a machine-gun component using the controller orientation.
 		 */
 		void duplicateControllerPointWithMachinegun(
 			const Point& source_point,
@@ -146,7 +146,7 @@ namespace danikk_space_engine
 	// while rendering gets both selection and hover state from the same array.
 
 	/**
-	 * @brief Performs the tick operation.
+	 * @brief Reads player input, updates selection and tool state, and applies the active action.
 	 */
 	void LocalPlayerControllerComponent::tick(World& world)
 	{

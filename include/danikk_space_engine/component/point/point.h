@@ -28,7 +28,7 @@ namespace danikk_space_engine
 using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& world);
 
 	/**
-	 * @brief Represents point component type data and behavior.
+	 * @brief Defines point-component storage requirements and lifecycle, tick, and frame callbacks.
 	 */
 	struct PointComponentType
 	{
@@ -65,7 +65,7 @@ using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& w
 		};
 
 		/**
-		 * @brief Returns data.
+		 * @brief Returns the component payload, selecting inline storage or the external allocation recorded by the slot.
 		 */
 		void* getData()
 		{
@@ -73,7 +73,7 @@ using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& w
 		}
 
 		/**
-		 * @brief Returns data.
+		 * @brief Returns the component payload, selecting inline storage or the external allocation recorded by the slot.
 		 */
 		const void* getData() const
 		{
@@ -81,7 +81,7 @@ using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& w
 		}
 
 		/**
-		 * @brief Performs the dispose operation.
+		 * @brief Returns the component slot to its default unused state.
 		 */
 		void dispose()
 		{

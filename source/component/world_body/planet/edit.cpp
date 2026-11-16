@@ -8,7 +8,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Performs the edit planet ground operation.
+	 * @brief Records a terrain stamp for the selected planet face and invalidates affected chunks.
 	 */
 	bool editPlanetGround(World& world, const FacePtr& face, double radius, bool adds_solid_terrain)
 	{

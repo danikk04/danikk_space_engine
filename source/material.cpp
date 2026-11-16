@@ -39,7 +39,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns material id.
+	 * @brief Looks up a material name and returns its table index, falling back to the default material when absent.
 	 */
 	MaterialId getMaterialID(const char* name)
 	{
@@ -54,7 +54,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns material count.
+	 * @brief Returns the number of entries in the material definition table.
 	 */
 	size_t getMaterialCount()
 	{
@@ -62,7 +62,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns material.
+	 * @brief Returns the material at an ID after checking that the ID is in range.
 	 */
 	MaterialDefinition& getMaterial(MaterialId id)
 	{

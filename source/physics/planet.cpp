@@ -14,7 +14,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Represents planet collision target data and behavior.
+		 * @brief Pairs a planet body with its settings for collision checks.
 		 */
 		struct PlanetCollisionTarget
 		{
@@ -23,7 +23,7 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Represents surface contact data and behavior.
+		 * @brief Stores a candidate contact point, normal, and penetration for a body against terrain.
 		 */
 		struct SurfaceContact
 		{
@@ -33,7 +33,7 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Represents surface contact manifold data and behavior.
+		 * @brief Collects terrain contact candidates and reduces them to the contacts used by the solver.
 		 */
 		struct SurfaceContactManifold
 		{

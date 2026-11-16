@@ -16,7 +16,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Represents node data and behavior.
+		 * @brief Accumulates timing and call-count statistics for one profiler scope.
 		 */
 		struct Node
 		{
@@ -69,7 +69,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Represents watcher data and behavior.
+	 * @brief Measures one named profiler scope and records its elapsed duration when it is destroyed.
 	 */
 	class Watcher
 	{
@@ -80,7 +80,7 @@ namespace danikk_space_engine
 		// The profiler retains this name pointer for reports; pass a string with static lifetime.
 
 		/**
-		 * @brief Performs the watcher operation.
+		 * @brief Begins a profiler timing scope and records its parent scope for hierarchical reporting.
 		 */
 		explicit Watcher(const char* name);
 		Watcher(const Watcher&) = delete;

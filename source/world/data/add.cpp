@@ -7,7 +7,7 @@ namespace danikk_space_engine
 
 		template<typename id_t>
 		/**
-		 * @brief Performs the contains id operation.
+		 * @brief Performs a linear membership check in the compact ID list.
 		 */
 		bool containsId(const DynamicArray<id_t>& ids, id_t id)
 		{

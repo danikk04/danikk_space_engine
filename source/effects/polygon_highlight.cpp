@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Reports whether planet chunk.
+		 * @brief Checks whether the chunk belongs to a world body with an active planet component.
 		 */
 		bool isPlanetChunk(const World& world, const Chunk& chunk)
 		{

@@ -8,7 +8,7 @@ namespace danikk_space_engine::collision_internal
 {
 
 	/**
-	 * @brief Reports whether loaded chunk.
+	 * @brief Checks whether the world body currently owns at least one active chunk.
 	 */
 	inline bool hasLoadedChunk(const World& world, const WorldBody& body)
 	{
@@ -21,7 +21,7 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	/**
-	 * @brief Represents body mass properties data and behavior.
+	 * @brief Stores the mass, local center of mass, and scalar inertia used by rigid-body impulses.
 	 */
 	struct BodyMassProperties
 	{
@@ -31,7 +31,7 @@ namespace danikk_space_engine::collision_internal
 	};
 
 	/**
-	 * @brief Represents convex chunk collider data and behavior.
+	 * @brief Stores a convex chunk’s transformed vertices, face normals, edges, and broadphase radius.
 	 */
 	struct ConvexChunkCollider
 	{
@@ -44,7 +44,7 @@ namespace danikk_space_engine::collision_internal
 	};
 
 	/**
-	 * @brief Represents body collider data and behavior.
+	 * @brief Groups a world body’s convex chunk colliders and derived mass properties for collision tests.
 	 */
 	struct BodyCollider
 	{
@@ -56,7 +56,7 @@ namespace danikk_space_engine::collision_internal
 	};
 
 	/**
-	 * @brief Represents body contact data and behavior.
+	 * @brief Stores a contact normal, contact offsets, and penetration depth for an intersecting body pair.
 	 */
 	struct BodyContact
 	{

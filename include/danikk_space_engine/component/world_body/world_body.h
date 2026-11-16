@@ -23,7 +23,7 @@ namespace danikk_space_engine
 		WorldBodyComponentSlot& slot, World& world, const GeneratedChunkData& generated_chunk);
 
 	/**
-	 * @brief Represents world body component type data and behavior.
+	 * @brief Defines world-body component storage requirements and lifecycle, update, and generated-chunk callbacks.
 	 */
 	struct WorldBodyComponentType
 	{
@@ -62,7 +62,7 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Returns the storage used by this component slot.
+		 * @brief Returns the component payload, selecting inline storage or the external allocation recorded by the slot.
 		 */
 		void* getData() { return uses_external_data ? external_data : inline_data; }
 		const void* getData() const { return uses_external_data ? external_data : inline_data; }

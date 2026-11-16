@@ -15,7 +15,7 @@ namespace danikk_space_engine
 		constexpr float camera_local_origin_rebase_distance = 128.0f;
 
 		/**
-		 * @brief Performs the rebase camera local position operation.
+		 * @brief Moves the camera’s local offset into its chunk transform to preserve float precision.
 		 */
 		void rebaseCameraLocalPosition(PointComponentSlot& slot, World& world)
 		{
@@ -88,7 +88,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns front.
+	 * @brief Builds the camera forward vector from its surface-up basis, yaw reference, and pitch.
 	 */
 	vec3 CameraComponent::getFront() const
 	{
@@ -98,7 +98,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns up.
+	 * @brief Builds the camera up vector from forward and roll, preserving the surface-oriented camera basis.
 	 */
 	vec3 CameraComponent::getUp() const
 	{
@@ -111,7 +111,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns right.
+	 * @brief Returns the normalized right axis perpendicular to the camera forward and up vectors.
 	 */
 	vec3 CameraComponent::getRight() const
 	{

@@ -39,7 +39,7 @@ namespace danikk_space_engine
 	public:
 
 		/**
-		 * @brief Performs the tick operation.
+		 * @brief Advances the world simulation by one fixed update step.
 		 */
 		void tick(World& world);
 	};

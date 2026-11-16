@@ -13,7 +13,7 @@ namespace danikk_space_engine
 
 		template<typename value_t>
 		/**
-		 * @brief Performs the swap values operation.
+		 * @brief Exchanges two values using move construction and assignment.
 		 */
 		void swapValues(value_t& left, value_t& right)
 		{
@@ -23,7 +23,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Represents grid point data and behavior.
+		 * @brief Stores a sampled point on the planet’s cube-face grid and its generated position.
 		 */
 		struct GridPoint
 		{
@@ -33,7 +33,7 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Performs the next power of two operation.
+		 * @brief Returns the smallest power of two that is greater than or equal to the input.
 		 */
 		size_t nextPowerOfTwo(size_t value)
 		{
@@ -43,7 +43,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Performs the edge key operation.
+		 * @brief Creates an order-independent key for a pair of grid-edge vertex indices.
 		 */
 		uint64 edgeKey(uint32 a, uint32 b)
 		{

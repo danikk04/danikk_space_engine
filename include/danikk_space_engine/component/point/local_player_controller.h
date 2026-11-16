@@ -33,7 +33,7 @@ namespace danikk_space_engine
 		bool dragged_human_followed_ground = true;
 
 		/**
-		 * @brief Performs the tick operation.
+		 * @brief Advances the world simulation by one fixed update step.
 		 */
 		void tick(World& world);
 	};

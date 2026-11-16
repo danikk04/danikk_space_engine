@@ -6,7 +6,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Performs the start base scenario operation.
+	 * @brief Creates the default planet, camera, and starting world content.
 	 */
 	void startBaseScenario(World& world);
 }

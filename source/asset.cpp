@@ -8,7 +8,7 @@ namespace danikk_space_engine
 	StaticAssetCollection static_asset_collection;
 
 	/**
-	 * @brief Performs the load operation.
+	 * @brief Reads and validates configuration entries, retaining the in-memory defaults for missing keys.
 	 */
 	void StaticAssetCollection::load()
 	{
@@ -41,7 +41,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns minecraft skin.
+	 * @brief Returns the shared skin texture at the requested ID; terminates with a fatal error when the ID is invalid.
 	 */
 	Texture& StaticAssetCollection::getMinecraftSkin(HumanSkinId skin_id)
 	{

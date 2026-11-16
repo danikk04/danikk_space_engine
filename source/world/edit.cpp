@@ -7,7 +7,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Performs the point is referenced by chunk operation.
+		 * @brief Checks the chunk’s point ID list before allowing the point to be reclaimed.
 		 */
 		bool pointIsReferencedByChunk(const WorldData& data, const Chunk& chunk, PointId point_id)
 		{

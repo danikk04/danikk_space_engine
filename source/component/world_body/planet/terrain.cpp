@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Performs the planet noise seed offset operation.
+		 * @brief Converts a planet seed into a deterministic three-dimensional noise offset.
 		 */
 		glm::dvec3 planetNoiseSeedOffset(uint64 seed)
 		{
