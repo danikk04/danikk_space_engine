@@ -10,16 +10,6 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr double chunk_update_distance = planet_voxel_size * 2.0;
-
-		template<typename value_t>
-		void eraseAt(DynamicArray<value_t>& values, size_t index)
-		{
-			for(size_t shift = index + 1; shift < values.size(); shift++)
-			{
-				values[shift - 1] = static_cast<value_t&&>(values[shift]);
-			}
-			values.resize(values.size() - 1);
-		}
 	}
 
 	void queuePlanetRequests(PlanetComponent& planet, World& world, const WorldBodyComponentSlot& slot)
@@ -37,20 +27,14 @@ namespace danikk_space_engine
 	void unloadPlanetChunksOutsideDesiredSet(PlanetComponent& planet, World& world)
 	{
 		Watcher watcher("Planet::unloadChunks");
-		for(size_t index = 0; index < planet.chunk_records.size();)
+		for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 		{
-			const PlanetChunkRecord& record = planet.chunk_records[index];
-			if(planet.chunk_lookup.isDesired(record.grid_coordinate))
+			if(!entry.has_record || planet.chunk_lookup.isDesired(entry.grid_coordinate)) continue;
+			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(entry.chunk_id))
 			{
-				index++;
-				continue;
+				world.data.destroyChunk(entry.chunk_id);
 			}
-			if(record.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(record.chunk_id))
-			{
-				world.data.destroyChunk(record.chunk_id);
-			}
-			planet.chunk_lookup.remove(record.grid_coordinate);
-			eraseAt(planet.chunk_records, index);
+			planet.chunk_lookup.remove(entry.grid_coordinate);
 		}
 	}
 
@@ -114,7 +98,7 @@ namespace danikk_space_engine
 					request.component_generation_id = slot.generation_id;
 					request.terrain_revision = planet.terrain_revision;
 					request.planet_radius = planet.radius;
-				request.core_radius = planet.core_radius;
+					request.core_radius = planet.core_radius;
 					request.chunk_width = chunk_width;
 					request.voxel_size = planet_voxel_size;
 					request.noise_seed = planet.noise_seed;
@@ -138,24 +122,22 @@ namespace danikk_space_engine
 		double radius)
 	{
 		Watcher watcher("Planet::invalidateChunks");
-		for(size_t index = 0; index < planet.chunk_records.size();)
+		for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 		{
-			const PlanetChunkRecord& record = planet.chunk_records[index];
-			const glm::dvec3 minimum = glm::dvec3(record.grid_coordinate) * planet_chunk_width;
+			if(!entry.has_record) continue;
+			const glm::dvec3 minimum = glm::dvec3(entry.grid_coordinate) * planet_chunk_width;
 			const glm::dvec3 maximum = minimum + glm::dvec3(planet_chunk_width);
 			const glm::dvec3 closest = glm::clamp(center, minimum, maximum);
 			const double invalidation_radius = radius + planet_voxel_size * 2.0;
 			if(glm::dot(center - closest, center - closest) > invalidation_radius * invalidation_radius)
 			{
-				index++;
 				continue;
 			}
-			if(record.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(record.chunk_id))
+			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(entry.chunk_id))
 			{
-				world.data.destroyChunk(record.chunk_id);
+				world.data.destroyChunk(entry.chunk_id);
 			}
-			planet.chunk_lookup.remove(record.grid_coordinate);
-			eraseAt(planet.chunk_records, index);
+			planet.chunk_lookup.remove(entry.grid_coordinate);
 		}
 	}
 }

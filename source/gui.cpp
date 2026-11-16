@@ -45,17 +45,18 @@ namespace danikk_space_engine
 		const LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
 		const char* active_tool_name = getToolName(controller.active_tool);
 		const char* selected_tool_action_name = getToolActionName(controller.selected_tool_action);
-		if(memory_sample_bytes == 0)
-		{
-			format(debug_info_label.text, "FPS:%\nRAM: unavailable\nTOOL:%\nACTION:%\ncamera_pos:%",
-				fps_counter.getValue(), active_tool_name, selected_tool_action_name, camera_position);
-			return;
-		}
-
+		String text;
+		formatAppend(text, "FPS:%\n", fps_counter.getValue());
 		const size_t whole_mebibytes = memory_sample_bytes / mib(1);
 		const size_t tenths_of_mebibyte = (memory_sample_bytes % mib(1)) * 10 / mib(1);
-		format(debug_info_label.text, "FPS:%\nRAM:%.% MiB\nTOOL:%\nACTION:%\ncamera_pos:%",
-			fps_counter.getValue(), whole_mebibytes, tenths_of_mebibyte,
-			active_tool_name, selected_tool_action_name, camera_position);
+		formatAppend(text,
+			memory_sample_bytes == 0 ? "RAM: unavailable\n" : "RAM:%.% MiB\n",
+			whole_mebibytes, tenths_of_mebibyte);
+
+		formatAppend(text, "TOOL:%\n", active_tool_name);
+		formatAppend(text, "ACTION:%\n", selected_tool_action_name);
+		formatAppend(text, "CAMERA SPEED:% m/s\n", controller.camera_movement_speed);
+		formatAppend(text, "camera_pos:%", camera_position);
+		debug_info_label.text = static_cast<String&&>(text);
 	}
 }

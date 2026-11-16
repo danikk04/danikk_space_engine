@@ -75,7 +75,6 @@ namespace danikk_space_engine
 				world.data.addGroundTriangleToChunk(chunk_id, triangle_id);
 			}
 		}
-		planet.chunk_records.pushMove(PlanetChunkRecord{generated_chunk.grid_coordinate, chunk_id});
 		planet.chunk_lookup.setChunk(generated_chunk.grid_coordinate, chunk_id);
 		world.removeChunkGenerationRequest(slot.slot_id, generated_chunk.grid_coordinate);
 		for(size_t index = 0; index < planet.pending_requests.size(); index++)

@@ -5,6 +5,7 @@ namespace danikk_space_engine
 	class GameObject;
 	class LocalPlayerControllerComponent;
 	class World;
+	class WorldEnvironment;
 	class WorldPhysics;
 
 	struct HumanComponent;
@@ -13,5 +14,7 @@ namespace danikk_space_engine
 	struct GraphComponentSlot;
 	struct PointComponentSlot;
 	struct RaycastHit;
+	struct RadiationSample;
+	struct TemperatureSample;
 	struct WorldBodyComponentSlot;
 }

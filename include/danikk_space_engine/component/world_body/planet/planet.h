@@ -30,13 +30,6 @@ namespace danikk_space_engine
 		uint64 noise_seed = 0;
 	};
 
-	struct PlanetChunkRecord
-	{
-		glm::ivec3 grid_coordinate = glm::ivec3(0);
-		// -1 means generation completed and the coordinate is known to contain no surface mesh.
-		ChunkId chunk_id = static_cast<ChunkId>(-1);
-	};
-
 	struct PlanetChunkLookupEntry
 	{
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
@@ -78,7 +71,6 @@ namespace danikk_space_engine
 		bool chunk_set_initialized = false;
 		bool chunk_updates_active = false;
 		DynamicArray<PlanetTerrainEdit> terrain_edits;
-		DynamicArray<PlanetChunkRecord> chunk_records;
 		PlanetChunkLookup chunk_lookup;
 		DynamicArray<ChunkGenerationRequest> pending_requests;
 	};

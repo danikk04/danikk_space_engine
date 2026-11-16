@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/world_environment.h>
 #include <danikk_space_engine/world_physics.h>
 
 #include <danikk_space_engine/world/point.h>
@@ -29,6 +30,7 @@ namespace danikk_space_engine
 	{
 	public:
 		WorldData data;
+		WorldEnvironment environment;
 		WorldPhysics physics;
 		ChunkLoader chunk_loader;
 		DynamicArray<PointId> pending_point_destruction_ids;

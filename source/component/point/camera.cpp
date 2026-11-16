@@ -12,6 +12,19 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+		constexpr float camera_local_origin_rebase_distance = 128.0f;
+
+		void rebaseCameraLocalPosition(PointComponentSlot& slot, World& world)
+		{
+			Point& point = world.data.getPoint(slot.point_id);
+			if(glm::dot(point.position, point.position)
+				<= camera_local_origin_rebase_distance * camera_local_origin_rebase_distance) return;
+
+			Chunk& chunk = world.data.getChunk(slot.chunk_id);
+			chunk.position += glm::dvec3(point.position);
+			point.position = vec3(0.0f);
+		}
+
 		void updateCameraSurfaceFrame(CameraComponent& camera, const PointComponentSlot& slot, const World& world)
 		{
 			if(!world.data.isChunkActive(slot.chunk_id)) return;
@@ -194,6 +207,7 @@ namespace danikk_space_engine
 			direction += camera.getRight();
 		}
 		world.data.getPoint(slot.point_id).position += direction * speed;
+		rebaseCameraLocalPosition(slot, world);
 		updateCameraSurfaceFrame(camera, slot, world);
 	}
 

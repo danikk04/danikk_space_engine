@@ -7,6 +7,7 @@ sources = files(
 	'main.cpp', 
 	'material.cpp',
 	'profiler.cpp',
+	'world_environment.cpp',
 	'world_physics.cpp',
 )
 
