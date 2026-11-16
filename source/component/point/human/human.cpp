@@ -118,8 +118,7 @@ namespace danikk_space_engine
 			const vec3 world_up = vec3(body.rotation * glm::dvec3(up));
 			const RaycastHit hit = world.raycast(foot + glm::dvec3(world_up) * static_cast<double>(step_height),
 				-world_up, step_height + maximum_drop);
-			if(!hit.hit || !world.data.isChunkActive(hit.face.chunk_id)
-				|| world.data.getChunk(hit.face.chunk_id).world_body_id != chunk.world_body_id
+			if(!hit.hit || hit.body_id != chunk.world_body_id
 				|| glm::dot(hit.normal, world_up) < minimum_ground_normal_dot) return false;
 			const vec3 supported_foot = vec3(glm::conjugate(body.rotation)
 				* (hit.position - body.position) - chunk.position) + up * 0.02f;

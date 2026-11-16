@@ -20,6 +20,7 @@ namespace danikk_space_engine
 		human, ///< Human pose, locomotion, ground following, and appearance.
 		npc_controller, ///< Autonomous human movement and head-look command generator.
 		inventory, ///< Dynamic item-stack storage attached to a point.
+		build_part, ///< Structural cube or slope with rendering and collision geometry.
 		count ///< Number of entries in the point-component type table.
 	};
 

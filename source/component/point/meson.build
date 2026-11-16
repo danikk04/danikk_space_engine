@@ -4,6 +4,7 @@ sources += files(
 	'local_player_controller.cpp',
 	'machinegun.cpp',
 	'inventory.cpp',
+	'build_part.cpp',
 	'point.cpp',
 )
 

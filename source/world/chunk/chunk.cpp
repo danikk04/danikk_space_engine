@@ -28,6 +28,7 @@ namespace danikk_space_engine
 				case PointComponentTypeId::human: return "Human";
 				case PointComponentTypeId::npc_controller: return "NPC controller";
 				case PointComponentTypeId::inventory: return "Inventory";
+				case PointComponentTypeId::build_part: return "BuildPart";
 				default: return "Unknown point component";
 			}
 		}

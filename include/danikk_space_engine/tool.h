@@ -27,7 +27,7 @@ namespace danikk_space_engine
 	 *
 	 * Action IDs are interpreted together with ToolId; not every action is valid in every category.
 	 * The category tables define the supported subset and cycling order: Terrain has
-	 * Extrude/Erase, Body has Extrude/Erase/Drag, Place has Machinegun/Body, and Human
+	 * Extrude/Erase, Body has Extrude/Erase/Drag, Place has Machinegun/Cube/Slope, and Human
 	 * has Drag/Create. None has no action list.
 	 */
 	enum class ToolActionId : uint8
@@ -37,7 +37,8 @@ namespace danikk_space_engine
 		erase, ///< Removes terrain or a mesh face, by category.
 		drag, ///< Captures and moves a WorldBody or human entity.
 		machinegun, ///< Places a machine-gun component at a raycast hit.
-		create_body, ///< Creates the primitive WorldBody placement preview/target.
+		create_body, ///< Creates a WorldBody with a cube BuildPart.
+		create_slope, ///< Creates a WorldBody with a slope BuildPart.
 		create_human, ///< Creates a human at a supported surface hit.
 		count ///< Number of action identifiers; not a selectable action.
 	};
@@ -149,7 +150,7 @@ namespace danikk_space_engine
 		const FacePtr& hovered_face);
 
 	/**
-	 * @brief Places the selected world-body or machine-gun object at the raycast hit.
+	 * @brief Places a machine gun or creates a WorldBody containing the selected BuildPart shape.
 	 * @param world World receiving the placed resources.
 	 * @param hit Hit defining the requested placement location.
 	 * @param action Placement action selected in the Place category.

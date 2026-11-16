@@ -99,8 +99,8 @@ namespace danikk_space_engine
 		 */
 		void createHumanAtHit(World& world, const RaycastHit& hit)
 		{
-			if(!world.data.isChunkActive(hit.face.chunk_id)) return;
-			const WorldBodyId body_id = world.data.getChunk(hit.face.chunk_id).world_body_id;
+			if(!world.data.isWorldBodyActive(hit.body_id)) return;
+			const WorldBodyId body_id = hit.body_id;
 			const WorldBody& body = world.data.getWorldBody(body_id);
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_position = inverse_rotation * (hit.position - body.position);

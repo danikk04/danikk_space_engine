@@ -7,6 +7,8 @@
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/component/point/build_part.h>
+#include <danikk_space_engine/world/build_part_shape.h>
 
 namespace danikk_space_engine
 {
@@ -87,6 +89,7 @@ namespace danikk_space_engine
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_origin = inverse_rotation * (origin - body.position);
 			const vec3 local_direction = vec3(inverse_rotation * glm::dvec3(normalized_direction));
+			const Ray body_local_ray{vec3(local_origin), local_direction};
 
 			auto test_chunk = [&](ChunkId chunk_id)
 			{
@@ -117,9 +120,43 @@ namespace danikk_space_engine
 					result.distance = intersection.distance;
 					result.position = origin + glm::dvec3(normalized_direction) * static_cast<double>(intersection.distance);
 					result.normal = intersection.normal;
+					result.body_id = body_id;
+					result.chunk_id = chunk_id;
 					result.face = FacePtr{chunk_id, triangle_id};
 					result.triangle_index = 0;
 					for(uint8 point_index = 0; point_index < 3; point_index++) result.points[point_index] = triangle.points[point_index];
+				}
+
+				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
+				{
+					if(!data.isPointComponentSlotActive(slot_id)) continue;
+					const PointComponentSlot& slot = data.getPointComponentSlot(slot_id);
+					if(slot.type_id != PointComponentTypeId::build_part
+						|| !data.isPointActive(slot.point_id)) continue;
+					const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
+					const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
+					const glm::dvec3 anchor = chunk.position + glm::dvec3(data.getPoint(slot.point_id).position);
+					for(const CubeTriangle& triangle : geometry.triangles)
+					{
+						const vec3 a = vec3(anchor + glm::dvec3(part.rotation * vec4(geometry.positions[triangle.points[0]], 0.0f)));
+						const vec3 b = vec3(anchor + glm::dvec3(part.rotation * vec4(geometry.positions[triangle.points[1]], 0.0f)));
+						const vec3 c = vec3(anchor + glm::dvec3(part.rotation * vec4(geometry.positions[triangle.points[2]], 0.0f)));
+						const RayTriangleIntersection intersection = intersectRayTriangle(body_local_ray, a, b, c);
+						if(!intersection.hit || intersection.distance > nearest_distance) continue;
+
+						nearest_distance = intersection.distance;
+						result.hit = true;
+						result.hit_build_part = true;
+						result.build_part_slot_id = slot_id;
+						result.distance = intersection.distance;
+						result.position = origin + glm::dvec3(normalized_direction) * static_cast<double>(intersection.distance);
+						result.normal = vec3(body.rotation * glm::dvec3(intersection.normal));
+						result.body_id = body_id;
+						result.chunk_id = chunk_id;
+						result.face = FacePtr{};
+						result.triangle_index = 0;
+						for(uint8 point_index = 0; point_index < 3; point_index++) result.points[point_index] = 0;
+					}
 				}
 			};
 

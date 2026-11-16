@@ -1,6 +1,8 @@
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/component/point/build_part.h>
+#include <danikk_space_engine/world/build_part_shape.h>
 #include "internal.h"
 
 namespace danikk_space_engine::collision_internal
@@ -139,11 +141,54 @@ namespace danikk_space_engine::collision_internal
 					collider.radius = glm::max(collider.radius, glm::length(positions[corner]));
 				}
 			}
-			if(shape.vertices.size() < 4) continue;
-			shape.center /= static_cast<double>(shape.vertices.size());
-			for(const glm::dvec3& vertex : shape.vertices)
-				shape.radius = glm::max(shape.radius, glm::length(vertex - shape.center));
-			collider.chunks.push(static_cast<ConvexChunkCollider&&>(shape));
+			if(shape.vertices.size() >= 4)
+			{
+				shape.center /= static_cast<double>(shape.vertices.size());
+				for(const glm::dvec3& vertex : shape.vertices)
+					shape.radius = glm::max(shape.radius, glm::length(vertex - shape.center));
+				collider.chunks.push(static_cast<ConvexChunkCollider&&>(shape));
+			}
+
+			for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
+			{
+				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+				if(slot.type_id != PointComponentTypeId::build_part
+					|| !world.data.isPointActive(slot.point_id)) continue;
+				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
+				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
+				ConvexChunkCollider part_shape;
+				const glm::dvec3 anchor = chunk.position
+					+ glm::dvec3(world.data.getPoint(slot.point_id).position);
+				part_shape.vertices.reserve(geometry.positions.size());
+				for(const vec3& local_position : geometry.positions)
+				{
+					const glm::dvec3 part_position = anchor
+						+ glm::dvec3(part.rotation * vec4(local_position, 0.0f));
+					const glm::dvec3 body_position = body.rotation * part_position;
+					part_shape.vertices.push(body_position);
+					part_shape.center += body_position;
+					collider.radius = glm::max(collider.radius, glm::length(body_position));
+				}
+				if(part_shape.vertices.size() < 4) continue;
+				part_shape.center /= static_cast<double>(part_shape.vertices.size());
+				for(const CubeTriangle& triangle : geometry.triangles)
+				{
+					const glm::dvec3& a = part_shape.vertices[triangle.points[0]];
+					const glm::dvec3& b = part_shape.vertices[triangle.points[1]];
+					const glm::dvec3& c = part_shape.vertices[triangle.points[2]];
+					addDirection(part_shape.normals, glm::cross(b - a, c - a));
+					addDirection(part_shape.edges, b - a);
+					addDirection(part_shape.edges, c - b);
+					addDirection(part_shape.edges, a - c);
+				}
+				for(const glm::dvec3& vertex : part_shape.vertices)
+				{
+					part_shape.radius = glm::max(part_shape.radius,
+						glm::length(vertex - part_shape.center));
+				}
+				collider.chunks.push(static_cast<ConvexChunkCollider&&>(part_shape));
+			}
 		}
 		if(id != dragged_id && body.mass > 0.0)
 		{

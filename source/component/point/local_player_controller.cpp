@@ -268,7 +268,7 @@ namespace danikk_space_engine
 					world,
 					selected_faces,
 					selected_face_count,
-					hit.hit,
+					hit.hit && !hit.hit_build_part,
 					hit.face,
 					hit);
 				if(result.replace_selected_faces)
@@ -280,7 +280,7 @@ namespace danikk_space_engine
 			}
 		}
 
-		if(hit.hit)
+		if(hit.hit && !hit.hit_build_part)
 		{
 			bool already_selected = false;
 			for(size_t i = 0; i < selected_face_count; i++)

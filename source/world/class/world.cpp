@@ -3,6 +3,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/effects/world_body_preview.h>
+#include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/effects/chunk_boundaries.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
@@ -367,10 +368,13 @@ namespace danikk_space_engine
 		const LocalPlayerControllerComponent& controller = getLocalPlayerControllerComponent();
 		if(settings.show_world_body_preview
 			&& controller.active_tool == ToolId::place
-			&& controller.selected_tool_action == ToolActionId::create_body)
+			&& (controller.selected_tool_action == ToolActionId::create_body
+				|| controller.selected_tool_action == ToolActionId::create_slope))
 		{
 			const RaycastHit hit = raycastFromCamera();
-			drawWorldBodyPlacementPreview(*this, hit);
+			const BuildPartShape shape = controller.selected_tool_action == ToolActionId::create_slope
+				? BuildPartShape::slope : BuildPartShape::cube;
+			drawWorldBodyPlacementPreview(*this, hit, shape);
 		}
 	}
 
@@ -402,6 +406,7 @@ namespace danikk_space_engine
 		chunk_loader_generation_id++;
 		chunk_generation_requests.clear();
 		chunk_generation_requests_dirty = false;
+		clearBuildPartMeshCache();
 		data.release();
 		pending_point_destruction_ids.clear();
 	}

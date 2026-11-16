@@ -17,7 +17,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Stores the nearest face hit and geometric data returned by a raycast.
+	 * @brief Stores the nearest surface-face or BuildPart hit returned by a raycast.
 	 *
 	 * A miss leaves `hit` false and the remaining fields at their default values. `face` is a
 	 * stable chunk/triangle handle suitable for editing while its owning resources remain active;
@@ -25,7 +25,7 @@ namespace danikk_space_engine
 	 */
 	struct RaycastHit
 	{
-		/** @brief True when the ray intersects a ground triangle within the requested range. */
+		/** @brief True when the ray intersects supported world geometry within the requested range. */
 		bool hit = false;
 		/** @brief Distance from the ray origin to the nearest hit, in world units. */
 		float distance = 0.0f;
@@ -35,6 +35,14 @@ namespace danikk_space_engine
 		vec3 normal = vec3(0.0f);
 		/** @brief Stable chunk/triangle handle for editing or selection. */
 		FacePtr face;
+		/** @brief True when the nearest hit is a BuildPart point component. */
+		bool hit_build_part = false;
+		/** @brief WorldBody containing the hit geometry. */
+		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
+		/** @brief Chunk containing the hit geometry or point component. */
+		ChunkId chunk_id = static_cast<ChunkId>(-1);
+		/** @brief Point-component slot of the hit BuildPart, valid when hit_build_part is true. */
+		PointComponentSlotId build_part_slot_id = static_cast<PointComponentSlotId>(-1);
 		/** @brief Triangle-within-face index; currently zero because ground faces are triangles. */
 		uint8 triangle_index = 0;
 		/** @brief Point IDs of the intersected triangle, in its stored winding order. */

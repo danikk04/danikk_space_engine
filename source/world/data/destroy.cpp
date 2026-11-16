@@ -1,5 +1,6 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/data.h>
+#include <danikk_space_engine/component/point/build_part.h>
 
 #include <cstdlib>
 
@@ -308,6 +309,18 @@ namespace danikk_space_engine
 	void WorldData::destroyPointComponentSlot(PointComponentSlotId id)
 	{
 		if(!isPointComponentSlotActive(id)) return;
+		const PointComponentSlot& destroyed_slot = point_components[id];
+		if(destroyed_slot.type_id == PointComponentTypeId::build_part)
+		{
+			for(PointComponentSlotId other_id : point_components.usedIds())
+				if(other_id != id && isPointComponentSlotActive(other_id))
+				{
+					PointComponentSlot& other_slot = point_components[other_id];
+					if(other_slot.type_id != PointComponentTypeId::build_part) continue;
+					BuildPartComponent& child = *static_cast<BuildPartComponent*>(other_slot.getData());
+					if(child.parent_slot_id == id) child.parent_slot_id = no_build_part_parent;
+				}
+		}
 		eraseIdFromChunks(*this, chunks.usedIds(), id, &Chunk::point_component_slot_ids);
 
 		PointComponentSlot& slot = point_components[id];

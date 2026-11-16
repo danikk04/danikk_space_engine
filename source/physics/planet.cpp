@@ -5,6 +5,8 @@
 #include "internal.h"
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/component/world_body/planet/terrain.h>
+#include <danikk_space_engine/component/point/build_part.h>
+#include <danikk_space_engine/world/build_part_shape.h>
 
 namespace danikk_space_engine
 {
@@ -42,7 +44,7 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Resolves penetration of a moving chunk's mesh points into a planet scalar field.
+		 * @brief Resolves penetration of a moving chunk's mesh and BuildPart vertices into a planet scalar field.
 		 * @param world World providing point data and planet/body transforms.
 		 * @param moving_body Non-planet body that receives position and velocity corrections.
 		 * @param moving_chunk Active chunk whose unique points are sampled.
@@ -58,22 +60,41 @@ namespace danikk_space_engine
 			const Chunk& moving_chunk, const BodyMassProperties& mass_properties,
 			const PlanetCollisionTarget& target)
 		{
-			if(moving_chunk.ground_triangle_ids.size() == 0) return;
 			const WorldBody& planet_body = world.data.getWorldBody(target.body_id);
 			const glm::dquat inverse_planet_rotation = glm::conjugate(planet_body.rotation);
 			DynamicArray<SurfaceContact> point_contacts;
-			point_contacts.reserve(moving_chunk.point_ids.size());
+			point_contacts.reserve(moving_chunk.point_ids.size() + moving_chunk.point_component_slot_ids.size() * 8);
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
 				return samplePlanetScalarField(position, target.planet->radius,
 					target.planet->noise_seed, target.planet->terrain_edits, target.planet->core_radius);
 			};
 			constexpr double gradient_step = planet_voxel_size * 0.25;
+			DynamicArray<glm::dvec3> local_points;
+			local_points.reserve(moving_chunk.point_ids.size() + moving_chunk.point_component_slot_ids.size() * 8);
 			for(PointId point_id : moving_chunk.point_ids)
 			{
 				if(!world.data.isPointActive(point_id)) continue;
-				const glm::dvec3 local_point = moving_chunk.position
-					+ glm::dvec3(world.data.getPoint(point_id).position);
+				local_points.push(moving_chunk.position + glm::dvec3(world.data.getPoint(point_id).position));
+			}
+			for(PointComponentSlotId slot_id : moving_chunk.point_component_slot_ids)
+			{
+				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+				if(slot.type_id != PointComponentTypeId::build_part
+					|| !world.data.isPointActive(slot.point_id)) continue;
+				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
+				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
+				const glm::dvec3 anchor = moving_chunk.position
+					+ glm::dvec3(world.data.getPoint(slot.point_id).position);
+				for(const vec3& vertex : geometry.positions)
+				{
+					local_points.push(anchor
+						+ glm::dvec3(part.rotation * vec4(vertex, 0.0f)));
+				}
+			}
+			for(const glm::dvec3& local_point : local_points)
+			{
 				const glm::dvec3 planet_local_point = inverse_planet_rotation
 					* (moving_body.position + moving_body.rotation * local_point - planet_body.position);
 				const double density = sample_field(planet_local_point);
@@ -256,18 +277,27 @@ namespace danikk_space_engine
 			if(!hasLoadedChunk(world, moving_body)) continue;
 			const BodyMassProperties mass_properties = calculateMassProperties(moving_body);
 			if(mass_properties.mass <= 0.0) continue;
-			bool has_surface_mesh = false;
+			bool has_surface_geometry = false;
 			for(ChunkId chunk_id : moving_body.chunk_ids)
 			{
-				if(world.data.isChunkActive(chunk_id)
-					&& world.data.getChunk(chunk_id).ground_triangle_ids.size() > 0)
+				if(!world.data.isChunkActive(chunk_id)) continue;
+				const Chunk& chunk = world.data.getChunk(chunk_id);
+				if(chunk.ground_triangle_ids.size() > 0)
 				{
-					has_surface_mesh = true;
-					break;
+					has_surface_geometry = true;
+				}
+				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
+				{
+					if(world.data.isPointComponentSlotActive(slot_id)
+						&& world.data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
+					{
+						has_surface_geometry = true;
+						break;
+					}
 				}
 			}
 
-			if(moving_body.collision_radius > 0.0 && !has_surface_mesh)
+			if(moving_body.collision_radius > 0.0 && !has_surface_geometry)
 			{
 				for(const PlanetCollisionTarget& target : planets)
 				{

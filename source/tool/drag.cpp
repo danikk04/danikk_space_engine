@@ -87,13 +87,12 @@ namespace danikk_space_engine
 		if(mouse_state == button_states::press)
 		{
 			clearDrag(controller);
-			if(hit.hit && world.data.isChunkActive(hit.face.chunk_id))
+			if(hit.hit && world.data.isWorldBodyActive(hit.body_id))
 			{
-				const Chunk& chunk = world.data.getChunk(hit.face.chunk_id);
-				if(canDragWorldBody(world, chunk.world_body_id))
+				if(canDragWorldBody(world, hit.body_id))
 				{
-					const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
-					controller.dragged_world_body_id = chunk.world_body_id;
+					const WorldBody& body = world.data.getWorldBody(hit.body_id);
+					controller.dragged_world_body_id = hit.body_id;
 					controller.dragged_body_distance = hit.distance;
 					controller.dragged_hit_offset = glm::conjugate(body.rotation)
 						* (hit.position - body.position);

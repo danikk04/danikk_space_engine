@@ -2,6 +2,7 @@
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/world/cube_mesh.h>
 #include <danikk_space_engine/component/point/machinegun.h>
+#include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 
 #include <cmath>
@@ -12,53 +13,66 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Creates a one-metre mesh body just above the hit and centers its chunk frame.
-		 * @param world World receiving body, chunk, point, and triangle resources.
-		 * @param hit Raycast result supplying placement position and outward normal.
-		 * The body's origin is placed half a cube plus 0.03 m along the hit normal.
-		 * The chunk origin is offset by half the planet chunk width so the initial
-		 * cube vertices lie near the chunk center and avoid boundary straddling.
+		 * @brief Creates one BuildPart anchor and attaches it to the hit part's WorldBody.
+		 * @param world World receiving the point and component resources.
+		 * @param hit Raycast result supplying placement position, normal, and optional parent part.
+		 * A hit on terrain creates a new WorldBody with one chunk and anchor point. A hit
+		 * on a BuildPart adds a child part to that part's body and stores its slot as parent.
 		 */
-		void createWorldBodyCubeAtHit(World& world, const RaycastHit& hit)
+		void createBuildPartAtHit(World& world, const RaycastHit& hit, BuildPartShape shape)
 		{
-			constexpr float cube_size = 1.0f;
 			constexpr double surface_offset = 0.03;
-			constexpr double chunk_center_offset = planet_chunk_width * 0.5;
 			vec3 up = hit.normal;
 			if(glm::length(up) < 0.0001f) up = vec3(0.0f, 0.0f, 1.0f);
 			up = glm::normalize(up);
 
-			const WorldBodyId body_id = world.data.createWorldBody();
-			WorldBody& body = world.data.getWorldBody(body_id);
-			body.position = hit.position
-				+ glm::dvec3(up) * (static_cast<double>(cube_size) * 0.5 + surface_offset);
-			body.mass = 1.0;
-			body.collision_radius = cube_size * 0.5f;
-			Chunk& chunk = world.data.createChunk(body_id);
-			chunk.position = glm::dvec3(-chunk_center_offset);
-			const ChunkId chunk_id = chunk.chunk_id;
-			DynamicArray<vec3> cube_positions;
-			DynamicArray<CubeTriangle> cube_triangles;
-			generateCubeGeometry(cube_size, cube_positions, cube_triangles);
-			DynamicArray<PointId> point_ids;
-			point_ids.reserve(cube_positions.size());
-			for(const vec3& position : cube_positions)
+			WorldBodyId body_id = static_cast<WorldBodyId>(-1);
+			ChunkId chunk_id = static_cast<ChunkId>(-1);
+			PointComponentSlotId parent_slot_id = no_build_part_parent;
+			glm::dvec3 anchor_world_position = hit.position + glm::dvec3(up) * (0.5 + surface_offset);
+			if(hit.hit_build_part
+				&& world.data.isPointComponentSlotActive(hit.build_part_slot_id))
 			{
-				const PointId point_id = world.data.createPoint();
-				world.data.getPoint(point_id).position = position
-					+ vec3(static_cast<float>(chunk_center_offset));
-				point_ids.push(point_id);
-			}
-			for(const CubeTriangle& cube_triangle : cube_triangles)
-			{
-				const GroundTriangleId triangle_id = world.data.createGroundTriangle();
-				GroundTriangle& triangle = world.data.getGroundTriangle(triangle_id);
-				for(uint8 corner = 0; corner < 3; corner++)
+				const PointComponentSlot& parent_slot = world.data.getPointComponentSlot(hit.build_part_slot_id);
+				if(parent_slot.type_id == PointComponentTypeId::build_part
+					&& world.data.isChunkActive(parent_slot.chunk_id))
 				{
-					triangle.points[corner] = point_ids[cube_triangle.points[corner]];
+					chunk_id = parent_slot.chunk_id;
+					body_id = world.data.getChunk(chunk_id).world_body_id;
+					parent_slot_id = hit.build_part_slot_id;
 				}
-				world.data.addGroundTriangleToChunk(chunk_id, triangle_id);
 			}
+
+			if(body_id == static_cast<WorldBodyId>(-1))
+			{
+				body_id = world.data.createWorldBody();
+				WorldBody& body = world.data.getWorldBody(body_id);
+				body.position = anchor_world_position;
+				body.mass = 1.0;
+				body.collision_radius = 0.87;
+				Chunk& chunk = world.data.createChunk(body_id);
+				chunk_id = chunk.chunk_id;
+				anchor_world_position = body.position;
+			}
+
+			WorldBody& body = world.data.getWorldBody(body_id);
+			Chunk& chunk = world.data.getChunk(chunk_id);
+			const PointId point_id = world.data.createPoint();
+			const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
+			const glm::dvec3 anchor_body_position = inverse_body_rotation
+				* (anchor_world_position - body.position);
+			world.data.getPoint(point_id).position = vec3(anchor_body_position - chunk.position);
+
+			BuildPartComponent part;
+			part.shape = shape;
+			part.parent_slot_id = parent_slot_id;
+			part.rotation = createBuildPartRotation(vec3(inverse_body_rotation * glm::dvec3(up)));
+			const PointComponentSlotId part_slot_id = world.data.createPointComponentSlot(
+				point_id, PointComponentTypeId::build_part, &part);
+			world.data.addPointComponentSlotToChunk(chunk_id, part_slot_id);
+			body.collision_radius = glm::max(body.collision_radius,
+				glm::length(chunk.position + glm::dvec3(world.data.getPoint(point_id).position)) + 0.87);
+			if(parent_slot_id != no_build_part_parent) body.mass += 1.0;
 		}
 
 		/**
@@ -73,12 +87,12 @@ namespace danikk_space_engine
 		{
 			const PointId point_id = world.data.createPoint();
 			Point& point = world.data.getPoint(point_id);
-			const Chunk& chunk = world.data.getChunk(hit.face.chunk_id);
+			const Chunk& chunk = world.data.getChunk(hit.chunk_id);
 			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 			const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
 			point.position = vec3(inverse_body_rotation
 				* (hit.position + glm::dvec3(hit.normal * 0.03f)
-				- world.getChunkWorldPosition(hit.face.chunk_id)));
+				- world.getChunkWorldPosition(hit.chunk_id)));
 
 			MachinegunComponent machinegun;
 			machinegun.forward = vec3(inverse_body_rotation * glm::dvec3(world.getCameraComponent().getFront()));
@@ -86,13 +100,13 @@ namespace danikk_space_engine
 			machinegun.right = vec3(inverse_body_rotation * glm::dvec3(world.getCameraComponent().getRight()));
 			const PointComponentSlotId slot_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::machine_gun, &machinegun);
-			world.data.addPointComponentSlotToChunk(hit.face.chunk_id, slot_id);
+			world.data.addPointComponentSlotToChunk(hit.chunk_id, slot_id);
 		}
 
 	}
 
 	/**
-	 * @brief Dispatches placement of a machine gun or standalone cube body at a valid ray hit.
+	 * @brief Dispatches placement of a machine gun or a cube/slope BuildPart at a valid ray hit.
 	 * @param world World receiving the created resources.
 	 * @param hit Raycast result defining the target chunk, point, and normal.
 	 * @param action Place action; unsupported values are ignored.
@@ -107,7 +121,10 @@ namespace danikk_space_engine
 				createMachinegunAtHit(world, hit);
 				break;
 			case ToolActionId::create_body:
-				createWorldBodyCubeAtHit(world, hit);
+				createBuildPartAtHit(world, hit, BuildPartShape::cube);
+				break;
+			case ToolActionId::create_slope:
+				createBuildPartAtHit(world, hit, BuildPartShape::slope);
 				break;
 			case ToolActionId::none:
 			case ToolActionId::extrude:
