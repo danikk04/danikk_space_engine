@@ -1,6 +1,12 @@
 #include<uniforms.glslh>
 #include<frag.glslh>
 
+/**
+ * @brief Applies a solid-style directional diffuse shade to the sampled material color.
+ * The normalized interpolated normal is lit from a fixed direction. Brightness
+ * ranges from 0.25 ambient to 1.0 at full diffuse alignment; texture and vertex
+ * tint provide the surface color, including their alpha channel.
+ */
 void main()
 {
 	vec4 surface_color = color * texture(diffuse_texture, frag_uv);

@@ -24,10 +24,16 @@ namespace danikk_space_engine
 			double radius;
 		};
 
-		// Finds closest points on two standing capsule axes, including degenerate endpoint cases.
-
 		/**
-		 * @brief Computes the pair of points with minimum distance on two finite segments.
+		 * @brief Computes closest points on two finite capsule-axis segments.
+		 * @param a0 Start of the first segment.
+		 * @param a1 End of the first segment.
+		 * @param b0 Start of the second segment.
+		 * @param b1 End of the second segment.
+		 * @param closest_a Receives the closest point on segment a.
+		 * @param closest_b Receives the closest point on segment b.
+		 * Handles two zero-length segments and either single degenerate segment,
+		 * then clamps the closest-point parameters to both finite segments.
 		 */
 		void closestSegmentPoints(const glm::dvec3& a0, const glm::dvec3& a1,
 			const glm::dvec3& b0, const glm::dvec3& b1,
@@ -80,10 +86,11 @@ namespace danikk_space_engine
 			closest_b = b0 + direction_b * parameter_b;
 		}
 
-		// Applies a world-space correction to the human center through its owning body's local frame.
-
 		/**
-		 * @brief Moves human.
+		 * @brief Applies a world-space displacement to a human's point in its body's local frame.
+		 * @param world World providing the owning chunk, body, and point.
+		 * @param human Collider record whose center and point position are updated.
+		 * @param world_delta Requested displacement in world coordinates.
 		 */
 		void moveHuman(World& world, HumanCollider& human, const glm::dvec3& world_delta)
 		{
@@ -94,11 +101,13 @@ namespace danikk_space_engine
 			human.center += world_delta;
 		}
 
-		// Tangential separation can push a capsule into uneven terrain. Probe below its feet
-		// afterward and lift it back to the supporting surface, never snapping it farther down.
-
 		/**
-		 * @brief Moves a human outward along the terrain normal until its feet clear the surface.
+		 * @brief Uses a short downward raycast to lift a separated human back above nearby ground.
+		 * @param world World used for raycasting and point/body access.
+		 * @param human Human capsule to check and possibly move.
+		 * The hit must belong to the same WorldBody and its normal must have at least
+		 * a 0.2 dot product with the human up axis. Only upward corrections from
+		 * 0.1 mm through 1 m are applied; this helper never snaps the human downward.
 		 */
 		void restoreHumanGroundClearance(World& world, HumanCollider& human)
 		{
@@ -123,16 +132,18 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Collects humans as vertical capsules, performs pairwise separation sweeps, then restores
-	// ground clearance for characters whose tangential correction crossed uneven terrain.
-
 	/**
-	 * @brief Resolves human collisions.
+	 * @brief Separates active human capsules using four pairwise positional-correction passes.
+	 * @param world World whose human point positions are adjusted.
+	 * Capsule radius is 14% of height; its axis is aligned with the transformed
+	 * human up vector. Pair resolution moves only along each capsule's tangent
+	 * plane and applies no velocity impulse. A final same-body raycast may restore
+	 * ground clearance after corrections on uneven terrain.
 	 */
 	void WorldPhysics::resolveHumanCollisions(World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("World::human collisions");
 		DynamicArray<HumanCollider> humans;

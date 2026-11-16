@@ -98,13 +98,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases mesh.
+	 * @brief Frees the GPU mesh allocation owned by the chunk, if one exists.
 	 */
 	void Chunk::destroyMesh()
 	{
-		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
-		 */
+		/** @brief Measures the mesh destruction duration for the profiler. */
 		Watcher watcher("Chunk::destroyMesh");
 		if(mesh != nullptr)
 		{
@@ -116,7 +114,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Invalidates mesh.
+	 * @brief Marks geometry stale and invalidates both material draw ranges and raycast bounds.
 	 */
 	void Chunk::invalidateMesh()
 	{
@@ -126,7 +124,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Adds point component slot.
+	 * @brief Appends a point-component slot ID to the chunk's callback traversal list.
+	 * @param slot_id Slot ID to append.
 	 */
 	void Chunk::addPointComponentSlot(PointComponentSlotId slot_id)
 	{
@@ -134,7 +133,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Adds graph component slot.
+	 * @brief Appends a graph-component slot ID to the chunk's callback traversal list.
+	 * @param slot_id Slot ID to append.
 	 */
 	void Chunk::addGraphComponentSlot(GraphComponentSlotId slot_id)
 	{
@@ -146,14 +146,10 @@ namespace danikk_space_engine
 	 */
 	void Chunk::tick(World& world)
 	{
-		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
-		 */
+		/** @brief Measures the full chunk tick traversal. */
 		Watcher chunk_scope("Chunk::tick");
 		{
-			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
-			 */
+			/** @brief Measures the point-component tick traversal. */
 			Watcher point_components_scope("Point components");
 			const size_t component_count = point_component_slot_ids.size();
 			for(size_t component_index = 0; component_index < component_count; component_index++)
@@ -173,18 +169,14 @@ namespace danikk_space_engine
 				}
 				if(type.tick != nullptr)
 				{
-					/**
-					 * @brief Disables copying to ensure a measured scope is recorded once.
-					 */
+					/** @brief Measures execution time for this point-component callback. */
 					Watcher component_scope(pointComponentName(slot.type_id));
 					type.tick(slot, world);
 				}
 			}
 		}
 		{
-			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
-			 */
+			/** @brief Measures the graph-component tick traversal. */
 			Watcher graph_components_scope("Graph components");
 			const size_t graph_component_count = graph_component_slot_ids.size();
 			for(size_t component_index = 0; component_index < graph_component_count; component_index++)
@@ -203,9 +195,7 @@ namespace danikk_space_engine
 				}
 				if(type.tick != nullptr)
 				{
-					/**
-					 * @brief Disables copying to ensure a measured scope is recorded once.
-					 */
+					/** @brief Measures execution time for this graph-component callback. */
 					Watcher component_scope(graphComponentName(slot.type_id));
 					type.tick(slot, world);
 				}
@@ -218,14 +208,10 @@ namespace danikk_space_engine
 	 */
 	void Chunk::frame(World& world)
 	{
-		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
-		 */
+		/** @brief Measures the full chunk frame traversal. */
 		Watcher chunk_scope("Chunk::frame");
 		{
-			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
-			 */
+			/** @brief Measures the point-component frame traversal. */
 			Watcher point_components_scope("Point components");
 			const size_t component_count = point_component_slot_ids.size();
 			for(size_t component_index = 0; component_index < component_count; component_index++)
@@ -246,18 +232,14 @@ namespace danikk_space_engine
 				const PointComponentType& type = getPointComponentType(slot.type_id);
 				if(type.frame != nullptr)
 				{
-					/**
-					 * @brief Disables copying to ensure a measured scope is recorded once.
-					 */
+					/** @brief Measures execution time for this point-component frame callback. */
 					Watcher component_scope(pointComponentName(slot.type_id));
 					type.frame(slot, world);
 				}
 			}
 		}
 		{
-			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
-			 */
+			/** @brief Measures the graph-component frame traversal. */
 			Watcher graph_components_scope("Graph components");
 			const size_t graph_component_count = graph_component_slot_ids.size();
 			for(size_t component_index = 0; component_index < graph_component_count; component_index++)
@@ -276,9 +258,7 @@ namespace danikk_space_engine
 				}
 				if(type.frame != nullptr)
 				{
-					/**
-					 * @brief Disables copying to ensure a measured scope is recorded once.
-					 */
+					/** @brief Measures execution time for this graph-component frame callback. */
 					Watcher component_scope(graphComponentName(slot.type_id));
 					type.frame(slot, world);
 				}
@@ -287,7 +267,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Creates world matrix.
+	 * @brief Combines body rotation and camera-relative chunk translation into the render transform.
+	 * @param world World supplying the body's current transform and camera origin.
+	 * @return Matrix mapping chunk-local vertices to camera-relative render coordinates.
 	 */
 	mat4 Chunk::createWorldMatrix(const World& world) const
 	{
@@ -303,7 +285,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Binds material ranges and draws the chunk mesh with the world transform.
+	 * @brief Binds each material's texture/tint and draws that material's contiguous mesh index range.
+	 * @param world World used to calculate the camera-relative chunk matrix.
 	 */
 	void Chunk::draw(World& world)
 	{

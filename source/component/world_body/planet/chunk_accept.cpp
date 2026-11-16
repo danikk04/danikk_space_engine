@@ -9,17 +9,23 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Compares all three integer coordinate components.
+		 * @brief Tests exact equality of two integer planet-grid coordinates.
+		 * @param left First grid key.
+		 * @param right Second grid key.
+		 * @return True when all three axes match.
 		 */
 		bool sameChunkKey(const glm::ivec3& left, const glm::ivec3& right)
 		{
 			return left.x == right.x && left.y == right.y && left.z == right.z;
 		}
 
-		template<typename value_t>
 		/**
-		 * @brief Erases at.
+		 * @brief Removes one element while preserving order by moving later elements left.
+		 * @tparam value_t Element type, required to support move assignment and destruction.
+		 * @param values Array to modify.
+		 * @param index Index of the element to remove; caller must provide an in-range index.
 		 */
+		template<typename value_t>
 		void eraseAt(DynamicArray<value_t>& values, size_t index)
 		{
 			for(size_t shift = index + 1; shift < values.size(); shift++)
@@ -31,7 +37,14 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Accepts planet generated chunk.
+	 * @brief Rejects stale worker output or installs its points and ground triangles in WorldData.
+	 *
+	 * Non-empty results create a chunk, convert local vertex indices to pooled Point IDs, and
+	 * create one material-tagged GroundTriangle per index triple. Empty results still receive a
+	 * generated lookup record so the same empty coordinate is not queued repeatedly.
+	 * @param slot Planet component slot whose identity was captured by the request.
+	 * @param world World receiving accepted chunk resources.
+	 * @param generated_chunk Worker output with request identity, local vertices, indices, and materials.
 	 */
 	void acceptPlanetGeneratedChunk(
 		WorldBodyComponentSlot& slot,
@@ -39,11 +52,13 @@ namespace danikk_space_engine
 		const GeneratedChunkData& generated_chunk)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("Accept generated planet chunk");
-		// Discard stale results. Empty chunks are recorded without allocating WorldData resources;
-		// non-empty results are converted from local mesh indices into points and ground triangles.
+		/**
+		 * @brief Rejects stale results and records valid empty chunks without allocating geometry.
+		 * Non-empty results convert local mesh indices into WorldData points and ground triangles.
+		 */
 		PlanetComponent& planet = *static_cast<PlanetComponent*>(slot.getData());
 		if(generated_chunk.terrain_revision != planet.terrain_revision
 			|| !planet.chunk_lookup.isDesired(generated_chunk.grid_coordinate)

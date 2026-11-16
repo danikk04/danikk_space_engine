@@ -11,7 +11,9 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Advances the NPC’s deterministic random state and returns a value in the unit interval.
+		 * @brief Advances the per-NPC xorshift generator and returns a float in [0, 1).
+		 * @param controller Controller whose random state is advanced.
+		 * @return Deterministic pseudorandom value; separate NPCs keep independent sequences.
 		 */
 		float randomUnit(NpcControllerComponent& controller)
 		{
@@ -22,11 +24,15 @@ namespace danikk_space_engine
 			return static_cast<float>(state >> 8) / 16777216.0f;
 		}
 
-		// Alternates idle pauses and short trips around a fixed local centre. A timeout releases
-		// unreachable targets so unloaded terrain or an edge cannot leave an NPC walking forever.
-
 		/**
-		 * @brief Updates wandering.
+		 * @brief Alternates idle pauses with bounded trips around the captured local wander center.
+		 *
+		 * Destinations are sampled by disk area in the tangent plane. A trip timeout clears an
+		 * unreachable target so an edge or unsupported terrain cannot leave the NPC walking forever.
+		 * @param controller Mutable wander state and pseudorandom generator state.
+		 * @param human Movement speed and local up direction for the tangent plane.
+		 * @param position Current human position in chunk-local coordinates.
+		 * @param dt Simulation step duration in seconds.
 		 */
 		void updateWandering(NpcControllerComponent& controller, const HumanComponent& human,
 			const vec3& position, float dt)
@@ -61,7 +67,10 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Updates random look.
+		 * @brief Selects a new random head yaw/pitch periodically and interpolates toward it.
+		 * @param controller Look timer, target angles, and pseudorandom state.
+		 * @param human Character whose head rotation is updated.
+		 * @param dt Simulation step duration in seconds.
 		 */
 		void updateRandomLook(NpcControllerComponent& controller, HumanComponent& human, float dt)
 		{
@@ -78,7 +87,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Constructs npc controller component.
+	 * @brief Creates default NPC state or copies optional behavior state into slot storage.
+	 * @param destination Destination storage owned by the point-component slot.
+	 * @param init_data Optional source `NpcControllerComponent`; null selects member defaults.
 	 */
 	void constructNpcControllerComponent(void* destination, const void* init_data)
 	{
@@ -88,7 +99,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves npc controller component.
+	 * @brief Copies NPC behavior state into relocated storage and ends the source lifetime.
+	 * @param destination Replacement payload storage.
+	 * @param source Existing live NPC controller payload.
 	 */
 	void moveNpcControllerComponent(void* destination, void* source)
 	{
@@ -98,7 +111,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases npc controller component.
+	 * @brief Ends the NPC controller payload lifetime; WorldData releases its slot storage.
+	 * @param data Existing live controller payload.
 	 */
 	void destroyNpcControllerComponent(void* data)
 	{
@@ -106,16 +120,18 @@ namespace danikk_space_engine
 		static_cast<NpcControllerComponent*>(data)->~NpcControllerComponent();
 	}
 
-	// Chooses random local trips or follows an explicit target, then writes the next movement command.
-	// Random head turns replace camera tracking by default; the human handles support checks.
-
 	/**
-	 * @brief Runs one simulation tick for npc controller component.
+	 * @brief Validates the paired human and writes the next movement and head-look command.
+	 *
+	 * A deterministic per-controller random sequence drives wandering and idle looks. Explicit
+	 * targets disable wandering; the HumanComponent later applies commands and handles physics.
+	 * @param slot NPC controller slot, expected to share point and chunk IDs with its human.
+	 * @param world World used for component validation and optional camera tracking.
 	 */
 	void tickNpcControllerComponent(PointComponentSlot& slot, World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("NpcControllerComponent::tick");
 		NpcControllerComponent& controller = *static_cast<NpcControllerComponent*>(slot.getData());

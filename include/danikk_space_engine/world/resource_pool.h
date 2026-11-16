@@ -6,44 +6,77 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Finds world resource id.
+	 * @brief Searches a compact resource-ID list and returns the matching index.
+	 *
+	 * Uses lower-bound binary search, so the input list must already be sorted in
+	 * ascending order.
+	 * @param ids ID array to scan.
+	 * @param id Value to find.
+	 * @return Index of the matching entry, or the insertion position that preserves sorted order.
 	 */
 	size_t findWorldResourceId(const DynamicArray<uint32>& ids, uint32 id);
 
 	/**
-	 * @brief Adds an ID to the active resource list without creating a duplicate.
+	 * @brief Inserts an ID into a sorted resource list at its lower-bound position.
+	 *
+	 * Performs a binary search and then shifts later entries to make room; lookup
+	 * is logarithmic, but insertion is linear in the number of IDs.
+	 * @param ids Sorted ID array to modify.
+	 * @param id ID to insert; callers must ensure it is not already present.
 	 */
 	void insertWorldResourceId(DynamicArray<uint32>& ids, uint32 id);
 
 	/**
-	 * @brief Erases world resource id.
+	 * @brief Removes the first matching resource ID while preserving the order of remaining entries.
+	 *
+	 * Uses lower-bound binary search followed by a linear left shift after a match.
+	 * @param ids ID array to modify.
+	 * @param id Value to remove.
+	 * @return True if a matching entry was erased.
 	 */
 	bool eraseWorldResourceId(DynamicArray<uint32>& ids, uint32 id);
 
 	/**
-	 * @brief Logs world resource capacity change.
+	 * @brief Logs a pool-array capacity change when the old and new capacities differ.
+	 * @param resource_name Pool's diagnostic name, such as `GroundTriangle`.
+	 * @param array_name Internal array whose capacity changed.
+	 * @param old_capacity Capacity captured before the operation.
+	 * @param new_capacity Capacity observed after the operation.
 	 */
 	void logWorldResourceCapacityChange(const char* resource_name, const char* array_name,
 		size_t old_capacity, size_t new_capacity);
 
-	/* Owns stable indexed slots and the active/free ID lists for one resource type. */
-
-	template<typename resource_t, typename id_t>
 	/**
-	 * @brief Manages stable resource IDs and reuses released slots.
+	 * @brief Owns stable indexed slots and active/free ID lists for one resource type.
+	 *
+	 * IDs are slot indices and remain associated with the same slot until it is freed. Active IDs
+	 * are kept densely for iteration, with `active_indices` providing O(1) membership checks; freed
+	 * IDs are reused from `free_ids`. `free()` only changes pool bookkeeping: the owner must first
+	 * destroy resource-specific payloads and detach references. Iteration order is not stable after
+	 * a free because the active list uses swap-remove. `size()` counts all slots, including reusable
+	 * ones. Mutating operations log capacity changes for each backing array.
+	 * @tparam resource_t Resource stored in each stable slot.
+	 * @tparam id_t Unsigned ID type used to expose slot indices.
 	 */
+	template<typename resource_t, typename id_t>
 	class WorldResourcePool
 	{
+		/** @brief Diagnostic resource name retained for capacity-change logs. */
 		const char* resource_name;
+		/** @brief Stable indexed resource storage, including currently free slots. */
 		DynamicArray<resource_t> slots;
+		/** @brief Dense list of currently active IDs; its order changes when entries are freed. */
 		DynamicArray<id_t> active_ids;
+		/** @brief Reverse map from slot ID to active_ids index, or invalid sentinel for free slots. */
 		DynamicArray<size_t> active_indices;
+		/** @brief IDs available for reuse by create(). */
 		DynamicArray<id_t> free_ids;
 
-		// Captures all backing arrays so implicit growth in push/pop/resize is covered too.
-
 		/**
-		 * @brief Captures a resource pool’s backing-array capacities and reports any growth when it leaves scope.
+		 * @brief Captures pool array capacities and logs any differences at scope exit.
+		 *
+		 * Used by pool mutations so early returns after construction are also accounted
+		 * for. It observes capacity changes only; it does not affect pool state.
 		 */
 		struct CapacityWatcher
 		{
@@ -72,14 +105,18 @@ namespace danikk_space_engine
 		};
 
 	public:
-		// The name is retained by the pool; use a string literal or another static string.
 		/**
-		 * @brief Initializes an empty pool and assigns its diagnostic name.
+		 * @brief Initializes an empty pool and assigns the name used in capacity logs.
+		 *
+		 * The pool retains the pointer without copying the text, so callers must provide
+		 * a string whose lifetime exceeds the pool's lifetime (normally a string literal).
+		 * @param resource_name Stable diagnostic string; normally a string literal.
 		 */
 		explicit WorldResourcePool(const char* resource_name) : resource_name(resource_name) {}
 
 		/**
-		 * @brief Reuses a freed slot or appends a slot, then registers its ID as active.
+		 * @brief Reuses the last free slot or appends storage, then adds its ID to the active set.
+		 * @return ID of a default-initialized resource slot.
 		 */
 		id_t create()
 		{
@@ -106,7 +143,14 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Removes an ID from the active set and returns its slot to the reusable free list.
+		 * @brief Removes an active ID in O(1) using swap-remove and makes its slot reusable.
+		 *
+		 * The final active ID is moved into the removed ID's position, so active-list
+		 * order can change. This changes pool membership and free-list bookkeeping;
+		 * it does not destroy the slot value. Callers must perform resource-specific
+		 * cleanup before freeing an ID.
+		 * @param id Slot ID to free.
+		 * @return True if the ID was active; false if it was invalid or already free.
 		 */
 		bool free(id_t id)
 		{
@@ -131,7 +175,9 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Checks the reverse active-index table to determine whether the ID is currently allocated.
+		 * @brief Checks the reverse index to determine whether an ID is currently active.
+		 * @param id Slot ID to check.
+		 * @return True when the reverse index maps back to this ID in `active_ids`.
 		 */
 		bool isActive(id_t id) const
 		{
@@ -142,24 +188,23 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Returns the resource stored at the given ID.
+		 * @brief Returns a slot by ID without checking that the slot is active.
+		 * @param id Slot index; the caller must ensure it is within `size()`.
+		 * @return Mutable reference, including when the slot is currently free.
 		 */
 		resource_t& operator[](id_t id) { return slots[id]; }
-		/**
-		 * @brief Returns the resource stored at the given ID without allowing modification.
-		 */
+		/** @brief Returns a read-only slot by ID without checking that it is active. */
 		const resource_t& operator[](id_t id) const { return slots[id]; }
-		/**
-		 * @brief Returns the number of allocated resource slots.
-		 */
+		/** @brief Returns total slot-array length, including slots currently in the free list. */
 		size_t size() const { return slots.size(); }
 		/**
-		 * @brief Returns the IDs of resources currently in use.
+		 * @brief Returns the dense list of active IDs for iteration.
+		 * @return Pool-owned array reference; do not retain it across create(), free(), clear(), or releaseMemory().
 		 */
 		const DynamicArray<id_t>& usedIds() const { return active_ids; }
 
 		/**
-		 * @brief Resets the inventory slot to its empty, unequipped state.
+		 * @brief Destroys all active resource objects and empties bookkeeping arrays while retaining capacity.
 		 */
 		void clear()
 		{
@@ -176,7 +221,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Releases memory.
+		 * @brief Clears resources and replaces all backing arrays to release their capacity.
 		 */
 		void releaseMemory()
 		{

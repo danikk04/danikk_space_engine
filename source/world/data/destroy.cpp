@@ -8,10 +8,14 @@ namespace danikk_space_engine
 	namespace
 	{
 
-		template<typename id_t>
 		/**
-		 * @brief Erases id.
+		 * @brief Removes every matching ID from a compact ownership list while preserving order.
+		 * @tparam id_t ID value type stored in the owner list.
+		 * @param ids List to clean up.
+		 * @param id Resource ID to detach.
+		 * @return True if at least one occurrence was removed.
 		 */
+		template<typename id_t>
 		bool eraseId(DynamicArray<id_t>& ids, id_t id)
 		{
 			bool erased = false;
@@ -29,10 +33,17 @@ namespace danikk_space_engine
 			return erased;
 		}
 
-		template<typename array_t, typename id_t>
 		/**
-		 * @brief Erases id from chunks.
+		 * @brief Detaches a resource ID from each listed chunk and optionally invalidates changed meshes.
+		 * @tparam array_t Chunk member type holding resource IDs.
+		 * @tparam id_t Resource ID type.
+		 * @param world_data Data pools used to resolve chunks.
+		 * @param chunk_ids Chunks whose ownership lists are searched.
+		 * @param id Resource ID to remove.
+		 * @param chunk_array Member pointer selecting the relevant ID list.
+		 * @param invalidate_mesh Whether changed chunks must rebuild their rendered mesh.
 		 */
+		template<typename array_t, typename id_t>
 		void eraseIdFromChunks(
 			WorldData& world_data,
 			const DynamicArray<ChunkId>& chunk_ids,
@@ -47,10 +58,16 @@ namespace danikk_space_engine
 			}
 		}
 
-		template<typename pool_t, typename predicate_t, typename destroy_t>
 		/**
-		 * @brief Removes and releases matching resources.
+		 * @brief Iterates active resources and invokes the destroy callback for predicate matches.
+		 * @tparam pool_t Resource pool type.
+		 * @tparam predicate_t Predicate accepting a resource reference.
+		 * @tparam destroy_t Callback accepting the matching resource ID.
+		 * @param pool Pool to traverse; traversal tolerates swap removal by rechecking the moved ID.
+		 * @param matches Predicate deciding whether to destroy each resource.
+		 * @param destroy Normal destruction callback for a matched ID.
 		 */
+		template<typename pool_t, typename predicate_t, typename destroy_t>
 		void destroyMatchingResources(pool_t& pool, predicate_t matches, destroy_t destroy)
 		{
 			for(size_t index = 0; index < pool.usedIds().size();)
@@ -61,37 +78,52 @@ namespace danikk_space_engine
 			}
 		}
 
-		template<typename list_t, typename destroy_t>
 		/**
-		 * @brief Removes and releases last until empty.
+		 * @brief Repeatedly destroys the last ID until an owner list is empty.
+		 * @tparam list_t Array-like owner list exposing size() and indexed access.
+		 * @tparam destroy_t Callback that removes the supplied resource ID from the list.
+		 * @param ids List that is shortened by the callback.
+		 * @param destroy Resource destruction callback.
 		 */
+		template<typename list_t, typename destroy_t>
 		void destroyLastUntilEmpty(const list_t& ids, destroy_t destroy)
 		{
 			while(ids.size() > 0) destroy(ids[ids.size() - 1]);
 		}
 
-		template<typename... pool_t>
 		/**
-		 * @brief Clears pools.
+		 * @brief Calls clear() on every supplied pool, destroying elements but retaining array capacity.
+		 * @tparam pool_t Pool types accepted by the fold expression.
+		 * @param pools Pools to clear.
 		 */
+		template<typename... pool_t>
 		void clearPools(pool_t&... pools)
 		{
 			(pools.clear(), ...);
 		}
 
-		template<typename... pool_t>
 		/**
-		 * @brief Releases pools.
+		 * @brief Calls releaseMemory() on every supplied pool to return backing arrays to the allocator.
+		 * @tparam pool_t Pool types accepted by the fold expression.
+		 * @param pools Pools whose storage is released.
 		 */
+		template<typename... pool_t>
 		void releasePools(pool_t&... pools)
 		{
 			(pools.releaseMemory(), ...);
 		}
 
-		template<typename slot_t, typename component_type_t, typename id_t>
 		/**
-		 * @brief Removes and releases component payload.
+		 * @brief Runs the registered component destructor and frees external payload storage when used.
+		 * @tparam slot_t Point, graph, or world-body component slot type.
+		 * @tparam component_type_t Matching callback descriptor type.
+		 * @tparam id_t Slot ID type used for diagnostic messages.
+		 * @param slot Component slot whose payload is being destroyed.
+		 * @param type Descriptor supplying the destroy callback.
+		 * @param id Slot ID reported if required storage/callbacks are missing.
+		 * @param component_name Human-readable category used in fatal diagnostics.
 		 */
+		template<typename slot_t, typename component_type_t, typename id_t>
 		void destroyComponentPayload(
 			slot_t& slot,
 			const component_type_t& type,
@@ -115,18 +147,19 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Removes all chunk references first, then walks the active pools for resources
-	// that use the point. Each matching resource is destroyed through its normal
-	// cleanup path; the scan keeps its index when an ID is erased because the next
-	// active ID shifts into that position. The point slot is freed after dependents.
-
 	/**
-	 * @brief Removes and releases point.
+	 * @brief Destroys all point components, triangles, and graph edges that reference the point.
+	 *
+	 * First detaches the point from every chunk, then destroys dependent resources
+	 * through their regular cleanup paths, and finally recycles the point slot. The
+	 * pool scan keeps its index after a removal because swap-remove may move another
+	 * active ID into that position.
+	 * @param id Point ID to destroy; inactive IDs are ignored.
 	 */
 	void WorldData::destroyPoint(PointId id)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("WorldData::destroyPoint");
 		if(!isPointActive(id)) return;
@@ -151,12 +184,13 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases ground triangle.
+	 * @brief Removes a triangle from its owning chunk with swap-remove and repairs the moved triangle's index.
+	 * @param id Triangle ID to destroy; inactive IDs are ignored.
 	 */
 	void WorldData::destroyGroundTriangle(GroundTriangleId id)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("WorldData::destroyGroundTriangle");
 		if(!isGroundTriangleActive(id)) return;
@@ -186,17 +220,17 @@ namespace danikk_space_engine
 		ground_triangles.free(id);
 	}
 
-	// Detaches the chunk from any WorldBody that lists it, destroys its components and geometry,
-	// releases its mesh, then decrements each point's chunk-reference count. Points whose count
-	// reaches zero are freed directly because this chunk's dependents have already been destroyed.
-
 	/**
-	 * @brief Removes and releases chunk.
+	 * @brief Detaches a chunk from bodies, destroys its components and geometry, then releases unreferenced points.
+	 * Removes body ownership, destroys component slots and triangles, releases the GPU mesh, then
+	 * decrements point reference counts. Any point whose count reaches zero is freed after this
+	 * chunk's dependents have already been detached.
+	 * @param id Chunk ID to destroy; inactive IDs are ignored.
 	 */
 	void WorldData::destroyChunk(ChunkId id)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("WorldData::destroyChunk");
 		if(!isChunkActive(id)) return;
@@ -224,8 +258,7 @@ namespace danikk_space_engine
 			point.referencing_chunk_count--;
 			if(point.referencing_chunk_count == 0)
 			{
-				// All components and geometry owned by this chunk were destroyed above.
-				// A zero chunk reference count means no other chunk can still use this point.
+				/** @brief No other chunk can retain this point once its distinct-owner count reaches zero. */
 				points.free(point_id);
 			}
 		}
@@ -237,7 +270,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases world body.
+	 * @brief Destroys all components and chunks owned by the body before returning its slot to the pool.
+	 * @param id WorldBody ID to destroy; inactive IDs are ignored.
 	 */
 	void WorldData::destroyWorldBody(WorldBodyId id)
 	{
@@ -253,7 +287,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases world body component slot.
+	 * @brief Detaches a body component, destroys its payload, resets the slot, and recycles its ID.
+	 * @param id Component slot ID to destroy; inactive IDs are ignored.
 	 */
 	void WorldData::destroyWorldBodyComponentSlot(WorldBodyComponentSlotId id)
 	{
@@ -267,7 +302,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases point component slot.
+	 * @brief Detaches a point component from chunk lists and releases its payload and slot.
+	 * @param id Component slot ID to destroy; inactive IDs are ignored.
 	 */
 	void WorldData::destroyPointComponentSlot(PointComponentSlotId id)
 	{
@@ -282,7 +318,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases graph component slot.
+	 * @brief Detaches an edge component from chunk lists and releases its payload and slot.
+	 * @param id Component slot ID to destroy; inactive IDs are ignored.
 	 */
 	void WorldData::destroyGraphComponentSlot(GraphComponentSlotId id)
 	{

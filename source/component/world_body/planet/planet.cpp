@@ -17,7 +17,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns planet settings.
+	 * @brief Returns the immutable preset used to initialize a planet component.
+	 * @param id Index into the static planet preset table.
+	 * @return The requested preset; an out-of-range index terminates with a fatal error.
 	 */
 	const PlanetComponentSettings& getPlanetSettings(PlanetSettingsId id)
 	{
@@ -29,12 +31,17 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Constructs planet component.
+	 * @brief Constructs a default planet payload and optionally copies a preset's scalar settings.
+	 *
+	 * The preset supplies name, radii, load distance, surface gravity, and noise seed. Runtime
+	 * arrays and chunk-tracking state remain default-initialized for this new component instance.
+	 * @param destination Component payload storage provided by WorldData.
+	 * @param init_data Optional PlanetComponentSettings preset; null selects Earth defaults.
 	 */
 	void constructPlanetComponent(void* destination, const void* init_data)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("constructPlanetComponent");
 		if(destination == nullptr) danikk_engine::formatFatalError("Planet component construction received null destination");
@@ -53,12 +60,14 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves planet component.
+	 * @brief Transfers owned edit, lookup, and request arrays into replacement component storage.
+	 * @param destination Replacement payload storage.
+	 * @param source Existing planet payload, destroyed after its arrays are moved.
 	 */
 	void movePlanetComponent(void* destination, void* source)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("movePlanetComponent");
 		if(destination == nullptr || source == nullptr)
@@ -71,12 +80,13 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases planet component.
+	 * @brief Ends the planet payload lifetime and releases its owned DynamicArray allocations.
+	 * @param data Existing live planet payload.
 	 */
 	void destroyPlanetComponent(void* data)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("destroyPlanetComponent");
 		if(data == nullptr) danikk_engine::formatFatalError("Planet component destruction received null data");
@@ -84,16 +94,24 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Updates planet component.
+	 * @brief Loads persistent terrain edits and updates the desired chunk set around the camera.
+	 *
+	 * Chunk reconciliation runs only when the camera moves beyond the update threshold, terrain
+	 * revision changes, or the set has not been initialized. Outside the planet's load range it
+	 * clears pending work and unloads chunks; each update submits immutable requests to ChunkLoader.
+	 * @param slot Planet component slot identifying the body and component generation.
+	 * @param world World containing camera state, chunk resources, and the generation worker.
 	 */
 	void updatePlanetComponent(WorldBodyComponentSlot& slot, World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("Planet component frame");
-		// Keep 3D chunks around the camera while it is within reach of the planet. Update the set after
-		// movement or terrain edits; the field itself remains defined throughout the planet volume.
+		/**
+		 * @brief Keeps a camera-centered set of 3D chunks loaded and refreshes it after movement or edits.
+		 * The scalar field remains defined throughout the planet volume; this set controls loaded surface work.
+		 */
 		if(!world.data.isWorldBodyActive(slot.world_body_id)
 			|| !world.data.isPointComponentSlotActive(world.camera_component_slot_id)) return;
 

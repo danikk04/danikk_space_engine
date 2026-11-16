@@ -4,7 +4,9 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Constructs inventory component.
+	 * @brief Constructs an empty inventory or copies the supplied slot array into slot storage.
+	 * @param destination Destination storage owned by the component slot.
+	 * @param init_data Optional source `InventoryComponent`; null creates an empty slot array.
 	 */
 	void constructInventoryComponent(void* destination, const void* init_data)
 	{
@@ -17,7 +19,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves inventory component.
+	 * @brief Move-constructs the inventory, transferring ownership of its DynamicArray allocation.
+	 * @param destination Replacement component payload storage.
+	 * @param source Existing inventory payload, destroyed after its array has been moved.
 	 */
 	void moveInventoryComponent(void* destination, void* source)
 	{
@@ -29,7 +33,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases inventory component.
+	 * @brief Destroys the inventory and its owned slot array without freeing slot-owned storage.
+	 * @param data Existing live inventory payload.
 	 */
 	void destroyInventoryComponent(void* data)
 	{

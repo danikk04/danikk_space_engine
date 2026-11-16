@@ -9,6 +9,12 @@ namespace danikk_space_engine
 		DynamicArray<MaterialDefinition> material_list;
 	}
 
+	/**
+	 * @brief Creates a material definition and decodes its packed RGB tint.
+	 * @param name Stable material name used by getMaterialID().
+	 * @param hexrgb_color Packed 0xRRGGBB color converted to normalized channel values.
+	 * @param texture_name Texture asset name; null creates an empty texture for non-rendered material.
+	 */
 	MaterialDefinition::MaterialDefinition(const char* name, uint32 hexrgb_color, const char* texture_name)
 		: name(name),
 		  color(
@@ -20,7 +26,14 @@ namespace danikk_space_engine
 	{}
 
 	/**
-	 * @brief Loads materials.
+	 * @brief Populates the process-wide material catalog once in the ID order declared by default_materials.
+	 *
+	 * The insertion sequence is part of the serialized/runtime ID contract: void, grass, stone,
+	 * lava, water, and magma must stay aligned with the constants in `default_materials`. Repeated
+	 * calls do nothing after the first population. Grass, stone, lava, water, and magma load the
+	 * texture assets `grass_32x32`, `stone_32x32`, `lava_32x32`, `water_32x32`, and `magma_32x32`
+	 * respectively; the void entry has no texture. Grass and water carry explicit tint colors,
+	 * while the remaining textured materials use white tint.
 	 */
 	void loadMaterials()
 	{
@@ -39,7 +52,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Looks up a material name and returns its table index, falling back to the default material when absent.
+	 * @brief Performs a linear exact-name lookup in the material catalog.
+	 * @param name Null-terminated material name.
+	 * @return Catalog index for a match, or the void material ID when no name matches.
 	 */
 	MaterialId getMaterialID(const char* name)
 	{
@@ -54,7 +69,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns the number of entries in the material definition table.
+	 * @brief Returns the number of definitions currently stored in the material catalog.
+	 * @return Material catalog length.
 	 */
 	size_t getMaterialCount()
 	{
@@ -62,7 +78,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns the material at an ID after checking that the ID is in range.
+	 * @brief Returns a mutable material definition using its ID as a direct array index.
+	 * @param id Valid index into material_list.
+	 * @return Reference to the requested definition. No bounds check is performed here.
 	 */
 	MaterialDefinition& getMaterial(MaterialId id)
 	{

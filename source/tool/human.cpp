@@ -16,7 +16,15 @@ namespace danikk_space_engine
 		constexpr PointComponentSlotId no_human_slot = static_cast<PointComponentSlotId>(-1);
 
 		/**
-		 * @brief Tests the ray against the human capsule formed by its vertical segment and radius.
+		 * @brief Finds the closest forward ray point to a finite capsule axis and tests its radius.
+		 * @param origin Ray origin in world coordinates.
+		 * @param direction Normalized ray direction.
+		 * @param center Capsule center.
+		 * @param up Unit capsule axis direction.
+		 * @param height Total capsule height including hemispherical ends.
+		 * @param radius Capsule radius.
+		 * @param ray_distance Receives the non-negative distance to the candidate ray point.
+		 * @return True when the closest ray/axis separation is no greater than radius.
 		 */
 		bool rayIntersectsHumanCapsule(const glm::dvec3& origin, const glm::dvec3& direction,
 			const glm::dvec3& center, const glm::dvec3& up, double height, double radius,
@@ -55,7 +63,11 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Clears human drag.
+		 * @brief Restores the captured human's ground-follow setting and clears drag state.
+		 * @param world World used to resolve the captured component slot.
+		 * @param controller Controller state whose human capture fields are reset.
+		 * If the captured slot is still active and still represents a human, its
+		 * saved follow_ground value is restored before the IDs and distance are reset.
 		 */
 		void clearHumanDrag(World& world, LocalPlayerControllerComponent& controller)
 		{
@@ -76,7 +88,14 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Creates human at hit.
+		 * @brief Creates an NPC slightly above a valid surface hit with a body-relative up axis.
+		 * @param world World receiving the NPC and its component slots.
+		 * @param hit Raycast result used to find the owning body and spawn location.
+		 * Planet up is radial from the body center; other bodies use the hit normal.
+		 * Hits with an invalid normal or a slope facing away from the chosen up axis
+		 * are rejected. The hit must satisfy dot(up, local_normal) >= 0.5; the
+		 * human's feet are placed 0.02 m above the hit before createNpc() offsets
+		 * its center by half the configured height.
 		 */
 		void createHumanAtHit(World& world, const RaycastHit& hit)
 		{
@@ -103,11 +122,12 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Human creation reuses the terrain hit placement. Dragging finds the nearest human capsule
-	// intersected by the camera ray, disables ground following while held, and moves its owning chunk.
-
 	/**
-	 * @brief Applies human tool.
+	 * @brief Handles the Human -> Create action using the current surface raycast hit.
+	 * @param world World receiving the new human resources.
+	 * @param hit Current camera raycast result.
+	 * @param action Selected Human action; drag is updated separately each tick.
+	 * @return Empty face-selection result; creation does not change face selection.
 	 */
 	ToolApplyResult applyHumanTool(World& world, const RaycastHit& hit, ToolActionId action)
 	{
@@ -116,7 +136,20 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Runs one simulation tick for human drag tool.
+	 * @brief Captures the nearest ray-hit human capsule and moves its chunk in front of the camera.
+	 * @param world World used for ray tests, transforms, and resource access.
+	 * @param controller Local controller storing the dragged human IDs and distance.
+	 * @param hit Nearest surface raycast hit, used to prevent selecting a human through geometry.
+	 * @param enabled Whether Human -> Drag remains the active interaction.
+	 * @param mouse_state Current left-button state; release or disable restores ground following.
+	 * @param scroll_delta Wheel movement changes distance only while Alt is held.
+	 * @param alt_pressed Enables wheel distance adjustment.
+	 * On press, capsule intersections are considered only when closer than the
+	 * surface hit. While captured, ground-follow is disabled and the owning chunk
+	 * origin is moved so the human point stays at the camera-relative target.
+	 * Alt-wheel multiplies the retained distance by 1.2 per wheel unit and clamps
+	 * it to 0.5–10,000 world units. Releasing the button or disabling this action
+	 * restores the ground-follow value saved when capture began.
 	 */
 	void tickHumanDragTool(World& world, LocalPlayerControllerComponent& controller,
 		const RaycastHit& hit, bool enabled, int mouse_state, float scroll_delta, bool alt_pressed)

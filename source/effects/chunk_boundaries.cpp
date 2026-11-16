@@ -8,13 +8,15 @@
 
 namespace danikk_space_engine
 {
-	// Collects the local-space box edges for every loaded chunk, transforms them into camera-relative
-	// coordinates, and builds thin black prisms around those edges into one reusable mesh. Planet
-	// chunks use their full generation-cell bounds; other chunks use referenced-point bounds. Drawing
-	// after world geometry lets the depth buffer keep hidden edges occluded.
-
 	/**
-	 * @brief Draws chunk boundaries.
+	 * @brief Batches visible chunk-boundary edge prisms and submits them as a single black draw.
+	 * @param world World containing the loaded chunks to inspect.
+	 * Chunks with any ground triangles use a fixed local box from zero to the
+	 * generation width; chunks without triangles derive bounds from active point
+	 * positions. The current branch checks triangle presence rather than the body
+	 * component type. Coordinates are transformed with each chunk's camera-relative
+	 * world matrix. The reusable mesh is overwritten each call and empty geometry
+	 * is not submitted.
 	 */
 	void drawChunkBoundaries(World& world)
 	{

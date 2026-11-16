@@ -4,11 +4,19 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		// Builds six outward-wound quads with rectangles from the classic 64x64 skin layout.
-		// Positions form a unit cube; dimensions and joint placement are applied when rendering.
-
 		/**
-		 * @brief Loads part mesh.
+		 * @brief Builds a unit-box mesh with six face UV rectangles from a 64x64 Minecraft skin atlas.
+		 *
+		 * Each face receives four independent vertices so its normal and atlas rectangle remain
+		 * flat and distinct, with outward winding. The rectangle layout follows the classic cuboid
+		 * net for the supplied body-part dimensions. Geometry remains unit-sized; rendering later
+		 * scales and positions it around the part's joint.
+		 * @param mesh Mesh that receives 24 vertices and 36 triangle indices.
+		 * @param u Horizontal pixel origin of this part's atlas net.
+		 * @param v Vertical pixel origin of this part's atlas net.
+		 * @param width Part width in skin pixels.
+		 * @param height Part height in skin pixels.
+		 * @param depth Part depth in skin pixels.
 		 */
 		void loadPartMesh(Mesh& mesh, int u, int v, int width, int height, int depth)
 		{
@@ -52,11 +60,14 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Loads shared meshes and defines proportions, pivots and fallback colours in units of body height.
-	// Builds both base and outer-layer UV meshes from the classic 64x64 Minecraft skin layout.
-
 	/**
-	 * @brief Loads human definition.
+	 * @brief Initializes shared body-part meshes, classic skin UV regions, proportions, and fallback colors.
+	 *
+	 * Creates separate base and overlay meshes for head, torso, arms, and legs. The generated
+	 * dimensions are normalized by 32 skin pixels and the part transforms are expressed relative
+	 * to a 1.8-unit character height. Both mesh layers use the classic 64x64 skin atlas layout;
+	 * fallback colors are applied when no skin texture is assigned.
+	 * @param definition Shared definition whose six part records are populated.
 	 */
 	void loadHumanDefinition(HumanDefinition& definition)
 	{

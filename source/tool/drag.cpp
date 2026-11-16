@@ -49,13 +49,23 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Captures the body under the cursor on mouse press, then keeps the grabbed local point at
-	// its current camera distance while the camera moves. Normal scrolling rotates the body; with
-	// Alt, scrolling changes the distance and cursor movement rotates it around camera-relative axes.
-	// After each transform, body position is adjusted to keep the grabbed point on the view ray.
-
 	/**
-	 * @brief Runs one simulation tick for drag tool.
+	 * @brief Updates capture, distance, and rotation for the Body -> Drag action.
+	 * @param world World providing camera transforms and target body resources.
+	 * @param controller Local controller storing the captured body and local hit offset.
+	 * @param hit Current raycast hit used to begin capture on a mouse press.
+	 * @param enabled Whether Body -> Drag is the active action.
+	 * @param mouse_state Current left mouse button state; release or disable clears capture.
+	 * @param scroll_delta Wheel movement supplied while the mouse button is held.
+	 * @param alt_pressed Changes wheel input from rotation to grab-distance adjustment.
+	 * @param cursor_delta Mouse displacement used to rotate around camera-relative axes.
+	 * On capture, stores the hit point relative to the body. The body origin is
+	 * recomputed after rotation or distance changes so that the captured local
+	 * point remains on the camera ray. Planet bodies and the body owning the camera
+	 * are ineligible. Alt-wheel scales grab distance by 1.2 per wheel unit and
+	 * clamps it to 0.5–10,000 world units.
+	 * Normal wheel input rotates the body; Alt-wheel changes grab distance, and mouse movement
+	 * rotates around camera-relative axes.
 	 */
 	void tickDragTool(
 		World& world,

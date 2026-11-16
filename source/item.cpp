@@ -35,7 +35,11 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Sets the human arm pose to weapon-ready; it does not create a separate weapon component.
+		 * @brief Sets the owning human's arm pose to weapon-ready for a held firearm.
+		 * @param world World used to find a HumanComponent attached to the owner point.
+		 * @param owner_point_id Point that owns the equipped inventory slot.
+		 * @param definition Concrete weapon definition; unused by this shared pose callback.
+		 * @return True when a human component was found and its arm pose was changed.
 		 */
 		bool equipWeapon(World& world, PointId owner_point_id, const ItemDefinition&)
 		{
@@ -46,7 +50,11 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Restores the human relaxed arm pose when the equipped weapon is removed.
+		 * @brief Restores the owning human's relaxed arm pose after removing a held weapon.
+		 * @param world World used to find the human attached to the owner point.
+		 * @param owner_point_id Point whose equipped weapon is being removed.
+		 * @param definition Concrete weapon definition; unused by this shared pose callback.
+		 * @return True when a human component was found and its arm pose was reset.
 		 */
 		bool unequipWeapon(World& world, PointId owner_point_id, const ItemDefinition&)
 		{
@@ -57,7 +65,9 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Binds the item texture and render color, sets the supplied world matrix, and draws the item mesh.
+		 * @brief Binds the definition texture or fallback white texture, applies tint/transform, and draws its mesh.
+		 * @param definition Item definition providing the mesh, optional texture, and render tint.
+		 * @param world_matrix Transform from item-local model space to render space.
 		 */
 		void drawWeapon(ItemDefinition& definition, const mat4& world_matrix)
 		{
@@ -71,7 +81,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Checks that each item definition references a known type and that weapon definitions have the callbacks and assets they require.
+		 * @brief Fails fast when item catalog access occurs before loadItemCatalog() initializes it.
 		 */
 		void validateItemCatalog()
 		{
@@ -80,7 +90,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Loads item catalog.
+	 * @brief Loads the MG-42 mesh and initializes its weapon category, stack limit, tint, and parameters.
+	 *
+	 * This catalog currently registers one concrete item; its weapon numeric values are placeholders.
+	 * No MG-42 texture is loaded yet, so its draw callback uses the white fallback texture.
 	 */
 	void loadItemCatalog()
 	{
@@ -95,7 +108,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns the registered item behavior table for the type ID.
+	 * @brief Returns the callback table for the requested item category.
+	 * @param id Category index into `item_types`.
+	 * @return Static category record; invalid IDs terminate through a fatal error.
 	 */
 	const ItemType& getItemType(ItemTypeId id)
 	{
@@ -104,7 +119,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns the item definition stored at the requested item definition ID.
+	 * @brief Returns an initialized concrete item definition after checking catalog state and ID.
+	 * @param id Definition index; `none` and out-of-range IDs are invalid.
+	 * @return Const definition record with its item assets and category parameters.
 	 */
 	const ItemDefinition& getItemDefinition(ItemDefinitionId id)
 	{
@@ -115,7 +132,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns the weapon parameter record after confirming that the definition is a weapon.
+	 * @brief Retrieves the weapon parameter union member after checking the item's category.
+	 * @param id Concrete item definition expected to be a weapon.
+	 * @return Reference to weapon damage, penetration, caliber, and firing-rate values.
 	 */
 	const WeaponItemParameters& getWeaponItemParameters(ItemDefinitionId id)
 	{
@@ -126,7 +145,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Invokes the item type’s use callback for the selected inventory stack.
+	 * @brief Validates a non-empty stack and dispatches its category's use callback if present.
+	 * @param world World context for the use operation.
+	 * @param owner_point_id Point whose inventory contains the stack.
+	 * @param slot Mutable stack passed through to the callback.
+	 * @return False for an empty stack or missing callback; otherwise the callback result.
 	 */
 	bool useItem(World& world, PointId owner_point_id, InventorySlot& slot)
 	{
@@ -137,7 +160,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Equips the selected stack and invokes the item type’s equip callback.
+	 * @brief Dispatches the definition's category equip callback for its owner point.
+	 * @param world World containing the item owner.
+	 * @param owner_point_id Point whose equipped state should be updated.
+	 * @param id Concrete item definition to equip.
+	 * @return False if the category has no equip callback or the callback rejects the action.
 	 */
 	bool equipItem(World& world, PointId owner_point_id, ItemDefinitionId id)
 	{
@@ -147,7 +174,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Unequips the item and invokes the item type’s unequip callback.
+	 * @brief Dispatches the definition's category unequip callback for its owner point.
+	 * @param world World containing the item owner.
+	 * @param owner_point_id Point whose equipped state should be cleared.
+	 * @param id Concrete item definition to unequip.
+	 * @return False if the category has no unequip callback or the callback rejects the action.
 	 */
 	bool unequipItem(World& world, PointId owner_point_id, ItemDefinitionId id)
 	{
@@ -157,7 +188,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Draws item.
+	 * @brief Validates the catalog/definition and calls the item's category draw callback.
+	 * @param id Concrete item definition to render.
+	 * @param world_matrix Transform supplied to the category renderer.
 	 */
 	void drawItem(ItemDefinitionId id, const mat4& world_matrix)
 	{

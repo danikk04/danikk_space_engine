@@ -9,11 +9,18 @@
 
 namespace danikk_space_engine
 {
-	// Creates an NPC in a separate component chunk so unloading generated terrain does not delete it.
-	// Input position is the body-local ground/feet location; the point is placed at the human center.
-
 	/**
-	 * @brief Creates a human with the soldier appearance, inventory, and default MG-42 equipment.
+	 * @brief Creates a soldier in a standalone chunk with a skin, equipped MG-42, and NPC controller.
+	 *
+	 * The input position is the world-body-local location of the feet. The point is placed half a
+	 * human height along `up`, and a new chunk is created so terrain streaming does not unload the NPC.
+	 * The human, inventory, and controller slots share the same point and chunk.
+	 * @param world World receiving the new chunk, point, and component slots.
+	 * @param world_body_id Active body that owns the new NPC chunk.
+	 * @param position Feet position in world-body-local coordinates.
+	 * @param up Local vertical direction; normalized, with +Z used if the input is degenerate.
+	 * @param forward Initial facing direction, projected onto the plane perpendicular to `up`.
+	 * @return ID of the attached NPC controller slot.
 	 */
 	PointComponentSlotId createHumanSoldier(World& world, WorldBodyId world_body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward)
@@ -61,7 +68,13 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Creates a human character, then attaches the autonomous NPC controller to its point.
+	 * @brief Creates the current default NPC archetype by delegating to createHumanSoldier().
+	 * @param world World receiving the NPC resources.
+	 * @param world_body_id Active body that owns the NPC.
+	 * @param position Feet position in body-local coordinates.
+	 * @param up Initial local up direction.
+	 * @param forward Initial local facing direction.
+	 * @return ID of the NPC controller slot created with the human.
 	 */
 	PointComponentSlotId createNpc(World& world, WorldBodyId world_body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward)

@@ -2,10 +2,11 @@
 
 namespace danikk_space_engine
 {
-	// Generates a centered cube with shared corner vertices and outward-wound triangle faces.
-
 	/**
-	 * @brief Generates cube geometry.
+	 * @brief Replaces the output arrays with a centered, shared-vertex cube mesh topology.
+	 * @param size Full cube edge length.
+	 * @param positions Receives eight corners at plus/minus half-size on each axis.
+	 * @param triangles Receives twelve outward-wound triangles, two for each side.
 	 */
 	void generateCubeGeometry(
 		float size,

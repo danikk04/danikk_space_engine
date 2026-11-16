@@ -14,7 +14,9 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Constructs bullet component.
+	 * @brief Constructs default projectile state or copies the caller-provided velocity/lifetime.
+	 * @param destination Destination storage owned by the point-component slot.
+	 * @param init_data Optional initial `BulletComponent`; null selects the default velocity and lifetime.
 	 */
 	void constructBulletComponent(void* destination, const void* init_data)
 	{
@@ -33,7 +35,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves bullet component.
+	 * @brief Transfers projectile state to replacement slot storage and destroys the source payload.
+	 * @param destination Replacement payload storage.
+	 * @param source Existing live projectile payload.
 	 */
 	void moveBulletComponent(void* destination, void* source)
 	{
@@ -47,7 +51,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases bullet component.
+	 * @brief Ends the projectile payload lifetime; the slot pool manages backing storage.
+	 * @param data Existing live projectile payload.
 	 */
 	void destroyBulletComponent(void* data)
 	{
@@ -58,16 +63,19 @@ namespace danikk_space_engine
 		std::destroy_at(static_cast<BulletComponent*>(data));
 	}
 
-	// Advances the projectile over this simulation step, raycasts the swept segment to prevent
-	// tunneling through world cells, and queues the point for cleanup on impact or timeout.
-
 	/**
-	 * @brief Runs one simulation tick for bullet component.
+	 * @brief Sweeps the projectile segment for impact, advances lifetime, and queues point removal.
+	 * @param slot Slot containing projectile state and point/chunk IDs.
+	 * @param world World used for world-space raycasting and deferred point destruction.
+	 * Uses the target frame delay and raycasts the full displacement before moving
+	 * the point, preventing a fast projectile from skipping a surface between ticks.
+	 * On impact the point is moved to the hit position and destruction is deferred;
+	 * otherwise age advances and an expired projectile is queued for removal.
 	 */
 	void tickBulletComponent(PointComponentSlot& slot, World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("BulletComponent::tick");
 
@@ -106,11 +114,13 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Builds a camera-independent orientation from the velocity and draws a narrow, bright sphere
-	// along the travel axis so the fast-moving projectile remains visible as a short tracer.
-
 	/**
-	 * @brief Processes one frame for bullet component.
+	 * @brief Renders an orange tracer aligned to projectile velocity using the shared sphere mesh.
+	 * @param slot Slot containing projectile state and render transform IDs.
+	 * @param world World used to construct the camera-relative chunk transform.
+	 * The tracer is assembled from a scaled low-poly sphere mesh, oriented along
+	 * velocity and drawn with a bright solid tint. Projectiles already queued for
+	 * destruction are skipped; missing shared mesh state is fatal.
 	 */
 	void frameBulletComponent(PointComponentSlot& slot, World& world)
 	{

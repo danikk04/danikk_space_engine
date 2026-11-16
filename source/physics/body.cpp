@@ -12,7 +12,10 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Checks whether the world body has an active planet component.
+		 * @brief Checks whether any active component slot marks the body as a planet.
+		 * @param world World used to validate component slots.
+		 * @param body Body whose component slot IDs are examined.
+		 * @return True on the first active Planet slot; otherwise false.
 		 */
 		bool isPlanetBody(const World& world, const WorldBody& body)
 		{
@@ -26,15 +29,18 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Builds mesh colliders and solves body/chunk pairs in four sweeps; dragged bodies are kinematic.
-
 	/**
-	 * @brief Resolves body collisions.
+	 * @brief Builds convex mesh proxies and resolves body pairs in four sequential passes.
+	 * @param world World whose loaded mesh bodies may be moved and have velocities changed.
+	 * Planet bodies and bodies without active chunks are excluded. Each unordered
+	 * body pair is broadphase-tested by its aggregate radius, then each chunk pair
+	 * is tested by a bounding sphere and SAT. The Drag-held body has zero inverse
+	 * mass and inertia, so the other body receives the pair correction and impulse.
 	 */
 	void WorldPhysics::resolveBodyCollisions(World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("World::body collisions");
 		WorldBodyId dragged_id = static_cast<WorldBodyId>(-1);

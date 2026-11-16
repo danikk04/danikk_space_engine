@@ -4,10 +4,15 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+		/** @brief Maximum number of generated chunk payloads buffered for the main thread. */
 		constexpr size_t max_completed_chunks = 2;
 
 		/**
-		 * @brief Compares the component-generation identity and grid coordinate, ignoring output payload.
+		 * @brief Compares the full request identity while ignoring copied settings and output arrays.
+		 * @param left First generation request.
+		 * @param right Second generation request.
+		 * @return True when world generation, body, component slot/incarnation,
+		 *         terrain revision, and grid coordinate all match.
 		 */
 		bool sameRequestKey(const ChunkGenerationRequest& left, const ChunkGenerationRequest& right)
 		{
@@ -20,7 +25,10 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Checks whether the completed-result queue contains the specified generation request.
+		 * @brief Prevents queueing work whose matching result is already awaiting the main thread.
+		 * @param request Request identity to look for.
+		 * @param completed Bounded result queue protected by the loader mutex.
+		 * @return True when one result has the same world/body/component/revision/coordinate identity.
 		 */
 		bool requestHasCompletedResult(
 			const ChunkGenerationRequest& request,
@@ -40,7 +48,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Stops the worker thread and releases loader resources.
+	 * @brief Stops and joins the worker, then allows its request/result arrays to be destroyed.
+	 * The destructor delegates to stop(), making repeated shutdown safe.
 	 */
 	ChunkLoader::~ChunkLoader()
 	{
@@ -48,7 +57,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Starts the worker thread that processes chunk-generation requests.
+	 * @brief Starts the single worker unless a worker thread is already joinable.
+	 * The worker waits on the condition variable until requests arrive or stop is called.
 	 */
 	void ChunkLoader::start()
 	{
@@ -59,7 +69,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Signals the worker to stop, wakes it, and joins the thread.
+	 * @brief Requests worker shutdown, wakes both wait conditions, joins, and clears queued data.
+	 * An in-progress chunk generation is not interrupted; run() discards its result
+	 * after observing stopping. Calling stop() while not started is a no-op.
 	 */
 	void ChunkLoader::stop()
 	{
@@ -79,7 +91,12 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Updates pending requests.
+	 * @brief Replaces pending work with the latest request snapshot while deduplicating active/completed jobs.
+	 * @param generation_id Current World lifetime token; a change discards old completed results.
+	 * @param new_requests Requests desired by all planet components for this world state.
+	 * Requests with stale tokens, the active request's key, or a result already in
+	 * the completed queue are omitted. If the filtered queue is unchanged, no
+	 * allocation or worker wake-up is needed.
 	 */
 	void ChunkLoader::updatePendingRequests(
 		uint64 generation_id,
@@ -94,8 +111,10 @@ namespace danikk_space_engine
 				result_space_available.notify_all();
 			}
 
-			// Compare the requested queue before rebuilding it. If the set is unchanged, this avoids
-			// needless allocations and scans when callers repeat an update.
+			/**
+			 * @brief Avoids rebuilding the pending array when the filtered request snapshot is unchanged.
+			 * This keeps repeated per-frame updates from causing unnecessary allocations and scans.
+			 */
 			size_t queued_index = 0;
 			bool same_queue = true;
 			for(const ChunkGenerationRequest& request : new_requests)
@@ -125,7 +144,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Attempts to obtain take completed.
+	 * @brief Moves the oldest completed result for the current world generation to the caller.
+	 * @param result Receives the moved CPU-side geometry and request identity.
+	 * @return True when a current-generation result was transferred; stale results
+	 *         are removed and skipped, and false means the queue is empty afterward.
 	 */
 	bool ChunkLoader::tryTakeCompleted(GeneratedChunkData& result)
 	{
@@ -148,7 +170,13 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Waits for generation requests, generates chunks on the worker thread, and queues completed results.
+	 * @brief Waits for jobs, generates CPU-only chunk data outside the mutex, and publishes valid results.
+	 *
+	 * The worker removes the oldest request and marks it active while locked,
+	 * performs scalar sampling, mesh extraction, and save I/O without holding the
+	 * queue mutex, then waits until the two-entry result queue has room. Results
+	 * from an obsolete world token or during shutdown are discarded. OpenGL work
+	 * and WorldData resource allocation happen later on the main thread.
 	 */
 	void ChunkLoader::run()
 	{

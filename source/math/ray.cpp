@@ -4,12 +4,17 @@
 
 namespace danikk_space_engine
 {
-	// Computes the nearest forward intersection between a ray and one triangle.
-	// Uses the Moller-Trumbore determinant and barycentric tests, rejecting degenerate,
-	// parallel, outside, or behind-origin intersections before returning distance and normal.
-
 	/**
-	 * @brief Tests a ray against a triangle and returns distance and barycentric coordinates on a hit.
+	 * @brief Tests a ray against one triangle with the Möller–Trumbore algorithm.
+	 * @param ray Input ray; its direction is normalized locally.
+	 * @param a First triangle vertex.
+	 * @param b Second triangle vertex.
+	 * @param c Third triangle vertex.
+	 * @return Hit flag, distance along the normalized ray, and winding-derived
+	 *         normalized face normal. Degenerate, parallel, outside, and
+	 *         behind-origin intersections return a default miss.
+	 * The test is two-sided: the determinant sign is not used for back-face culling.
+	 * @see World::raycast(), which calls this test only for triangles in candidate chunks.
 	 */
 	RayTriangleIntersection intersectRayTriangle(
 		const Ray& ray,

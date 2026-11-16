@@ -12,7 +12,15 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Adds quad.
+	 * @brief Appends a four-vertex face with UV extents scaled for texture tiling.
+	 * @param mesh Dynamic mesh receiving the two face triangles.
+	 * @param a First face corner.
+	 * @param b Second face corner.
+	 * @param c Third face corner.
+	 * @param d Fourth face corner.
+	 * @param normal Flat face normal shared by all corners.
+	 * @param u_size Horizontal UV extent, normally the face's first physical dimension.
+	 * @param v_size Vertical UV extent, normally the face's second physical dimension.
 	 */
 	static void addQuad(DynamicMesh<DefaultVertex>& mesh, const vec3& a, const vec3& b,
 			const vec3& c, const vec3& d, const vec3& normal, float u_size, float v_size)
@@ -27,12 +35,10 @@ namespace danikk_space_engine
 		mesh.addSquare(vertices);
 	}
 
-	// Creates a unit cube mesh whose face UV ranges tile according to the requested dimensions.
-	// Allocates a Mesh, emits six independently normaled quads with size-based UV extents,
-	// uploads the generated vertices and indices, and configures the vertex attributes.
-
 	/**
-	 * @brief Creates cube mesh.
+	 * @brief Allocates a centered unit cube mesh and tiles each face UV by the requested size.
+	 * @param size Dimensions that scale the per-face UV ranges; generated geometry remains unit-sized.
+	 * @return Heap-allocated Mesh owned by the shape cache after successful generation.
 	 */
 	static Mesh* createCubeMesh(vec3 size)
 	{
@@ -61,7 +67,7 @@ namespace danikk_space_engine
 	static constexpr size_t shape_mesh_cache_capacity = 1024;
 
 	/**
-	 * @brief Initializes shape table.
+	 * @brief Registers the cube definition once and reserves space for up to 1024 cached meshes.
 	 */
 	void initShapeTable()
 	{
@@ -77,7 +83,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Finds a mesh cache entry for the exact requested dimensions or generates and stores one on a cache miss.
+	 * @brief Performs an exact-size linear cache lookup, creating and storing a mesh on a miss.
+	 * @param size Requested mesh dimensions.
+	 * @return Pointer to the existing or newly appended entry, or nullptr if no factory is available.
+	 * The implementation aborts when the pre-reserved cache is full; it does not
+	 * resize the cache dynamically.
 	 */
 	ShapeMesh* ShapeDefinition::getMeshEntry(vec3 size)
 	{
@@ -103,7 +113,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Finds shape.
+	 * @brief Returns the first legacy shape-table entry with the requested ID.
+	 * @param id Shape ID to find.
+	 * @return Matching definition or nullptr when absent.
 	 */
 	ShapeDefinition* findShape(ShapeId id)
 	{
@@ -118,7 +130,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Clears shape mesh cache.
+	 * @brief Releases every cached Mesh object and resets each definition's mesh list.
 	 */
 	void clearShapeMeshCache()
 	{

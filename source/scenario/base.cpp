@@ -12,12 +12,17 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		// Searches deterministic radial directions from outside the terrain toward the core. It chooses
-		// a point only after finding a continuous solid interval, keeping the camera below the surface,
-		// outside the protected core, and away from thin cave walls.
-
 		/**
-		 * @brief Finds ground camera position.
+		 * @brief Finds a deterministic underground camera sample in a sufficiently thick solid region.
+		 * @param planet_body_id Planet whose persisted terrain edits are loaded for sampling.
+		 * @param planet_settings Radius, seed, and protected core settings for the scalar field.
+		 * @param camera_position Receives the first qualifying world-body-local position.
+		 * @return True when a sample is found; false when the planet is too small or
+		 *         all tested radial directions lack the required solid depth.
+		 * Scans ten fixed directions from beyond the terrain inward, one voxel-size
+		 * step at a time, stopping outside the core plus a two-voxel safety margin.
+		 * It requires consecutive solid samples to avoid spawning in a thin cave
+		 * wall. Terrain edit stamps are loaded before evaluating the field.
 		 */
 		bool findGroundCameraPosition(
 			WorldBodyId planet_body_id,
@@ -80,10 +85,14 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Clears the world and creates the planet with the camera and its controller.
-
 	/**
-	 * @brief Creates the default planet, camera, and starting world content.
+	 * @brief Clears the world data and builds the Earth planet with its camera and local controller.
+	 * @param world World whose resource pools and singleton component-slot IDs are initialized.
+	 * Creates the configured Earth body and Planet component, then a camera point
+	 * in a chunk attached to that body. The camera's requested spawn mode comes
+	 * from Settings; a failed underground search warns and uses the sky spawn.
+	 * The camera and controller slots are registered with the camera chunk so its
+	 * component callbacks participate in chunk traversal.
 	 */
 	void startBaseScenario(World& world)
 	{

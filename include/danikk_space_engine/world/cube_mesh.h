@@ -7,7 +7,9 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Stores one triangle generated for a face of the cube-based planet surface.
+	 * @brief Stores three indices into the generated cube's shared corner array.
+	 *
+	 * Triangle vertex order defines its outward-facing winding.
 	 */
 	struct CubeTriangle
 	{
@@ -15,7 +17,10 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Generates cube geometry.
+	 * @brief Generates a centered cube from eight shared vertices and twelve outward-wound triangles.
+	 * @param size Full edge length; the cube extends by `size / 2` on either side of the origin.
+	 * @param positions Output array, cleared and replaced with the eight corner positions.
+	 * @param triangles Output array, cleared and replaced with two triangles per cube face.
 	 */
 	void generateCubeGeometry(
 		float size,

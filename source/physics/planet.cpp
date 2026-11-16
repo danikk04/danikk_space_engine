@@ -41,10 +41,18 @@ namespace danikk_space_engine
 			uint32 support_point_count = 0;
 		};
 
-		// Samples the field gradient at mesh points, groups similar normals and resolves support contacts.
-
 		/**
-		 * @brief Checks collision for chunk surface with planet.
+		 * @brief Resolves penetration of a moving chunk's mesh points into a planet scalar field.
+		 * @param world World providing point data and planet/body transforms.
+		 * @param moving_body Non-planet body that receives position and velocity corrections.
+		 * @param moving_chunk Active chunk whose unique points are sampled.
+		 * @param mass_properties Approximate mass and scalar inertia for contact impulses.
+		 * @param target Planet body and scalar-field settings used for sampling.
+		 * For each point inside terrain, estimates the field gradient with central
+		 * differences at one quarter of planet_voxel_size. Penetration is density
+		 * divided by gradient magnitude. Contacts deeper than two voxel sizes are
+		 * discarded; remaining contacts with normals having dot product >= 0.98
+		 * are grouped. Four positional and four velocity passes resolve the groups.
 		 */
 		void collideChunkSurfaceWithPlanet(World& world, WorldBody& moving_body,
 			const Chunk& moving_chunk, const BodyMassProperties& mass_properties,
@@ -151,10 +159,17 @@ namespace danikk_space_engine
 			}
 		}
 
-		// Samples the scalar field and its gradient to find a sphere fallback contact.
-
 		/**
-		 * @brief Returns planet surface contact.
+		 * @brief Tests a spherical fallback collider against the planet field and finds an outward normal.
+		 * @param planet Planet radius, seed, terrain edits, and core radius.
+		 * @param field_position Collider-center position in planet-local coordinates.
+		 * @param collider_radius Radius of the spherical fallback collider.
+		 * @param outward_direction Receives the normalized field-outward direction.
+		 * @param penetration Receives sampled density plus collider radius.
+		 * @return False when the resulting penetration is non-positive; true when
+		 *         the sphere overlaps the field. The normal is estimated from central
+		 *         differences at half a voxel, with radial and fixed-axis fallbacks
+		 *         for a degenerate gradient.
 		 */
 		bool getPlanetSurfaceContact(const PlanetComponent& planet, const glm::dvec3& field_position,
 			double collider_radius, glm::dvec3& outward_direction, double& penetration)
@@ -193,15 +208,18 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Collects planet targets and resolves sphere or mesh contacts for each moving body.
-
 	/**
-	 * @brief Resolves planet collisions.
+	 * @brief Collects planets, then resolves each eligible body's scalar-field contacts.
+	 * @param world World containing planet components, loaded chunks, and moving bodies.
+	 * A body with a positive collision radius and no active triangle mesh uses the
+	 * spherical fallback. Otherwise each active chunk is tested through its mesh
+	 * points. Planet bodies, unloaded bodies, and bodies with invalid mass
+	 * properties are skipped; planets remain static during contact resolution.
 	 */
 	void WorldPhysics::resolvePlanetCollisions(World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("World::planet collisions");
 		DynamicArray<PlanetCollisionTarget> planets;

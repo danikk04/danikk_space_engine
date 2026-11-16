@@ -22,7 +22,10 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Computes a sample for planet terrain height.
+		 * @brief Evaluates three-octave seeded fractal noise as radial terrain-height displacement.
+		 * @param position Planet-centered sample position used as the noise coordinate.
+		 * @param noise_seed Seed that offsets the noise domain deterministically.
+		 * @return Height displacement in world units, scaled to the current terrain amplitude.
 		 */
 		double samplePlanetTerrainHeight(const glm::dvec3& position, uint64 noise_seed)
 		{
@@ -30,7 +33,11 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Computes a sample for planet surface radius.
+		 * @brief Iteratively estimates the noisy surface radius along a radial direction.
+		 * @param direction Normalized direction from the planet center.
+		 * @param radius Preset mean surface radius.
+		 * @param noise_seed Seed used by the terrain-height field.
+		 * @return Mean radius plus the sampled height displacement at the surface location.
 		 */
 		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed)
 		{
@@ -43,7 +50,12 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Computes a sample for planet core density.
+		 * @brief Returns signed density for the slightly noisy solid-core boundary.
+		 * @param position Planet-centered sample coordinate.
+		 * @param distance_from_center Distance of the sample from the planet origin.
+		 * @param noise_seed Seed used for the independently offset core noise.
+		 * @param core_radius Preset mean core radius.
+		 * @return Positive density inside the noisy core and negative density outside it.
 		 */
 		double samplePlanetCoreDensity(
 			const glm::dvec3& position,
@@ -61,12 +73,19 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Combines the radial terrain field, cave carving, persistent edits, and a deterministic noisy
-	// solid core. The core floor is applied last, ensuring edits and cave noise cannot hollow it out;
-	// its configured radius varies slightly with deterministic seeded noise.
-
 	/**
-	 * @brief Computes a sample for planet scalar field.
+	 * @brief Evaluates the signed field by combining a noisy shell, cave mask, edit stamps, and core.
+	 * @param position_relative_to_planet_center Sample coordinate relative to planet origin.
+	 * @param radius Mean outer surface radius.
+	 * @param noise_seed Seed controlling terrain, cave, and core noise domains.
+	 * @param edits Persistent additive and subtractive spherical terrain edits.
+	 * @param core_radius Mean radius of the core that remains solid despite cave carving.
+	 * @return Signed density: positive is solid, negative is air, and zero is an isosurface.
+	 * The radial shell is `radius + height_noise - distance`. A four-octave cave
+	 * field with frequency 0.009 and threshold 0.04 carves the shell via min().
+	 * Add stamps union spheres with max(); remove stamps subtract spheres with
+	 * min(). The seeded, mildly rough core is finally unioned with max(), keeping
+	 * the interior solid regardless of cave or edit values.
 	 */
 	double samplePlanetScalarField(
 		const glm::dvec3& position_relative_to_planet_center,
@@ -99,7 +118,13 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns planet surface material.
+	 * @brief Assigns grass to samples within three metres of the noisy outer radius and stone deeper inside.
+	 * @param position_relative_to_planet_center Sample point relative to planet origin.
+	 * @param radius Mean planet surface radius.
+	 * @param noise_seed Seed used to estimate the local noisy surface radius.
+	 * @return Grass when `surface_radius - distance <= 3 m`, otherwise stone; the
+	 *         exact center is stone. This one-sided threshold also classifies points
+	 *         outside the nominal surface as grass.
 	 */
 	MaterialId getPlanetSurfaceMaterial(
 		const glm::dvec3& position_relative_to_planet_center,

@@ -9,7 +9,12 @@ namespace danikk_space_engine::math
 {
 
 	/**
-	 * @brief Hashes integer lattice coordinates into a deterministic scalar noise value.
+	 * @brief Mixes the low 32 bits of lattice coordinates into a deterministic value in [-1, 1].
+	 * @param x Lattice X coordinate.
+	 * @param y Lattice Y coordinate.
+	 * @param z Lattice Z coordinate.
+	 * Coordinate products are combined with XOR and passed through a 32-bit avalanche
+	 * hash, then mapped from the unsigned integer range to approximately [-1, 1].
 	 */
 	double latticeNoise3D(std::int64_t x, std::int64_t y, std::int64_t z)
 	{
@@ -26,7 +31,9 @@ namespace danikk_space_engine::math
 	}
 
 	/**
-	 * @brief Interpolates deterministic lattice values to produce smooth three-dimensional value noise.
+	 * @brief Computes 3D value noise by quintic-weighted interpolation of eight lattice samples.
+	 * @param position Position in noise space.
+	 * @return Smooth interpolation of the cell's corner values.
 	 */
 	double valueNoise3D(const glm::dvec3& position)
 	{
@@ -49,7 +56,12 @@ namespace danikk_space_engine::math
 	}
 
 	/**
-	 * @brief Sums scaled value-noise octaves using the requested octave count and persistence.
+	 * @brief Accumulates finer value-noise octaves with geometric amplitude decay.
+	 * @param position Base sample position.
+	 * @param octave_count Number of octaves to sum.
+	 * @param persistence Amplitude multiplier between adjacent octaves.
+	 * @return Weighted sum divided by the accumulated amplitude, or zero when no
+	 *         positive amplitude was accumulated.
 	 */
 	double fractalNoise3D(const glm::dvec3& position, uint8 octave_count, double persistence)
 	{

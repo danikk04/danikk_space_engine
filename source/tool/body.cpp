@@ -10,7 +10,10 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Checks whether the chunk belongs to a world body with an active planet component.
+		 * @brief Checks whether an active chunk is owned by a body with a live Planet component.
+		 * @param world World used to validate the chunk/body/component chain.
+		 * @param chunk_id Chunk being classified.
+		 * @return True only for an active planet chunk.
 		 */
 		bool isPlanetChunk(const World& world, ChunkId chunk_id)
 		{
@@ -30,7 +33,13 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Adds triangle.
+		 * @brief Allocates a triangle, assigns its three point IDs, and registers it with a chunk.
+		 * @param world WorldData owner of the new triangle.
+		 * @param chunk_id Chunk receiving the triangle reference.
+		 * @param a First vertex ID in winding order.
+		 * @param b Second vertex ID in winding order.
+		 * @param c Third vertex ID in winding order.
+		 * @return ID of the created GroundTriangle.
 		 */
 		GroundTriangleId addTriangle(World& world, ChunkId chunk_id, PointId a, PointId b, PointId c)
 		{
@@ -44,12 +53,16 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Replaces a triangular face with a translated cap and three side quads. Each quad is
-	// triangulated with a consistent outward winding. New points stay in the owning chunk's
-	// local space; the returned cap FacePtr becomes the controller's current selection.
-
 	/**
-	 * @brief Applies body extrude tool.
+	 * @brief Replaces one editable triangle with a translated cap and three triangulated side faces.
+	 * @param world World whose chunk-local point and triangle pools are modified.
+	 * @param face Source triangle to extrude; planet chunks are rejected.
+	 * @param distance Translation distance along the stored triangle normal.
+	 * @return Selection replacement containing the new cap when successful; an
+	 *         empty result when the source is invalid, degenerate, or belongs to a planet.
+	 * The source triangle is destroyed after its three offset points, cap, and six
+	 * side triangles have been added. Winding is adjusted so the new prism faces
+	 * point outward, and the owning body's broadphase collision radius is expanded.
 	 */
 	ToolApplyResult applyBodyExtrudeTool(World& world, const FacePtr& face, double distance)
 	{
@@ -112,7 +125,16 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Applies body tool.
+	 * @brief Dispatches body extrusion or erasure to a hovered face or selected face set.
+	 * @param world World whose mesh resources may be edited.
+	 * @param action Requested Body action; Drag is handled by its separate tick function.
+	 * @param selected_faces Face list whose first selected_face_count entries are selected.
+	 * @param selected_face_count Number of selected prefix entries.
+	 * @param has_hovered_face Whether hovered_face is the current target.
+	 * @param hovered_face Face currently under the cursor.
+	 * @return Extrusion's replacement selection or an empty result. Current code
+	 *         gives hover priority for extrusion; erase removes only hover when
+	 *         present, otherwise all selected non-planet faces.
 	 */
 	ToolApplyResult applyBodyTool(
 		World& world,

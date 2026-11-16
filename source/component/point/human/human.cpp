@@ -14,7 +14,10 @@ namespace danikk_space_engine
 		constexpr float minimum_ground_normal_dot = 0.2f;
 
 		/**
-		 * @brief Returns planet.
+		 * @brief Finds the planet component attached to a world body, if any.
+		 * @param data World resource pools used to validate component-slot IDs.
+		 * @param body World body whose component slots are inspected.
+		 * @return Planet payload for the first planet component, or null for non-planet bodies.
 		 */
 		const PlanetComponent* getPlanet(const WorldData& data, const WorldBody& body)
 		{
@@ -29,7 +32,20 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Finds planet ground position.
+		 * @brief Finds a supported character-center position by sampling the planet signed field.
+		 *
+		 * Brackets the density transition along `up`, bisects it, estimates the surface normal
+		 * from a finite-difference gradient, and rejects contacts steeper than the walkable limit.
+		 * @param chunk Chunk containing the human point.
+		 * @param body Owning world body; used for the planet-relative transform context.
+		 * @param planet Scalar-field parameters and terrain edit stamps.
+		 * @param up Character's local up direction.
+		 * @param human_height Character capsule height.
+		 * @param proposed Candidate character-center position in chunk-local coordinates.
+		 * @param supported Receives the adjusted center position on valid support.
+		 * @param step_height Maximum upward step probe distance.
+		 * @param maximum_drop Maximum downward support probe distance.
+		 * @return True if a walkable surface supports the character within the probe interval.
 		 */
 		bool findPlanetGroundPosition(const Chunk& chunk, const WorldBody& body,
 			const PlanetComponent& planet, const vec3& up, float human_height,
@@ -75,11 +91,18 @@ namespace danikk_space_engine
 			return true;
 		}
 
-		// Derives the feet from the center point, then probes for support on the current body.
-		// Grounded movement uses step limits; falling checks full tick travel to avoid tunnelling.
-
 		/**
-		 * @brief Finds ground position.
+		 * @brief Finds a walkable support position using scalar-field sampling or world raycast.
+		 * @param world World used for scalar-field data and raycast queries.
+		 * @param chunk Chunk containing the character.
+		 * @param body Body whose terrain or mesh surfaces can support the character.
+		 * @param up Character-local up direction.
+		 * @param human_height Character height used to locate the feet.
+		 * @param proposed Candidate center position in chunk-local coordinates.
+		 * @param supported Receives the corrected center position when support is found.
+		 * @param step_height Maximum upward step distance to test.
+		 * @param maximum_drop Maximum downward distance to search for support.
+		 * @return True when a sufficiently upward-facing surface is found within the interval.
 		 */
 		bool findGroundPosition(World& world, const Chunk& chunk, const WorldBody& body,
 			const vec3& up, float human_height, const vec3& proposed, vec3& supported,
@@ -104,11 +127,20 @@ namespace danikk_space_engine
 			return true;
 		}
 
-		// Keeps horizontal steps on supported slopes. Once support under the current feet is lost,
-		// integrates vertical speed and sweeps the entire downward travel before accepting a landing.
-
 		/**
-		 * @brief Moves with ground.
+		 * @brief Applies tangential movement while supported, or integrates and sweeps a fall.
+		 *
+		 * When ground following is disabled, movement is unconstrained and vertical speed is reset.
+		 * Otherwise the helper keeps the character on nearby support, limits step/drop probes,
+		 * applies gravity after support loss, and checks the full downward travel before landing.
+		 * @param world World used by support queries.
+		 * @param chunk Owning chunk used for local/world coordinate conversion.
+		 * @param body Owning world body and transform.
+		 * @param human Character dimensions and grounded/fall state.
+		 * @param point Mutable point position representing the character center.
+		 * @param velocity Tangential movement command for this tick.
+		 * @param gravity Gravity magnitude in units per second squared.
+		 * @param dt Simulation step duration in seconds.
 		 */
 		void moveWithGround(World& world, const Chunk& chunk, const WorldBody& body,
 			HumanComponent& human, Point& point, const vec3& velocity, float gravity, float dt)
@@ -151,11 +183,12 @@ namespace danikk_space_engine
 			}
 		}
 
-		// Draws equipped MG-42 items attached to the soldier's weapon-ready pose. The OBJ's X/Y/Z
-		// axes map to character forward/up/right; the attachment offset is expressed in body-height units.
-
 		/**
-		 * @brief Draws equipped weapons.
+		 * @brief Draws equipped MG-42 items at the shoulder using the current weapon-ready pose.
+		 * @param human_slot Human slot used to find inventory components on the same point.
+		 * @param human Character pose, height, and head pitch.
+		 * @param body_matrix Transform from character-local coordinates to render coordinates.
+		 * @param world World used to inspect the owning chunk's component slots.
 		 */
 		void drawEquippedWeapons(const PointComponentSlot& human_slot, const HumanComponent& human,
 			const mat4& body_matrix, World& world)
@@ -197,7 +230,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Constructs human component.
+	 * @brief Creates default human state or copies the provided initial state into slot storage.
+	 * @param destination Destination storage owned by WorldData.
+	 * @param init_data Optional source `HumanComponent`; null initializes member defaults.
 	 */
 	void constructHumanComponent(void* destination, const void* init_data)
 	{
@@ -207,7 +242,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves human component.
+	 * @brief Copies human state into relocated storage and ends the source payload lifetime.
+	 * @param destination Replacement payload storage.
+	 * @param source Existing live human payload.
 	 */
 	void moveHumanComponent(void* destination, void* source)
 	{
@@ -217,7 +254,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases human component.
+	 * @brief Ends the human payload lifetime; WorldData owns release of the backing storage.
+	 * @param data Existing live human payload.
 	 */
 	void destroyHumanComponent(void* data)
 	{
@@ -225,17 +263,18 @@ namespace danikk_space_engine
 		static_cast<HumanComponent*>(data)->~HumanComponent();
 	}
 
-	// Consumes a chunk-local movement command, updates the point and advances walking by distance.
-	// Planet ownership supplies radial up and gravity. Lost support triggers swept vertical falling;
-	// walking animation follows actual horizontal movement, not the fall distance.
-
 	/**
-	 * @brief Runs one simulation tick for human component.
+	 * @brief Reorients local up from gravity, consumes requested movement, and updates locomotion state.
+	 *
+	 * The movement command is cleared after reading. Ground following delegates to support tests;
+	 * walking phase and facing are advanced from actual tangential displacement.
+	 * @param slot Human component slot containing point and chunk ownership.
+	 * @param world World supplying gravity samples and collision/support queries.
 	 */
 	void tickHumanComponent(PointComponentSlot& slot, World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("HumanComponent::tick");
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id))
@@ -288,11 +327,13 @@ namespace danikk_space_engine
 		human.walk_amplitude = glm::mix(human.walk_amplitude, target_amplitude, glm::min(dt * 10.0f, 1.0f));
 	}
 
-	// Builds the common human transform and dispatches rendering through its appearance type.
-	// World translation is camera-relative in double before conversion to the float render matrix.
-
 	/**
-	 * @brief Updates the human’s appearance transform and draws its body and equipped item.
+	 * @brief Builds the character transform from its center point and renders body plus equipment.
+	 *
+	 * The visible model root is shifted down by half the character height, while the point remains
+	 * at the body's vertical center. Rendering is camera-relative and uses the body's rotation.
+	 * @param slot Human component slot, containing point and owning chunk IDs.
+	 * @param world World used for world transforms, camera origin, and equipped inventory lookup.
 	 */
 	void frameHumanComponent(PointComponentSlot& slot, World& world)
 	{

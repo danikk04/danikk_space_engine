@@ -5,12 +5,17 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Integrates body motion, resolves planet contacts, resolves body-to-body contacts, and removes core-crossing entities.
+	 * @brief Executes the physics stages in their fixed per-tick order.
+	 * @param world World passed through to each stage.
+	 * Runs integration, core removal, planet contacts, body-to-body contacts,
+	 * and human separation. Since core removal follows integration, bodies and
+	 * point entities that cross the exclusion radius are released before contact
+	 * resolution in this tick.
 	 */
 	void WorldPhysics::tick(World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("WorldPhysics::tick");
 		integrateMotion(world);

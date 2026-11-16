@@ -14,7 +14,12 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Returns whether a finite ray intersects the supplied sphere.
+		 * @brief Tests whether a finite, normalized ray segment passes through a sphere.
+		 * @param center Sphere center relative to the ray origin.
+		 * @param radius Sphere radius.
+		 * @param direction Normalized ray direction.
+		 * @param max_distance Maximum ray-segment length.
+		 * @return True if the sphere's chord overlaps the forward segment [0, max_distance].
 		 */
 		bool rayIntersectsSphere(const vec3& center, float radius, const vec3& direction, float max_distance)
 		{
@@ -29,7 +34,10 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Returns the planet settings and streaming state attached to this body, or nullptr if the body has no planet component.
+		 * @brief Finds the body's active PlanetComponent, if present.
+		 * @param data WorldData used to validate component slot IDs.
+		 * @param body Body whose component list is inspected.
+		 * @return Planet payload or null when this body has no planet component.
 		 */
 		const PlanetComponent* getPlanetComponent(const WorldData& data, const WorldBody& body)
 		{
@@ -46,17 +54,22 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Tests candidate chunks for triangle intersections. Planet chunks are located through the
-	// planet's coordinate hash table while a 3D DDA walks only grid cells crossed by the ray;
-	// irregular/non-planet bodies retain the existing per-body chunk scan.
-
 	/**
-	 * @brief Rejects chunks using their bounding spheres, tests remaining triangles, and returns the nearest hit.
+	 * @brief Traverses likely chunks, intersects their triangles, and records the nearest hit.
+	 *
+	 * Planet bodies use a body-level sphere test followed by 3D DDA through the chunk-coordinate
+	 * grid. Other bodies scan their chunk IDs. Per-chunk bounds reject misses before ray-triangle
+	 * tests; dirty or invalid bounds do not cull the chunk. The DDA visits only grid cells crossed
+	 * by the ray, then the shared triangle routine tests geometry in candidate chunks.
+	 * @param origin Ray origin in world coordinates.
+	 * @param direction Ray direction, normalized internally.
+	 * @param max_distance Maximum accepted distance in world units.
+	 * @return Nearest triangle hit or a default miss result.
 	 */
 	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("World::raycast");
 		RaycastHit result;
@@ -178,7 +191,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Finds the nearest ray intersection with from camera.
+	 * @brief Uses the active camera point and forward vector as the ray origin and direction.
+	 * @param max_distance Maximum accepted ray length.
+	 * @return Nearest hit, or a miss if the camera slot/point is not active.
 	 */
 	RaycastHit World::raycastFromCamera(float max_distance) const
 	{

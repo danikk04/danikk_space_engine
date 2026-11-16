@@ -15,7 +15,7 @@ namespace danikk_engine_game
 	using namespace danikk_space_engine;
 
     /**
-     * @brief Loads the application configuration before engine initialization.
+     * @brief Engine pre-initialization callback; currently performs no work.
      */
     void pre_begin()
     {
@@ -23,7 +23,10 @@ namespace danikk_engine_game
     }
 
 	/**
-	 * @brief Shuts down the world and engine services in dependency-safe order.
+	 * @brief Saves configuration and shuts down world-owned resources.
+	 *
+	 * Configuration is persisted before World::shutdown() stops and joins the chunk worker, rejects
+	 * outstanding generation results, and releases meshes while the graphics context is still alive.
 	 */
 	void end()
 	{
@@ -32,7 +35,14 @@ namespace danikk_engine_game
 	}
 
     /**
-     * @brief Initializes engine services, loads assets, configures the GUI, and creates the starting world.
+	 * @brief Attempts to load settings, initializes shared assets and UI, then creates the world.
+	 * @details Graphics context creation is managed by the framework before this callback. The
+	 * callback sets the window title, attempts to load `settings.cfg`, loads shared assets and
+	 * item/human catalogs, then loads built-in materials. It next defines and composes the debug
+	 * label, registers localization strings, initializes World and its base scenario, and finally
+	 * selects the base 2D shader for GUI rendering. A missing settings file leaves the defaults in
+	 * use. The return value of `config.load()` is not checked here, so startup continues after a
+	 * configuration read or parse error.
      */
     void begin()
     {
@@ -48,19 +58,22 @@ namespace danikk_engine_game
     }
 
     /**
-     * @brief Runs one application frame, including profiling, GUI update, and world rendering.
+     * @brief Executes one application frame in GUI, input, simulation, and rendering order.
+	 * @details Begins the profiler tick and its outer `frame` scope, updates the GUI, checks Escape,
+	 * advances `World::tick()`, renders via `World::frame()`, then closes the scope and profiler
+	 * tick. The Escape check occurs between GUI refresh and world simulation.
      */
     void frame()
     {
 		profiler.beginTick();
 		{
 			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
 			Watcher frame_watcher("frame");
 			{
 				/**
-				 * @brief Disables copying to ensure a measured scope is recorded once.
+				 * @brief Measures the duration of the enclosing profiler scope.
 				 */
 				Watcher gui_scope("GUI::frame");
 				gui.frame();

@@ -6,6 +6,7 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Built-in material IDs; each value is the corresponding material_list index. */
 	namespace default_materials
 	{
 		constexpr inline MaterialId void_material = 0;
@@ -17,7 +18,13 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Associates a material name and display color with its texture asset.
+	 * @brief Defines the render tint and texture associated with a material ID.
+	 *
+	 * The catalog stores definitions in a DynamicArray, so each MaterialId is its
+	 * current array index. The packed color constructor argument is decoded from
+	 * 0xRRGGBB into normalized RGB channels. A null texture name creates an empty
+	 * Texture; rendering code can then bind the white fallback texture while still
+	 * applying this definition's tint.
 	 */
 	struct MaterialDefinition
 	{
@@ -29,22 +36,32 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Loads materials.
+	 * @brief Loads the built-in void, grass, stone, lava, water, and magma definitions once.
+	 *
+	 * Repeated calls are no-ops after the first population. Insertion order defines
+	 * the MaterialId values and must stay aligned with default_materials. Textures
+	 * are loaded by asset name; the void material has no texture.
 	 */
 	void loadMaterials();
 
 	/**
-	 * @brief Looks up a material name and returns its table index, falling back to the default material when absent.
+	 * @brief Finds a material by exact name and returns its array index.
+	 * @param name Name to compare against the loaded material catalog.
+	 * @return Matching MaterialId, or default_materials::void_material when absent.
 	 */
 	MaterialId getMaterialID(const char* name);
 
 	/**
-	 * @brief Returns the number of entries in the material definition table.
+	 * @brief Returns the current number of loaded material definitions.
+	 * @return Number of entries in the internal material array.
 	 */
 	size_t getMaterialCount();
 
 	/**
-	 * @brief Returns the material at an ID after checking that the ID is in range.
+	 * @brief Returns the catalog entry at an index-based material ID.
+	 * @param id MaterialId used directly as an array index.
+	 * @return Mutable reference to the definition. The ID must be less than
+	 *         getMaterialCount(); this function does not perform a bounds check.
 	 */
 	MaterialDefinition& getMaterial(MaterialId id);
 }

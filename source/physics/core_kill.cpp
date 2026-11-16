@@ -23,7 +23,10 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Checks whether the body position lies inside any configured planet core radius.
+		 * @brief Tests a position against the fixed five-metre exclusion sphere of each planet.
+		 * @param position World-space position to test.
+		 * @param planets Snapshot of planet IDs and world-space centers.
+		 * @return True when squared distance to any center is strictly less than 25 m².
 		 */
 		bool isInsideAnyPlanetCore(const glm::dvec3& position,
 			const DynamicArray<PlanetCoreTarget>& planets)
@@ -37,7 +40,10 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Checks whether the world body has an active planet component.
+		 * @brief Checks whether any active component slot marks the body as a planet.
+		 * @param world World used to validate component slots.
+		 * @param body Body whose component slots are inspected.
+		 * @return True when an active Planet component is attached.
 		 */
 		bool isPlanetBody(const World& world, const WorldBody& body)
 		{
@@ -53,16 +59,17 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Removes non-planet bodies and point-based entities that end up within five metres of a planet
-	// center. IDs are collected before destruction so resource-pool iteration remains valid.
-
 	/**
-	 * @brief Removes and releases entities inside planet core.
+	 * @brief Destroys loaded non-planet bodies and non-camera points inside any planet core.
+	 * @param world World whose WorldData resource pools are modified.
+	 * Planet centers are copied before destruction. Body and point IDs are queued
+	 * before release so pool iteration is not invalidated. Point components in
+	 * inactive chunks are ignored; each point ID is queued at most once.
 	 */
 	void WorldPhysics::destroyEntitiesInsidePlanetCore(World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("World::planet core entity removal");
 		DynamicArray<PlanetCoreTarget> planets;

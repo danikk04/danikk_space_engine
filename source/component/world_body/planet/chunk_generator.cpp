@@ -13,7 +13,10 @@ namespace danikk_space_engine
 
 		template<typename value_t>
 		/**
-		 * @brief Exchanges two values using move construction and assignment.
+		 * @brief Exchanges two values using move construction and move assignment.
+		 * @tparam value_t Value type supporting move construction and assignment.
+		 * @param left First value to exchange.
+		 * @param right Second value to exchange.
 		 */
 		void swapValues(value_t& left, value_t& right)
 		{
@@ -23,7 +26,9 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Stores a sampled point on the planet’s cube-face grid and its generated position.
+		 * @brief Holds a scalar-field sample on the chunk's regular 3D lattice.
+		 * `id` is the flattened lattice index used to form shared edge-cache keys;
+		 * `position` is planet-local and `density` is positive inside solid terrain.
 		 */
 		struct GridPoint
 		{
@@ -33,7 +38,9 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Returns the smallest power of two that is greater than or equal to the input.
+		 * @brief Returns the smallest power of two not less than the requested capacity.
+		 * @param value Requested minimum capacity; zero returns one.
+		 * @return Power-of-two size used by the open-addressed edge-intersection cache.
 		 */
 		size_t nextPowerOfTwo(size_t value)
 		{
@@ -43,7 +50,11 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Creates an order-independent key for a pair of grid-edge vertex indices.
+		 * @brief Packs an unordered pair of 32-bit lattice vertex IDs into a 64-bit key.
+		 * @param a First endpoint ID.
+		 * @param b Second endpoint ID.
+		 * @return Same key for either endpoint order, allowing neighboring tetrahedra
+		 *         to reuse a single interpolated surface vertex.
 		 */
 		uint64 edgeKey(uint32 a, uint32 b)
 		{
@@ -51,14 +62,17 @@ namespace danikk_space_engine
 			return (static_cast<uint64>(a) << 32) | b;
 		}
 
-		/*
-		 * Samples the complete 3D density lattice, polygonizes each cube as six consistently split
-		 * tetrahedra, and caches edge intersections so neighboring tetrahedra share mesh vertices.
-		 * Triangle winding is oriented from solid density toward air, including cave walls.
-		 */
-
 		/**
-		 * @brief Generates planet chunk geometry.
+		 * @brief Samples and polygonizes one regular 3D chunk of the planetary scalar field.
+		 * @param request Immutable planet parameters, terrain edits, grid coordinate,
+		 *                and chunk origin captured when the worker job was submitted.
+		 * @return Request identity plus chunk-local surface vertices and triangle indices.
+		 * The field is sampled at every lattice corner. Each lattice cube is split
+		 * into six tetrahedra; sign-changing tetrahedron edges are linearly
+		 * interpolated and cached by an unordered endpoint key so adjacent
+		 * tetrahedra share vertices. The resulting 3- or 4-vertex polygon is angle
+		 * sorted, fan-triangulated, and wound from solid toward air. This helper
+		 * reads no WorldData and creates no GPU resources.
 		 */
 		GeneratedChunkData generatePlanetChunkGeometry(const ChunkGenerationRequest& request)
 		{
@@ -252,20 +266,20 @@ namespace danikk_space_engine
 		}
 	}
 
-	/*
-	 * Loads a saved planet chunk or generates and saves its scalar-field surface geometry. It then
-	 * assigns each surface triangle a deterministic material from its radial depth below the noisy
-	 * planet surface. Material IDs are derived after loading too, so existing geometry saves do not
-	 * need a format change and the main thread can accept the finished chunk without sampling noise.
-	 */
-
 	/**
-	 * @brief Generates planet chunk.
+	 * @brief Loads compatible saved geometry or generates, saves, and materializes a planet chunk result.
+	 * @param request Immutable generation identity, settings, edits, and chunk coordinate.
+	 * @return Worker result containing request identity, local geometry, and a
+	 *         material ID for each triangle; geometry arrays may be empty when the
+	 *         sampled field contains no surface in this chunk.
+	 * Material IDs are recalculated from each triangle centroid after either load
+	 * or generation, so material assignment is not part of the mesh save format.
+	 * This worker-side function does not allocate WorldData resources or upload a mesh.
 	 */
 	GeneratedChunkData generatePlanetChunk(const ChunkGenerationRequest& request)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("Generate planet chunk");
 		GeneratedChunkData result;

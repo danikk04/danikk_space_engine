@@ -8,7 +8,10 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Checks whether the chunk belongs to a world body with an active planet component.
+		 * @brief Checks whether an active chunk is owned by a body with a live Planet component.
+		 * @param world World used to resolve the chunk, body, and component slots.
+		 * @param chunk_id Candidate chunk ID.
+		 * @return True when the full ownership chain is active and contains a planet component.
 		 */
 		bool isPlanetChunk(const World& world, ChunkId chunk_id)
 		{
@@ -29,7 +32,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Applies terrain tool.
+	 * @brief Applies a six-metre-radius additive or subtractive stamp to a planet hit.
+	 * @param world World containing the target planet.
+	 * @param action Terrain action; only extrude and erase are recognized.
+	 * @param hit Raycast result defining the triangle-centered edit.
+	 * @return Empty selection result; misses, non-planet chunks, and unsupported actions do nothing.
 	 */
 	ToolApplyResult applyTerrainTool(World& world, ToolActionId action, const RaycastHit& hit)
 	{

@@ -9,7 +9,11 @@ namespace danikk_space_engine::collision_internal
 	{
 
 		/**
-		 * @brief Applies impulse.
+		 * @brief Applies a single-body impulse to linear and angular velocity.
+		 * @param body Body receiving the impulse.
+		 * @param mass_properties Mass and scalar inertia used to scale the response.
+		 * @param contact_offset Lever arm from the center of mass in world coordinates.
+		 * @param impulse Impulse vector in world coordinates.
 		 */
 		void applyImpulse(WorldBody& body, const BodyMassProperties& mass_properties,
 			const glm::dvec3& contact_offset, const glm::dvec3& impulse)
@@ -19,7 +23,13 @@ namespace danikk_space_engine::collision_internal
 		}
 
 		/**
-		 * @brief Applies pair impulse.
+		 * @brief Applies equal and opposite impulses using each body's inverse mass and inertia.
+		 * @param a First body, receiving the negative impulse.
+		 * @param b Second body, receiving the positive impulse.
+		 * @param ca Collider response properties for a.
+		 * @param cb Collider response properties for b.
+		 * @param contact Contact offsets relative to each body origin.
+		 * @param impulse World-space impulse applied to b and negated for a.
 		 */
 		void applyPairImpulse(WorldBody& a, WorldBody& b, const BodyCollider& ca,
 			const BodyCollider& cb, const BodyContact& contact, const glm::dvec3& impulse)
@@ -32,6 +42,11 @@ namespace danikk_space_engine::collision_internal
 
 		/**
 		 * @brief Computes the inverse mass contribution of a contact point, including rotational inertia.
+		 * @param a First collider's inverse mass and inertia.
+		 * @param b Second collider's inverse mass and inertia.
+		 * @param contact Local contact arms for both bodies.
+		 * @param direction Unit impulse direction being evaluated.
+		 * @return Sum of linear and angular inverse-mass terms along the direction.
 		 */
 		double effectiveInverseMass(const BodyCollider& a, const BodyCollider& b,
 			const BodyContact& contact, const glm::dvec3& direction)
@@ -44,7 +59,11 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	/**
-	 * @brief Calculates mass properties.
+	 * @brief Approximates a body's mass and inertia as a solid sphere using collision_radius.
+	 * @param body Body providing mass and collision radius.
+	 * @return Zero-initialized properties when the collision radius is not positive;
+	 *         otherwise non-positive body mass falls back to 1 and inertia is clamped
+	 *         to at least 1e-6. The center of mass is local origin.
 	 */
 	BodyMassProperties calculateMassProperties(const WorldBody& body)
 	{
@@ -58,10 +77,15 @@ namespace danikk_space_engine::collision_internal
 		return properties;
 	}
 
-	// Cancels inward contact velocity, then applies friction using the angular effective mass.
-
 	/**
-	 * @brief Applies contact impulse.
+	 * @brief Cancels inward point velocity and applies friction against a static surface.
+	 * @param body Body receiving the response.
+	 * @param mass_properties Approximate body mass and scalar inertia.
+	 * @param outward_direction Unit contact normal directed away from the surface.
+	 * @param support_point_local Contact point relative to body origin, in body-local coordinates.
+	 * The normal impulse includes angular response about the center of mass. A
+	 * subsequent friction impulse opposes tangential point velocity and is capped
+	 * by a Coulomb coefficient of 0.9. Separating contacts receive no impulse.
 	 */
 	void applyContactImpulse(WorldBody& body, const BodyMassProperties& mass_properties,
 		const glm::dvec3& outward_direction, const glm::dvec3& support_point_local)
@@ -104,7 +128,12 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	/**
-	 * @brief Resolves contact.
+	 * @brief Applies positional depenetration, then resolves velocity at a static contact.
+	 * @param body Body moved out of the surface.
+	 * @param mass_properties Approximate mass and scalar inertia.
+	 * @param outward_direction Unit direction from the surface into free space.
+	 * @param penetration Estimated overlap depth; a 0.001 m margin is added.
+	 * @param support_point_local Contact point relative to the body's local origin.
 	 */
 	void resolveContact(WorldBody& body, const BodyMassProperties& mass_properties,
 		const glm::dvec3& outward_direction, double penetration,
@@ -114,10 +143,16 @@ namespace danikk_space_engine::collision_internal
 		applyContactImpulse(body, mass_properties, outward_direction, support_point_local);
 	}
 
-	// Splits penetration correction by inverse mass and applies equal opposite normal and friction impulses.
-
 	/**
-	 * @brief Resolves pair.
+	 * @brief Corrects a pair's overlap and applies normal and friction impulses when they approach.
+	 * @param a First body, corrected opposite the contact normal.
+	 * @param b Second body, corrected along the contact normal.
+	 * @param ca Collider response properties for a.
+	 * @param cb Collider response properties for b.
+	 * @param contact SAT contact data, including penetration and local contact offsets.
+	 * Removes 80% of penetration beyond 0.1 mm, distributed by inverse mass.
+	 * There is no restitution term; friction magnitude is capped at 0.9 times the
+	 * normal impulse. A pair with no movable mass is unchanged.
 	 */
 	void resolvePair(WorldBody& a, WorldBody& b, const BodyCollider& ca,
 		const BodyCollider& cb, const BodyContact& contact)

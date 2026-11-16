@@ -8,12 +8,20 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Records a terrain stamp for the selected planet face and invalidates affected chunks.
+	 * @brief Converts a selected triangle to a planet-local sphere stamp and persists the edit.
+	 * @param world World containing the selected face and owning planet component.
+	 * @param face Chunk and triangle IDs identifying the edit center.
+	 * @param radius Radius of the additive or subtractive sphere in world units.
+	 * @param adds_solid_terrain True to add solid terrain; false to remove it.
+	 * @return True when the face and owning planet are valid and the edit was appended.
+	 * The center is the triangle centroid in planet-body coordinates. The edit
+	 * revision is advanced (skipping zero) and the full ordered stamp list is
+	 * saved; the next planet update invalidates intersecting chunks for rebuild.
 	 */
 	bool editPlanetGround(World& world, const FacePtr& face, double radius, bool adds_solid_terrain)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("editPlanetGround");
 		if(!world.data.isChunkActive(face.chunk_id)

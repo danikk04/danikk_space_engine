@@ -11,7 +11,10 @@ namespace danikk_space_engine
 		constexpr ToolActionId human_actions[] = {ToolActionId::drag, ToolActionId::create_human};
 
 		/**
-		 * @brief Returns the supported action array for the selected tool and its length.
+		 * @brief Selects the static action list associated with one category.
+		 * @param tool Tool category to inspect.
+		 * @param count Receives the number of actions in the returned array.
+		 * @return Pointer to static action IDs, or nullptr with count zero for None/invalid categories.
 		 */
 		const ToolActionId* getActions(ToolId tool, size_t& count)
 		{
@@ -40,7 +43,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves to the previous or next tool and wraps at either end of the tool list.
+	 * @brief Advances or reverses the top-level tool category, wrapping at both ends.
+	 * @param current Current category ordinal.
+	 * @param direction Negative reverses; zero and positive values advance.
+	 * @return The wrapped category ID.
 	 */
 	ToolId stepTool(ToolId current, int direction)
 	{
@@ -52,7 +58,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns the first supported action for a tool, or ToolActionId::none when the tool has no actions.
+	 * @brief Returns the first entry in a category's action table.
+	 * @param tool Category to query.
+	 * @return First supported action, or none when the category has no registered actions.
 	 */
 	ToolActionId getFirstToolAction(ToolId tool)
 	{
@@ -62,7 +70,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves within the selected tool’s supported actions, wrapping at the ends and falling back to the first action if current is invalid.
+	 * @brief Steps through the action table for one category with wraparound.
+	 * @param tool Category whose action list is used.
+	 * @param current Current action; unsupported values fall back to the first action.
+	 * @param direction Negative reverses; zero and positive values advance.
+	 * @return New action, or none if the category has no actions.
 	 */
 	ToolActionId stepToolAction(ToolId tool, ToolActionId current, int direction)
 	{
@@ -82,7 +94,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns the user-facing name for a tool ID, using “Unknown” for an unsupported value.
+	 * @brief Maps a top-level category ID to its UI label.
+	 * @param tool Category ID.
+	 * @return Static display string, or "Unknown" for an unsupported value.
 	 */
 	const char* getToolName(ToolId tool)
 	{
@@ -99,7 +113,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns the user-facing name for an action ID, using “Unknown” for an unsupported value.
+	 * @brief Maps an action ID to its UI label.
+	 * @param action Action ID.
+	 * @return Static display string, or "Unknown" for an unsupported value.
 	 */
 	const char* getToolActionName(ToolActionId action)
 	{
@@ -118,7 +134,16 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Applies tool.
+	 * @brief Routes the action to the selected tool-family implementation.
+	 * @param tool Active top-level category.
+	 * @param action Selected action ID.
+	 * @param world World the handler may modify.
+	 * @param selected_faces Current face list, selected prefix followed by optional hover face.
+	 * @param selected_face_count Number of persistent selection entries.
+	 * @param has_hovered_face Whether hovered_face is valid.
+	 * @param hovered_face Current cursor target.
+	 * @param hit Current camera raycast result.
+	 * @return Handler result for optional selection replacement; unsupported category IDs return an empty result.
 	 */
 	ToolApplyResult applyTool(
 		ToolId tool,

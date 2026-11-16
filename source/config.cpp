@@ -13,7 +13,11 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Parses default camera position.
+		 * @brief Parses the exact `sky` or `ground` token into a camera spawn enum.
+		 * @param destination Address of a DefaultCameraPosition field.
+		 * @param value Non-null configuration value bytes.
+		 * @param value_size Number of bytes in value; no terminator is required.
+		 * @return True for one of the two recognized tokens; false leaves the field unchanged.
 		 */
 		bool parseDefaultCameraPosition(void* destination, const char* value, size_t value_size)
 		{
@@ -32,7 +36,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Initializes the configuration path and binds settings fields for loading and saving.
+	 * @brief Resolves settings.cfg beside the executable and binds all settings keys.
+	 * Boolean parsing is delegated to the framework Config; camera placement uses
+	 * the local exact-token parser for `sky` and `ground`.
 	 */
 	Config::Config()
 		: path(danikk_framework::getExecutableDirectory())
@@ -45,7 +51,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Reads and validates configuration entries, retaining the in-memory defaults for missing keys.
+	 * @brief Reads settings.cfg into the bound fields, preserving defaults for omitted keys.
+	 * @return True on successful read or empty-file creation; false on open,
+	 *         seek, read, or framework parsing failure. Parse failures report the
+	 *         line number supplied by the framework Config object.
 	 */
 	bool Config::load()
 	{
@@ -98,7 +107,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Writes the current bound settings values to the configuration file.
+	 * @brief Serializes every setting as a `key=value` line and replaces settings.cfg.
+	 * @return True only when the full buffer is written and fclose succeeds.
 	 */
 	bool Config::save() const
 	{

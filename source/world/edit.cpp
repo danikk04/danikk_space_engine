@@ -35,11 +35,15 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Removes selected standalone triangles and unreferenced points. Planet triangles
-	// instead add a subtractive terrain edit, because their mesh is generated from a field.
-
 	/**
-	 * @brief Deletes faces.
+	 * @brief Deletes selected mesh faces or applies subtractive edits to planet terrain.
+	 * @param faces Face handles to process; inactive chunks/triangles are ignored and repeated
+	 *        triangle IDs are processed once.
+	 * Planet faces add a radius-6 m subtractive terrain stamp because their mesh is generated
+	 * from a scalar field. For other bodies the triangle is destroyed, then each of its points
+	 * is reclaimed only when this chunk is its sole referencing chunk and no remaining triangle
+	 * or component in the chunk uses it. The controller's face list and selected count are cleared
+	 * after processing, including when every supplied handle was invalid.
 	 */
 	void World::deleteFaces(const DynamicArray<FacePtr>& faces)
 	{

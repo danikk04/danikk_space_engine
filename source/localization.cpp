@@ -9,7 +9,12 @@ namespace danikk_space_engine
 	danikk_framework::Localization localization;
 
 	/**
-	 * @brief Initializes localiztion.
+	 * @brief Registers the current built-in block names in English and Russian.
+	 *
+	 * This module adds entries to the shared framework catalog; it does not load
+	 * a language file or select the active locale. Keys are grouped under `block/`
+	 * and passed to the framework localization-registration macro. The public
+	 * function name keeps the existing misspelling for compatibility with its call sites.
 	 */
 	void initLocaliztion()
 	{

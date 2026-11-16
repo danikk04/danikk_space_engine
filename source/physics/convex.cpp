@@ -9,7 +9,9 @@ namespace danikk_space_engine::collision_internal
 	{
 
 		/**
-		 * @brief Adds direction.
+		 * @brief Adds a normalized direction unless a parallel or antiparallel one is already present.
+		 * @param directions Destination list of unique unoriented axes.
+		 * @param direction Candidate edge or face-normal direction; near-zero vectors are ignored.
 		 */
 		void addDirection(DynamicArray<glm::dvec3>& directions, glm::dvec3 direction)
 		{
@@ -23,11 +25,19 @@ namespace danikk_space_engine::collision_internal
 			directions.push(direction);
 		}
 
-		// Projects both colliders onto an axis, rejects disjoint intervals and retains
-		// the smallest translation needed to separate overlapping intervals.
-
 		/**
-		 * @brief Projects both convex colliders onto an axis and rejects the pair if the intervals do not overlap.
+		 * @brief Projects both convex colliders onto an axis and updates the minimum separating contact.
+		 *
+		 * The second interval is shifted by the candidate body translation. Disjoint intervals
+		 * reject the SAT candidate; otherwise the axis replaces the current contact only when it
+		 * yields a smaller penetration depth.
+		 * @param a First collider, projected in its current body-relative position.
+		 * @param b Second collider, shifted by `translation` before projection.
+		 * @param translation Relative offset from collider a to collider b.
+		 * @param axis Candidate separating axis; near-zero axes are treated as non-separating.
+		 * @param contact Contact record whose penetration and normal may be updated.
+		 * @return False if the projected intervals are disjoint; true if they overlap or the
+		 *         candidate axis is degenerate.
 		 */
 		bool testAxis(const ConvexChunkCollider& a, const ConvexChunkCollider& b,
 			const glm::dvec3& translation, glm::dvec3 axis, BodyContact& contact)
@@ -61,7 +71,10 @@ namespace danikk_space_engine::collision_internal
 		}
 
 		/**
-		 * @brief Returns the extreme point of a convex collider in the requested direction.
+		 * @brief Averages vertices lying on the collider's extreme support plane.
+		 * @param shape Convex chunk proxy whose relative vertices are inspected.
+		 * @param normal Direction defining the support plane.
+		 * @return Average of vertices within 1e-5 projection units of the maximum.
 		 */
 		glm::dvec3 supportCenter(const ConvexChunkCollider& shape, const glm::dvec3& normal)
 		{
@@ -78,10 +91,15 @@ namespace danikk_space_engine::collision_internal
 		}
 	}
 
-	// Builds convex chunk proxies from unique mesh vertices, face normals and edge directions.
-
 	/**
-	 * @brief Creates collider.
+	 * @brief Builds body-relative convex proxies from active chunk surface triangles.
+	 * @param world World supplying active chunks and their point/triangle data.
+	 * @param id ID of the body to prepare.
+	 * @param dragged_id Body whose proxy must be kinematic during pair resolution.
+	 * @return One proxy for each chunk with at least four unique valid vertices.
+	 * Triangles contribute face normals and edge directions; duplicate axes and
+	 * point IDs are removed. The returned body radius encloses all collected
+	 * vertices around the body's origin.
 	 */
 	BodyCollider createCollider(const World& world, WorldBodyId id, WorldBodyId dragged_id)
 	{
@@ -135,10 +153,16 @@ namespace danikk_space_engine::collision_internal
 		return collider;
 	}
 
-	// Rejects separated spheres, runs SAT on face and edge axes, then computes the support contact.
-
 	/**
-	 * @brief Finds contact.
+	 * @brief Rejects separated convex chunks or returns their minimum-penetration SAT contact.
+	 * @param a First chunk proxy.
+	 * @param b Second chunk proxy.
+	 * @param translation Current body-origin displacement from a to b.
+	 * @param contact Output for the overlap normal, penetration, and approximate offsets.
+	 * @return False when bounding spheres or an SAT axis separate the proxies;
+	 *         true when all tested axes overlap and a finite minimum penetration exists.
+	 * Face normals from both chunks and cross products of edge directions form the
+	 * candidate axes. The contact point is approximated from opposing support centers.
 	 */
 	bool findContact(const ConvexChunkCollider& a, const ConvexChunkCollider& b,
 		const glm::dvec3& translation, BodyContact& contact)

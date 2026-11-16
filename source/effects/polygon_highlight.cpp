@@ -27,11 +27,14 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Draws a selected mesh triangle as a slightly inset overlay toward the camera.
-	// The overlay is omitted for generated planet terrain, which has no editable face selection.
-
 	/**
-	 * @brief Draws polygon highlight.
+	 * @brief Rebuilds and draws one selected triangle as an inset overlay toward the camera.
+	 * @param world World used for resource validation and camera-relative transforms.
+	 * @param face Face reference identifying its chunk and ground triangle.
+	 * @param highlight_mesh Reusable mesh overwritten with the triangle's three vertices.
+	 * @param color Solid color applied to the overlay.
+	 * Invalid resources and planet chunks are ignored. Vertices shrink by 1/1.05
+	 * around the centroid and receive a 0.002 camera-facing offset before upload.
 	 */
 	void drawPolygonHighlight(
 		const World& world,
@@ -94,7 +97,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Draws polygon highlights.
+	 * @brief Draws stored face selections, coloring selected entries gray and the hover entry red.
+	 * @param world World providing the local player's controller component and face resources.
+	 * The controller stores selection first and the hovered face last; only entries
+	 * before selected_face_count receive the selected color.
 	 */
 	void drawPolygonHighlights(const World& world)
 	{

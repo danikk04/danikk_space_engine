@@ -10,11 +10,10 @@ namespace danikk_space_engine
 {
 	GUI gui;
 
+	/** @brief Shared style referenced by the debug label for its lifetime. */
 	TextStyle debug_info_label_style;
 
-	/**
-	 * @brief Configures the debug label’s font, multiline layout, character size, and position.
-	 */
+	/** @copydoc GUI::define */
 	void GUI::define()
 	{
     	debug_info_label_style.anchor = TextAnchor::multiline;
@@ -30,16 +29,19 @@ namespace danikk_space_engine
     	debug_info_label.name = "debug_info_label";
 	}
 
-	/**
-	 * @brief Adds the debug information label to the GUI hierarchy.
-	 */
+	/** @copydoc GUI::compose */
 	void GUI::compose()
 	{
     	gui_root.addChild(debug_info_label);
 	}
 
 	/**
-	 * @brief Refreshes the memory sample and formats FPS, memory, tool, speed, and camera position.
+	 * @brief Refreshes the one-second memory sample and appends each debug value on its own line.
+	 *
+	 * A zero memory reading is formatted as unavailable. The camera coordinates
+	 * are truncated to two decimal places before formatting. The completed
+	 * framework String replaces the label text once after all fields are appended. Values are
+	 * ordered as FPS, RAM, tool, action, camera speed, and camera position.
 	 */
 	void GUI::frame()
 	{

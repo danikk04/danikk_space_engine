@@ -4,7 +4,10 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Adds chunk.
+	 * @brief Adds a chunk ID unless it is already present.
+	 * @param chunk_id ID to add to this body's ordered membership list.
+	 * @details Scans the current list linearly. If no match exists, appends the ID;
+	 * repeated additions leave both contents and order unchanged.
 	 */
 	void WorldBody::addChunk(ChunkId chunk_id)
 	{
@@ -16,7 +19,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes chunk.
+	 * @brief Removes the first matching chunk ID without reordering the rest.
+	 * @param chunk_id ID to remove from this body's membership list.
+	 * @return True when an entry was found and removed; false when absent.
+	 * @details After finding the entry, shifts following IDs one position left and
+	 * shrinks the array, preserving the relative order of remaining chunks.
 	 */
 	bool WorldBody::removeChunk(ChunkId chunk_id)
 	{
@@ -34,7 +41,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Adds component slot.
+	 * @brief Adds a component slot ID unless it is already present.
+	 * @param slot_id ID to add to this body's ordered component list.
+	 * @details Scans the current list linearly. If no match exists, appends the ID;
+	 * repeated additions leave both contents and order unchanged.
 	 */
 	void WorldBody::addComponentSlot(WorldBodyComponentSlotId slot_id)
 	{
@@ -46,7 +56,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes component slot.
+	 * @brief Removes the first matching component slot ID without reordering others.
+	 * @param slot_id ID to remove from this body's component list.
+	 * @return True when an entry was found and removed; false when absent.
+	 * @details Shifts later IDs left after a match, then shrinks the array while
+	 * preserving the order of the remaining component slots.
 	 */
 	bool WorldBody::removeComponentSlot(WorldBodyComponentSlotId slot_id)
 	{

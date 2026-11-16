@@ -5,11 +5,12 @@
 
 namespace danikk_space_engine
 {
-	// No temperature providers are registered yet. Availability distinguishes a missing field from
-	// a valid physical temperature of zero kelvin.
-
 	/**
-	 * @brief Computes a sample for temperature at.
+	 * @brief Returns unavailable until a temperature provider is registered.
+	 * @param world Unused until world-specific temperature sources are implemented.
+	 * @param world_position Unused sample position.
+	 * @param world_time_seconds Unused simulation time.
+	 * @return Default sample with available false.
 	 */
 	TemperatureSample WorldEnvironment::sampleTemperatureAt(
 		const World& world,
@@ -22,11 +23,12 @@ namespace danikk_space_engine
 		return TemperatureSample{};
 	}
 
-	// No radiation providers are registered yet. Availability distinguishes a missing field from
-	// a valid zero dose rate.
-
 	/**
-	 * @brief Computes a sample for radiation at.
+	 * @brief Returns unavailable until a radiation provider is registered.
+	 * @param world Unused until world-specific radiation sources are implemented.
+	 * @param world_position Unused sample position.
+	 * @param world_time_seconds Unused simulation time.
+	 * @return Default sample with available false.
 	 */
 	RadiationSample WorldEnvironment::sampleRadiationAt(
 		const World& world,
@@ -40,7 +42,13 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Computes a sample for gravity at.
+	 * @brief Adds the radial gravity contribution of every active planet component.
+	 * @param world World containing planet bodies.
+	 * @param world_position Global position in double precision.
+	 * @return Summed acceleration vector in m/s². Outside a planet the configured
+	 *         surface magnitude follows inverse-square falloff; inside, magnitude is
+	 *         surface_gravity * radius / distance and therefore increases toward the
+	 *         center. Samples within 1e-6 units of a center are skipped.
 	 */
 	glm::dvec3 WorldEnvironment::sampleGravityAt(const World& world, const glm::dvec3& world_position) const
 	{

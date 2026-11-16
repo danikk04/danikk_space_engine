@@ -32,18 +32,21 @@ namespace danikk_space_engine
 		}
 	}
 
-	/*
-	 * Builds the chunk mesh by scanning its triangles once per loaded material and appending matching
-	 * triangles contiguously, producing one index range per material for separate draw calls. While
-	 * appending it skips inactive resources and degenerate triangles, computes flat face normals and
-	 * projected UVs, then calculates the local bounding sphere before uploading the buffers.
+	/**
+	 * @brief Rebuilds the chunk's indexed GPU mesh from active ground triangles, grouped by material.
+	 * @return Reference to the chunk-owned mesh after upload.
+	 * For each material ID, active triangles with three active points are appended
+	 * contiguously; missing points and degenerate triangles are skipped. Every
+	 * triangle gets a flat normal and planar UVs projected along the dominant
+	 * normal axis. The method records index ranges per non-empty material, derives
+	 * a local bounding sphere from generated vertices, uploads the mesh, and clears
+	 * mesh_dirty. It builds a triangle surface mesh; there is no VolumeCell
+	 * meshing or internal-face culling in the current world representation.
 	 */
 
 	Mesh& Chunk::createMesh()
 	{
-		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
-		 */
+		/** @brief Measures the mesh rebuild duration for the profiler. */
 		Watcher watcher("Chunk::createMesh");
 		if(mesh == nullptr)
 		{

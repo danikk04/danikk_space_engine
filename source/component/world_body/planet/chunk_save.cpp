@@ -131,14 +131,14 @@ namespace danikk_space_engine
 		}
 	}
 
-	/*
-	 * Loads a saved chunk only when its version, grid key, planet parameters, array sizes, and
-	 * every triangle index are valid. Geometry is first read into temporary arrays, so a corrupt or
-	 * truncated file leaves the caller's result unchanged and can safely fall back to regeneration.
-	 */
-
 	/**
-	 * @brief Loads planet chunk.
+	 * @brief Validates the saved chunk header and arrays before replacing the worker result.
+	 *
+	 * Geometry is read into temporary arrays. A corrupt or truncated file leaves
+	 * the caller's result unchanged so generation can safely fall back to rebuilding.
+	 * @param request Generation parameters used to locate and verify the save.
+	 * @param result Output object updated only after the file passes all integrity checks.
+	 * @return True for a valid chunk file, false for missing, incompatible, or malformed data.
 	 */
 	bool loadPlanetChunk(const ChunkGenerationRequest& request, GeneratedChunkData& result)
 	{
@@ -211,13 +211,13 @@ namespace danikk_space_engine
 		return true;
 	}
 
-	/*
-	 * Saves generated local-space geometry with its planet parameters, revision and format version.
-	 * Write failures are logged; generated geometry remains available to the running world.
-	 */
-
 	/**
-	 * @brief Saves planet chunk.
+	 * @brief Serializes chunk-local point positions and triangle indices with versioned generation metadata.
+	 *
+	 * Write failures are logged; generated geometry remains available to the running
+	 * world. Triangle material IDs are recalculated from the scalar field when loaded.
+	 * @param request Chunk key and planet parameters used for the path and file header.
+	 * @param result Generated geometry to persist; material IDs are regenerated from the field.
 	 */
 	void savePlanetChunk(const ChunkGenerationRequest& request, const GeneratedChunkData& result)
 	{
@@ -255,14 +255,19 @@ namespace danikk_space_engine
 		if(!output) formatLogError("Unable to write chunk save: %", file_path.string().c_str());
 	}
 
-	/*
-	 * Loads the persistent list of spherical terrain operations for one planet identity. The file header
-	 * validates the radius, seed, format version, and count before edit records are accepted; malformed
-	 * or truncated data is ignored so the planet can still start from its procedural base field.
-	 */
-
 	/**
-	 * @brief Loads planet terrain edits.
+	 * @brief Loads and validates the body's ordered terrain stamps and their revision counter.
+	 *
+	 * Reads into a temporary array and replaces the outputs only after the header
+	 * and every record validate. Malformed or truncated data is ignored, allowing
+	 * the planet to fall back to its procedural base field. A compatible legacy
+	 * file is migrated to the current per-body path.
+	 * @param world_body_id Body whose save folder is searched.
+	 * @param planet_radius Expected radius recorded in the header.
+	 * @param noise_seed Expected procedural seed recorded in the header.
+	 * @param edits Output array replaced after every stamp passes validation.
+	 * @param terrain_revision Output revision paired with the edit list.
+	 * @return True when a valid current or legacy file was loaded; false when no valid file exists.
 	 */
 	bool loadPlanetTerrainEdits(
 		WorldBodyId world_body_id,
@@ -315,13 +320,16 @@ namespace danikk_space_engine
 		return true;
 	}
 
-	/*
-	 * Persists terrain edits independently from generated meshes. Each operation is serialized field by
-	 * field rather than as a padded struct, and a failed disk write never interrupts terrain generation.
-	 */
-
 	/**
-	 * @brief Saves planet terrain edits.
+	 * @brief Serializes the edit list field-by-field and logs any directory or write failure.
+	 *
+	 * Edits are written as individual fields rather than raw padded structures.
+	 * A failed save is logged and does not stop in-memory terrain generation.
+	 * @param world_body_id Body-specific save directory key.
+	 * @param planet_radius Radius written for compatibility checking on load.
+	 * @param noise_seed Procedural seed written for compatibility checking on load.
+	 * @param edits Ordered add/remove stamps to write.
+	 * @param terrain_revision Revision associated with the list.
 	 */
 	void savePlanetTerrainEdits(
 		WorldBodyId world_body_id,

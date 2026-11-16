@@ -19,7 +19,9 @@ namespace danikk_space_engine
 		constexpr float muzzle_vertical_offset = 0.31f;
 
 		/**
-		 * @brief Returns orientation matrix.
+		 * @brief Builds a basis matrix whose columns are the weapon's local forward/up/right axes.
+		 * @param machinegun Component carrying the weapon orientation basis.
+		 * @return Rotation matrix without translation or scale.
 		 */
 		mat4 getOrientationMatrix(const MachinegunComponent& machinegun)
 		{
@@ -31,7 +33,10 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Finds owning chunk id.
+		 * @brief Searches chunk component lists for the chunk that owns a given weapon slot.
+		 * @param slot Component slot whose address is matched against chunk membership.
+		 * @param world World whose active bodies and chunks are searched.
+		 * @return Owning chunk ID, or the invalid sentinel if the slot is not registered.
 		 */
 		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
@@ -52,7 +57,11 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Spawns bullet.
+		 * @brief Creates a point and bullet component at a muzzle position in the owner chunk.
+		 * @param chunk_id Chunk that will own the new projectile component.
+		 * @param position Muzzle position in chunk-local coordinates.
+		 * @param direction Unit travel direction inherited from the weapon barrel.
+		 * @param world WorldData used to allocate and register the projectile resources.
 		 */
 		void spawnBullet(ChunkId chunk_id, const vec3& position, const vec3& direction, World& world)
 		{
@@ -69,7 +78,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Constructs machinegun component.
+	 * @brief Initializes default weapon state or copies caller-provided orientation and timer state.
+	 * @param destination Destination storage owned by the component slot.
+	 * @param init_data Optional source `MachinegunComponent`; null selects defaults.
 	 */
 	void constructMachinegunComponent(void* destination, const void* init_data)
 	{
@@ -88,7 +99,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves machinegun component.
+	 * @brief Transfers the weapon payload to relocated storage and destroys the source object.
+	 * @param destination Replacement payload storage.
+	 * @param source Existing live machine-gun payload.
 	 */
 	void moveMachinegunComponent(void* destination, void* source)
 	{
@@ -102,7 +115,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases machinegun component.
+	 * @brief Ends the machine-gun payload lifetime; slot storage is reclaimed by WorldData.
+	 * @param data Existing live machine-gun payload.
 	 */
 	void destroyMachinegunComponent(void* data)
 	{
@@ -113,16 +127,18 @@ namespace danikk_space_engine
 		std::destroy_at(static_cast<MachinegunComponent*>(data));
 	}
 
-	// Accumulates simulation time, resolves the weapon's owning chunk and muzzle transform,
-	// then creates one moving bullet point for every elapsed 0.25-second firing interval.
-
 	/**
-	 * @brief Runs one simulation tick for machinegun component.
+	 * @brief Accumulates elapsed time and spawns a bullet for every elapsed firing interval.
+	 * @param slot Machine-gun slot containing payload and attached point ID.
+	 * @param world World used to find the owning chunk and allocate projectile resources.
+	 * The interval is 0.25 seconds. Each elapsed interval produces one projectile;
+	 * its point is placed at the transformed muzzle and its initial velocity follows
+	 * the weapon's forward direction.
 	 */
 	void tickMachinegunComponent(PointComponentSlot& slot, World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("MachinegunComponent::tick");
 
@@ -174,12 +190,10 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Draws the shared MG-42 mesh at the position of the point that owns this component.
-	// The component scale is applied after translation; OBJ groups and materials have already
-	// been combined into the shared mesh during static asset loading.
-
 	/**
-	 * @brief Processes one frame for machinegun component.
+	 * @brief Draws the shared MG-42 item mesh with the component's local basis and scale.
+	 * @param slot Slot containing payload, attached point ID, and owner chunk ID.
+	 * @param world World used to build the body's world matrix.
 	 */
 	void frameMachinegunComponent(PointComponentSlot& slot, World& world)
 	{

@@ -29,7 +29,13 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Updates camera surface frame.
+		 * @brief Reorients the camera's local up axis to the radial direction of its owning body.
+		 *
+		 * Parallel-transports the yaw reference between old and new up vectors, then reprojects it
+		 * onto the tangent plane so yaw remains stable while moving over a spherical surface.
+		 * @param camera Camera state whose local surface frame is updated.
+		 * @param slot Slot identifying the camera point and its owning chunk.
+		 * @param world World used to obtain the camera and body world positions.
 		 */
 		void updateCameraSurfaceFrame(CameraComponent& camera, const PointComponentSlot& slot, const World& world)
 		{
@@ -75,7 +81,9 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Returns horizontal heading.
+		 * @brief Applies camera yaw to the tangent-plane reference direction.
+		 * @param camera Camera state containing the reference heading, surface up, and yaw angle.
+		 * @return Normalized heading projected onto the plane perpendicular to surface up.
 		 */
 		vec3 getHorizontalHeading(const CameraComponent& camera)
 		{
@@ -88,7 +96,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Builds the camera forward vector from its surface-up basis, yaw reference, and pitch.
+	 * @brief Builds forward by rotating the tangent heading with yaw, then pitching toward surface up.
+	 * @return Normalized direction in the camera point's local coordinate frame.
 	 */
 	vec3 CameraComponent::getFront() const
 	{
@@ -98,7 +107,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Builds the camera up vector from forward and roll, preserving the surface-oriented camera basis.
+	 * @brief Builds an orthogonal surface-oriented up vector and rotates it around forward by roll.
+	 * @return Normalized camera up axis in point-local coordinates.
 	 */
 	vec3 CameraComponent::getUp() const
 	{
@@ -119,7 +129,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Constructs camera component.
+	 * @brief Creates default camera state or copies the supplied initial camera payload.
+	 * @param destination Destination storage owned by the point-component slot.
+	 * @param init_data Optional source camera state; a null pointer selects member defaults.
 	 */
 	void constructCameraComponent(void* destination, const void* init_data)
 	{
@@ -139,7 +151,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves camera component.
+	 * @brief Transfers camera state to relocated storage and ends the source object's lifetime.
+	 * @param destination Replacement payload storage.
+	 * @param source Existing live camera payload.
 	 */
 	void moveCameraComponent(void* destination, void* source)
 	{
@@ -154,7 +168,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases camera component.
+	 * @brief Ends the camera payload's lifetime; the component-slot allocator owns storage release.
+	 * @param data Existing live camera payload.
 	 */
 	void destroyCameraComponent(void* data)
 	{
@@ -166,12 +181,19 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Runs one simulation tick for camera component.
+	 * @brief Updates the camera's surface frame, mouse look, roll, and point movement for one tick.
+	 * @param slot Camera slot identifying the point and chunk to move.
+	 * @param world World used to obtain radial up, controller speed, and body transforms.
+	 * Mouse deltas are rotated by current roll before changing yaw and pitch; pitch
+	 * is clamped just inside +/- 90 degrees. Q/E change roll at 1.5 rad/s. WASD
+	 * translates along current front/right axes using speed times target frame delay.
+	 * A local camera offset above 128 m is transferred into the chunk's double
+	 * position. Surface up/yaw frame are refreshed both before and after movement.
 	 */
 	void tickCameraComponent(PointComponentSlot& slot, World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("CameraComponent::tick");
 
@@ -251,7 +273,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Processes one frame for camera component.
+	 * @brief Publishes this camera's perspective parameters to the renderer for the current frame.
+	 * @param slot Slot containing the camera state and camera point ID.
+	 * @param world Unused currently; the signature matches the component callback interface.
 	 */
 	void frameCameraComponent(PointComponentSlot& slot, World&)
 	{

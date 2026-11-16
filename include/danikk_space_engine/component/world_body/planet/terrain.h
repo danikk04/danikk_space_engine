@@ -13,16 +13,28 @@ namespace danikk_space_engine
 	 */
 	struct PlanetTerrainEdit
 	{
+		/** @brief Center of the spherical terrain stamp in coordinates relative to the planet center. */
 		glm::dvec3 center = glm::dvec3(0.0);
+		/** @brief Stamp radius in world units. */
 		double radius = 0.0;
-		// Selects additive solid terrain (true) or a subtractive spherical cut (false).
+		/** @brief True adds solid terrain; false subtracts a spherical region from the field. */
 		bool adds_solid_terrain = false;
 	};
 
-	// Returns positive density inside terrain, zero on any terrain boundary, and negative density in air.
-
 	/**
-	 * @brief Computes a sample for planet scalar field.
+	 * @brief Samples the signed density field used to generate and collide with a planet.
+	 *
+	 * Positive values represent solid material, negative values represent air, and zero is the
+	 * isosurface. The result combines the radial shell, deterministic noise, terrain edit stamps,
+	 * and the solid core boundary. Cave density is combined with the shell using a minimum operation;
+	 * additive/subtractive edits use max/min sphere fields, then the noisy core is unioned last so it
+	 * cannot be excavated by caves or saved edits.
+	 * @param position_relative_to_planet_center Sample position in planet-centered world units.
+	 * @param radius Nominal outer radius of the planet.
+	 * @param noise_seed Stable seed selecting the procedural terrain pattern.
+	 * @param edits Additive/subtractive spherical stamps applied to the base field.
+	 * @param core_radius Radius of the core region kept solid by the field.
+	 * @return Signed density; values greater than zero are inside solid terrain.
 	 */
 	double samplePlanetScalarField(
 		const glm::dvec3& position_relative_to_planet_center,
@@ -32,7 +44,13 @@ namespace danikk_space_engine
 		double core_radius);
 
 	/**
-	 * @brief Returns planet surface material.
+	 * @brief Selects a terrain material for a point on or near the procedural surface.
+	 * @param position_relative_to_planet_center Position relative to the planet center.
+	 * @param radius Nominal outer radius used to estimate surface height.
+	 * @param noise_seed Seed shared with terrain generation.
+	 * @return Grass for samples at or above the three-metre subsurface boundary,
+	 *         otherwise stone; the exact center is stone. Callers use this at
+	 *         surface triangle centers, so exterior samples are also classified as grass.
 	 */
 	MaterialId getPlanetSurfaceMaterial(
 		const glm::dvec3& position_relative_to_planet_center,

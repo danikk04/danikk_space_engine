@@ -6,7 +6,11 @@ namespace danikk_space_engine::math
 {
 
 	/**
-	 * @brief Returns the linear blend of start and end using amount without clamping the amount.
+	 * @brief Linearly blends two endpoints and permits extrapolation.
+	 * @param start Value at interpolation amount 0.
+	 * @param end Value at interpolation amount 1.
+	 * @param amount Unclamped blend factor.
+	 * @return start + (end - start) * amount.
 	 */
 	double linearInterpolate(double start, double end, double amount)
 	{
@@ -14,7 +18,9 @@ namespace danikk_space_engine::math
 	}
 
 	/**
-	 * @brief Computes the quintic fade polynomial used to smooth interpolation at cell boundaries.
+	 * @brief Evaluates the quintic interpolation fade curve without clamping its input.
+	 * @param value Curve parameter, normally between 0 and 1.
+	 * @return 6t^5 - 15t^4 + 10t^3.
 	 */
 	double quinticFade(double value)
 	{
@@ -22,7 +28,11 @@ namespace danikk_space_engine::math
 	}
 
 	/**
-	 * @brief Clamps the normalized value between edges, then applies the cubic smooth-step curve.
+	 * @brief Clamps a normalized interval position and applies the cubic smooth-step polynomial.
+	 * @param edge0 Lower interval edge.
+	 * @param edge1 Upper interval edge.
+	 * @param value Input to normalize.
+	 * @return Cubic-smoothed value in [0, 1], with a threshold result when the edges match.
 	 */
 	double smoothStep(double edge0, double edge1, double value)
 	{

@@ -7,11 +7,13 @@
 
 namespace danikk_space_engine
 {
-	// Builds a blue cube at the same position used by Build -> Create WorldBody.
-	// Geometry is camera-relative to retain precision while previewing far from the origin.
-
 	/**
-	 * @brief Draws world body placement preview.
+	 * @brief Creates transient cube geometry at the proposed WorldBody placement and draws it blue.
+	 * @param world World supplying camera position and placement transforms.
+	 * @param hit Surface hit that determines cube center and outward orientation.
+	 * A miss produces no draw. The cube is one metre wide and its center is placed
+	 * half a cube plus 0.03 m above the hit. Geometry is converted to
+	 * camera-relative coordinates; this function only updates a static render mesh.
 	 */
 	void drawWorldBodyPlacementPreview(World& world, const RaycastHit& hit)
 	{

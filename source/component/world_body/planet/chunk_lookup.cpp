@@ -9,7 +9,10 @@ namespace danikk_space_engine
 		constexpr uint8 deleted_bucket = 2;
 
 		/**
-		 * @brief Compares all three integer coordinate components.
+		 * @brief Tests exact equality of two integer planet-grid coordinates.
+		 * @param left First chunk coordinate.
+		 * @param right Second chunk coordinate.
+		 * @return True when x, y, and z all match.
 		 */
 		bool sameChunkKey(const glm::ivec3& left, const glm::ivec3& right)
 		{
@@ -17,7 +20,9 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Computes a deterministic 64-bit hash from all three signed grid coordinates for the chunk lookup table.
+		 * @brief Hashes all signed coordinate components with a deterministic 64-bit mixing sequence.
+		 * @param key Planet chunk coordinate to hash.
+		 * @return Hash used as the initial bucket in the power-of-two open-addressed table.
 		 */
 		uint64 hashChunkKey(const glm::ivec3& key)
 		{
@@ -35,7 +40,11 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Uses linear probing to find a matching coordinate or the first available bucket.
+		 * @brief Probes the table for a key, optionally preferring the first tombstone for insertion.
+		 * @param entries Open-addressed bucket array; capacity must be a power of two.
+		 * @param key Coordinate being searched or inserted.
+		 * @param find_deleted_bucket Whether a deleted bucket can be returned as an insertion target.
+		 * @return Matching/available bucket index, or the invalid-size sentinel if no bucket is usable.
 		 */
 		size_t findChunkBucket(
 			const DynamicArray<PlanetChunkLookupEntry>& entries,
@@ -66,7 +75,10 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Keeps the open-addressing table below its load threshold and rehashes occupied entries when it grows.
+		 * @brief Grows the lookup table at its load threshold and rehashes live entries.
+		 *
+		 * Capacity starts at 16 and doubles; tombstones are discarded during rehashing.
+		 * @param lookup Table whose bucket storage may be replaced.
 		 */
 		void ensureChunkLookupCapacity(PlanetChunkLookup& lookup)
 		{
@@ -89,7 +101,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Clears desired flags and tombstones entries that no longer own loaded chunks.
+	 * @brief Starts a new desired-set pass while retaining loaded records as candidates for reuse.
+	 *
+	 * Every retained loaded coordinate has its desired flag cleared. Entries that have no completed
+	 * generation record are tombstoned, since they represent obsolete pending/empty state.
 	 */
 	void PlanetChunkLookup::clearDesired()
 	{
@@ -109,7 +124,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Marks this coordinate as needed in the current streaming update.
+	 * @brief Ensures a lookup record exists and marks the coordinate wanted in this update pass.
+	 * @param grid_coordinate Planet grid coordinate to retain or request.
 	 */
 	void PlanetChunkLookup::markDesired(const glm::ivec3& grid_coordinate)
 	{
@@ -130,7 +146,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Sets chunk.
+	 * @brief Stores a completed generation result, including a known-empty result with invalid chunk ID.
+	 * @param grid_coordinate Coordinate represented by the completed result.
+	 * @param chunk_id Loaded chunk ID, or the invalid sentinel when generation produced no geometry.
 	 */
 	void PlanetChunkLookup::setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id)
 	{
@@ -150,7 +168,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes a loaded coordinate from the lookup table and clears its chunk record.
+	 * @brief Clears the generated record and tombstones it unless the coordinate is still desired.
+	 * @param grid_coordinate Coordinate whose loaded/generated record is being invalidated.
 	 */
 	void PlanetChunkLookup::remove(const glm::ivec3& grid_coordinate)
 	{
@@ -165,7 +184,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Reports whether the grid coordinate is in the current desired chunk set.
+	 * @brief Checks whether a coordinate was included in the latest desired-set calculation.
+	 * @param grid_coordinate Coordinate to query.
+	 * @return True if its live lookup entry has the desired flag set.
 	 */
 	bool PlanetChunkLookup::isDesired(const glm::ivec3& grid_coordinate) const
 	{
@@ -174,7 +195,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Reports whether generation has produced a chunk for the grid coordinate.
+	 * @brief Checks whether generation completed for a coordinate, including an empty result.
+	 * @param grid_coordinate Coordinate to query.
+	 * @return True if a generated record exists, regardless of whether it owns a WorldData chunk.
 	 */
 	bool PlanetChunkLookup::isGenerated(const glm::ivec3& grid_coordinate) const
 	{
@@ -183,7 +206,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns a checked reference to an active chunk; an invalid ID raises a fatal error.
+	 * @brief Retrieves a loaded chunk ID for a coordinate without treating known-empty as loaded.
+	 * @param grid_coordinate Coordinate to query.
+	 * @param chunk_id Receives the associated chunk ID when the lookup has one.
+	 * @return True if a record has a non-sentinel chunk ID; false for absent or empty results.
 	 */
 	bool PlanetChunkLookup::getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const
 	{

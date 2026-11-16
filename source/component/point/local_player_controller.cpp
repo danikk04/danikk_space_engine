@@ -12,9 +12,12 @@ namespace danikk_space_engine
 	namespace
 	{
 
-		/**
-		 * @brief Finds owning chunk id.
-		 */
+	/**
+	 * @brief Searches active body/chunk ownership lists for the chunk registering this controller.
+	 * @param slot Controller slot whose address is compared with chunk membership.
+	 * @param world World whose bodies and chunks are scanned.
+	 * @return Owning chunk ID or the invalid sentinel when the slot is unattached.
+	 */
 		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
 			for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
@@ -34,7 +37,11 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Creates a point at the controller location and attaches a machine-gun component using the controller orientation.
+		 * @brief Duplicates a point and attaches a machine gun aligned to the camera basis.
+		 * @param source_point Controller point copied as the new weapon position.
+		 * @param camera Camera orientation used to initialize weapon forward/up/right.
+		 * @param chunk_id Chunk that receives the new point component.
+		 * @param world WorldData allocator and chunk registry.
 		 */
 		void duplicateControllerPointWithMachinegun(
 			const Point& source_point,
@@ -56,7 +63,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Constructs local player controller component.
+	 * @brief Creates default controller state or copies supplied tool, selection, and drag state.
+	 * @param destination Destination storage owned by the point-component slot.
+	 * @param init_data Optional initial controller state; null selects member defaults.
 	 */
 	void constructLocalPlayerControllerComponent(void* destination, const void* init_data)
 	{
@@ -75,7 +84,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Moves local player controller component.
+	 * @brief Transfers controller state and its selected-face array to relocated slot storage.
+	 * @param destination Replacement payload storage.
+	 * @param source Existing controller payload, destroyed after the move.
 	 */
 	void moveLocalPlayerControllerComponent(void* destination, void* source)
 	{
@@ -89,7 +100,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes and releases local player controller component.
+	 * @brief Destroys controller state, including the dynamic selected-face array.
+	 * @param data Existing live controller payload.
 	 */
 	void destroyLocalPlayerControllerComponent(void* data)
 	{
@@ -101,12 +113,14 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Runs one simulation tick for local player controller component.
+	 * @brief Validates the controller, processes its input, then handles a pressed M key by spawning a machine gun.
+	 * @param slot Controller slot whose point/chunk ownership is used for duplication.
+	 * @param world World providing camera orientation and allocating the weapon point/component.
 	 */
 	void tickLocalPlayerControllerComponent(PointComponentSlot& slot, World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("tickLocalPlayerControllerComponent");
 
@@ -141,17 +155,22 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Keeps selected faces at the start of selected_faces and appends the hovered face
-	// when it is not already selected. This lets editing operate on the selected prefix,
-	// while rendering gets both selection and hover state from the same array.
-
 	/**
-	 * @brief Reads player input, updates selection and tool state, and applies the active action.
+	 * @brief Updates tool/camera controls, runs drag behavior, applies pressed actions, and refreshes the hover face.
+	 *
+	 * Ctrl-wheel takes precedence over Alt and multiplies camera speed by
+	 * `1.25^scroll_delta`, clamped to 0.01–1,000,000 m/s. Otherwise Alt-wheel
+	 * changes the selected action and unmodified wheel changes category; cycling is
+	 * suppressed during a drag, where non-Ctrl wheel and mouse input go to that drag handler.
+	 * Each tick raycasts from the camera. A left-button press applies the current
+	 * tool when no drag is active. Persistent selected faces occupy the array prefix;
+	 * a distinct hovered face is appended last for rendering and tool dispatch.
+	 * @param world World providing input context, camera raycast, and tool operations.
 	 */
 	void LocalPlayerControllerComponent::tick(World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("LocalPlayerControllerComponent::tick");
 

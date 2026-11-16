@@ -18,7 +18,10 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Creates unit box.
+	 * @brief Extracts a unit oriented box from a GameObject's local transform.
+	 * @param object Object whose transformed origin and basis vectors define the box.
+	 * @return Box centered at the transformed origin with normalized axes and half
+	 *         extents equal to half the basis-vector lengths.
 	 */
 	static OrientedBox makeUnitBox(const GameObject& object)
 	{
@@ -35,12 +38,12 @@ namespace danikk_space_engine
 		return result;
 	}
 
-	// Tests two oriented boxes with the separating axis theorem and returns the minimum penetration.
-	// Projects both boxes onto their three face axes and nine pairwise cross-product axes;
-	// any non-overlapping projection rejects collision, otherwise the shallowest axis gives the normal.
-
 	/**
-	 * @brief Checks cube cube collision.
+	 * @brief Tests two transformed unit boxes using the 15-axis separating-axis theorem.
+	 * @param object_a First box.
+	 * @param object_b Second box.
+	 * @return Collision flag, minimum-overlap axis oriented from a toward b, and
+	 *         penetration depth. Touching projections count as non-colliding.
 	 */
 	static CollisionInfo checkCubeCubeCollision(const GameObject& object_a, const GameObject& object_b)
 	{
@@ -85,7 +88,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns sphere center.
+	 * @brief Returns the sphere center from the object's transformed local origin.
+	 * @param object Object whose transform defines the sphere center.
+	 * @return World-space center in the same coordinate space as local_matrix.
 	 */
 	static vec3 getSphereCenter(const GameObject& object)
 	{
@@ -93,7 +98,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns sphere radius.
+	 * @brief Estimates a sphere radius as half the largest transformed basis-vector length.
+	 * @param object Object whose transform provides scale.
+	 * @return Conservative radius for non-uniformly scaled sphere geometry.
 	 */
 	static float getSphereRadius(const GameObject& object)
 	{
@@ -103,7 +110,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Checks sphere sphere collision.
+	 * @brief Tests two spheres by center distance and summed radii.
+	 * @param object_a First sphere object.
+	 * @param object_b Second sphere object.
+	 * @return Overlap result; coincident centers use the positive X axis as a fallback normal.
 	 */
 	static CollisionInfo checkSphereSphereCollision(const GameObject& object_a, const GameObject& object_b)
 	{
@@ -120,12 +130,12 @@ namespace danikk_space_engine
 		return result;
 	}
 
-	// Tests a sphere against an oriented box and computes a contact normal and penetration depth.
-	// Projects the sphere center onto each box axis to find the closest point, then checks radius overlap;
-	// if the center is inside the box, selects the nearest face as the contact direction.
-
 	/**
-	 * @brief Checks cube sphere collision.
+	 * @brief Tests a sphere against an oriented unit box using the closest box point.
+	 * @param cube_object Box object.
+	 * @param sphere_object Sphere object.
+	 * @return Overlap normal pointing from the box toward the sphere and penetration.
+	 * When the center is inside the box, the nearest box face supplies the normal.
 	 */
 	static CollisionInfo checkCubeSphereCollision(const GameObject& cube_object, const GameObject& sphere_object)
 	{
@@ -177,7 +187,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Checks sphere cube collision.
+	 * @brief Tests a sphere-box pair by reversing the box-sphere contact normal.
+	 * @param sphere_object First shape in the ordered pair.
+	 * @param cube_object Second shape in the ordered pair.
+	 * @return Same penetration as the reversed box-sphere test, with normal oriented
+	 *         from the sphere toward the box.
 	 */
 	static CollisionInfo checkSphereCubeCollision(const GameObject& sphere_object, const GameObject& cube_object)
 	{
@@ -187,7 +201,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Checks no collision.
+	 * @brief Returns a default non-collision result for unsupported or empty shape pairs.
+	 * @param unused_a First object; intentionally not inspected.
+	 * @param unused_b Second object; intentionally not inspected.
+	 * @return Default CollisionInfo with collided false.
 	 */
 	static CollisionInfo checkNoCollision(const GameObject&, const GameObject&)
 	{

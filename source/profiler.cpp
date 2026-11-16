@@ -26,7 +26,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Initializes the profiler reporting interval.
+	 * @brief Initializes the report clock; the default aggregation interval is one second.
 	 */
 	Profiler::Profiler()
 		: report_start_time(std::chrono::steady_clock::now())
@@ -35,7 +35,9 @@ namespace danikk_space_engine
 	Profiler profiler;
 
 	/**
-	 * @brief Begins scope.
+	 * @brief Resolves a hierarchical node, using a per-thread cache before locking the node table.
+	 * @param name Stable scope-name pointer.
+	 * @return Node ID for the (parent, name) pair, pushed onto this thread's scope stack.
 	 */
 	uint32 Profiler::beginScope(const char* name)
 	{
@@ -72,7 +74,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Ends scope.
+	 * @brief Pops the matching thread-local scope and accumulates duration and call count.
+	 * @param node_id Scope node previously returned by beginScope().
+	 * @param elapsed_nanoseconds Elapsed steady-clock time to add to the current interval.
 	 */
 	void Profiler::endScope(uint32 node_id, uint64 elapsed_nanoseconds)
 	{
@@ -88,21 +92,20 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Begins tick.
+	 * @brief Marks the start of one frame for the over-30-ms stall threshold.
 	 */
 	void Profiler::beginTick()
 	{
-		// Tick counters are cleared by endTick so worker-thread scopes finishing between
-		// consecutive main-thread frames are included in the next report interval.
 		tick_start_time = std::chrono::steady_clock::now();
 	}
 
-	// Accumulates scope totals for the reporting interval and records any tick over 30 ms.
-	// At the interval boundary, logs only if FPS is below 20 or a slow tick occurred.
-	// Every interval resets its counters, including intervals whose reports are suppressed.
-
 	/**
-	 * @brief Ends tick.
+	 * @brief Accumulates per-frame counters and conditionally logs the interval summary.
+	 *
+	 * The interval is considered slow when any frame exceeds 30 ms or when
+	 * ticks / elapsed seconds is below 20. Totals and maxima reset after every
+	 * interval regardless of whether a log is emitted; logged child times are
+	 * inclusive of nested Watcher scopes.
 	 */
 	void Profiler::endTick()
 	{
@@ -179,7 +182,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Sets report interval milliseconds.
+	 * @brief Sets the report interval, clamping zero to one millisecond.
+	 * @param milliseconds New interval duration.
 	 */
 	void Profiler::setReportIntervalMilliseconds(uint64 milliseconds)
 	{

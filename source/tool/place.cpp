@@ -12,7 +12,12 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Creates world body cube at hit.
+		 * @brief Creates a one-metre mesh body just above the hit and centers its chunk frame.
+		 * @param world World receiving body, chunk, point, and triangle resources.
+		 * @param hit Raycast result supplying placement position and outward normal.
+		 * The body's origin is placed half a cube plus 0.03 m along the hit normal.
+		 * The chunk origin is offset by half the planet chunk width so the initial
+		 * cube vertices lie near the chunk center and avoid boundary straddling.
 		 */
 		void createWorldBodyCubeAtHit(World& world, const RaycastHit& hit)
 		{
@@ -57,7 +62,12 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Creates machinegun at hit.
+		 * @brief Creates a point-attached machine gun in the hit chunk, oriented to the camera.
+		 * @param world World receiving the point and machine-gun component slot.
+		 * @param hit Surface hit used for the local point position and owning chunk.
+		 * The point is offset 0.03 m from the surface, transformed into chunk-local
+		 * coordinates; the weapon basis is transformed from camera axes into the
+		 * owning WorldBody's local orientation.
 		 */
 		void createMachinegunAtHit(World& world, const RaycastHit& hit)
 		{
@@ -81,11 +91,12 @@ namespace danikk_space_engine
 
 	}
 
-	// Applies placement actions at the raycast position. A machinegun is attached to the hit chunk;
-	// a new cube mesh is placed in its own WorldBody.
-
 	/**
-	 * @brief Applies place tool.
+	 * @brief Dispatches placement of a machine gun or standalone cube body at a valid ray hit.
+	 * @param world World receiving the created resources.
+	 * @param hit Raycast result defining the target chunk, point, and normal.
+	 * @param action Place action; unsupported values are ignored.
+	 * @return Empty selection result; a miss leaves the world unchanged.
 	 */
 	ToolApplyResult applyPlaceTool(World& world, const RaycastHit& hit, ToolActionId action)
 	{

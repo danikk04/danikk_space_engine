@@ -12,7 +12,10 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Returns dragged world body id.
+		 * @brief Reads the body currently controlled by the active local Drag tool.
+		 * @param world World containing the controller component slot.
+		 * @return Dragged body ID, or the invalid WorldBodyId sentinel when the
+		 *         controller slot is unavailable or inactive.
 		 */
 		WorldBodyId getDraggedWorldBodyId(const World& world)
 		{
@@ -27,15 +30,18 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Applies planetary gravity, integrates linear velocity, then updates body rotation.
-
 	/**
-	 * @brief Integrates motion.
+	 * @brief Applies sampled gravity and integrates position and rotation of eligible bodies.
+	 * @param world World providing bodies, loaded-chunk state, and the gravity field.
+	 * A non-positive target frame delay ends the stage. Planet bodies, the body
+	 * held by Drag, and bodies without an active chunk are skipped. Linear
+	 * acceleration and position use semi-implicit Euler integration; rotation is
+	 * advanced from angular velocity using an axis-angle delta and normalized.
 	 */
 	void WorldPhysics::integrateMotion(World& world)
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("World::body motion");
 		const float delta_time = danikk_engine::getTargetFrameDelay();

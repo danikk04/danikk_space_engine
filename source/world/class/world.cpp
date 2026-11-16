@@ -30,56 +30,45 @@ namespace danikk_space_engine
 		}
 	}
 
-	/**
-	 * @brief Returns the active point-component slot that owns the camera.
-	 */
+	/** @brief Resolves camera_component_slot_id to the active camera slot. */
 	PointComponentSlot& World::getCameraSlot()
 	{
 		return data.getPointComponentSlot(camera_component_slot_id);
 	}
 
-	/**
-	 * @brief Returns the active point-component slot that owns the camera.
-	 */
+	/** @brief Resolves the configured camera slot as a read-only reference. */
 	const PointComponentSlot& World::getCameraSlot() const
 	{
 		return data.getPointComponentSlot(camera_component_slot_id);
 	}
 
-	/**
-	 * @brief Returns the camera component stored in the camera slot.
-	 */
+	/** @brief Casts the camera slot payload to its registered CameraComponent type. */
 	CameraComponent& World::getCameraComponent()
 	{
 		return *static_cast<CameraComponent*>(getCameraSlot().getData());
 	}
 
-	/**
-	 * @brief Returns the camera component stored in the camera slot.
-	 */
+	/** @brief Returns the registered camera payload without permitting mutation. */
 	const CameraComponent& World::getCameraComponent() const
 	{
 		return *static_cast<const CameraComponent*>(getCameraSlot().getData());
 	}
 
-	/**
-	 * @brief Returns the active point that defines the camera’s local position.
-	 */
+	/** @brief Resolves the point ID stored by the active camera component slot. */
 	Point& World::getCameraPoint()
 	{
 		return data.getPoint(getCameraSlot().point_id);
 	}
 
-	/**
-	 * @brief Returns the active point that defines the camera’s local position.
-	 */
+	/** @brief Returns the camera point as a read-only resource reference. */
 	const Point& World::getCameraPoint() const
 	{
 		return data.getPoint(getCameraSlot().point_id);
 	}
 
 	/**
-	 * @brief Transforms the camera point through its chunk and world body into world-space coordinates.
+	 * @brief Converts camera point coordinates from chunk-local to double-precision world space.
+	 * @return Body position plus rotated chunk origin and camera-point offset.
 	 */
 	glm::dvec3 World::getCameraWorldPosition() const
 	{
@@ -88,7 +77,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Transforms the chunk origin through its owning world body into world-space coordinates.
+	 * @brief Converts a chunk's body-local origin to double-precision world coordinates.
+	 * @param chunk_id Active chunk whose body and local offset define the origin.
+	 * @return Body position plus the body's rotation applied to the chunk offset.
 	 */
 	glm::dvec3 World::getChunkWorldPosition(ChunkId chunk_id) const
 	{
@@ -98,7 +89,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Transforms a point’s chunk-local position through the chunk and body transforms.
+	 * @brief Converts a point's local position through its chunk and WorldBody transforms.
+	 * @param chunk_id Active chunk containing the point.
+	 * @param point_id Active point whose position is relative to that chunk.
+	 * @return Double-precision position in world coordinates.
 	 */
 	glm::dvec3 World::getPointWorldPosition(ChunkId chunk_id, PointId point_id) const
 	{
@@ -108,18 +102,14 @@ namespace danikk_space_engine
 			* (chunk.position + glm::dvec3(data.getPoint(point_id).position));
 	}
 
-	/**
-	 * @brief Returns the controller component attached to the configured controller slot.
-	 */
+	/** @brief Resolves the configured local-player slot and casts its payload to the controller type. */
 	LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent()
 	{
 		PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_component_slot_id);
 		return *static_cast<LocalPlayerControllerComponent*>(slot.getData());
 	}
 
-	/**
-	 * @brief Returns the controller component attached to the configured controller slot.
-	 */
+	/** @brief Returns the configured local-player controller payload as read-only. */
 	const LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent() const
 	{
 		const PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_component_slot_id);
@@ -127,17 +117,20 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Runs world-body and chunk component ticks, applies deferred point deletion, then advances physics.
+	 * @brief Ticks body and chunk components, drains deferred point deletion, then advances physics.
+	 * Body, chunk, and per-body component IDs are snapshotted before callbacks
+	 * can mutate ownership lists. Point destruction is deferred until traversal
+	 * ends, then WorldPhysics runs after component commands and deletions.
 	 */
 	void World::tick()
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher tick_scope("tick");
 		{
 			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
 			Watcher world_body_components_scope("WorldBody components");
 			const DynamicArray<WorldBodyId> world_body_ids(data.getUsedWorldBodyIds());
@@ -168,7 +161,7 @@ namespace danikk_space_engine
 					if(type.tick != nullptr)
 					{
 						/**
-						 * @brief Disables copying to ensure a measured scope is recorded once.
+						 * @brief Measures the duration of the enclosing profiler scope.
 						 */
 						Watcher component_scope(worldBodyComponentName(slot.type_id));
 						type.tick(slot, *this);
@@ -190,7 +183,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Queues a point for destruction after component and chunk iteration completes.
+	 * @brief Adds a live point once to the queue drained after component traversal.
+	 * @param point_id Point to destroy after all current component callbacks complete.
+	 * Inactive IDs are ignored and duplicate requests are coalesced.
 	 */
 	void World::deferPointDestruction(PointId point_id)
 	{
@@ -203,7 +198,12 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Replaces pending generation work and removes requests made for stale component generations.
+	 * @brief Replaces one component's pending requests and stamps them with the current world generation.
+	 * @param component_slot_id Component whose previous requests should be removed.
+	 * @param requests Latest request snapshot produced by that component.
+	 * Prior requests for this component are removed while preserving unrelated
+	 * request order. New requests receive the current world token and mark the
+	 * worker snapshot dirty for submission during World::frame().
 	 */
 	void World::replaceChunkGenerationRequests(
 		WorldBodyComponentSlotId component_slot_id,
@@ -232,7 +232,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes chunk generation request.
+	 * @brief Removes the queued request for one component/grid coordinate and marks the worker queue dirty.
+	 * @param component_slot_id Owner component of the request.
+	 * @param grid_coordinate Planet grid key to remove.
 	 */
 	void World::removeChunkGenerationRequest(
 		WorldBodyComponentSlotId component_slot_id,
@@ -256,17 +258,22 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Accepts generated chunks, runs frame callbacks, updates meshes, and renders world bodies.
+	 * @brief Accepts generated work, updates chunk/component render state, and draws the world frame.
+	 *
+	 * Completed chunks are accepted only when world, body, slot, component
+	 * generation, and terrain revision still match. Dirty meshes are rebuilt on
+	 * the main thread; rendering uses camera-relative transforms and optional
+	 * debug effects are controlled by Settings.
 	 */
 	void World::frame()
 	{
 		/**
-		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher frame_scope("World::frame");
 		{
 			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
 			Watcher world_body_components_scope("WorldBody components");
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
@@ -280,7 +287,7 @@ namespace danikk_space_engine
 					if(type.frame != nullptr)
 					{
 						/**
-						 * @brief Disables copying to ensure a measured scope is recorded once.
+						 * @brief Measures the duration of the enclosing profiler scope.
 						 */
 						Watcher component_scope(worldBodyComponentName(slot.type_id));
 						type.frame(slot, *this);
@@ -291,7 +298,7 @@ namespace danikk_space_engine
 		if(chunk_generation_requests_dirty)
 		{
 			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
 			Watcher request_update_scope("ChunkLoader::updatePendingRequests");
 			chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
@@ -312,7 +319,7 @@ namespace danikk_space_engine
 				if(type.accept_generated_chunk != nullptr)
 				{
 					/**
-					 * @brief Disables copying to ensure a measured scope is recorded once.
+					 * @brief Measures the duration of the enclosing profiler scope.
 					 */
 					Watcher accept_scope("Accept generated chunk");
 					type.accept_generated_chunk(slot, *this, generated_chunk);
@@ -326,7 +333,7 @@ namespace danikk_space_engine
 		setViewMatrix(view);
 		{
 			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
 			Watcher chunk_frame_scope("Chunk mesh and component frame");
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
@@ -342,7 +349,7 @@ namespace danikk_space_engine
 		}
 		{
 			/**
-			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
 			Watcher chunk_draw_scope("Chunk draw");
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
@@ -368,7 +375,10 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Initializes the camera, world data, physics, and the selected starting scenario.
+	 * @brief Starts the loader, invalidates older results, resets queues, and creates the base scenario.
+	 * Advances the world token while skipping zero, clears the submitted and local
+	 * request arrays plus deferred point removals, then starts the base scenario.
+	 * That scenario clears and repopulates WorldData.
 	 */
 	void World::init()
 	{
@@ -383,7 +393,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Stops chunk generation and releases world-owned resources.
+	 * @brief Stops and joins the worker, invalidates outstanding results, and releases all WorldData pools.
+	 * Advances the world token and clears request state before releasing resource pools.
 	 */
 	void World::shutdown()
 	{

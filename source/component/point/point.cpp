@@ -76,7 +76,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns point component type.
+	 * @brief Resolves a point-component ID to its static storage and callback descriptor.
+	 * @param type_id Component type requested by a slot or allocator.
+	 * @return Registered descriptor, or the inert `none` descriptor for an out-of-range ID.
 	 */
 	const PointComponentType& getPointComponentType(PointComponentTypeId type_id)
 	{

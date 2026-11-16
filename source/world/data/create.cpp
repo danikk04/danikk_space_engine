@@ -5,10 +5,15 @@ namespace danikk_space_engine
 	namespace
 	{
 
-		template<typename component_type_t, typename type_id_t>
 		/**
-		 * @brief Raises a fatal error when component callbacks or in-place storage requirements are invalid.
+		 * @brief Validates type registration and payload alignment before constructing a component.
+		 * @tparam component_type_t Component callback descriptor type.
+		 * @tparam type_id_t Registered component ID type.
+		 * @param type Callback metadata to validate.
+		 * @param type_id ID used for diagnostics and to reject the reserved `none` entry.
+		 * @param component_name Component category label for fatal diagnostics.
 		 */
+		template<typename component_type_t, typename type_id_t>
 		void validateComponentType(const component_type_t& type, type_id_t type_id, const char* component_name)
 		{
 			if(static_cast<uint32>(type_id) == 0 || type.construct == nullptr || type.data_size == 0)
@@ -21,10 +26,18 @@ namespace danikk_space_engine
 			}
 		}
 
-		template<typename slot_t, typename component_type_t, typename type_id_t>
 		/**
-		 * @brief Constructs component payload.
+		 * @brief Chooses payload storage and calls the registered placement constructor.
+		 * @tparam slot_t Component slot type providing inline storage and external pointer fields.
+		 * @tparam component_type_t Callback descriptor type.
+		 * @tparam type_id_t Component ID type.
+		 * @param slot Slot receiving the payload.
+		 * @param type Descriptor providing size, relocation policy, and construct callback.
+		 * @param init_data Optional initialization data forwarded to the callback.
+		 * @param type_id ID used for allocation diagnostics.
+		 * @param component_name Component category label for fatal diagnostics.
 		 */
+		template<typename slot_t, typename component_type_t, typename type_id_t>
 		void constructComponentPayload(
 			slot_t& slot,
 			const component_type_t& type,
@@ -48,13 +61,14 @@ namespace danikk_space_engine
 		}
 	}
 
+	/** @copydoc WorldData::createPoint */
 	PointId WorldData::createPoint() { return points.create(); }
+	/** @copydoc WorldData::createGroundTriangle */
 	GroundTriangleId WorldData::createGroundTriangle() { return ground_triangles.create(); }
+	/** @copydoc WorldData::createWorldBody */
 	WorldBodyId WorldData::createWorldBody() { return world_bodies.create(); }
 
-	/**
-	 * @brief Creates world body component slot.
-	 */
+	/** @copydoc WorldData::createWorldBodyComponentSlot */
 	WorldBodyComponentSlotId WorldData::createWorldBodyComponentSlot(
 		WorldBodyId world_body_id,
 		WorldBodyComponentTypeId type_id,
@@ -80,7 +94,12 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Creates chunk.
+	 * @brief Creates a chunk owned by a body and registers the reverse body-to-chunk link.
+	 *
+	 * New chunks start with an origin grid coordinate and zero local position; generation or
+	 * placement code assigns their spatial coordinates afterward.
+	 * @param world_body_id Active body that will own the chunk.
+	 * @return Mutable reference to the initialized chunk resource.
 	 */
 	Chunk& WorldData::createChunk(WorldBodyId world_body_id)
 	{
@@ -98,9 +117,7 @@ namespace danikk_space_engine
 		return chunk;
 	}
 
-	/**
-	 * @brief Creates point component slot.
-	 */
+	/** @copydoc WorldData::createPointComponentSlot */
 	PointComponentSlotId WorldData::createPointComponentSlot(
 		PointId point_id,
 		PointComponentTypeId type_id,
@@ -124,12 +141,18 @@ namespace danikk_space_engine
 		return id;
 	}
 
-	// Creates the graph slot payload after validating its chunk, endpoint points,
-	// type registration, and alignment. It then adds references to both endpoints
-	// and registers the finished slot with the owning chunk.
-
 	/**
-	 * @brief Creates graph component slot.
+	 * @brief Creates an edge payload and registers it with its owning chunk and endpoints.
+	 *
+	 * Validates the chunk and both endpoint IDs, constructs the payload using the registered type,
+	 * adds each endpoint to the chunk's distinct point-reference list, then appends the graph slot
+	 * to the chunk's graph-component list.
+	 * @param chunk_id Active chunk that owns and schedules the graph component.
+	 * @param point_a First active endpoint.
+	 * @param point_b Second active endpoint.
+	 * @param type_id Registered graph-component type.
+	 * @param init_data Optional type-specific initialization data.
+	 * @return ID of the constructed graph-component slot.
 	 */
 	GraphComponentSlotId WorldData::createGraphComponentSlot(
 		ChunkId chunk_id,

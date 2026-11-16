@@ -9,11 +9,15 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		// Draws the base body meshes first, then the UV-mapped outer skin layer with a slight shell
-		// expansion. The overlay pass disables depth writes so transparent pixels reveal the base.
-
 		/**
-		 * @brief Draws each human part with its skin UV region, then draws the optional second skin layer.
+		 * @brief Renders six posed body-part meshes and, when present, their Minecraft outer skin layer.
+		 *
+		 * Base meshes use per-part atlas UVs and either the skin texture or fallback part colors.
+		 * Overlay meshes use the second atlas layer, are scaled by 1.04, and render with depth writes
+		 * disabled so transparent texels reveal the base layer.
+		 * @param human Current walk cycle, head rotation, and arm pose.
+		 * @param base Character transform shared by all six parts.
+		 * @param skin_id Index into the loaded Minecraft skin texture array; index zero is fallback.
 		 */
 		void drawMinecraftHuman(const HumanComponent& human, const mat4& base, HumanSkinId skin_id)
 		{
@@ -43,7 +47,7 @@ namespace danikk_space_engine
 							angle = weapon_arm_pitch;
 						else if(index == static_cast<size_t>(HumanPart::left_arm))
 						{
-							// Turn the left arm inward across the chest, then raise it toward the weapon.
+							/** @brief Rotates the left arm inward across the chest and raises it toward the weapon grip. */
 							joint = glm::rotate(joint, -0.610865238f, vec3(0, 0, 1));
 							angle = weapon_arm_pitch;
 						}
@@ -73,7 +77,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Draws the selected human appearance, including body parts, skin layers, and equipped item rendering.
+	 * @brief Dispatches appearance rendering; unsupported full-model rendering warns once and falls back.
+	 * @param human Appearance selection and animated pose to render.
+	 * @param world_matrix Character-local to render-space transform.
 	 */
 	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix)
 	{
@@ -84,7 +90,7 @@ namespace danikk_space_engine
 				return;
 			case HumanRenderType::model_3d:
 			{
-				// Model-specific IDs must not be interpreted as Minecraft texture indices.
+				/** @brief Keep 3D model IDs separate from indices into the Minecraft skin texture table. */
 				static bool reported_unimplemented = false;
 				if(!reported_unimplemented)
 				{

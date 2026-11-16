@@ -8,7 +8,12 @@ namespace danikk_space_engine
 	StaticAssetCollection static_asset_collection;
 
 	/**
-	 * @brief Reads and validates configuration entries, retaining the in-memory defaults for missing keys.
+	 * @brief Initializes global render assets and the item and human-definition catalogs.
+	 *
+	 * The skin array is cleared and seeded with an empty entry at ID zero before
+	 * the bundled soldier texture is appended. This keeps the fallback skin ID
+	 * stable and lets unspecialized humans render with per-part colors. Must run
+	 * after the graphics context and asset paths are initialized.
 	 */
 	void StaticAssetCollection::load()
 	{
@@ -30,7 +35,13 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Loads minecraft skin.
+	 * @brief Appends a nearest-filtered skin texture and returns its index in minecraft_skins.
+	 * @param texture_name Texture asset name relative to the data texture directory, without extension.
+	 * @return ID assigned to the appended texture; if called before load(), an
+	 *         empty fallback entry is inserted first so zero remains reserved.
+	 * The image is assumed to use the 64x64 Minecraft skin layout; its dimensions
+	 * are not checked here. Appending may reallocate the array and invalidate references
+	 * previously returned by getMinecraftSkin().
 	 */
 	HumanSkinId StaticAssetCollection::loadMinecraftSkin(const char* texture_name)
 	{
@@ -41,7 +52,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Returns the shared skin texture at the requested ID; terminates with a fatal error when the ID is invalid.
+	 * @brief Returns the shared Minecraft skin texture after validating its catalog index.
+	 * @param skin_id Previously assigned skin catalog ID.
+	 * @return Mutable reference to the shared texture; invalid IDs trigger a fatal error.
+	 * The reference points into the owning DynamicArray and must not be retained
+	 * across operations that append another skin.
 	 */
 	Texture& StaticAssetCollection::getMinecraftSkin(HumanSkinId skin_id)
 	{
@@ -49,25 +64,4 @@ namespace danikk_space_engine
 		return minecraft_skins[skin_id];
 	}
 
-	/*Texture& BlockAtlas::getAtlas(uint index)
-	{
-		if(array.size() < index)
-		{
-			array.rawResize(index - array.size() + 1);
-			array[index].container = NULL;
-		}
-		if(array[index].isNull())
-		{
-			StringBuffer<10> atlas_name;
-			atlas_name << "atlas" << (size_t)index;
-
-			array[index] = Texture(atlas_name.c_string());
-		}
-		return array[index];
-	}
-	Sprite BlockAtlas::getTextureFromAtlas(uint atlas_index, uint in_atlas_index)
-	{
-		Texture& texture = getAtlas(atlas_index);
-		return texture.createSpriteByIndex(in_atlas_index, texture_axis_size, texture_axis_count);
-	}*/
 }
