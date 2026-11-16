@@ -9,6 +9,8 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+		constexpr double minimum_ground_normal_dot = 0.2;
+
 		struct HumanCollider
 		{
 			PointId point_id;
@@ -80,11 +82,34 @@ namespace danikk_space_engine
 			point.position += vec3(glm::conjugate(body.rotation) * world_delta);
 			human.center += world_delta;
 		}
+
+		// Tangential separation can push a capsule into uneven terrain. Probe below its feet
+		// afterward and lift it back to the supporting surface, never snapping it farther down.
+		void restoreHumanGroundClearance(World& world, HumanCollider& human)
+		{
+			const glm::dvec3 foot_position = human.center - human.up * (human.height * 0.5);
+			constexpr double probe_height = 1.0;
+			constexpr double maximum_lift = 1.0;
+			const RaycastHit hit = world.raycast(
+				foot_position + human.up * probe_height,
+				vec3(-human.up),
+				static_cast<float>(probe_height + maximum_lift));
+			if(!hit.hit || !world.data.isChunkActive(hit.face.chunk_id)) return;
+			const Chunk& hit_chunk = world.data.getChunk(hit.face.chunk_id);
+			const Chunk& human_chunk = world.data.getChunk(human.chunk_id);
+			if(hit_chunk.world_body_id != human_chunk.world_body_id
+				|| glm::dot(glm::dvec3(hit.normal), human.up) < minimum_ground_normal_dot) return;
+
+			const glm::dvec3 supported_center = hit.position + human.up * (human.height * 0.5 + 0.02);
+			const glm::dvec3 correction = supported_center - human.center;
+			const double lift = glm::dot(correction, human.up);
+			if(lift <= 0.0001 || lift > maximum_lift) return;
+			moveHuman(world, human, correction);
+		}
 	}
 
-	// Collects humans as vertical capsules, then performs four pairwise separation sweeps. Contact
-	// corrections are projected onto each character's ground plane and converted back to body space,
-	// so people are pushed apart without being lifted off their supporting surface.
+	// Collects humans as vertical capsules, performs pairwise separation sweeps, then restores
+	// ground clearance for characters whose tangential correction crossed uneven terrain.
 	void WorldPhysics::resolveHumanCollisions(World& world)
 	{
 		Watcher watcher("World::human collisions");
@@ -165,6 +190,11 @@ namespace danikk_space_engine
 						moveHuman(world, b, glm::normalize(move_b) * correction_distance);
 				}
 			}
+		}
+
+		for(HumanCollider& human : humans)
+		{
+			restoreHumanGroundClearance(world, human);
 		}
 	}
 }

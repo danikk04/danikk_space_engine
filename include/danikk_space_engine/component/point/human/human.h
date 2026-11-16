@@ -59,7 +59,6 @@ namespace danikk_space_engine
 		float walk_phase = 0.0f;
 		float walk_amplitude = 0.0f;
 		float vertical_speed = 0.0f; // Along up; negative when falling.
-		float gravity_acceleration = 9.8f; // Used when the owning body has no Planet component.
 		bool grounded = false;
 		bool follow_ground = true;
 	};

@@ -29,5 +29,6 @@ namespace danikk_space_engine
 			const World& world,
 			const glm::dvec3& world_position,
 			double world_time_seconds) const;
+		glm::dvec3 sampleGravityAt(const World& world, const glm::dvec3& world_position) const;
 	};
 }

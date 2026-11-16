@@ -11,12 +11,74 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+		constexpr float minimum_ground_normal_dot = 0.2f;
+
+		const PlanetComponent* getPlanet(const WorldData& data, const WorldBody& body)
+		{
+			for(WorldBodyComponentSlotId component_id : body.component_slot_ids)
+			{
+				if(!data.isWorldBodyComponentSlotActive(component_id)) continue;
+				const WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(component_id);
+				if(slot.type_id == WorldBodyComponentTypeId::planet)
+					return static_cast<const PlanetComponent*>(slot.getData());
+			}
+			return nullptr;
+		}
+
+		bool findPlanetGroundPosition(const Chunk& chunk, const WorldBody& body,
+			const PlanetComponent& planet, const vec3& up, float human_height,
+			const vec3& proposed, vec3& supported, float step_height, float maximum_drop)
+		{
+			const double capsule_radius = human_height * 0.14;
+			const double half_axis = human_height * 0.5 - capsule_radius;
+			const glm::dvec3 bottom_center = chunk.position
+				+ glm::dvec3(proposed - up * static_cast<float>(half_axis));
+			const auto densityAtOffset = [&](double offset)
+			{
+				return samplePlanetScalarField(bottom_center + glm::dvec3(up) * offset,
+					planet.radius, planet.noise_seed, planet.terrain_edits, planet.core_radius);
+			};
+			double upper = step_height;
+			double lower = -maximum_drop;
+			if(densityAtOffset(upper) > -capsule_radius || densityAtOffset(lower) < -capsule_radius) return false;
+			for(uint8 iteration = 0; iteration < 8; iteration++)
+			{
+				const double middle = (upper + lower) * 0.5;
+				if(densityAtOffset(middle) < -capsule_radius) upper = middle;
+				else lower = middle;
+			}
+			const glm::dvec3 contact_position = bottom_center + glm::dvec3(up) * ((upper + lower) * 0.5);
+			constexpr double gradient_step = planet_voxel_size * 0.25;
+			glm::dvec3 gradient(0.0);
+			for(uint8 axis = 0; axis < 3; axis++)
+			{
+				glm::dvec3 offset(0.0);
+				offset[axis] = gradient_step;
+				gradient[axis] = (samplePlanetScalarField(contact_position + offset,
+					planet.radius, planet.noise_seed, planet.terrain_edits, planet.core_radius)
+					- samplePlanetScalarField(contact_position - offset,
+						planet.radius, planet.noise_seed, planet.terrain_edits, planet.core_radius))
+					/ (2.0 * gradient_step);
+			}
+			const double gradient_length = glm::length(gradient);
+			if(gradient_length <= 1e-8 || glm::dot(-gradient / gradient_length, glm::dvec3(up))
+				< minimum_ground_normal_dot) return false;
+			const glm::dvec3 supported_bottom = contact_position + glm::dvec3(up) * 0.02;
+			supported = vec3(supported_bottom - chunk.position) + up * static_cast<float>(half_axis);
+			(void)body;
+			return true;
+		}
+
 		// Derives the feet from the center point, then probes for support on the current body.
 		// Grounded movement uses step limits; falling checks full tick travel to avoid tunnelling.
 		bool findGroundPosition(World& world, const Chunk& chunk, const WorldBody& body,
 			const vec3& up, float human_height, const vec3& proposed, vec3& supported,
 			float step_height = 0.5f, float maximum_drop = 0.75f)
 		{
+			if(const PlanetComponent* planet = getPlanet(world.data, body))
+				return findPlanetGroundPosition(chunk, body, *planet, up, human_height,
+					proposed, supported, step_height, maximum_drop);
+
 			const vec3 proposed_foot = proposed - up * (human_height * 0.5f);
 			const glm::dvec3 foot = body.position
 				+ body.rotation * (chunk.position + glm::dvec3(proposed_foot));
@@ -25,7 +87,7 @@ namespace danikk_space_engine
 				-world_up, step_height + maximum_drop);
 			if(!hit.hit || !world.data.isChunkActive(hit.face.chunk_id)
 				|| world.data.getChunk(hit.face.chunk_id).world_body_id != chunk.world_body_id
-				|| glm::dot(hit.normal, world_up) < 0.5f) return false;
+				|| glm::dot(hit.normal, world_up) < minimum_ground_normal_dot) return false;
 			const vec3 supported_foot = vec3(glm::conjugate(body.rotation)
 				* (hit.position - body.position) - chunk.position) + up * 0.02f;
 			supported = supported_foot + up * (human_height * 0.5f);
@@ -148,17 +210,13 @@ namespace danikk_space_engine
 		Point& point = world.data.getPoint(slot.point_id);
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
-		float gravity = glm::max(human.gravity_acceleration, 0.0f);
-		for(WorldBodyComponentSlotId component_id : body.component_slot_ids)
+		const glm::dvec3 world_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
+		const glm::dvec3 gravity_world = world.environment.sampleGravityAt(world, world_position);
+		const double gravity_magnitude = glm::length(gravity_world);
+		const float gravity = static_cast<float>(gravity_magnitude);
+		if(gravity_magnitude > 1e-8)
 		{
-			if(!world.data.isWorldBodyComponentSlotActive(component_id)) continue;
-			if(world.data.getWorldBodyComponentSlot(component_id).type_id != WorldBodyComponentTypeId::planet) continue;
-			const PlanetComponent& planet = *static_cast<const PlanetComponent*>(
-				world.data.getWorldBodyComponentSlot(component_id).getData());
-			gravity = static_cast<float>(glm::max(planet.surface_gravity, 0.0));
-			const glm::dvec3 radial = chunk.position + glm::dvec3(point.position - human.up * (human.height * 0.5f));
-			if(glm::length(radial) > 1e-6) human.up = vec3(glm::normalize(radial));
-			break;
+			human.up = vec3(glm::conjugate(body.rotation) * (-gravity_world / gravity_magnitude));
 		}
 		if(glm::length(human.up) < 1e-6f) human.up = vec3(0, 0, 1);
 		human.up = glm::normalize(human.up);
