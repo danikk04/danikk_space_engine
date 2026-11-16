@@ -28,8 +28,12 @@ namespace danikk_space_engine
 		}
 	}
 
-	// Builds the chunk mesh from its ground triangles, computes a bounding sphere,
-	// uploads vertex and index data, and creates one material range for the mesh.
+	/*
+	 * Builds the chunk mesh by scanning its triangles once per loaded material and appending matching
+	 * triangles contiguously, producing one index range per material for separate draw calls. While
+	 * appending it skips inactive resources and degenerate triangles, computes flat face normals and
+	 * projected UVs, then calculates the local bounding sphere before uploading the buffers.
+	 */
 	Mesh& Chunk::createMesh()
 	{
 		Watcher watcher("Chunk::createMesh");
@@ -46,31 +50,38 @@ namespace danikk_space_engine
 		vertices.reserve(ground_triangle_ids.size() * 3);
 		indices.reserve(ground_triangle_ids.size() * 3);
 
-		for(GroundTriangleId triangle_id : ground_triangle_ids)
+		for(MaterialId material_id = 0; material_id < getMaterialCount(); material_id++)
 		{
-			if(!world.data.isGroundTriangleActive(triangle_id)) continue;
-			const GroundTriangle& triangle = world.data.getGroundTriangle(triangle_id);
-			if(!world.data.isPointActive(triangle.points[0])
-				|| !world.data.isPointActive(triangle.points[1])
-				|| !world.data.isPointActive(triangle.points[2])) continue;
+			const uint32 first_index = static_cast<uint32>(indices.size());
+			for(GroundTriangleId triangle_id : ground_triangle_ids)
+			{
+				if(!world.data.isGroundTriangleActive(triangle_id)) continue;
+				const GroundTriangle& triangle = world.data.getGroundTriangle(triangle_id);
+				if(triangle.material_id != material_id
+					|| !world.data.isPointActive(triangle.points[0])
+					|| !world.data.isPointActive(triangle.points[1])
+					|| !world.data.isPointActive(triangle.points[2])) continue;
 
-			if(vertices.size() + 3 > static_cast<size_t>(std::numeric_limits<gl_point_index_t>::max()) + 1)
-			{
-				std::abort();
+				if(vertices.size() + 3 > static_cast<size_t>(std::numeric_limits<gl_point_index_t>::max()) + 1)
+				{
+					std::abort();
+				}
+				const vec3 a = world.data.getPoint(triangle.points[0]).position;
+				const vec3 b = world.data.getPoint(triangle.points[1]).position;
+				const vec3 c = world.data.getPoint(triangle.points[2]).position;
+				const vec3 cross_product = glm::cross(b - a, c - a);
+				const float normal_length = glm::length(cross_product);
+				if(normal_length <= 0.000001f) continue;
+				const vec3 normal = cross_product / normal_length;
+				const vec3 positions[3] = {a, b, c};
+				for(uint8 corner = 0; corner < 3; corner++)
+				{
+					indices.push(static_cast<gl_point_index_t>(vertices.size()));
+					vertices.pushCtor(positions[corner], normal, projectToUV(positions[corner], normal));
+				}
 			}
-			const vec3 a = world.data.getPoint(triangle.points[0]).position;
-			const vec3 b = world.data.getPoint(triangle.points[1]).position;
-			const vec3 c = world.data.getPoint(triangle.points[2]).position;
-			const vec3 cross_product = glm::cross(b - a, c - a);
-			const float normal_length = glm::length(cross_product);
-			if(normal_length <= 0.000001f) continue;
-			const vec3 normal = cross_product / normal_length;
-			const vec3 positions[3] = {a, b, c};
-			for(uint8 corner = 0; corner < 3; corner++)
-			{
-				indices.push(static_cast<gl_point_index_t>(vertices.size()));
-				vertices.pushCtor(positions[corner], normal, projectToUV(positions[corner], normal));
-			}
+			const uint32 index_count = static_cast<uint32>(indices.size()) - first_index;
+			if(index_count > 0) material_ranges.push(ChunkMaterialRange{material_id, first_index, index_count});
 		}
 
 		if(vertices.size() == 0)
@@ -96,10 +107,6 @@ namespace danikk_space_engine
 			}
 			bounds_radius += 0.0001f;
 			bounds_valid = true;
-			material_ranges.push(ChunkMaterialRange{
-				default_materials::stone,
-				0,
-				static_cast<uint32>(indices.size())});
 		}
 
 		mesh->setData(

@@ -79,7 +79,8 @@ namespace danikk_space_engine
 					{
 						const size_t point_index = pointId(x, y, z);
 						densities[point_index] = samplePlanetScalarField(
-							pointPosition(x, y, z), request.planet_radius, request.noise_seed, request.terrain_edits);
+							pointPosition(x, y, z), request.planet_radius, request.noise_seed,
+							request.terrain_edits, request.core_radius);
 					}
 				}
 			}
@@ -235,13 +236,35 @@ namespace danikk_space_engine
 		}
 	}
 
+	/*
+	 * Loads a saved planet chunk or generates and saves its scalar-field surface geometry. It then
+	 * assigns each surface triangle a deterministic material from its radial depth below the noisy
+	 * planet surface. Material IDs are derived after loading too, so existing geometry saves do not
+	 * need a format change and the main thread can accept the finished chunk without sampling noise.
+	 */
 	GeneratedChunkData generatePlanetChunk(const ChunkGenerationRequest& request)
 	{
 		Watcher watcher("Generate planet chunk");
 		GeneratedChunkData result;
-		if(loadPlanetChunk(request, result)) return result;
-		result = generatePlanetChunkGeometry(request);
-		savePlanetChunk(request, result);
+		if(!loadPlanetChunk(request, result))
+		{
+			result = generatePlanetChunkGeometry(request);
+			savePlanetChunk(request, result);
+		}
+
+		const size_t triangle_count = result.triangle_point_indices.size() / 3;
+		result.triangle_material_ids.reserve(triangle_count);
+		for(size_t triangle = 0; triangle < triangle_count; triangle++)
+		{
+			const size_t first_index = triangle * 3;
+			const vec3 a = result.point_positions[result.triangle_point_indices[first_index]];
+			const vec3 b = result.point_positions[result.triangle_point_indices[first_index + 1]];
+			const vec3 c = result.point_positions[result.triangle_point_indices[first_index + 2]];
+			const glm::dvec3 center = request.chunk_position
+				+ (glm::dvec3(a) + glm::dvec3(b) + glm::dvec3(c)) / 3.0;
+			result.triangle_material_ids.push(getPlanetSurfaceMaterial(
+				center, request.planet_radius, request.noise_seed));
+		}
 		return result;
 	}
 }

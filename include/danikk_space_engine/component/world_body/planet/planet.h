@@ -2,19 +2,29 @@
 
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/fwd.h>
+#include <danikk_space_engine/id.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/component/world_body/planet/chunk_generator.h>
 
 namespace danikk_space_engine
 {
-	inline constexpr double default_planet_radius = 5000.0;
+	namespace planet_settings_ids
+	{
+		inline constexpr PlanetSettingsId earth = 0;
+		inline constexpr PlanetSettingsId count = 1;
+	}
+
+	inline constexpr double default_planet_radius = 6371000.0;
+	inline constexpr double default_planet_core_radius = 3480000.0;
 	inline constexpr double planet_chunk_load_radius = 100.0;
 	inline constexpr double planet_chunk_width = 32.0;
 	inline constexpr double planet_voxel_size = 4.0;
 
 	struct PlanetComponentSettings
 	{
+		const char* name = "Earth";
 		double radius = default_planet_radius;
+		double core_radius = default_planet_core_radius;
 		double chunk_load_radius = planet_chunk_load_radius;
 		double surface_gravity = 9.8;
 		uint64 noise_seed = 0;
@@ -54,7 +64,9 @@ namespace danikk_space_engine
 
 	struct PlanetComponent
 	{
+		const char* name = "Earth";
 		double radius = default_planet_radius;
+		double core_radius = default_planet_core_radius;
 		double chunk_load_radius = planet_chunk_load_radius;
 		double surface_gravity = 9.8;
 		uint64 noise_seed = 0;
@@ -71,6 +83,7 @@ namespace danikk_space_engine
 		DynamicArray<ChunkGenerationRequest> pending_requests;
 	};
 
+	const PlanetComponentSettings& getPlanetSettings(PlanetSettingsId id);
 	void constructPlanetComponent(void* destination, const void* init_data);
 	void movePlanetComponent(void* destination, void* source);
 	void destroyPlanetComponent(void* data);

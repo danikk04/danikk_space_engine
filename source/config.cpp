@@ -1,6 +1,6 @@
 #include <danikk_space_engine/config.h>
 
-#include <cstdio>
+#include <cstring>
 
 #include <danikk_framework/log.h>
 
@@ -9,6 +9,24 @@ namespace danikk_space_engine
 	Settings settings;
 	Config config;
 
+	namespace
+	{
+		bool parseDefaultCameraPosition(void* destination, const char* value, size_t value_size)
+		{
+			if(value_size == 3 && std::memcmp(value, "sky", 3) == 0)
+			{
+				*static_cast<DefaultCameraPosition*>(destination) = DefaultCameraPosition::sky;
+				return true;
+			}
+			if(value_size == 6 && std::memcmp(value, "ground", 6) == 0)
+			{
+				*static_cast<DefaultCameraPosition*>(destination) = DefaultCameraPosition::ground;
+				return true;
+			}
+			return false;
+		}
+	}
+
 	Config::Config()
 		: path(danikk_framework::getExecutableDirectory())
 	{
@@ -16,7 +34,7 @@ namespace danikk_space_engine
 		values.bind("show_chunk_bounds", settings.show_chunk_bounds);
 		values.bind("show_face_highlight", settings.show_face_highlight);
 		values.bind("show_world_body_preview", settings.show_world_body_preview);
-		values.bind("planet_radius", settings.planet_radius);
+		values.bind("default_camera_position", &settings.default_camera_position, &parseDefaultCameraPosition);
 	}
 
 	bool Config::load()
@@ -74,9 +92,8 @@ namespace danikk_space_engine
 		contents << "show_chunk_bounds=" << (settings.show_chunk_bounds ? "true" : "false") << '\n';
 		contents << "show_face_highlight=" << (settings.show_face_highlight ? "true" : "false") << '\n';
 		contents << "show_world_body_preview=" << (settings.show_world_body_preview ? "true" : "false") << '\n';
-		char planet_radius_text[64];
-		std::snprintf(planet_radius_text, sizeof(planet_radius_text), "%.17g", settings.planet_radius);
-		contents << "planet_radius=" << planet_radius_text << '\n';
+		contents << "default_camera_position="
+			<< (settings.default_camera_position == DefaultCameraPosition::ground ? "ground" : "sky") << '\n';
 
 		std::FILE* file = std::fopen(path.c_string(), "wb");
 		if(file == nullptr)

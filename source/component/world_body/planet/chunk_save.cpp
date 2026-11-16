@@ -12,7 +12,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr uint32 chunk_save_magic = 0x4443484Bu;
-		constexpr uint32 chunk_save_version = 8;
+		constexpr uint32 chunk_save_version = 9;
 		constexpr uint32 terrain_edits_magic = 0x44504544u;
 		constexpr uint32 terrain_edits_version = 1;
 
@@ -26,6 +26,7 @@ namespace danikk_space_engine
 			uint32 point_count;
 			uint32 index_count;
 			double planet_radius;
+			double core_radius;
 			double chunk_width;
 			double voxel_size;
 			uint64 noise_seed;
@@ -130,7 +131,8 @@ namespace danikk_space_engine
 		if(!input || header.magic != chunk_save_magic || header.version != chunk_save_version
 			|| header.x != request.grid_coordinate.x || header.y != request.grid_coordinate.y
 			|| header.z != request.grid_coordinate.z
-			|| header.planet_radius != request.planet_radius || header.noise_seed != request.noise_seed
+			|| header.planet_radius != request.planet_radius || header.core_radius != request.core_radius
+			|| header.noise_seed != request.noise_seed
 			|| header.chunk_width != request.chunk_width || header.voxel_size != request.voxel_size
 			|| header.terrain_revision != request.terrain_revision
 			|| header.point_count > 100000 || header.index_count > 1000000 || header.index_count % 3 != 0)
@@ -200,7 +202,7 @@ namespace danikk_space_engine
 			request.grid_coordinate.x, request.grid_coordinate.y, request.grid_coordinate.z,
 			static_cast<uint32>(result.point_positions.size()),
 			static_cast<uint32>(result.triangle_point_indices.size()),
-			request.planet_radius, request.chunk_width, request.voxel_size,
+			request.planet_radius, request.core_radius, request.chunk_width, request.voxel_size,
 			request.noise_seed, request.terrain_revision};
 		output.write(reinterpret_cast<const char*>(&header), sizeof(header));
 		for(const vec3& position : result.point_positions)

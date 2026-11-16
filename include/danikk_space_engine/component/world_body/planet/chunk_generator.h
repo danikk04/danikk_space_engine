@@ -17,6 +17,7 @@ namespace danikk_space_engine
 		uint64 component_generation_id = 0;
 		uint64 terrain_revision = 0;
 		double planet_radius = 0.0;
+		double core_radius = 0.0;
 		double chunk_width = 32.0;
 		double voxel_size = 4.0;
 		uint64 noise_seed = 0;
@@ -36,6 +37,7 @@ namespace danikk_space_engine
 		glm::dvec3 chunk_position = glm::dvec3(0.0);
 		DynamicArray<vec3> point_positions;
 		DynamicArray<uint32> triangle_point_indices;
+		DynamicArray<MaterialId> triangle_material_ids;
 	};
 
 	GeneratedChunkData generatePlanetChunk(const ChunkGenerationRequest& request);

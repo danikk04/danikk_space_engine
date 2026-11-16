@@ -10,6 +10,19 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr double chunk_update_distance = planet_voxel_size * 2.0;
+		const PlanetComponentSettings planet_settings[planet_settings_ids::count] =
+		{
+			{"Earth", default_planet_radius, default_planet_core_radius, planet_chunk_load_radius, 9.8, 0}
+		};
+	}
+
+	const PlanetComponentSettings& getPlanetSettings(PlanetSettingsId id)
+	{
+		if(id >= planet_settings_ids::count)
+		{
+			danikk_engine::formatFatalError("Invalid planet settings ID %", id);
+		}
+		return planet_settings[id];
 	}
 
 	void constructPlanetComponent(void* destination, const void* init_data)
@@ -21,7 +34,9 @@ namespace danikk_space_engine
 		{
 			const PlanetComponentSettings& settings = *static_cast<const PlanetComponentSettings*>(init_data);
 			PlanetComponent& planet = *static_cast<PlanetComponent*>(destination);
+			planet.name = settings.name;
 			planet.radius = settings.radius;
+			planet.core_radius = settings.core_radius;
 			planet.chunk_load_radius = settings.chunk_load_radius;
 			planet.surface_gravity = settings.surface_gravity;
 			planet.noise_seed = settings.noise_seed;

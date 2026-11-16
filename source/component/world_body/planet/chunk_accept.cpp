@@ -1,5 +1,6 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/component/world_body/planet/terrain.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
@@ -65,6 +66,12 @@ namespace danikk_space_engine
 				triangle.points[0] = point_ids[point_a_index];
 				triangle.points[1] = point_ids[point_b_index];
 				triangle.points[2] = point_ids[point_c_index];
+				const size_t triangle_index = index / 3;
+				if(triangle_index >= generated_chunk.triangle_material_ids.size())
+				{
+					danikk_engine::formatFatalError("Generated planet chunk has no material for triangle %", triangle_index);
+				}
+				triangle.material_id = generated_chunk.triangle_material_ids[triangle_index];
 				world.data.addGroundTriangleToChunk(chunk_id, triangle_id);
 			}
 		}

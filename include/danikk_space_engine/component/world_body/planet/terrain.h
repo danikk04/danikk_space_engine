@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/default.h>
 #include <danikk_framework/dynamic_array.h>
+#include <danikk_space_engine/material.h>
 #include <glm/glm.hpp>
 
 namespace danikk_space_engine
@@ -19,5 +20,11 @@ namespace danikk_space_engine
 		const glm::dvec3& position_relative_to_planet_center,
 		double radius,
 		uint64 noise_seed,
-		const DynamicArray<PlanetTerrainEdit>& edits);
+		const DynamicArray<PlanetTerrainEdit>& edits,
+		double core_radius);
+
+	MaterialId getPlanetSurfaceMaterial(
+		const glm::dvec3& position_relative_to_planet_center,
+		double radius,
+		uint64 noise_seed);
 }

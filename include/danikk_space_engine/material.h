@@ -13,6 +13,7 @@ namespace danikk_space_engine
 		constexpr inline MaterialId stone = 2;
 		constexpr inline MaterialId lava = 3;
 		constexpr inline MaterialId water = 4;
+		constexpr inline MaterialId magma = 5;
 	}
 
 	struct MaterialDefinition
@@ -26,5 +27,6 @@ namespace danikk_space_engine
 
 	void loadMaterials();
 	MaterialId getMaterialID(const char* name);
+	size_t getMaterialCount();
 	MaterialDefinition& getMaterial(MaterialId id);
 }

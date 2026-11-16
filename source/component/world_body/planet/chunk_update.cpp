@@ -114,6 +114,7 @@ namespace danikk_space_engine
 					request.component_generation_id = slot.generation_id;
 					request.terrain_revision = planet.terrain_revision;
 					request.planet_radius = planet.radius;
+				request.core_radius = planet.core_radius;
 					request.chunk_width = chunk_width;
 					request.voxel_size = planet_voxel_size;
 					request.noise_seed = planet.noise_seed;

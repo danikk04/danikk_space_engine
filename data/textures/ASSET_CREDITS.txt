@@ -1,9 +1,15 @@
 Texture assets
 
-grass_32x32.png, stone_32x32.png, lava_32x32.png, water_32x32.png
-From "N64 Texture Pack" by n64guy.
-License: CC0 (public domain).
-Source: https://opengameart.org/node/170403
+grass_32x32.png (grass_block_top.png), stone_32x32.png (stone.png),
+lava_32x32.png (first frame of lava_still.png),
+water_32x32.png (first frame of water_still.png),
+magma_32x32.png (first frame of magma.png)
+From Faithful 32x Java by the Faithful Resource Pack team.
+Source: https://github.com/Faithful-Resource-Pack/Faithful-32x-Java
+Project website: https://faithfulpack.net
+License: Faithful License v4; see FAITHFUL_LICENSE.txt.
+The animated lava, water, and magma sprite sheets are represented by their first
+32x32 frame because the engine currently loads static textures.
 
 medium-loadout-marpat-woodland-14906056-e1810.png
 "USMC Marpat Woodland Infantry with IOTV vest" by Dr William Woods, incorporating helmet design by Box_1105.

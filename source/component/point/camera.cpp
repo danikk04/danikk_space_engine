@@ -174,15 +174,7 @@ namespace danikk_space_engine
 			camera.rotation.z += roll_delta;
 		}
 
-		float speed = frame_delay;
-		if(getKeyboardState(keyboard_buttons::left_shift))
-		{
-			speed *= 10.0f;
-		}
-		if(getKeyboardState(keyboard_buttons::left_control))
-		{
-			speed *= 10.0f;
-		}
+		const float speed = controller.camera_movement_speed * frame_delay;
 
 		vec3 direction(0.0f);
 		if(getKeyboardState(keyboard_buttons::w))

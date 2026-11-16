@@ -44,7 +44,7 @@ namespace danikk_space_engine
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
 				return samplePlanetScalarField(position, target.planet->radius,
-					target.planet->noise_seed, target.planet->terrain_edits);
+					target.planet->noise_seed, target.planet->terrain_edits, target.planet->core_radius);
 			};
 			constexpr double gradient_step = planet_voxel_size * 0.25;
 			for(PointId point_id : moving_chunk.point_ids)
@@ -143,7 +143,8 @@ namespace danikk_space_engine
 		{
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
-				return samplePlanetScalarField(position, planet.radius, planet.noise_seed, planet.terrain_edits);
+				return samplePlanetScalarField(
+					position, planet.radius, planet.noise_seed, planet.terrain_edits, planet.core_radius);
 			};
 			penetration = sample_field(field_position) + collider_radius;
 			if(penetration <= 0.0) return false;

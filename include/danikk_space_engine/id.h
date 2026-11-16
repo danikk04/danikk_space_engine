@@ -10,6 +10,7 @@ namespace danikk_space_engine
 	using GroundTriangleId = uint32;
 	using MaterialId = uint32;
 	using ShapeId = uint32;
+	using PlanetSettingsId = uint32;
 	using HumanSkinId = uint32;
 	using ItemTypeId = uint32;
 	using ItemDefinitionId = uint32;

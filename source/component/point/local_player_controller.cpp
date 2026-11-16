@@ -3,6 +3,8 @@
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/world/world.h>
 
+#include <cmath>
+
 #include <danikk_engine/input.h>
 
 namespace danikk_space_engine
@@ -129,20 +131,37 @@ namespace danikk_space_engine
 
 		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
+		const int left_control_state = getKeyboardState(keyboard_buttons::left_control);
+		const int right_control_state = getKeyboardState(keyboard_buttons::right_control);
 		const int left_mouse_state = getMouseState(mouse_buttons::left);
 		const bool left_mouse_down = left_mouse_state == button_states::press
 			|| left_mouse_state == button_states::hold;
 		const float mouse_scroll_delta = getMouseScrollDelta();
 		const bool alt_pressed = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
+		const bool control_pressed = left_control_state == button_states::press
+			|| left_control_state == button_states::hold
+			|| right_control_state == button_states::press
+			|| right_control_state == button_states::hold;
+		const float tool_mouse_scroll_delta = control_pressed ? 0.0f : mouse_scroll_delta;
 		const bool body_dragging = active_tool == ToolId::body
 			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
 		const bool human_dragging = active_tool == ToolId::human
 			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
 		const bool dragging = body_dragging || human_dragging;
-		if(!dragging && alt_pressed)
+		if(control_pressed)
 		{
-			tool_action_scroll_accumulator += mouse_scroll_delta;
+			if(mouse_scroll_delta != 0.0f)
+			{
+				camera_movement_speed = glm::clamp(
+					camera_movement_speed * std::pow(1.25f, mouse_scroll_delta),
+					0.01f,
+					1000000.0f);
+			}
+		}
+		else if(!dragging && alt_pressed)
+		{
+			tool_action_scroll_accumulator += tool_mouse_scroll_delta;
 			while(tool_action_scroll_accumulator >= 1.0f)
 			{
 				selected_tool_action = stepToolAction(active_tool, selected_tool_action, 1);
@@ -156,7 +175,7 @@ namespace danikk_space_engine
 		}
 		else if(!dragging)
 		{
-			tool_scroll_accumulator += mouse_scroll_delta;
+			tool_scroll_accumulator += tool_mouse_scroll_delta;
 			while(tool_scroll_accumulator >= 1.0f)
 			{
 				active_tool = stepTool(active_tool, 1);
@@ -176,7 +195,7 @@ namespace danikk_space_engine
 		{
 			tickDragTool(
 				world, *this, hit, true, left_mouse_state,
-				left_mouse_down ? mouse_scroll_delta : 0.0f,
+				left_mouse_down ? tool_mouse_scroll_delta : 0.0f,
 				alt_pressed,
 				getCursorDelta() * getMouseSensivity());
 			tickHumanDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false);
@@ -185,7 +204,7 @@ namespace danikk_space_engine
 		{
 			tickDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false, vec2(0.0f));
 			tickHumanDragTool(world, *this, hit, true, left_mouse_state,
-				alt_pressed ? mouse_scroll_delta : 0.0f, alt_pressed);
+				alt_pressed ? tool_mouse_scroll_delta : 0.0f, alt_pressed);
 		}
 		else
 		{

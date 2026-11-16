@@ -27,10 +27,11 @@ namespace danikk_space_engine
 		}
 
 		material_list.pushCtor("void", 0x000000, nullptr);
-		material_list.pushCtor("grass", 0xFFFFFF, "grass_32x32");
+		material_list.pushCtor("grass", 0x91BD59, "grass_32x32");
 		material_list.pushCtor("stone", 0xFFFFFF, "stone_32x32");
 		material_list.pushCtor("lava", 0xFFFFFF, "lava_32x32");
-		material_list.pushCtor("water", 0xFFFFFF, "water_32x32");
+		material_list.pushCtor("water", 0x3F76E4, "water_32x32");
+		material_list.pushCtor("magma", 0xFFFFFF, "magma_32x32");
 	}
 
 	MaterialId getMaterialID(const char* name)
@@ -43,6 +44,11 @@ namespace danikk_space_engine
 			}
 		}
 		return default_materials::void_material;
+	}
+
+	size_t getMaterialCount()
+	{
+		return material_list.size();
 	}
 
 	MaterialDefinition& getMaterial(MaterialId id)

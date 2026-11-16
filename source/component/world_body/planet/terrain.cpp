@@ -22,12 +22,22 @@ namespace danikk_space_engine
 			return math::fractalNoise3D(position * 0.02 + planetNoiseSeedOffset(noise_seed), 3, 0.5) * 16.0;
 		}
 
+		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed)
+		{
+			double surface_radius = radius;
+			for(uint8 iteration = 0; iteration < 5; iteration++)
+			{
+				surface_radius = radius + samplePlanetTerrainHeight(direction * surface_radius, noise_seed);
+			}
+			return surface_radius;
+		}
+
 		double samplePlanetCoreDensity(
 			const glm::dvec3& position,
 			double distance_from_center,
-			uint64 noise_seed)
+			uint64 noise_seed,
+			double core_radius)
 		{
-			constexpr double core_radius = 5.0;
 			constexpr double core_surface_roughness = 0.75;
 			const double surface_noise = math::fractalNoise3D(
 				position * 0.25 + planetNoiseSeedOffset(noise_seed ^ 0x6C8E9CF570932BD5ull),
@@ -39,13 +49,14 @@ namespace danikk_space_engine
 	}
 
 	// Combines the radial terrain field, cave carving, persistent edits, and a deterministic noisy
-	// solid core. The core floor is applied last, ensuring edits and cave noise cannot hollow out its
-	// 5-metre interior while its outer boundary varies smoothly with seeded noise.
+	// solid core. The core floor is applied last, ensuring edits and cave noise cannot hollow it out;
+	// its configured radius varies slightly with deterministic seeded noise.
 	double samplePlanetScalarField(
 		const glm::dvec3& position_relative_to_planet_center,
 		double radius,
 		uint64 noise_seed,
-		const DynamicArray<PlanetTerrainEdit>& edits)
+		const DynamicArray<PlanetTerrainEdit>& edits,
+		double core_radius)
 	{
 		const double distance_from_center = glm::length(position_relative_to_planet_center);
 		double density = radius
@@ -66,8 +77,24 @@ namespace danikk_space_engine
 			else density = std::min(density, distance - edit.radius);
 		}
 		density = std::max(density, samplePlanetCoreDensity(
-			position_relative_to_planet_center, distance_from_center, noise_seed));
+			position_relative_to_planet_center, distance_from_center, noise_seed, core_radius));
 		return density;
+	}
+
+	MaterialId getPlanetSurfaceMaterial(
+		const glm::dvec3& position_relative_to_planet_center,
+		double radius,
+		uint64 noise_seed)
+	{
+		constexpr double grass_layer_depth = 3.0;
+		const double distance_from_center = glm::length(position_relative_to_planet_center);
+		if(distance_from_center < 0.000001) return default_materials::stone;
+
+		const glm::dvec3 direction = position_relative_to_planet_center / distance_from_center;
+		const double surface_depth = samplePlanetSurfaceRadius(direction, radius, noise_seed) - distance_from_center;
+		return surface_depth <= grass_layer_depth
+			? default_materials::grass
+			: default_materials::stone;
 	}
 
 }
