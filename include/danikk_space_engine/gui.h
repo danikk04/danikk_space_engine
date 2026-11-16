@@ -17,6 +17,22 @@ namespace danikk_space_engine
 	 */
 	class GUI
 	{
+		/** @brief Number of columns in the visual build hotbar. */
+		static constexpr uint32 hotbar_column_count = 12;
+		/** @brief Number of rows in the visual build hotbar. */
+		static constexpr uint32 hotbar_row_count = 3;
+		/** @brief Empty toolbar slot elements, laid out row by row from the bottom. */
+		GUIElement hotbar_slots[hotbar_column_count * hotbar_row_count];
+		/** @brief Small keyboard shortcut labels drawn above each slot's background. */
+		GUIElement hotbar_slot_labels[hotbar_column_count * hotbar_row_count];
+		/** @brief Shared dark-gray fill style for every empty toolbar slot. */
+		DrawStyle hotbar_slot_fill_style;
+		/** @brief Shared thin gray outline style for every toolbar slot. */
+		BorderDrawStyle hotbar_slot_border_style;
+		/** @brief Brighter gray outline style for the currently selected toolbar slot. */
+		BorderDrawStyle hotbar_selected_slot_border_style;
+		/** @brief Shared small-font style for toolbar keyboard shortcut labels. */
+		TextStyle hotbar_slot_text_style;
 		/** @brief Engine GUI element used to display the game's multiline debug readout. */
 		GUIElement debug_info_label;
 		/** @brief Most recently sampled process memory usage in bytes; zero means unavailable. */
@@ -26,11 +42,12 @@ namespace danikk_space_engine
 	public:
 
 		/**
-		 * @brief Configures the debug label’s font, multiline layout, character size, and position.
+		 * @brief Configures the debug label and positions the empty three-row build hotbar.
 		 *
-		 * Uses the shared bitmap font and 0.014 screen-relative character dimensions. The label is
-		 * anchored at the top-left and given a 0.4 by 0.3 relative layout area. The style object is
-		 * shared outside this class and must remain alive while the label references it.
+		 * The debug label uses the shared bitmap font and 0.014 screen-relative character dimensions.
+		 * The hotbar contains twelve columns and three rows of gray slots, centered near the bottom
+		 * edge. Its bottom row shows number symbols, middle row shows Shift shortcuts, and top row
+		 * shows Ctrl shortcuts. Slot and label styles are shared by all 36 cells.
 		 */
 		void define();
 

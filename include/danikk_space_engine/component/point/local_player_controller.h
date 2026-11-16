@@ -27,6 +27,8 @@ namespace danikk_space_engine
 		ToolId active_tool = ToolId::none;
 		/** @brief Fractional wheel delta retained until it reaches a whole tool-selection step. */
 		float tool_scroll_accumulator = 0.0f;
+		/** @brief Selected hotbar slot index in row-major order, starting at the bottom-left. */
+		uint32 selected_hotbar_slot = 0;
 		/** @brief Active action within the selected tool, changed by Alt plus wheel scrolling. */
 		ToolActionId selected_tool_action = ToolActionId::none;
 		/** @brief Fractional Alt-wheel delta retained until it changes the selected tool action. */
@@ -53,7 +55,8 @@ namespace danikk_space_engine
 		/**
 		 * @brief Polls input, updates raycast selection, and applies the active tool or drag action.
 		 *
-		 * Selection state is kept in one array: its first `selected_face_count` entries are
+		 * Number keys select the bottom hotbar row, Shift-number selects the middle row, and
+		 * Ctrl-number selects the top row. Selection state is kept in one array: its first `selected_face_count` entries are
 		 * persistent selections and any remaining entry is the current hover target. Wheel priority
 		 * is Ctrl (camera speed), then Alt (tool action), then category. Category/action cycling is
 		 * suppressed during a drag; without Ctrl, Drag consumes the wheel for rotation or distance

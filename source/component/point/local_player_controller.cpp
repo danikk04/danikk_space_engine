@@ -183,6 +183,8 @@ namespace danikk_space_engine
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
 		const int left_control_state = getKeyboardState(keyboard_buttons::left_control);
 		const int right_control_state = getKeyboardState(keyboard_buttons::right_control);
+		const int left_shift_state = getKeyboardState(keyboard_buttons::left_shift);
+		const int right_shift_state = getKeyboardState(keyboard_buttons::right_shift);
 		const int left_mouse_state = getMouseState(mouse_buttons::left);
 		const bool left_mouse_down = left_mouse_state == button_states::press
 			|| left_mouse_state == button_states::hold;
@@ -193,6 +195,37 @@ namespace danikk_space_engine
 			|| left_control_state == button_states::hold
 			|| right_control_state == button_states::press
 			|| right_control_state == button_states::hold;
+		const bool shift_pressed = left_shift_state == button_states::press
+			|| left_shift_state == button_states::hold
+			|| right_shift_state == button_states::press
+			|| right_shift_state == button_states::hold;
+		if(!alt_pressed && !(control_pressed && shift_pressed))
+		{
+			constexpr int hotbar_key_codes[12] =
+			{
+				keyboard_buttons::number1,
+				keyboard_buttons::number2,
+				keyboard_buttons::number3,
+				keyboard_buttons::number4,
+				keyboard_buttons::number5,
+				keyboard_buttons::number6,
+				keyboard_buttons::number7,
+				keyboard_buttons::number8,
+				keyboard_buttons::number9,
+				keyboard_buttons::number0,
+				keyboard_buttons::minus,
+				keyboard_buttons::equal
+			};
+			const uint32 row_offset = control_pressed ? 24 : (shift_pressed ? 12 : 0);
+			for(uint32 index = 0; index < 12; ++index)
+			{
+				if(getKeyboardState(hotbar_key_codes[index]) == button_states::press)
+				{
+					selected_hotbar_slot = row_offset + index;
+					break;
+				}
+			}
+		}
 		const float tool_mouse_scroll_delta = control_pressed ? 0.0f : mouse_scroll_delta;
 		const bool body_dragging = active_tool == ToolId::body
 			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
