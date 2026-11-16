@@ -16,6 +16,9 @@ namespace danikk_space_engine
 		constexpr inline MaterialId magma = 5;
 	}
 
+	/**
+	 * @brief Represents material definition data and behavior.
+	 */
 	struct MaterialDefinition
 	{
 		const char* name;
@@ -25,8 +28,23 @@ namespace danikk_space_engine
 		MaterialDefinition(const char* name, uint32 hexrgb_color, const char* texture_name);
 	};
 
+	/**
+	 * @brief Loads materials.
+	 */
 	void loadMaterials();
+
+	/**
+	 * @brief Returns material id.
+	 */
 	MaterialId getMaterialID(const char* name);
+
+	/**
+	 * @brief Returns material count.
+	 */
 	size_t getMaterialCount();
+
+	/**
+	 * @brief Returns material.
+	 */
 	MaterialDefinition& getMaterial(MaterialId id);
 }

@@ -6,6 +6,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Reports whether planet chunk.
+		 */
 		bool isPlanetChunk(const World& world, ChunkId chunk_id)
 		{
 			if(!world.data.isChunkActive(chunk_id)) return false;
@@ -24,6 +28,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Applies terrain tool.
+	 */
 	ToolApplyResult applyTerrainTool(World& world, ToolActionId action, const RaycastHit& hit)
 	{
 		if(!hit.hit || !isPlanetChunk(world, hit.face.chunk_id)) return ToolApplyResult();

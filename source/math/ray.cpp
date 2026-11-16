@@ -7,6 +7,10 @@ namespace danikk_space_engine
 	// Computes the nearest forward intersection between a ray and one triangle.
 	// Uses the Moller-Trumbore determinant and barycentric tests, rejecting degenerate,
 	// parallel, outside, or behind-origin intersections before returning distance and normal.
+
+	/**
+	 * @brief Performs the intersect ray triangle operation.
+	 */
 	RayTriangleIntersection intersectRayTriangle(
 		const Ray& ray,
 		const vec3& a,
@@ -26,6 +30,7 @@ namespace danikk_space_engine
 		const vec3 edge_b = c - a;
 		const vec3 determinant_vector = glm::cross(direction, edge_b);
 		const float determinant = glm::dot(edge_a, determinant_vector);
+
 		if(std::fabs(determinant) <= epsilon)
 		{
 			return result;

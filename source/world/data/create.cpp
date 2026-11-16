@@ -4,7 +4,11 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
 		template<typename component_type_t, typename type_id_t>
+		/**
+		 * @brief Performs the validate component type operation.
+		 */
 		void validateComponentType(const component_type_t& type, type_id_t type_id, const char* component_name)
 		{
 			if(static_cast<uint32>(type_id) == 0 || type.construct == nullptr || type.data_size == 0)
@@ -18,6 +22,9 @@ namespace danikk_space_engine
 		}
 
 		template<typename slot_t, typename component_type_t, typename type_id_t>
+		/**
+		 * @brief Constructs component payload.
+		 */
 		void constructComponentPayload(
 			slot_t& slot,
 			const component_type_t& type,
@@ -45,11 +52,15 @@ namespace danikk_space_engine
 	GroundTriangleId WorldData::createGroundTriangle() { return ground_triangles.create(); }
 	WorldBodyId WorldData::createWorldBody() { return world_bodies.create(); }
 
+	/**
+	 * @brief Creates world body component slot.
+	 */
 	WorldBodyComponentSlotId WorldData::createWorldBodyComponentSlot(
 		WorldBodyId world_body_id,
 		WorldBodyComponentTypeId type_id,
 		const void* init_data)
 	{
+
 		if(!isWorldBodyActive(world_body_id))
 		{
 			danikk_engine::formatFatalError("World body component references invalid body %", world_body_id);
@@ -68,8 +79,12 @@ namespace danikk_space_engine
 		return id;
 	}
 
+	/**
+	 * @brief Creates chunk.
+	 */
 	Chunk& WorldData::createChunk(WorldBodyId world_body_id)
 	{
+
 		if(!isWorldBodyActive(world_body_id))
 		{
 			danikk_engine::formatFatalError("Chunk references invalid world body %", world_body_id);
@@ -83,11 +98,15 @@ namespace danikk_space_engine
 		return chunk;
 	}
 
+	/**
+	 * @brief Creates point component slot.
+	 */
 	PointComponentSlotId WorldData::createPointComponentSlot(
 		PointId point_id,
 		PointComponentTypeId type_id,
 		const void* init_data)
 	{
+
 		if(!isPointActive(point_id))
 		{
 			danikk_engine::formatFatalError("Point component references invalid point %", point_id);
@@ -108,6 +127,10 @@ namespace danikk_space_engine
 	// Creates the graph slot payload after validating its chunk, endpoint points,
 	// type registration, and alignment. It then adds references to both endpoints
 	// and registers the finished slot with the owning chunk.
+
+	/**
+	 * @brief Creates graph component slot.
+	 */
 	GraphComponentSlotId WorldData::createGraphComponentSlot(
 		ChunkId chunk_id,
 		PointId point_a,
@@ -115,10 +138,12 @@ namespace danikk_space_engine
 		GraphComponentTypeId type_id,
 		const void* init_data)
 	{
+
 		if(!isChunkActive(chunk_id))
 		{
 			danikk_engine::formatFatalError("Graph component references invalid chunk %", chunk_id);
 		}
+
 		if(!isPointActive(point_a) || !isPointActive(point_b))
 		{
 			danikk_engine::formatFatalError("Graph component references invalid endpoint points % and %", point_a, point_b);

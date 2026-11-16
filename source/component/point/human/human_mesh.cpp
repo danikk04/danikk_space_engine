@@ -6,6 +6,10 @@ namespace danikk_space_engine
 	{
 		// Builds six outward-wound quads with rectangles from the classic 64x64 skin layout.
 		// Positions form a unit cube; dimensions and joint placement are applied when rendering.
+
+		/**
+		 * @brief Loads part mesh.
+		 */
 		void loadPartMesh(Mesh& mesh, int u, int v, int width, int height, int depth)
 		{
 			const vec3 normals[] = {
@@ -50,6 +54,10 @@ namespace danikk_space_engine
 
 	// Loads shared meshes and defines proportions, pivots and fallback colours in units of body height.
 	// Builds both base and outer-layer UV meshes from the classic 64x64 Minecraft skin layout.
+
+	/**
+	 * @brief Loads human definition.
+	 */
 	void loadHumanDefinition(HumanDefinition& definition)
 	{
 		const glm::ivec2 origins[] = {{0, 0}, {16, 16}, {40, 16}, {32, 48}, {0, 16}, {16, 48}};

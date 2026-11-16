@@ -12,6 +12,9 @@ namespace danikk_space_engine
 		constexpr uint64 empty_edge_key = static_cast<uint64>(-1);
 
 		template<typename value_t>
+		/**
+		 * @brief Performs the swap values operation.
+		 */
 		void swapValues(value_t& left, value_t& right)
 		{
 			value_t temporary = static_cast<value_t&&>(left);
@@ -19,6 +22,9 @@ namespace danikk_space_engine
 			right = static_cast<value_t&&>(temporary);
 		}
 
+		/**
+		 * @brief Represents grid point data and behavior.
+		 */
 		struct GridPoint
 		{
 			uint32 id;
@@ -26,6 +32,9 @@ namespace danikk_space_engine
 			float density;
 		};
 
+		/**
+		 * @brief Performs the next power of two operation.
+		 */
 		size_t nextPowerOfTwo(size_t value)
 		{
 			size_t result = 1;
@@ -33,6 +42,9 @@ namespace danikk_space_engine
 			return result;
 		}
 
+		/**
+		 * @brief Performs the edge key operation.
+		 */
 		uint64 edgeKey(uint32 a, uint32 b)
 		{
 			if(a > b) swapValues(a, b);
@@ -43,6 +55,10 @@ namespace danikk_space_engine
 		 * Samples the complete 3D density lattice, polygonizes each cube as six consistently split
 		 * tetrahedra, and caches edge intersections so neighboring tetrahedra share mesh vertices.
 		 * Triangle winding is oriented from solid density toward air, including cave walls.
+		 */
+
+		/**
+		 * @brief Generates planet chunk geometry.
 		 */
 		GeneratedChunkData generatePlanetChunkGeometry(const ChunkGenerationRequest& request)
 		{
@@ -242,10 +258,18 @@ namespace danikk_space_engine
 	 * planet surface. Material IDs are derived after loading too, so existing geometry saves do not
 	 * need a format change and the main thread can accept the finished chunk without sampling noise.
 	 */
+
+	/**
+	 * @brief Generates planet chunk.
+	 */
 	GeneratedChunkData generatePlanetChunk(const ChunkGenerationRequest& request)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Generate planet chunk");
 		GeneratedChunkData result;
+
 		if(!loadPlanetChunk(request, result))
 		{
 			result = generatePlanetChunkGeometry(request);

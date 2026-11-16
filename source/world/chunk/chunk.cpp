@@ -12,6 +12,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Performs the point component name operation.
+		 */
 		const char* pointComponentName(PointComponentTypeId type_id)
 		{
 			switch(type_id)
@@ -28,6 +32,9 @@ namespace danikk_space_engine
 			}
 		}
 
+		/**
+		 * @brief Performs the graph component name operation.
+		 */
 		const char* graphComponentName(GraphComponentTypeId type_id)
 		{
 			switch(type_id)
@@ -39,6 +46,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Transfers mesh and resource-array ownership from another chunk.
+	 */
 	Chunk::Chunk(Chunk&& other) noexcept
 		: mesh(other.mesh), material_ranges(static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges)),
 		bounds_valid(other.bounds_valid), mesh_dirty(other.mesh_dirty),
@@ -79,13 +89,22 @@ namespace danikk_space_engine
 		return *this;
 	}
 
+	/**
+	 * @brief Releases the mesh owned by the chunk.
+	 */
 	Chunk::~Chunk()
 	{
 		destroyMesh();
 	}
 
+	/**
+	 * @brief Removes and releases mesh.
+	 */
 	void Chunk::destroyMesh()
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Chunk::destroyMesh");
 		if(mesh != nullptr)
 		{
@@ -96,6 +115,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Invalidates mesh.
+	 */
 	void Chunk::invalidateMesh()
 	{
 		mesh_dirty = true;
@@ -103,20 +125,35 @@ namespace danikk_space_engine
 		material_ranges.clear();
 	}
 
+	/**
+	 * @brief Adds point component slot.
+	 */
 	void Chunk::addPointComponentSlot(PointComponentSlotId slot_id)
 	{
 		point_component_slot_ids.push(slot_id);
 	}
 
+	/**
+	 * @brief Adds graph component slot.
+	 */
 	void Chunk::addGraphComponentSlot(GraphComponentSlotId slot_id)
 	{
 		graph_component_slot_ids.push(slot_id);
 	}
 
+	/**
+	 * @brief Performs the tick operation.
+	 */
 	void Chunk::tick(World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher chunk_scope("Chunk::tick");
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher point_components_scope("Point components");
 			const size_t component_count = point_component_slot_ids.size();
 			for(size_t component_index = 0; component_index < component_count; component_index++)
@@ -136,12 +173,18 @@ namespace danikk_space_engine
 				}
 				if(type.tick != nullptr)
 				{
+					/**
+					 * @brief Disables copying to ensure a measured scope is recorded once.
+					 */
 					Watcher component_scope(pointComponentName(slot.type_id));
 					type.tick(slot, world);
 				}
 			}
 		}
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher graph_components_scope("Graph components");
 			const size_t graph_component_count = graph_component_slot_ids.size();
 			for(size_t component_index = 0; component_index < graph_component_count; component_index++)
@@ -160,6 +203,9 @@ namespace danikk_space_engine
 				}
 				if(type.tick != nullptr)
 				{
+					/**
+					 * @brief Disables copying to ensure a measured scope is recorded once.
+					 */
 					Watcher component_scope(graphComponentName(slot.type_id));
 					type.tick(slot, world);
 				}
@@ -167,10 +213,19 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Performs the frame operation.
+	 */
 	void Chunk::frame(World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher chunk_scope("Chunk::frame");
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher point_components_scope("Point components");
 			const size_t component_count = point_component_slot_ids.size();
 			for(size_t component_index = 0; component_index < component_count; component_index++)
@@ -191,12 +246,18 @@ namespace danikk_space_engine
 				const PointComponentType& type = getPointComponentType(slot.type_id);
 				if(type.frame != nullptr)
 				{
+					/**
+					 * @brief Disables copying to ensure a measured scope is recorded once.
+					 */
 					Watcher component_scope(pointComponentName(slot.type_id));
 					type.frame(slot, world);
 				}
 			}
 		}
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher graph_components_scope("Graph components");
 			const size_t graph_component_count = graph_component_slot_ids.size();
 			for(size_t component_index = 0; component_index < graph_component_count; component_index++)
@@ -215,6 +276,9 @@ namespace danikk_space_engine
 				}
 				if(type.frame != nullptr)
 				{
+					/**
+					 * @brief Disables copying to ensure a measured scope is recorded once.
+					 */
 					Watcher component_scope(graphComponentName(slot.type_id));
 					type.frame(slot, world);
 				}
@@ -222,6 +286,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Creates world matrix.
+	 */
 	mat4 Chunk::createWorldMatrix(const World& world) const
 	{
 		const WorldBody& body = world.data.getWorldBody(world_body_id);
@@ -235,6 +302,9 @@ namespace danikk_space_engine
 		return glm::translate(mat4(1.0f), vec3(relative_chunk_position)) * body_rotation;
 	}
 
+	/**
+	 * @brief Performs the draw operation.
+	 */
 	void Chunk::draw(World& world)
 	{
 		if(mesh == nullptr || material_ranges.size() == 0) return;

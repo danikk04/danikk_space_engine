@@ -10,6 +10,10 @@ namespace danikk_space_engine
 
 	namespace
 	{
+
+		/**
+		 * @brief Reports whether planet body.
+		 */
 		bool isPlanetBody(const World& world, const WorldBody& body)
 		{
 			for(WorldBodyComponentSlotId id : body.component_slot_ids)
@@ -23,13 +27,21 @@ namespace danikk_space_engine
 	}
 
 	// Builds mesh colliders and solves body/chunk pairs in four sweeps; dragged bodies are kinematic.
+
+	/**
+	 * @brief Resolves body collisions.
+	 */
 	void WorldPhysics::resolveBodyCollisions(World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("World::body collisions");
 		WorldBodyId dragged_id = static_cast<WorldBodyId>(-1);
 		if(world.data.isPointComponentSlotActive(world.local_player_controller_component_slot_id))
 			dragged_id = world.getLocalPlayerControllerComponent().dragged_world_body_id;
 		DynamicArray<BodyCollider> colliders;
+
 		for(WorldBodyId id : world.data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = world.data.getWorldBody(id);

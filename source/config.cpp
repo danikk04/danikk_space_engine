@@ -11,6 +11,10 @@ namespace danikk_space_engine
 
 	namespace
 	{
+
+		/**
+		 * @brief Parses default camera position.
+		 */
 		bool parseDefaultCameraPosition(void* destination, const char* value, size_t value_size)
 		{
 			if(value_size == 3 && std::memcmp(value, "sky", 3) == 0)
@@ -27,6 +31,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Initializes the configuration path and binds settings fields for loading and saving.
+	 */
 	Config::Config()
 		: path(danikk_framework::getExecutableDirectory())
 	{
@@ -37,6 +44,9 @@ namespace danikk_space_engine
 		values.bind("default_camera_position", &settings.default_camera_position, &parseDefaultCameraPosition);
 	}
 
+	/**
+	 * @brief Performs the load operation.
+	 */
 	bool Config::load()
 	{
 		std::FILE* file = std::fopen(path.c_string(), "rb");
@@ -59,6 +69,7 @@ namespace danikk_space_engine
 			return false;
 		}
 		const long file_size = std::ftell(file);
+
 		if(file_size < 0 || std::fseek(file, 0, SEEK_SET) != 0)
 		{
 			std::fclose(file);
@@ -86,6 +97,9 @@ namespace danikk_space_engine
 		return true;
 	}
 
+	/**
+	 * @brief Performs the save operation.
+	 */
 	bool Config::save() const
 	{
 		danikk_framework::String contents;

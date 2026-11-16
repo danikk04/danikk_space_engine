@@ -16,6 +16,9 @@ namespace danikk_space_engine
 		};
 	}
 
+	/**
+	 * @brief Returns planet settings.
+	 */
 	const PlanetComponentSettings& getPlanetSettings(PlanetSettingsId id)
 	{
 		if(id >= planet_settings_ids::count)
@@ -25,8 +28,14 @@ namespace danikk_space_engine
 		return planet_settings[id];
 	}
 
+	/**
+	 * @brief Constructs planet component.
+	 */
 	void constructPlanetComponent(void* destination, const void* init_data)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("constructPlanetComponent");
 		if(destination == nullptr) danikk_engine::formatFatalError("Planet component construction received null destination");
 		new (destination) PlanetComponent();
@@ -43,8 +52,14 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Moves planet component.
+	 */
 	void movePlanetComponent(void* destination, void* source)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("movePlanetComponent");
 		if(destination == nullptr || source == nullptr)
 		{
@@ -55,15 +70,27 @@ namespace danikk_space_engine
 		source_planet->~PlanetComponent();
 	}
 
+	/**
+	 * @brief Removes and releases planet component.
+	 */
 	void destroyPlanetComponent(void* data)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("destroyPlanetComponent");
 		if(data == nullptr) danikk_engine::formatFatalError("Planet component destruction received null data");
 		static_cast<PlanetComponent*>(data)->~PlanetComponent();
 	}
 
+	/**
+	 * @brief Updates planet component.
+	 */
 	void updatePlanetComponent(WorldBodyComponentSlot& slot, World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Planet component frame");
 		// Keep 3D chunks around the camera while it is within reach of the planet. Update the set after
 		// movement or terrain edits; the field itself remains defined throughout the planet volume.

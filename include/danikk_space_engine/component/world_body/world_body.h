@@ -22,6 +22,9 @@ namespace danikk_space_engine
 	using WorldBodyComponentChunkFunction = void (*)(
 		WorldBodyComponentSlot& slot, World& world, const GeneratedChunkData& generated_chunk);
 
+	/**
+	 * @brief Represents world body component type data and behavior.
+	 */
 	struct WorldBodyComponentType
 	{
 		size_t data_size = 0;
@@ -35,8 +38,14 @@ namespace danikk_space_engine
 		WorldBodyComponentChunkFunction accept_generated_chunk = nullptr;
 	};
 
+	/**
+	 * @brief Returns world body component type.
+	 */
 	const WorldBodyComponentType& getWorldBodyComponentType(WorldBodyComponentTypeId type_id);
 
+	/**
+	 * @brief Associates component data and callbacks with a world body.
+	 */
 	struct WorldBodyComponentSlot
 	{
 		static constexpr size_t inline_data_capacity = 32;
@@ -52,8 +61,14 @@ namespace danikk_space_engine
 			void* external_data;
 		};
 
+		/**
+		 * @brief Returns the storage used by this component slot.
+		 */
 		void* getData() { return uses_external_data ? external_data : inline_data; }
 		const void* getData() const { return uses_external_data ? external_data : inline_data; }
+		/**
+		 * @brief Resets the component slot to its unused state.
+		 */
 		void dispose() { *this = WorldBodyComponentSlot(); }
 	};
 }

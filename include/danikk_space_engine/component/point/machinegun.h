@@ -4,6 +4,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Stores machine gun state, fires bullets, and draws its model.
+	 */
 	struct MachinegunComponent
 	{
 		float scale = 0.25f;
@@ -13,9 +17,28 @@ namespace danikk_space_engine
 		float shot_timer = 0.0f;
 	};
 
+	/**
+	 * @brief Constructs machinegun component.
+	 */
 	void constructMachinegunComponent(void* destination, const void* init_data);
+
+	/**
+	 * @brief Moves machinegun component.
+	 */
 	void moveMachinegunComponent(void* destination, void* source);
+
+	/**
+	 * @brief Removes and releases machinegun component.
+	 */
 	void destroyMachinegunComponent(void* data);
+
+	/**
+	 * @brief Runs one simulation tick for machinegun component.
+	 */
 	void tickMachinegunComponent(PointComponentSlot& slot, World& world);
+
+	/**
+	 * @brief Processes one frame for machinegun component.
+	 */
 	void frameMachinegunComponent(PointComponentSlot& slot, World& world);
 }

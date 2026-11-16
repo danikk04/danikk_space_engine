@@ -8,6 +8,9 @@ namespace danikk_space_engine
 {
 	danikk_framework::Localization localization;
 
+	/**
+	 * @brief Initializes localiztion.
+	 */
 	void initLocaliztion()
 	{
 		_("block/air",								"Air",						"Воздух");

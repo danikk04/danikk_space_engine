@@ -13,12 +13,18 @@ namespace danikk_space_engine
 		constexpr double planet_core_death_radius_squared =
 			planet_core_death_radius * planet_core_death_radius;
 
+		/**
+		 * @brief Represents planet core target data and behavior.
+		 */
 		struct PlanetCoreTarget
 		{
 			WorldBodyId body_id;
 			glm::dvec3 center;
 		};
 
+		/**
+		 * @brief Reports whether inside any planet core.
+		 */
 		bool isInsideAnyPlanetCore(const glm::dvec3& position,
 			const DynamicArray<PlanetCoreTarget>& planets)
 		{
@@ -30,6 +36,9 @@ namespace danikk_space_engine
 			return false;
 		}
 
+		/**
+		 * @brief Reports whether planet body.
+		 */
 		bool isPlanetBody(const World& world, const WorldBody& body)
 		{
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
@@ -46,8 +55,15 @@ namespace danikk_space_engine
 
 	// Removes non-planet bodies and point-based entities that end up within five metres of a planet
 	// center. IDs are collected before destruction so resource-pool iteration remains valid.
+
+	/**
+	 * @brief Removes and releases entities inside planet core.
+	 */
 	void WorldPhysics::destroyEntitiesInsidePlanetCore(World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("World::planet core entity removal");
 		DynamicArray<PlanetCoreTarget> planets;
 		const DynamicArray<WorldBodyId> world_body_ids(world.data.getUsedWorldBodyIds());
@@ -73,12 +89,14 @@ namespace danikk_space_engine
 		}
 
 		PointId camera_point_id = static_cast<PointId>(-1);
+
 		if(world.data.isPointComponentSlotActive(world.camera_component_slot_id))
 		{
 			camera_point_id = world.data.getPointComponentSlot(world.camera_component_slot_id).point_id;
 		}
 
 		DynamicArray<PointId> points_to_destroy;
+
 		for(PointComponentSlotId slot_id : world.data.getUsedPointComponentSlotIds())
 		{
 			if(!world.data.isPointComponentSlotActive(slot_id)) continue;

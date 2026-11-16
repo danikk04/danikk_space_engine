@@ -8,11 +8,17 @@ namespace danikk_space_engine
 		constexpr uint8 occupied_bucket = 1;
 		constexpr uint8 deleted_bucket = 2;
 
+		/**
+		 * @brief Performs the same chunk key operation.
+		 */
 		bool sameChunkKey(const glm::ivec3& left, const glm::ivec3& right)
 		{
 			return left.x == right.x && left.y == right.y && left.z == right.z;
 		}
 
+		/**
+		 * @brief Reports whether h chunk key.
+		 */
 		uint64 hashChunkKey(const glm::ivec3& key)
 		{
 			uint64 hash = 1469598103934665603ull;
@@ -28,6 +34,9 @@ namespace danikk_space_engine
 			return hash ^ (hash >> 31);
 		}
 
+		/**
+		 * @brief Finds chunk bucket.
+		 */
 		size_t findChunkBucket(
 			const DynamicArray<PlanetChunkLookupEntry>& entries,
 			const glm::ivec3& key,
@@ -56,6 +65,9 @@ namespace danikk_space_engine
 			return first_deleted;
 		}
 
+		/**
+		 * @brief Performs the ensure chunk lookup capacity operation.
+		 */
 		void ensureChunkLookupCapacity(PlanetChunkLookup& lookup)
 		{
 			if(lookup.entries.size() != 0
@@ -76,6 +88,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Clears desired.
+	 */
 	void PlanetChunkLookup::clearDesired()
 	{
 		for(PlanetChunkLookupEntry& entry : entries)
@@ -93,6 +108,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Performs the mark desired operation.
+	 */
 	void PlanetChunkLookup::markDesired(const glm::ivec3& grid_coordinate)
 	{
 		ensureChunkLookupCapacity(*this);
@@ -111,6 +129,9 @@ namespace danikk_space_engine
 		entry.desired = true;
 	}
 
+	/**
+	 * @brief Sets chunk.
+	 */
 	void PlanetChunkLookup::setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id)
 	{
 		ensureChunkLookupCapacity(*this);
@@ -128,6 +149,9 @@ namespace danikk_space_engine
 		entry.has_record = true;
 	}
 
+	/**
+	 * @brief Performs the remove operation.
+	 */
 	void PlanetChunkLookup::remove(const glm::ivec3& grid_coordinate)
 	{
 		const size_t index = findChunkBucket(entries, grid_coordinate, false);
@@ -140,18 +164,27 @@ namespace danikk_space_engine
 		entry_count--;
 	}
 
+	/**
+	 * @brief Reports whether desired.
+	 */
 	bool PlanetChunkLookup::isDesired(const glm::ivec3& grid_coordinate) const
 	{
 		const size_t index = findChunkBucket(entries, grid_coordinate, false);
 		return index != static_cast<size_t>(-1) && entries[index].desired;
 	}
 
+	/**
+	 * @brief Reports whether generated.
+	 */
 	bool PlanetChunkLookup::isGenerated(const glm::ivec3& grid_coordinate) const
 	{
 		const size_t index = findChunkBucket(entries, grid_coordinate, false);
 		return index != static_cast<size_t>(-1) && entries[index].has_record;
 	}
 
+	/**
+	 * @brief Returns chunk.
+	 */
 	bool PlanetChunkLookup::getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const
 	{
 		const size_t index = findChunkBucket(entries, grid_coordinate, false);

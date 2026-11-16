@@ -19,8 +19,12 @@ namespace danikk_space_engine
 		  texture(texture_name ? Texture(texture_name) : Texture())
 	{}
 
+	/**
+	 * @brief Loads materials.
+	 */
 	void loadMaterials()
 	{
+
 		if(material_list.size() != 0)
 		{
 			return;
@@ -34,6 +38,9 @@ namespace danikk_space_engine
 		material_list.pushCtor("magma", 0xFFFFFF, "magma_32x32");
 	}
 
+	/**
+	 * @brief Returns material id.
+	 */
 	MaterialId getMaterialID(const char* name)
 	{
 		for(index_t i = 0; i < material_list.size(); i++)
@@ -46,11 +53,17 @@ namespace danikk_space_engine
 		return default_materials::void_material;
 	}
 
+	/**
+	 * @brief Returns material count.
+	 */
 	size_t getMaterialCount()
 	{
 		return material_list.size();
 	}
 
+	/**
+	 * @brief Returns material.
+	 */
 	MaterialDefinition& getMaterial(MaterialId id)
 	{
 		return material_list[id];

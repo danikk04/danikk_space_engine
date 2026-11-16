@@ -12,6 +12,9 @@ namespace danikk_space_engine
 		model_3d
 	};
 
+	/**
+	 * @brief Represents human appearance data and behavior.
+	 */
 	struct HumanAppearance
 	{
 		HumanRenderType render_type = HumanRenderType::minecraft_style;
@@ -29,6 +32,9 @@ namespace danikk_space_engine
 		weapon_ready
 	};
 
+	/**
+	 * @brief Represents human part definition data and behavior.
+	 */
 	struct HumanPartDefinition
 	{
 		Mesh mesh;
@@ -39,11 +45,18 @@ namespace danikk_space_engine
 		vec3 color = vec3(1.0f);
 	};
 
+	/**
+	 * @brief Represents human definition data and behavior.
+	 */
 	struct HumanDefinition
 	{
+
 		HumanPartDefinition parts[static_cast<size_t>(HumanPart::count)];
 	};
 
+	/**
+	 * @brief Stores a human character’s state, orientation, pose, and appearance.
+	 */
 	struct HumanComponent
 	{
 		// The attached point is the character's vertical center; feet are center - up * height / 2.
@@ -63,13 +76,44 @@ namespace danikk_space_engine
 		bool follow_ground = true;
 	};
 
+	/**
+	 * @brief Loads human definition.
+	 */
 	void loadHumanDefinition(HumanDefinition& definition);
+
+	/**
+	 * @brief Creates human soldier.
+	 */
 	PointComponentSlotId createHumanSoldier(World& world, WorldBodyId world_body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward);
+
+	/**
+	 * @brief Constructs human component.
+	 */
 	void constructHumanComponent(void* destination, const void* init_data);
+
+	/**
+	 * @brief Moves human component.
+	 */
 	void moveHumanComponent(void* destination, void* source);
+
+	/**
+	 * @brief Removes and releases human component.
+	 */
 	void destroyHumanComponent(void* data);
+
+	/**
+	 * @brief Runs one simulation tick for human component.
+	 */
 	void tickHumanComponent(PointComponentSlot& slot, World& world);
+
+	/**
+	 * @brief Processes one frame for human component.
+	 */
 	void frameHumanComponent(PointComponentSlot& slot, World& world);
+
+	/**
+	 * @brief Draws human appearance.
+	 */
 	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix);
 }

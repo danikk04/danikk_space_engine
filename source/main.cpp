@@ -14,17 +14,26 @@ namespace danikk_engine_game
 {
 	using namespace danikk_space_engine;
 
+    /**
+     * @brief Performs the pre begin operation.
+     */
     void pre_begin()
     {
 
     }
 
+	/**
+	 * @brief Performs the end operation.
+	 */
 	void end()
 	{
 		config.save();
 		world.shutdown();
 	}
 
+    /**
+     * @brief Performs the begin operation.
+     */
     void begin()
     {
 		setWindowTitle("Danikk Space Engine");
@@ -38,12 +47,21 @@ namespace danikk_engine_game
     	static_asset_collection.base2d_shader.use();
     }
 
+    /**
+     * @brief Performs the frame operation.
+     */
     void frame()
     {
 		profiler.beginTick();
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher frame_watcher("frame");
 			{
+				/**
+				 * @brief Disables copying to ensure a measured scope is recorded once.
+				 */
 				Watcher gui_scope("GUI::frame");
 				gui.frame();
 			}

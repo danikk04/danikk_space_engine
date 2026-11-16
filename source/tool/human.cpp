@@ -15,6 +15,9 @@ namespace danikk_space_engine
 		constexpr ChunkId no_human_chunk = static_cast<ChunkId>(-1);
 		constexpr PointComponentSlotId no_human_slot = static_cast<PointComponentSlotId>(-1);
 
+		/**
+		 * @brief Performs the ray intersects human capsule operation.
+		 */
 		bool rayIntersectsHumanCapsule(const glm::dvec3& origin, const glm::dvec3& direction,
 			const glm::dvec3& center, const glm::dvec3& up, double height, double radius,
 			double& ray_distance)
@@ -51,6 +54,9 @@ namespace danikk_space_engine
 			return glm::dot(separation, separation) <= radius * radius;
 		}
 
+		/**
+		 * @brief Clears human drag.
+		 */
 		void clearHumanDrag(World& world, LocalPlayerControllerComponent& controller)
 		{
 			if(world.data.isPointComponentSlotActive(controller.dragged_human_slot_id))
@@ -69,6 +75,9 @@ namespace danikk_space_engine
 			controller.dragged_human_followed_ground = true;
 		}
 
+		/**
+		 * @brief Creates human at hit.
+		 */
 		void createHumanAtHit(World& world, const RaycastHit& hit)
 		{
 			if(!world.data.isChunkActive(hit.face.chunk_id)) return;
@@ -96,12 +105,19 @@ namespace danikk_space_engine
 
 	// Human creation reuses the terrain hit placement. Dragging finds the nearest human capsule
 	// intersected by the camera ray, disables ground following while held, and moves its owning chunk.
+
+	/**
+	 * @brief Applies human tool.
+	 */
 	ToolApplyResult applyHumanTool(World& world, const RaycastHit& hit, ToolActionId action)
 	{
 		if(action == ToolActionId::create_human && hit.hit) createHumanAtHit(world, hit);
 		return ToolApplyResult();
 	}
 
+	/**
+	 * @brief Runs one simulation tick for human drag tool.
+	 */
 	void tickHumanDragTool(World& world, LocalPlayerControllerComponent& controller,
 		const RaycastHit& hit, bool enabled, int mouse_state, float scroll_delta, bool alt_pressed)
 	{
@@ -150,6 +166,7 @@ namespace danikk_space_engine
 		}
 
 		if(controller.dragged_human_slot_id == no_human_slot) return;
+
 		if(!world.data.isPointComponentSlotActive(controller.dragged_human_slot_id)
 			|| !world.data.isPointActive(controller.dragged_human_point_id)
 			|| !world.data.isChunkActive(controller.dragged_human_chunk_id))

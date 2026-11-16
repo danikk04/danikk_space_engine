@@ -2,6 +2,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Adds chunk.
+	 */
 	void WorldBody::addChunk(ChunkId chunk_id)
 	{
 		for(ChunkId existing_chunk_id : chunk_ids)
@@ -11,6 +15,9 @@ namespace danikk_space_engine
 		chunk_ids.push(chunk_id);
 	}
 
+	/**
+	 * @brief Removes chunk.
+	 */
 	bool WorldBody::removeChunk(ChunkId chunk_id)
 	{
 		for(size_t index = 0; index < chunk_ids.size(); index++)
@@ -26,6 +33,9 @@ namespace danikk_space_engine
 		return false;
 	}
 
+	/**
+	 * @brief Adds component slot.
+	 */
 	void WorldBody::addComponentSlot(WorldBodyComponentSlotId slot_id)
 	{
 		for(WorldBodyComponentSlotId existing_id : component_slot_ids)
@@ -35,6 +45,9 @@ namespace danikk_space_engine
 		component_slot_ids.push(slot_id);
 	}
 
+	/**
+	 * @brief Removes component slot.
+	 */
 	bool WorldBody::removeComponentSlot(WorldBodyComponentSlotId slot_id)
 	{
 		for(size_t index = 0; index < component_slot_ids.size(); index++)

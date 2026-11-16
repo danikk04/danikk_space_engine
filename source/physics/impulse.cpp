@@ -7,6 +7,10 @@ namespace danikk_space_engine::collision_internal
 {
 	namespace
 	{
+
+		/**
+		 * @brief Applies impulse.
+		 */
 		void applyImpulse(WorldBody& body, const BodyMassProperties& mass_properties,
 			const glm::dvec3& contact_offset, const glm::dvec3& impulse)
 		{
@@ -14,6 +18,9 @@ namespace danikk_space_engine::collision_internal
 			body.angular_velocity += glm::cross(contact_offset, impulse) / mass_properties.scalar_inertia;
 		}
 
+		/**
+		 * @brief Applies pair impulse.
+		 */
 		void applyPairImpulse(WorldBody& a, WorldBody& b, const BodyCollider& ca,
 			const BodyCollider& cb, const BodyContact& contact, const glm::dvec3& impulse)
 		{
@@ -23,6 +30,9 @@ namespace danikk_space_engine::collision_internal
 			b.angular_velocity += glm::cross(contact.offset_b, impulse) * cb.inverse_inertia;
 		}
 
+		/**
+		 * @brief Performs the effective inverse mass operation.
+		 */
 		double effectiveInverseMass(const BodyCollider& a, const BodyCollider& b,
 			const BodyContact& contact, const glm::dvec3& direction)
 		{
@@ -33,6 +43,9 @@ namespace danikk_space_engine::collision_internal
 		}
 	}
 
+	/**
+	 * @brief Calculates mass properties.
+	 */
 	BodyMassProperties calculateMassProperties(const WorldBody& body)
 	{
 		BodyMassProperties properties;
@@ -46,6 +59,10 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	// Cancels inward contact velocity, then applies friction using the angular effective mass.
+
+	/**
+	 * @brief Applies contact impulse.
+	 */
 	void applyContactImpulse(WorldBody& body, const BodyMassProperties& mass_properties,
 		const glm::dvec3& outward_direction, const glm::dvec3& support_point_local)
 	{
@@ -86,6 +103,9 @@ namespace danikk_space_engine::collision_internal
 			tangent_direction * friction_impulse_magnitude);
 	}
 
+	/**
+	 * @brief Resolves contact.
+	 */
 	void resolveContact(WorldBody& body, const BodyMassProperties& mass_properties,
 		const glm::dvec3& outward_direction, double penetration,
 		const glm::dvec3& support_point_local)
@@ -95,6 +115,10 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	// Splits penetration correction by inverse mass and applies equal opposite normal and friction impulses.
+
+	/**
+	 * @brief Resolves pair.
+	 */
 	void resolvePair(WorldBody& a, WorldBody& b, const BodyCollider& ca,
 		const BodyCollider& cb, const BodyContact& contact)
 	{

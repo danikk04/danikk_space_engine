@@ -3,6 +3,10 @@
 namespace danikk_space_engine
 {
 	// Generates a centered cube with shared corner vertices and outward-wound triangle faces.
+
+	/**
+	 * @brief Generates cube geometry.
+	 */
 	void generateCubeGeometry(
 		float size,
 		DynamicArray<vec3>& positions,

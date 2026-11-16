@@ -11,6 +11,9 @@ namespace danikk_space_engine
 	{
 		constexpr double minimum_ground_normal_dot = 0.2;
 
+		/**
+		 * @brief Represents human collider data and behavior.
+		 */
 		struct HumanCollider
 		{
 			PointId point_id;
@@ -22,6 +25,10 @@ namespace danikk_space_engine
 		};
 
 		// Finds closest points on two standing capsule axes, including degenerate endpoint cases.
+
+		/**
+		 * @brief Performs the closest segment points operation.
+		 */
 		void closestSegmentPoints(const glm::dvec3& a0, const glm::dvec3& a1,
 			const glm::dvec3& b0, const glm::dvec3& b1,
 			glm::dvec3& closest_a, glm::dvec3& closest_b)
@@ -74,6 +81,10 @@ namespace danikk_space_engine
 		}
 
 		// Applies a world-space correction to the human center through its owning body's local frame.
+
+		/**
+		 * @brief Moves human.
+		 */
 		void moveHuman(World& world, HumanCollider& human, const glm::dvec3& world_delta)
 		{
 			const Chunk& chunk = world.data.getChunk(human.chunk_id);
@@ -85,6 +96,10 @@ namespace danikk_space_engine
 
 		// Tangential separation can push a capsule into uneven terrain. Probe below its feet
 		// afterward and lift it back to the supporting surface, never snapping it farther down.
+
+		/**
+		 * @brief Performs the restore human ground clearance operation.
+		 */
 		void restoreHumanGroundClearance(World& world, HumanCollider& human)
 		{
 			const glm::dvec3 foot_position = human.center - human.up * (human.height * 0.5);
@@ -110,10 +125,18 @@ namespace danikk_space_engine
 
 	// Collects humans as vertical capsules, performs pairwise separation sweeps, then restores
 	// ground clearance for characters whose tangential correction crossed uneven terrain.
+
+	/**
+	 * @brief Resolves human collisions.
+	 */
 	void WorldPhysics::resolveHumanCollisions(World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("World::human collisions");
 		DynamicArray<HumanCollider> humans;
+
 		for(PointComponentSlotId slot_id : world.data.getUsedPointComponentSlotIds())
 		{
 			if(!world.data.isPointComponentSlotActive(slot_id)) continue;

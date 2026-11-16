@@ -22,6 +22,9 @@ namespace danikk_space_engine
 		inline constexpr ItemDefinitionId count = 2;
 	}
 
+	/**
+	 * @brief Represents weapon item parameters data and behavior.
+	 */
 	struct WeaponItemParameters
 	{
 		float damage;
@@ -30,12 +33,18 @@ namespace danikk_space_engine
 		float rounds_per_minute;
 	};
 
+	/**
+	 * @brief Represents food item parameters data and behavior.
+	 */
 	struct FoodItemParameters
 	{
 		float health_restored;
 		float hunger_restored;
 	};
 
+	/**
+	 * @brief Represents armor item parameters data and behavior.
+	 */
 	struct ArmorItemParameters
 	{
 		float physical_resistance;
@@ -48,10 +57,12 @@ namespace danikk_space_engine
 		WeaponItemParameters weapon;
 		FoodItemParameters food;
 		ArmorItemParameters armor;
-
 		ItemDefinitionParameters() : weapon{} {}
 	};
 
+	/**
+	 * @brief Describes a concrete item, its visual assets, and its parameters.
+	 */
 	struct ItemDefinition;
 
 	using ItemUseFunction = bool (*)(World& world, PointId owner_point_id,
@@ -60,6 +71,9 @@ namespace danikk_space_engine
 		const ItemDefinition& definition);
 	using ItemDrawFunction = void (*)(ItemDefinition& definition, const mat4& world_matrix);
 
+	/**
+	 * @brief Defines operations supported by a category of items.
+	 */
 	struct ItemType
 	{
 		const char* name = "";
@@ -69,6 +83,9 @@ namespace danikk_space_engine
 		ItemDrawFunction draw = nullptr;
 	};
 
+	/**
+	 * @brief Describes a concrete item, its visual assets, and its parameters.
+	 */
 	struct ItemDefinition
 	{
 		ItemTypeId type_id = item_type_ids::none;
@@ -80,13 +97,43 @@ namespace danikk_space_engine
 		ItemDefinitionParameters parameters;
 	};
 
+	/**
+	 * @brief Loads item catalog.
+	 */
 	void loadItemCatalog();
+
+	/**
+	 * @brief Returns item type.
+	 */
 	const ItemType& getItemType(ItemTypeId id);
+
+	/**
+	 * @brief Returns item definition.
+	 */
 	const ItemDefinition& getItemDefinition(ItemDefinitionId id);
+
+	/**
+	 * @brief Returns weapon item parameters.
+	 */
 	const WeaponItemParameters& getWeaponItemParameters(ItemDefinitionId id);
 
+	/**
+	 * @brief Performs the use item operation.
+	 */
 	bool useItem(World& world, PointId owner_point_id, InventorySlot& slot);
+
+	/**
+	 * @brief Performs the equip item operation.
+	 */
 	bool equipItem(World& world, PointId owner_point_id, ItemDefinitionId id);
+
+	/**
+	 * @brief Performs the unequip item operation.
+	 */
 	bool unequipItem(World& world, PointId owner_point_id, ItemDefinitionId id);
+
+	/**
+	 * @brief Draws item.
+	 */
 	void drawItem(ItemDefinitionId id, const mat4& world_matrix);
 }

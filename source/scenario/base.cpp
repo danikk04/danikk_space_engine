@@ -15,6 +15,10 @@ namespace danikk_space_engine
 		// Searches deterministic radial directions from outside the terrain toward the core. It chooses
 		// a point only after finding a continuous solid interval, keeping the camera below the surface,
 		// outside the protected core, and away from thin cave walls.
+
+		/**
+		 * @brief Finds ground camera position.
+		 */
 		bool findGroundCameraPosition(
 			WorldBodyId planet_body_id,
 			const PlanetComponentSettings& planet_settings,
@@ -77,6 +81,10 @@ namespace danikk_space_engine
 	}
 
 	// Clears the world and creates the planet with the camera and its controller.
+
+	/**
+	 * @brief Performs the start base scenario operation.
+	 */
 	void startBaseScenario(World& world)
 	{
 		world.data.clear();

@@ -13,6 +13,9 @@ namespace danikk_space_engine
 		ground
 	};
 
+	/**
+	 * @brief Stores the current application settings.
+	 */
 	struct Settings
 	{
 		bool show_chunk_bounds = true;
@@ -21,6 +24,9 @@ namespace danikk_space_engine
 		DefaultCameraPosition default_camera_position = DefaultCameraPosition::sky;
 	};
 
+	/**
+	 * @brief Binds settings fields to configuration file loading and saving.
+	 */
 	class Config
 	{
 		danikk_framework::Config values;
@@ -29,7 +35,14 @@ namespace danikk_space_engine
 	public:
 		Config();
 
+		/**
+		 * @brief Performs the load operation.
+		 */
 		bool load();
+
+		/**
+		 * @brief Performs the save operation.
+		 */
 		bool save() const;
 	};
 

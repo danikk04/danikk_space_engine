@@ -12,6 +12,10 @@ namespace danikk_space_engine
 	// coordinates, and builds thin black prisms around those edges into one reusable mesh. Planet
 	// chunks use their full generation-cell bounds; other chunks use referenced-point bounds. Drawing
 	// after world geometry lets the depth buffer keep hidden edges occluded.
+
+	/**
+	 * @brief Draws chunk boundaries.
+	 */
 	void drawChunkBoundaries(World& world)
 	{
 		constexpr uint8 edge_indices[12][2]

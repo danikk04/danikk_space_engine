@@ -14,6 +14,9 @@ namespace danikk_space_engine
 	{
 		constexpr float camera_local_origin_rebase_distance = 128.0f;
 
+		/**
+		 * @brief Performs the rebase camera local position operation.
+		 */
 		void rebaseCameraLocalPosition(PointComponentSlot& slot, World& world)
 		{
 			Point& point = world.data.getPoint(slot.point_id);
@@ -25,6 +28,9 @@ namespace danikk_space_engine
 			point.position = vec3(0.0f);
 		}
 
+		/**
+		 * @brief Updates camera surface frame.
+		 */
 		void updateCameraSurfaceFrame(CameraComponent& camera, const PointComponentSlot& slot, const World& world)
 		{
 			if(!world.data.isChunkActive(slot.chunk_id)) return;
@@ -68,6 +74,9 @@ namespace danikk_space_engine
 			}
 		}
 
+		/**
+		 * @brief Returns horizontal heading.
+		 */
 		vec3 getHorizontalHeading(const CameraComponent& camera)
 		{
 			const vec3 up = glm::normalize(camera.surface_up);
@@ -78,6 +87,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Returns front.
+	 */
 	vec3 CameraComponent::getFront() const
 	{
 		const vec3 up = glm::normalize(surface_up);
@@ -85,6 +97,9 @@ namespace danikk_space_engine
 		return glm::normalize(heading * cos(rotation.y) + up * sin(rotation.y));
 	}
 
+	/**
+	 * @brief Returns up.
+	 */
 	vec3 CameraComponent::getUp() const
 	{
 		const vec3 front = getFront();
@@ -95,11 +110,17 @@ namespace danikk_space_engine
 		return glm::normalize(vec3(roll_matrix * vec4(base_up, 0.0f)));
 	}
 
+	/**
+	 * @brief Returns right.
+	 */
 	vec3 CameraComponent::getRight() const
 	{
 		return glm::normalize(glm::cross(getFront(), getUp()));
 	}
 
+	/**
+	 * @brief Constructs camera component.
+	 */
 	void constructCameraComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr)
@@ -117,6 +138,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Moves camera component.
+	 */
 	void moveCameraComponent(void* destination, void* source)
 	{
 		if(destination == nullptr || source == nullptr)
@@ -129,6 +153,9 @@ namespace danikk_space_engine
 		std::destroy_at(source_component);
 	}
 
+	/**
+	 * @brief Removes and releases camera component.
+	 */
 	void destroyCameraComponent(void* data)
 	{
 		if(data == nullptr)
@@ -138,13 +165,21 @@ namespace danikk_space_engine
 		std::destroy_at(static_cast<CameraComponent*>(data));
 	}
 
+	/**
+	 * @brief Runs one simulation tick for camera component.
+	 */
 	void tickCameraComponent(PointComponentSlot& slot, World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("CameraComponent::tick");
+
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Camera component tick received null data");
 		}
+
 		if(!world.data.isPointActive(slot.point_id))
 		{
 			danikk_engine::formatFatalError("Camera component references invalid point %", slot.point_id);
@@ -190,18 +225,22 @@ namespace danikk_space_engine
 		const float speed = controller.camera_movement_speed * frame_delay;
 
 		vec3 direction(0.0f);
+
 		if(getKeyboardState(keyboard_buttons::w))
 		{
 			direction += camera.getFront();
 		}
+
 		if(getKeyboardState(keyboard_buttons::s))
 		{
 			direction -= camera.getFront();
 		}
+
 		if(getKeyboardState(keyboard_buttons::a))
 		{
 			direction -= camera.getRight();
 		}
+
 		if(getKeyboardState(keyboard_buttons::d))
 		{
 			direction += camera.getRight();
@@ -211,8 +250,12 @@ namespace danikk_space_engine
 		updateCameraSurfaceFrame(camera, slot, world);
 	}
 
+	/**
+	 * @brief Processes one frame for camera component.
+	 */
 	void frameCameraComponent(PointComponentSlot& slot, World&)
 	{
+
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Camera component frame received null data");

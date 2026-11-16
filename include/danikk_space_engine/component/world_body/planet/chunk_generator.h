@@ -9,6 +9,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Represents chunk generation request data and behavior.
+	 */
 	struct ChunkGenerationRequest
 	{
 		uint64 generation_id = 0;
@@ -26,6 +30,9 @@ namespace danikk_space_engine
 		DynamicArray<PlanetTerrainEdit> terrain_edits;
 	};
 
+	/**
+	 * @brief Represents generated chunk data data and behavior.
+	 */
 	struct GeneratedChunkData
 	{
 		uint64 generation_id = 0;
@@ -40,5 +47,8 @@ namespace danikk_space_engine
 		DynamicArray<MaterialId> triangle_material_ids;
 	};
 
+	/**
+	 * @brief Generates planet chunk.
+	 */
 	GeneratedChunkData generatePlanetChunk(const ChunkGenerationRequest& request);
 }

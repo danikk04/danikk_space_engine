@@ -6,6 +6,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Represents oriented box data and behavior.
+	 */
 	struct OrientedBox
 	{
 		vec3 center;
@@ -13,6 +17,9 @@ namespace danikk_space_engine
 		vec3 half_extents;
 	};
 
+	/**
+	 * @brief Creates unit box.
+	 */
 	static OrientedBox makeUnitBox(const GameObject& object)
 	{
 		const mat4& transform = object.local_matrix;
@@ -31,6 +38,10 @@ namespace danikk_space_engine
 	// Tests two oriented boxes with the separating axis theorem and returns the minimum penetration.
 	// Projects both boxes onto their three face axes and nine pairwise cross-product axes;
 	// any non-overlapping projection rejects collision, otherwise the shallowest axis gives the normal.
+
+	/**
+	 * @brief Checks cube cube collision.
+	 */
 	static CollisionInfo checkCubeCubeCollision(const GameObject& object_a, const GameObject& object_b)
 	{
 		CollisionInfo result;
@@ -73,11 +84,17 @@ namespace danikk_space_engine
 		return result;
 	}
 
+	/**
+	 * @brief Returns sphere center.
+	 */
 	static vec3 getSphereCenter(const GameObject& object)
 	{
 		return vec3(object.local_matrix * vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	}
 
+	/**
+	 * @brief Returns sphere radius.
+	 */
 	static float getSphereRadius(const GameObject& object)
 	{
 		const mat4& transform = object.local_matrix;
@@ -85,6 +102,9 @@ namespace danikk_space_engine
 				glm::max(glm::length(vec3(transform[1])), glm::length(vec3(transform[2]))));
 	}
 
+	/**
+	 * @brief Checks sphere sphere collision.
+	 */
 	static CollisionInfo checkSphereSphereCollision(const GameObject& object_a, const GameObject& object_b)
 	{
 		CollisionInfo result;
@@ -103,6 +123,10 @@ namespace danikk_space_engine
 	// Tests a sphere against an oriented box and computes a contact normal and penetration depth.
 	// Projects the sphere center onto each box axis to find the closest point, then checks radius overlap;
 	// if the center is inside the box, selects the nearest face as the contact direction.
+
+	/**
+	 * @brief Checks cube sphere collision.
+	 */
 	static CollisionInfo checkCubeSphereCollision(const GameObject& cube_object, const GameObject& sphere_object)
 	{
 		CollisionInfo result;
@@ -152,6 +176,9 @@ namespace danikk_space_engine
 		return result;
 	}
 
+	/**
+	 * @brief Checks sphere cube collision.
+	 */
 	static CollisionInfo checkSphereCubeCollision(const GameObject& sphere_object, const GameObject& cube_object)
 	{
 		CollisionInfo result = checkCubeSphereCollision(cube_object, sphere_object);
@@ -159,6 +186,9 @@ namespace danikk_space_engine
 		return result;
 	}
 
+	/**
+	 * @brief Checks no collision.
+	 */
 	static CollisionInfo checkNoCollision(const GameObject&, const GameObject&)
 	{
 		return CollisionInfo();

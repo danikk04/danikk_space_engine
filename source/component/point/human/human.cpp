@@ -13,6 +13,9 @@ namespace danikk_space_engine
 	{
 		constexpr float minimum_ground_normal_dot = 0.2f;
 
+		/**
+		 * @brief Returns planet.
+		 */
 		const PlanetComponent* getPlanet(const WorldData& data, const WorldBody& body)
 		{
 			for(WorldBodyComponentSlotId component_id : body.component_slot_ids)
@@ -25,6 +28,9 @@ namespace danikk_space_engine
 			return nullptr;
 		}
 
+		/**
+		 * @brief Finds planet ground position.
+		 */
 		bool findPlanetGroundPosition(const Chunk& chunk, const WorldBody& body,
 			const PlanetComponent& planet, const vec3& up, float human_height,
 			const vec3& proposed, vec3& supported, float step_height, float maximum_drop)
@@ -71,6 +77,10 @@ namespace danikk_space_engine
 
 		// Derives the feet from the center point, then probes for support on the current body.
 		// Grounded movement uses step limits; falling checks full tick travel to avoid tunnelling.
+
+		/**
+		 * @brief Finds ground position.
+		 */
 		bool findGroundPosition(World& world, const Chunk& chunk, const WorldBody& body,
 			const vec3& up, float human_height, const vec3& proposed, vec3& supported,
 			float step_height = 0.5f, float maximum_drop = 0.75f)
@@ -96,6 +106,10 @@ namespace danikk_space_engine
 
 		// Keeps horizontal steps on supported slopes. Once support under the current feet is lost,
 		// integrates vertical speed and sweeps the entire downward travel before accepting a landing.
+
+		/**
+		 * @brief Moves with ground.
+		 */
 		void moveWithGround(World& world, const Chunk& chunk, const WorldBody& body,
 			HumanComponent& human, Point& point, const vec3& velocity, float gravity, float dt)
 		{
@@ -139,6 +153,10 @@ namespace danikk_space_engine
 
 		// Draws equipped MG-42 items attached to the soldier's weapon-ready pose. The OBJ's X/Y/Z
 		// axes map to character forward/up/right; the attachment offset is expressed in body-height units.
+
+		/**
+		 * @brief Draws equipped weapons.
+		 */
 		void drawEquippedWeapons(const PointComponentSlot& human_slot, const HumanComponent& human,
 			const mat4& body_matrix, World& world)
 		{
@@ -178,6 +196,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Constructs human component.
+	 */
 	void constructHumanComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr) formatFatalError("Human construction received null destination");
@@ -185,6 +206,9 @@ namespace danikk_space_engine
 			? HumanComponent() : *static_cast<const HumanComponent*>(init_data));
 	}
 
+	/**
+	 * @brief Moves human component.
+	 */
 	void moveHumanComponent(void* destination, void* source)
 	{
 		if(destination == nullptr || source == nullptr) formatFatalError("Human move received null memory");
@@ -192,6 +216,9 @@ namespace danikk_space_engine
 		static_cast<HumanComponent*>(source)->~HumanComponent();
 	}
 
+	/**
+	 * @brief Removes and releases human component.
+	 */
 	void destroyHumanComponent(void* data)
 	{
 		if(data == nullptr) formatFatalError("Human destruction received null data");
@@ -201,8 +228,15 @@ namespace danikk_space_engine
 	// Consumes a chunk-local movement command, updates the point and advances walking by distance.
 	// Planet ownership supplies radial up and gravity. Lost support triggers swept vertical falling;
 	// walking animation follows actual horizontal movement, not the fall distance.
+
+	/**
+	 * @brief Runs one simulation tick for human component.
+	 */
 	void tickHumanComponent(PointComponentSlot& slot, World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("HumanComponent::tick");
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id))
 			formatFatalError("Human references an invalid point or chunk");
@@ -233,6 +267,7 @@ namespace danikk_space_engine
 		displacement -= human.up * glm::dot(displacement, human.up);
 		const float distance = glm::length(displacement);
 		human.forward -= human.up * glm::dot(human.forward, human.up);
+
 		if(glm::length(human.forward) < 1e-6f)
 		{
 			const vec3 reference = std::abs(human.up.y) < 0.9f ? vec3(0, 1, 0) : vec3(1, 0, 0);
@@ -255,6 +290,10 @@ namespace danikk_space_engine
 
 	// Builds the common human transform and dispatches rendering through its appearance type.
 	// World translation is camera-relative in double before conversion to the float render matrix.
+
+	/**
+	 * @brief Processes one frame for human component.
+	 */
 	void frameHumanComponent(PointComponentSlot& slot, World& world)
 	{
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id)) return;

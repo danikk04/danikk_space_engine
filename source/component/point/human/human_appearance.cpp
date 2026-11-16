@@ -11,6 +11,10 @@ namespace danikk_space_engine
 	{
 		// Draws the base body meshes first, then the UV-mapped outer skin layer with a slight shell
 		// expansion. The overlay pass disables depth writes so transparent pixels reveal the base.
+
+		/**
+		 * @brief Draws minecraft human.
+		 */
 		void drawMinecraftHuman(const HumanComponent& human, const mat4& base, HumanSkinId skin_id)
 		{
 			HumanDefinition& definition = static_asset_collection.human_definition;
@@ -68,6 +72,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Draws human appearance.
+	 */
 	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix)
 	{
 		switch(human.appearance.render_type)

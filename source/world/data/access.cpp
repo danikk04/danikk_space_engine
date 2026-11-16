@@ -4,14 +4,24 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
 		template<typename resource_t, typename id_t>
+		/**
+		 * @brief Returns checked resource.
+		 */
 		resource_t& getCheckedResource(WorldResourcePool<resource_t, id_t>& pool, id_t id, const char* resource_name)
 		{
 			if(!pool.isActive(id)) danikk_engine::formatFatalError("Invalid % ID %", resource_name, id);
 			return pool[id];
 		}
 
+		/**
+		 * @brief Returns checked resource.
+		 */
 		template<typename resource_t, typename id_t>
+		/**
+		 * @brief Returns checked resource.
+		 */
 		const resource_t& getCheckedResource(
 			const WorldResourcePool<resource_t, id_t>& pool,
 			id_t id,

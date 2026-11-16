@@ -16,6 +16,9 @@ namespace danikk_space_engine
 		constexpr uint32 terrain_edits_magic = 0x44504544u;
 		constexpr uint32 terrain_edits_version = 1;
 
+		/**
+		 * @brief Represents chunk save header data and behavior.
+		 */
 		struct ChunkSaveHeader
 		{
 			uint32 magic;
@@ -33,6 +36,9 @@ namespace danikk_space_engine
 			uint64 terrain_revision;
 		};
 
+		/**
+		 * @brief Represents terrain edits header data and behavior.
+		 */
 		struct TerrainEditsHeader
 		{
 			uint32 magic;
@@ -43,17 +49,26 @@ namespace danikk_space_engine
 			uint32 edit_count;
 		};
 
+		/**
+		 * @brief Saves root directory.
+		 */
 		std::filesystem::path saveRootDirectory()
 		{
 			return std::filesystem::path(danikk_framework::getExecutableDirectory().c_string())
 				/ "saves" / "default";
 		}
 
+		/**
+		 * @brief Performs the world body terrain directory operation.
+		 */
 		std::filesystem::path worldBodyTerrainDirectory(WorldBodyId world_body_id)
 		{
 			return saveRootDirectory() / "world_bodies" / std::to_string(world_body_id) / "terrain";
 		}
 
+		/**
+		 * @brief Performs the chunk save file name operation.
+		 */
 		std::filesystem::path chunkSaveFileName(
 			const ChunkGenerationRequest& request,
 			bool include_version,
@@ -70,30 +85,45 @@ namespace danikk_space_engine
 				+ "_" + std::to_string(request.grid_coordinate.z) + ".bin";
 		}
 
+		/**
+		 * @brief Performs the chunk save file path operation.
+		 */
 		std::filesystem::path chunkSaveFilePath(const ChunkGenerationRequest& request)
 		{
 			return worldBodyTerrainDirectory(request.world_body_id) / "chunks"
 				/ chunkSaveFileName(request, false, chunk_save_version, false);
 		}
 
+		/**
+		 * @brief Performs the versioned chunk save file path operation.
+		 */
 		std::filesystem::path versionedChunkSaveFilePath(const ChunkGenerationRequest& request)
 		{
 			return worldBodyTerrainDirectory(request.world_body_id) / "chunks"
 				/ chunkSaveFileName(request, true, chunk_save_version, false);
 		}
 
+		/**
+		 * @brief Performs the legacy chunk save file path operation.
+		 */
 		std::filesystem::path legacyChunkSaveFilePath(const ChunkGenerationRequest& request)
 		{
 			return saveRootDirectory() / "terrain"
 				/ chunkSaveFileName(request, true, 6, true);
 		}
 
+		/**
+		 * @brief Performs the terrain edits file path operation.
+		 */
 		std::filesystem::path terrainEditsFilePath(WorldBodyId world_body_id, uint64 noise_seed)
 		{
 			return worldBodyTerrainDirectory(world_body_id)
 				/ ("edits_" + std::to_string(noise_seed) + ".bin");
 		}
 
+		/**
+		 * @brief Performs the legacy terrain edits file path operation.
+		 */
 		std::filesystem::path legacyTerrainEditsFilePath(WorldBodyId world_body_id, uint64 noise_seed)
 		{
 			return saveRootDirectory() / "terrain"
@@ -105,6 +135,10 @@ namespace danikk_space_engine
 	 * Loads a saved chunk only when its version, grid key, planet parameters, array sizes, and
 	 * every triangle index are valid. Geometry is first read into temporary arrays, so a corrupt or
 	 * truncated file leaves the caller's result unchanged and can safely fall back to regeneration.
+	 */
+
+	/**
+	 * @brief Loads planet chunk.
 	 */
 	bool loadPlanetChunk(const ChunkGenerationRequest& request, GeneratedChunkData& result)
 	{
@@ -181,6 +215,10 @@ namespace danikk_space_engine
 	 * Saves generated local-space geometry with its planet parameters, revision and format version.
 	 * Write failures are logged; generated geometry remains available to the running world.
 	 */
+
+	/**
+	 * @brief Saves planet chunk.
+	 */
 	void savePlanetChunk(const ChunkGenerationRequest& request, const GeneratedChunkData& result)
 	{
 		std::error_code error;
@@ -221,6 +259,10 @@ namespace danikk_space_engine
 	 * Loads the persistent list of spherical terrain operations for one planet identity. The file header
 	 * validates the radius, seed, format version, and count before edit records are accepted; malformed
 	 * or truncated data is ignored so the planet can still start from its procedural base field.
+	 */
+
+	/**
+	 * @brief Loads planet terrain edits.
 	 */
 	bool loadPlanetTerrainEdits(
 		WorldBodyId world_body_id,
@@ -276,6 +318,10 @@ namespace danikk_space_engine
 	/*
 	 * Persists terrain edits independently from generated meshes. Each operation is serialized field by
 	 * field rather than as a padded struct, and a failed disk write never interrupts terrain generation.
+	 */
+
+	/**
+	 * @brief Saves planet terrain edits.
 	 */
 	void savePlanetTerrainEdits(
 		WorldBodyId world_body_id,

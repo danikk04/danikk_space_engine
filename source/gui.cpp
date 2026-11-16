@@ -12,6 +12,9 @@ namespace danikk_space_engine
 
 	TextStyle debug_info_label_style;
 
+	/**
+	 * @brief Performs the define operation.
+	 */
 	void GUI::define()
 	{
     	debug_info_label_style.anchor = TextAnchor::multiline;
@@ -27,11 +30,17 @@ namespace danikk_space_engine
     	debug_info_label.name = "debug_info_label";
 	}
 
+	/**
+	 * @brief Performs the compose operation.
+	 */
 	void GUI::compose()
 	{
     	gui_root.addChild(debug_info_label);
 	}
 
+	/**
+	 * @brief Performs the frame operation.
+	 */
 	void GUI::frame()
 	{
 		memory_sample_timer += getTargetFrameDelay();

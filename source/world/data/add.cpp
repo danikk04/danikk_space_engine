@@ -4,7 +4,11 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
 		template<typename id_t>
+		/**
+		 * @brief Performs the contains id operation.
+		 */
 		bool containsId(const DynamicArray<id_t>& ids, id_t id)
 		{
 			for(id_t existing_id : ids)
@@ -15,6 +19,9 @@ namespace danikk_space_engine
 		}
 
 		template<typename id_t, typename array_t, typename attach_t>
+		/**
+		 * @brief Adds unique resource to chunk.
+		 */
 		void addUniqueResourceToChunk(
 			WorldData& world_data,
 			ChunkId chunk_id,
@@ -42,8 +49,12 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Adds point reference to chunk.
+	 */
 	void WorldData::addPointReferenceToChunk(ChunkId chunk_id, PointId point_id)
 	{
+
 		if(!isChunkActive(chunk_id) || !isPointActive(point_id))
 		{
 			danikk_engine::formatFatalError("Cannot attach point % to invalid chunk %", point_id, chunk_id);
@@ -61,6 +72,9 @@ namespace danikk_space_engine
 		point.referencing_chunk_count++;
 	}
 
+	/**
+	 * @brief Adds ground triangle to chunk.
+	 */
 	void WorldData::addGroundTriangleToChunk(ChunkId chunk_id, GroundTriangleId triangle_id)
 	{
 		GroundTriangle& triangle = getGroundTriangle(triangle_id);
@@ -68,6 +82,7 @@ namespace danikk_space_engine
 		{
 			danikk_engine::formatFatalError("Ground triangle % already belongs to chunk %", triangle_id, triangle.chunk_id);
 		}
+
 		addUniqueResourceToChunk(*this, chunk_id, triangle_id, isGroundTriangleActive(triangle_id), "ground triangle",
 			&Chunk::ground_triangle_ids,
 			[this, chunk_id, triangle_id]
@@ -81,8 +96,12 @@ namespace danikk_space_engine
 		triangle.index_in_chunk = chunk.ground_triangle_ids.size() - 1;
 	}
 
+	/**
+	 * @brief Adds point component slot to chunk.
+	 */
 	void WorldData::addPointComponentSlotToChunk(ChunkId chunk_id, PointComponentSlotId slot_id)
 	{
+
 		addUniqueResourceToChunk(*this, chunk_id, slot_id, isPointComponentSlotActive(slot_id), "point component",
 			&Chunk::point_component_slot_ids,
 			[this, chunk_id, slot_id]

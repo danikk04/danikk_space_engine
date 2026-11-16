@@ -5,6 +5,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Represents npc controller component data and behavior.
+	 */
 	struct NpcControllerComponent
 	{
 		PointComponentSlotId human_slot_id = static_cast<PointComponentSlotId>(-1);
@@ -21,12 +25,19 @@ namespace danikk_space_engine
 		vec2 look_target = vec2(0.0f);
 		uint32 random_state = 0;
 
+		/**
+		 * @brief Moves to.
+		 */
 		void moveTo(const vec3& position)
 		{
 			wander_enabled = false;
 			target_position = position;
 			has_movement_target = true;
 		}
+
+		/**
+		 * @brief Performs the stop operation.
+		 */
 		void stop()
 		{
 			wander_enabled = false;
@@ -34,11 +45,29 @@ namespace danikk_space_engine
 		}
 	};
 
+	/**
+	 * @brief Creates npc.
+	 */
 	PointComponentSlotId createNpc(World& world, WorldBodyId world_body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward);
 
+	/**
+	 * @brief Constructs npc controller component.
+	 */
 	void constructNpcControllerComponent(void* destination, const void* init_data);
+
+	/**
+	 * @brief Moves npc controller component.
+	 */
 	void moveNpcControllerComponent(void* destination, void* source);
+
+	/**
+	 * @brief Removes and releases npc controller component.
+	 */
 	void destroyNpcControllerComponent(void* data);
+
+	/**
+	 * @brief Runs one simulation tick for npc controller component.
+	 */
 	void tickNpcControllerComponent(PointComponentSlot& slot, World& world);
 }

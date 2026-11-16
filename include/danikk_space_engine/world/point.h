@@ -5,6 +5,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Stores a local position and the number of chunks that own the point.
+	 */
 	struct Point
 	{
 		vec3 position = vec3(0.0f);

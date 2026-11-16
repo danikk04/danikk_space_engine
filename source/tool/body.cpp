@@ -8,6 +8,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Reports whether planet chunk.
+		 */
 		bool isPlanetChunk(const World& world, ChunkId chunk_id)
 		{
 			if(!world.data.isChunkActive(chunk_id)) return false;
@@ -25,6 +29,9 @@ namespace danikk_space_engine
 			return false;
 		}
 
+		/**
+		 * @brief Adds triangle.
+		 */
 		GroundTriangleId addTriangle(World& world, ChunkId chunk_id, PointId a, PointId b, PointId c)
 		{
 			const GroundTriangleId triangle_id = world.data.createGroundTriangle();
@@ -40,6 +47,10 @@ namespace danikk_space_engine
 	// Replaces a triangular face with a translated cap and three side quads. Each quad is
 	// triangulated with a consistent outward winding. New points stay in the owning chunk's
 	// local space; the returned cap FacePtr becomes the controller's current selection.
+
+	/**
+	 * @brief Applies body extrude tool.
+	 */
 	ToolApplyResult applyBodyExtrudeTool(World& world, const FacePtr& face, double distance)
 	{
 		if(!world.data.isChunkActive(face.chunk_id)
@@ -100,6 +111,9 @@ namespace danikk_space_engine
 		return result;
 	}
 
+	/**
+	 * @brief Applies body tool.
+	 */
 	ToolApplyResult applyBodyTool(
 		World& world,
 		ToolActionId action,

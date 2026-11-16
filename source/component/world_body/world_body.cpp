@@ -22,6 +22,9 @@ namespace danikk_space_engine
 		};
 	}
 
+	/**
+	 * @brief Returns world body component type.
+	 */
 	const WorldBodyComponentType& getWorldBodyComponentType(WorldBodyComponentTypeId type_id)
 	{
 		const uint32 index = static_cast<uint32>(type_id);

@@ -8,6 +8,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Reports whether planet chunk.
+		 */
 		bool isPlanetChunk(const World& world, const Chunk& chunk)
 		{
 			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
@@ -25,6 +29,10 @@ namespace danikk_space_engine
 
 	// Draws a selected mesh triangle as a slightly inset overlay toward the camera.
 	// The overlay is omitted for generated planet terrain, which has no editable face selection.
+
+	/**
+	 * @brief Draws polygon highlight.
+	 */
 	void drawPolygonHighlight(
 		const World& world,
 		const FacePtr& face,
@@ -85,6 +93,9 @@ namespace danikk_space_engine
 		highlight_mesh.draw();
 	}
 
+	/**
+	 * @brief Draws polygon highlights.
+	 */
 	void drawPolygonHighlights(const World& world)
 	{
 		static Mesh highlight_mesh;

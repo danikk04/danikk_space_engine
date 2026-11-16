@@ -7,16 +7,30 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Represents gui data and behavior.
+	 */
 	class GUI
 	{
 		GUIElement debug_info_label;
 		size_t memory_sample_bytes = 0;
 		float memory_sample_timer = 1.0f;
 	public:
+
+		/**
+		 * @brief Performs the define operation.
+		 */
 		void define();
 
+		/**
+		 * @brief Performs the compose operation.
+		 */
 		void compose();
 
+		/**
+		 * @brief Performs the frame operation.
+		 */
 		void frame();
 	};
 

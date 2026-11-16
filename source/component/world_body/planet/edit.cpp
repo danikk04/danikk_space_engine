@@ -6,8 +6,15 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Performs the edit planet ground operation.
+	 */
 	bool editPlanetGround(World& world, const FacePtr& face, double radius, bool adds_solid_terrain)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("editPlanetGround");
 		if(!world.data.isChunkActive(face.chunk_id)
 			|| !world.data.isGroundTriangleActive(face.ground_triangle_id)) return false;

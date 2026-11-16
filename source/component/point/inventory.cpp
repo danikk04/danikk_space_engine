@@ -2,6 +2,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Constructs inventory component.
+	 */
 	void constructInventoryComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr)
@@ -12,6 +16,9 @@ namespace danikk_space_engine
 			new (destination) InventoryComponent(*static_cast<const InventoryComponent*>(init_data));
 	}
 
+	/**
+	 * @brief Moves inventory component.
+	 */
 	void moveInventoryComponent(void* destination, void* source)
 	{
 		if(destination == nullptr || source == nullptr)
@@ -21,6 +28,9 @@ namespace danikk_space_engine
 		source_inventory->~InventoryComponent();
 	}
 
+	/**
+	 * @brief Removes and releases inventory component.
+	 */
 	void destroyInventoryComponent(void* data)
 	{
 		if(data == nullptr)

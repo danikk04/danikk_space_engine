@@ -7,12 +7,19 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Performs the same chunk key operation.
+		 */
 		bool sameChunkKey(const glm::ivec3& left, const glm::ivec3& right)
 		{
 			return left.x == right.x && left.y == right.y && left.z == right.z;
 		}
 
 		template<typename value_t>
+		/**
+		 * @brief Erases at.
+		 */
 		void eraseAt(DynamicArray<value_t>& values, size_t index)
 		{
 			for(size_t shift = index + 1; shift < values.size(); shift++)
@@ -23,11 +30,17 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Accepts planet generated chunk.
+	 */
 	void acceptPlanetGeneratedChunk(
 		WorldBodyComponentSlot& slot,
 		World& world,
 		const GeneratedChunkData& generated_chunk)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Accept generated planet chunk");
 		// Discard stale results. Empty chunks are recorded without allocating WorldData resources;
 		// non-empty results are converted from local mesh indices into points and ground triangles.
@@ -37,6 +50,7 @@ namespace danikk_space_engine
 			|| planet.chunk_lookup.isGenerated(generated_chunk.grid_coordinate)) return;
 
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
+
 		if(generated_chunk.triangle_point_indices.size() > 0)
 		{
 			Chunk& chunk = world.data.createChunk(slot.world_body_id);

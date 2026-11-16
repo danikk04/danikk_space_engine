@@ -10,6 +10,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Creates world body cube at hit.
+		 */
 		void createWorldBodyCubeAtHit(World& world, const RaycastHit& hit)
 		{
 			constexpr float cube_size = 1.0f;
@@ -52,6 +56,9 @@ namespace danikk_space_engine
 			}
 		}
 
+		/**
+		 * @brief Creates machinegun at hit.
+		 */
 		void createMachinegunAtHit(World& world, const RaycastHit& hit)
 		{
 			const PointId point_id = world.data.createPoint();
@@ -76,6 +83,10 @@ namespace danikk_space_engine
 
 	// Applies placement actions at the raycast position. A machinegun is attached to the hit chunk;
 	// a new cube mesh is placed in its own WorldBody.
+
+	/**
+	 * @brief Applies place tool.
+	 */
 	ToolApplyResult applyPlaceTool(World& world, const RaycastHit& hit, ToolActionId action)
 	{
 		if(!hit.hit) return ToolApplyResult();

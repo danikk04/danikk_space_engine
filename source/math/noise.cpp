@@ -7,6 +7,10 @@
 
 namespace danikk_space_engine::math
 {
+
+	/**
+	 * @brief Performs the lattice noise3 d operation.
+	 */
 	double latticeNoise3D(std::int64_t x, std::int64_t y, std::int64_t z)
 	{
 		uint32_t hash = static_cast<uint32_t>(x) * 0x8DA6B343u;
@@ -21,6 +25,9 @@ namespace danikk_space_engine::math
 		return static_cast<double>(hash) / std::numeric_limits<uint32_t>::max() * 2.0 - 1.0;
 	}
 
+	/**
+	 * @brief Performs the value noise3 d operation.
+	 */
 	double valueNoise3D(const glm::dvec3& position)
 	{
 		const std::int64_t x0 = static_cast<std::int64_t>(std::floor(position.x));
@@ -41,6 +48,9 @@ namespace danikk_space_engine::math
 		return linearInterpolate(z00, z01, z);
 	}
 
+	/**
+	 * @brief Performs the fractal noise3 d operation.
+	 */
 	double fractalNoise3D(const glm::dvec3& position, uint8 octave_count, double persistence)
 	{
 		double result = 0.0;

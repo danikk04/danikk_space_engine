@@ -11,6 +11,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Generates chunks on a worker thread and delivers results to the main thread.
+	 */
 	class ChunkLoader
 	{
 		std::mutex mutex;
@@ -24,6 +28,9 @@ namespace danikk_space_engine
 		ChunkGenerationRequest active_request;
 		uint64 current_generation_id = 0;
 
+		/**
+		 * @brief Performs the run operation.
+		 */
 		void run();
 	public:
 		ChunkLoader() = default;
@@ -31,9 +38,24 @@ namespace danikk_space_engine
 		ChunkLoader& operator=(const ChunkLoader&) = delete;
 		~ChunkLoader();
 
+		/**
+		 * @brief Performs the start operation.
+		 */
 		void start();
+
+		/**
+		 * @brief Performs the stop operation.
+		 */
 		void stop();
+
+		/**
+		 * @brief Updates pending requests.
+		 */
 		void updatePendingRequests(uint64 generation_id, const DynamicArray<ChunkGenerationRequest>& new_requests);
+
+		/**
+		 * @brief Attempts to obtain take completed.
+		 */
 		bool tryTakeCompleted(GeneratedChunkData& result);
 	};
 }

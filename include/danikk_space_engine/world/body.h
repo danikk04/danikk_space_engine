@@ -7,6 +7,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Represents a positioned world body and owns its chunks and components.
+	 */
 	class WorldBody
 	{
 	public:
@@ -19,9 +23,24 @@ namespace danikk_space_engine
 		DynamicArray<ChunkId> chunk_ids;
 		DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
 
+		/**
+		 * @brief Adds chunk.
+		 */
 		void addChunk(ChunkId chunk_id);
+
+		/**
+		 * @brief Removes chunk.
+		 */
 		bool removeChunk(ChunkId chunk_id);
+
+		/**
+		 * @brief Adds component slot.
+		 */
 		void addComponentSlot(WorldBodyComponentSlotId slot_id);
+
+		/**
+		 * @brief Removes component slot.
+		 */
 		bool removeComponentSlot(WorldBodyComponentSlotId slot_id);
 	};
 }

@@ -12,12 +12,19 @@ namespace danikk_space_engine
 
 	namespace
 	{
+
+		/**
+		 * @brief Represents planet collision target data and behavior.
+		 */
 		struct PlanetCollisionTarget
 		{
 			WorldBodyId body_id;
 			const PlanetComponent* planet;
 		};
 
+		/**
+		 * @brief Represents surface contact data and behavior.
+		 */
 		struct SurfaceContact
 		{
 			glm::dvec3 local_point = glm::dvec3(0.0);
@@ -25,6 +32,9 @@ namespace danikk_space_engine
 			double penetration = 0.0;
 		};
 
+		/**
+		 * @brief Represents surface contact manifold data and behavior.
+		 */
 		struct SurfaceContactManifold
 		{
 			SurfaceContact contact;
@@ -32,6 +42,10 @@ namespace danikk_space_engine
 		};
 
 		// Samples the field gradient at mesh points, groups similar normals and resolves support contacts.
+
+		/**
+		 * @brief Checks collision for chunk surface with planet.
+		 */
 		void collideChunkSurfaceWithPlanet(World& world, WorldBody& moving_body,
 			const Chunk& moving_chunk, const BodyMassProperties& mass_properties,
 			const PlanetCollisionTarget& target)
@@ -138,6 +152,10 @@ namespace danikk_space_engine
 		}
 
 		// Samples the scalar field and its gradient to find a sphere fallback contact.
+
+		/**
+		 * @brief Returns planet surface contact.
+		 */
 		bool getPlanetSurfaceContact(const PlanetComponent& planet, const glm::dvec3& field_position,
 			double collider_radius, glm::dvec3& outward_direction, double& penetration)
 		{
@@ -176,10 +194,18 @@ namespace danikk_space_engine
 	}
 
 	// Collects planet targets and resolves sphere or mesh contacts for each moving body.
+
+	/**
+	 * @brief Resolves planet collisions.
+	 */
 	void WorldPhysics::resolvePlanetCollisions(World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("World::planet collisions");
 		DynamicArray<PlanetCollisionTarget> planets;
+
 		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = world.data.getWorldBody(body_id);

@@ -75,6 +75,9 @@ namespace danikk_space_engine
 			== static_cast<size_t>(PointComponentTypeId::count));
 	}
 
+	/**
+	 * @brief Returns point component type.
+	 */
 	const PointComponentType& getPointComponentType(PointComponentTypeId type_id)
 	{
 		const uint32 index = static_cast<uint32>(type_id);

@@ -5,6 +5,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Performs the point is referenced by chunk operation.
+		 */
 		bool pointIsReferencedByChunk(const WorldData& data, const Chunk& chunk, PointId point_id)
 		{
 			for(GroundTriangleId triangle_id : chunk.ground_triangle_ids)
@@ -33,6 +37,10 @@ namespace danikk_space_engine
 
 	// Removes selected standalone triangles and unreferenced points. Planet triangles
 	// instead add a subtractive terrain edit, because their mesh is generated from a field.
+
+	/**
+	 * @brief Deletes faces.
+	 */
 	void World::deleteFaces(const DynamicArray<FacePtr>& faces)
 	{
 		DynamicArray<GroundTriangleId> handled_triangle_ids;

@@ -10,6 +10,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Returns dragged world body id.
+		 */
 		WorldBodyId getDraggedWorldBodyId(const World& world)
 		{
 			if(world.local_player_controller_component_slot_id >= world.data.getPointComponentSlotCount()
@@ -24,13 +28,21 @@ namespace danikk_space_engine
 	}
 
 	// Applies planetary gravity, integrates linear velocity, then updates body rotation.
+
+	/**
+	 * @brief Integrates motion.
+	 */
 	void WorldPhysics::integrateMotion(World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("World::body motion");
 		const float delta_time = danikk_engine::getTargetFrameDelay();
 		if(delta_time <= 0.0f) return;
 
 		const WorldBodyId dragged_body_id = getDraggedWorldBodyId(world);
+
 		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
 		{
 			if(body_id == dragged_body_id) continue;

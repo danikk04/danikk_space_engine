@@ -4,6 +4,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Constructs graph marker.
+		 */
 		void constructGraphMarker(void* destination, const void* init_data)
 		{
 			*static_cast<uint8*>(destination) = init_data == nullptr
@@ -11,6 +15,9 @@ namespace danikk_space_engine
 				: *static_cast<const uint8*>(init_data);
 		}
 
+		/**
+		 * @brief Moves graph marker.
+		 */
 		void moveGraphMarker(void* destination, void* source)
 		{
 			*static_cast<uint8*>(destination) = *static_cast<uint8*>(source);
@@ -45,6 +52,9 @@ namespace danikk_space_engine
 		};
 	}
 
+	/**
+	 * @brief Returns graph component type.
+	 */
 	const GraphComponentType& getGraphComponentType(GraphComponentTypeId type_id)
 	{
 		const uint32 index = static_cast<uint32>(type_id);

@@ -7,7 +7,11 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
 		template<typename id_t>
+		/**
+		 * @brief Erases id.
+		 */
 		bool eraseId(DynamicArray<id_t>& ids, id_t id)
 		{
 			bool erased = false;
@@ -26,6 +30,9 @@ namespace danikk_space_engine
 		}
 
 		template<typename array_t, typename id_t>
+		/**
+		 * @brief Erases id from chunks.
+		 */
 		void eraseIdFromChunks(
 			WorldData& world_data,
 			const DynamicArray<ChunkId>& chunk_ids,
@@ -41,6 +48,9 @@ namespace danikk_space_engine
 		}
 
 		template<typename pool_t, typename predicate_t, typename destroy_t>
+		/**
+		 * @brief Removes and releases matching resources.
+		 */
 		void destroyMatchingResources(pool_t& pool, predicate_t matches, destroy_t destroy)
 		{
 			for(size_t index = 0; index < pool.usedIds().size();)
@@ -52,24 +62,36 @@ namespace danikk_space_engine
 		}
 
 		template<typename list_t, typename destroy_t>
+		/**
+		 * @brief Removes and releases last until empty.
+		 */
 		void destroyLastUntilEmpty(const list_t& ids, destroy_t destroy)
 		{
 			while(ids.size() > 0) destroy(ids[ids.size() - 1]);
 		}
 
 		template<typename... pool_t>
+		/**
+		 * @brief Clears pools.
+		 */
 		void clearPools(pool_t&... pools)
 		{
 			(pools.clear(), ...);
 		}
 
 		template<typename... pool_t>
+		/**
+		 * @brief Releases pools.
+		 */
 		void releasePools(pool_t&... pools)
 		{
 			(pools.releaseMemory(), ...);
 		}
 
 		template<typename slot_t, typename component_type_t, typename id_t>
+		/**
+		 * @brief Removes and releases component payload.
+		 */
 		void destroyComponentPayload(
 			slot_t& slot,
 			const component_type_t& type,
@@ -97,8 +119,15 @@ namespace danikk_space_engine
 	// that use the point. Each matching resource is destroyed through its normal
 	// cleanup path; the scan keeps its index when an ID is erased because the next
 	// active ID shifts into that position. The point slot is freed after dependents.
+
+	/**
+	 * @brief Removes and releases point.
+	 */
 	void WorldData::destroyPoint(PointId id)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("WorldData::destroyPoint");
 		if(!isPointActive(id)) return;
 
@@ -121,8 +150,14 @@ namespace danikk_space_engine
 		points.free(id);
 	}
 
+	/**
+	 * @brief Removes and releases ground triangle.
+	 */
 	void WorldData::destroyGroundTriangle(GroundTriangleId id)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("WorldData::destroyGroundTriangle");
 		if(!isGroundTriangleActive(id)) return;
 		GroundTriangle& triangle = ground_triangles[id];
@@ -154,8 +189,15 @@ namespace danikk_space_engine
 	// Detaches the chunk from any WorldBody that lists it, destroys its components and geometry,
 	// releases its mesh, then decrements each point's chunk-reference count. Points whose count
 	// reaches zero are freed directly because this chunk's dependents have already been destroyed.
+
+	/**
+	 * @brief Removes and releases chunk.
+	 */
 	void WorldData::destroyChunk(ChunkId id)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("WorldData::destroyChunk");
 		if(!isChunkActive(id)) return;
 
@@ -168,6 +210,7 @@ namespace danikk_space_engine
 		destroyLastUntilEmpty(chunk.ground_triangle_ids,
 			[this](GroundTriangleId triangle_id) { destroyGroundTriangle(triangle_id); });
 		chunk.destroyMesh();
+
 		while(chunk.point_ids.size() > 0)
 		{
 			const PointId point_id = chunk.point_ids[chunk.point_ids.size() - 1];
@@ -193,10 +236,14 @@ namespace danikk_space_engine
 		chunks.free(id);
 	}
 
+	/**
+	 * @brief Removes and releases world body.
+	 */
 	void WorldData::destroyWorldBody(WorldBodyId id)
 	{
 		if(!isWorldBodyActive(id)) return;
 		WorldBody& body = world_bodies[id];
+
 		while(body.component_slot_ids.size() > 0)
 		{
 			destroyWorldBodyComponentSlot(body.component_slot_ids[body.component_slot_ids.size() - 1]);
@@ -205,6 +252,9 @@ namespace danikk_space_engine
 		world_bodies.free(id);
 	}
 
+	/**
+	 * @brief Removes and releases world body component slot.
+	 */
 	void WorldData::destroyWorldBodyComponentSlot(WorldBodyComponentSlotId id)
 	{
 		if(!isWorldBodyComponentSlotActive(id)) return;
@@ -216,6 +266,9 @@ namespace danikk_space_engine
 		world_body_components.free(id);
 	}
 
+	/**
+	 * @brief Removes and releases point component slot.
+	 */
 	void WorldData::destroyPointComponentSlot(PointComponentSlotId id)
 	{
 		if(!isPointComponentSlotActive(id)) return;
@@ -228,6 +281,9 @@ namespace danikk_space_engine
 		point_components.free(id);
 	}
 
+	/**
+	 * @brief Removes and releases graph component slot.
+	 */
 	void WorldData::destroyGraphComponentSlot(GraphComponentSlotId id)
 	{
 		if(!isGraphComponentSlotActive(id)) return;
@@ -240,6 +296,9 @@ namespace danikk_space_engine
 		graph_components.free(id);
 	}
 
+	/**
+	 * @brief Performs the clear operation.
+	 */
 	void WorldData::clear()
 	{
 		destroyLastUntilEmpty(world_body_components.usedIds(),
@@ -251,6 +310,9 @@ namespace danikk_space_engine
 		clearPools(point_components, graph_components, world_body_components, chunks, world_bodies, points, ground_triangles);
 	}
 
+	/**
+	 * @brief Performs the release operation.
+	 */
 	void WorldData::release()
 	{
 		clear();

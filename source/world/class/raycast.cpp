@@ -12,6 +12,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Performs the ray intersects sphere operation.
+		 */
 		bool rayIntersectsSphere(const vec3& center, float radius, const vec3& direction, float max_distance)
 		{
 			const float projection = glm::dot(center, direction);
@@ -24,6 +28,9 @@ namespace danikk_space_engine
 			return projection + half_chord >= 0.0f && projection - half_chord <= max_distance;
 		}
 
+		/**
+		 * @brief Returns planet component.
+		 */
 		const PlanetComponent* getPlanetComponent(const WorldData& data, const WorldBody& body)
 		{
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
@@ -42,8 +49,15 @@ namespace danikk_space_engine
 	// Tests candidate chunks for triangle intersections. Planet chunks are located through the
 	// planet's coordinate hash table while a 3D DDA walks only grid cells crossed by the ray;
 	// irregular/non-planet bodies retain the existing per-body chunk scan.
+
+	/**
+	 * @brief Performs the raycast operation.
+	 */
 	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("World::raycast");
 		RaycastHit result;
 		const float direction_length = glm::length(direction);
@@ -163,6 +177,9 @@ namespace danikk_space_engine
 		return result;
 	}
 
+	/**
+	 * @brief Finds the nearest ray intersection with from camera.
+	 */
 	RaycastHit World::raycastFromCamera(float max_distance) const
 	{
 		if(camera_component_slot_id >= data.getPointComponentSlotCount()) return RaycastHit{};

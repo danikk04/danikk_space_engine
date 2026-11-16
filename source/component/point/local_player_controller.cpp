@@ -11,6 +11,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Finds owning chunk id.
+		 */
 		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
 			for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
@@ -29,6 +33,9 @@ namespace danikk_space_engine
 			return static_cast<ChunkId>(-1);
 		}
 
+		/**
+		 * @brief Performs the duplicate controller point with machinegun operation.
+		 */
 		void duplicateControllerPointWithMachinegun(
 			const Point& source_point,
 			const CameraComponent& camera,
@@ -48,6 +55,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Constructs local player controller component.
+	 */
 	void constructLocalPlayerControllerComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr)
@@ -64,6 +74,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Moves local player controller component.
+	 */
 	void moveLocalPlayerControllerComponent(void* destination, void* source)
 	{
 		if(destination == nullptr || source == nullptr)
@@ -75,6 +88,9 @@ namespace danikk_space_engine
 		source_controller->~LocalPlayerControllerComponent();
 	}
 
+	/**
+	 * @brief Removes and releases local player controller component.
+	 */
 	void destroyLocalPlayerControllerComponent(void* data)
 	{
 		if(data == nullptr)
@@ -84,9 +100,16 @@ namespace danikk_space_engine
 		static_cast<LocalPlayerControllerComponent*>(data)->~LocalPlayerControllerComponent();
 	}
 
+	/**
+	 * @brief Runs one simulation tick for local player controller component.
+	 */
 	void tickLocalPlayerControllerComponent(PointComponentSlot& slot, World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("tickLocalPlayerControllerComponent");
+
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Local player controller tick received null data");
@@ -121,9 +144,17 @@ namespace danikk_space_engine
 	// Keeps selected faces at the start of selected_faces and appends the hovered face
 	// when it is not already selected. This lets editing operate on the selected prefix,
 	// while rendering gets both selection and hover state from the same array.
+
+	/**
+	 * @brief Performs the tick operation.
+	 */
 	void LocalPlayerControllerComponent::tick(World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("LocalPlayerControllerComponent::tick");
+
 		if(selected_faces.size() > selected_face_count)
 		{
 			selected_faces.resize(selected_face_count);

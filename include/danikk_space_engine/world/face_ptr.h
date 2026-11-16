@@ -5,6 +5,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Identifies a terrain face by its owning chunk and face index.
+	 */
 	struct FacePtr
 	{
 		ChunkId chunk_id = 0;

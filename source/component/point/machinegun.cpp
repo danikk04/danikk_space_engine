@@ -18,6 +18,9 @@ namespace danikk_space_engine
 		constexpr float muzzle_forward_offset = 4.4f;
 		constexpr float muzzle_vertical_offset = 0.31f;
 
+		/**
+		 * @brief Returns orientation matrix.
+		 */
 		mat4 getOrientationMatrix(const MachinegunComponent& machinegun)
 		{
 			mat4 orientation(1.0f);
@@ -27,6 +30,9 @@ namespace danikk_space_engine
 			return orientation;
 		}
 
+		/**
+		 * @brief Finds owning chunk id.
+		 */
 		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
 			for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
@@ -45,6 +51,9 @@ namespace danikk_space_engine
 			return static_cast<ChunkId>(-1);
 		}
 
+		/**
+		 * @brief Spawns bullet.
+		 */
 		void spawnBullet(ChunkId chunk_id, const vec3& position, const vec3& direction, World& world)
 		{
 			const PointId point_id = world.data.createPoint();
@@ -59,6 +68,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Constructs machinegun component.
+	 */
 	void constructMachinegunComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr)
@@ -75,6 +87,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Moves machinegun component.
+	 */
 	void moveMachinegunComponent(void* destination, void* source)
 	{
 		if(destination == nullptr || source == nullptr)
@@ -86,6 +101,9 @@ namespace danikk_space_engine
 		std::destroy_at(source_component);
 	}
 
+	/**
+	 * @brief Removes and releases machinegun component.
+	 */
 	void destroyMachinegunComponent(void* data)
 	{
 		if(data == nullptr)
@@ -97,13 +115,22 @@ namespace danikk_space_engine
 
 	// Accumulates simulation time, resolves the weapon's owning chunk and muzzle transform,
 	// then creates one moving bullet point for every elapsed 0.25-second firing interval.
+
+	/**
+	 * @brief Runs one simulation tick for machinegun component.
+	 */
 	void tickMachinegunComponent(PointComponentSlot& slot, World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("MachinegunComponent::tick");
+
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Machinegun component tick received null data");
 		}
+
 		if(!world.data.isPointActive(slot.point_id))
 		{
 			danikk_engine::formatFatalError("Machinegun component references invalid point %", slot.point_id);
@@ -150,12 +177,18 @@ namespace danikk_space_engine
 	// Draws the shared MG-42 mesh at the position of the point that owns this component.
 	// The component scale is applied after translation; OBJ groups and materials have already
 	// been combined into the shared mesh during static asset loading.
+
+	/**
+	 * @brief Processes one frame for machinegun component.
+	 */
 	void frameMachinegunComponent(PointComponentSlot& slot, World& world)
 	{
+
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Machinegun component frame received null data");
 		}
+
 		if(!world.data.isPointActive(slot.point_id))
 		{
 			danikk_engine::formatFatalError("Machinegun component references invalid point %", slot.point_id);

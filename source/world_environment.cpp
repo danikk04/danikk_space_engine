@@ -7,6 +7,10 @@ namespace danikk_space_engine
 {
 	// No temperature providers are registered yet. Availability distinguishes a missing field from
 	// a valid physical temperature of zero kelvin.
+
+	/**
+	 * @brief Computes a sample for temperature at.
+	 */
 	TemperatureSample WorldEnvironment::sampleTemperatureAt(
 		const World& world,
 		const glm::dvec3& world_position,
@@ -20,6 +24,10 @@ namespace danikk_space_engine
 
 	// No radiation providers are registered yet. Availability distinguishes a missing field from
 	// a valid zero dose rate.
+
+	/**
+	 * @brief Computes a sample for radiation at.
+	 */
 	RadiationSample WorldEnvironment::sampleRadiationAt(
 		const World& world,
 		const glm::dvec3& world_position,
@@ -31,9 +39,13 @@ namespace danikk_space_engine
 		return RadiationSample{};
 	}
 
+	/**
+	 * @brief Computes a sample for gravity at.
+	 */
 	glm::dvec3 WorldEnvironment::sampleGravityAt(const World& world, const glm::dvec3& world_position) const
 	{
 		glm::dvec3 gravity(0.0);
+
 		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = world.data.getWorldBody(body_id);

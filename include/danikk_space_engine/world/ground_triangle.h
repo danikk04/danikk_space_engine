@@ -6,6 +6,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Defines one terrain surface triangle by the IDs of its three points.
+	 */
 	struct GroundTriangle
 	{
 		static constexpr uint32 no_chunk = static_cast<uint32>(-1);

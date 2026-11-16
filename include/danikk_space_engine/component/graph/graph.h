@@ -21,6 +21,9 @@ namespace danikk_space_engine
 	using GraphComponentDestroyFunction = void (*)(void* data);
 	using GraphComponentUpdateFunction = void (*)(GraphComponentSlot& slot, World& world);
 
+	/**
+	 * @brief Represents graph component type data and behavior.
+	 */
 	struct GraphComponentType
 	{
 		size_t data_size = 0;
@@ -33,8 +36,14 @@ namespace danikk_space_engine
 		GraphComponentUpdateFunction frame = nullptr;
 	};
 
+	/**
+	 * @brief Returns graph component type.
+	 */
 	const GraphComponentType& getGraphComponentType(GraphComponentTypeId type_id);
 
+	/**
+	 * @brief Associates component data and callbacks with a pair of world points.
+	 */
 	struct GraphComponentSlot
 	{
 		static constexpr size_t inline_data_capacity = 32;
@@ -49,16 +58,25 @@ namespace danikk_space_engine
 			void* external_data;
 		};
 
+		/**
+		 * @brief Returns data.
+		 */
 		void* getData()
 		{
 			return uses_external_data ? external_data : inline_data;
 		}
 
+		/**
+		 * @brief Returns data.
+		 */
 		const void* getData() const
 		{
 			return uses_external_data ? external_data : inline_data;
 		}
 
+		/**
+		 * @brief Performs the dispose operation.
+		 */
 		void dispose()
 		{
 			*this = GraphComponentSlot();

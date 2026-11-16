@@ -12,6 +12,9 @@ namespace danikk_space_engine
 	{
 		constexpr WorldBodyId no_dragged_body = static_cast<WorldBodyId>(-1);
 
+		/**
+		 * @brief Reports whether drag world body.
+		 */
 		bool canDragWorldBody(const World& world, WorldBodyId body_id)
 		{
 			if(!world.data.isWorldBodyActive(body_id)) return false;
@@ -35,6 +38,9 @@ namespace danikk_space_engine
 			return true;
 		}
 
+		/**
+		 * @brief Clears drag.
+		 */
 		void clearDrag(LocalPlayerControllerComponent& controller)
 		{
 			controller.dragged_world_body_id = no_dragged_body;
@@ -47,6 +53,10 @@ namespace danikk_space_engine
 	// its current camera distance while the camera moves. Normal scrolling rotates the body; with
 	// Alt, scrolling changes the distance and cursor movement rotates it around camera-relative axes.
 	// After each transform, body position is adjusted to keep the grabbed point on the view ray.
+
+	/**
+	 * @brief Runs one simulation tick for drag tool.
+	 */
 	void tickDragTool(
 		World& world,
 		LocalPlayerControllerComponent& controller,
@@ -83,6 +93,7 @@ namespace danikk_space_engine
 
 		const WorldBodyId body_id = controller.dragged_world_body_id;
 		if(body_id == no_dragged_body) return;
+
 		if(!canDragWorldBody(world, body_id))
 		{
 			clearDrag(controller);

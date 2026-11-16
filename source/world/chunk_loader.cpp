@@ -6,6 +6,9 @@ namespace danikk_space_engine
 	{
 		constexpr size_t max_completed_chunks = 2;
 
+		/**
+		 * @brief Performs the same request key operation.
+		 */
 		bool sameRequestKey(const ChunkGenerationRequest& left, const ChunkGenerationRequest& right)
 		{
 			return left.generation_id == right.generation_id
@@ -16,6 +19,9 @@ namespace danikk_space_engine
 				&& left.grid_coordinate == right.grid_coordinate;
 		}
 
+		/**
+		 * @brief Performs the request has completed result operation.
+		 */
 		bool requestHasCompletedResult(
 			const ChunkGenerationRequest& request,
 			const DynamicArray<GeneratedChunkData>& completed)
@@ -33,11 +39,17 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Stops the worker thread and releases loader resources.
+	 */
 	ChunkLoader::~ChunkLoader()
 	{
 		stop();
 	}
 
+	/**
+	 * @brief Performs the start operation.
+	 */
 	void ChunkLoader::start()
 	{
 		std::lock_guard<std::mutex> guard(mutex);
@@ -46,6 +58,9 @@ namespace danikk_space_engine
 		worker = std::thread(&ChunkLoader::run, this);
 	}
 
+	/**
+	 * @brief Performs the stop operation.
+	 */
 	void ChunkLoader::stop()
 	{
 		{
@@ -63,6 +78,9 @@ namespace danikk_space_engine
 		stopping = false;
 	}
 
+	/**
+	 * @brief Updates pending requests.
+	 */
 	void ChunkLoader::updatePendingRequests(
 		uint64 generation_id,
 		const DynamicArray<ChunkGenerationRequest>& new_requests)
@@ -106,9 +124,13 @@ namespace danikk_space_engine
 		order_available.notify_one();
 	}
 
+	/**
+	 * @brief Attempts to obtain take completed.
+	 */
 	bool ChunkLoader::tryTakeCompleted(GeneratedChunkData& result)
 	{
 		std::lock_guard<std::mutex> guard(mutex);
+
 		while(!completed.empty())
 		{
 			GeneratedChunkData candidate = static_cast<GeneratedChunkData&&>(completed[0]);
@@ -125,6 +147,9 @@ namespace danikk_space_engine
 		return false;
 	}
 
+	/**
+	 * @brief Performs the run operation.
+	 */
 	void ChunkLoader::run()
 	{
 		while(true)

@@ -8,6 +8,9 @@ namespace danikk_space_engine
 
     extern danikk_framework::Localization localization;
 
+	/**
+	 * @brief Initializes localiztion.
+	 */
 	void initLocaliztion();
 
 #define localization danikk_space_engine::localization

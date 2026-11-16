@@ -12,6 +12,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Represents static asset collection data and behavior.
+	 */
 	struct StaticAssetCollection
 	{
 		Shader base2d_shader;
@@ -27,8 +31,19 @@ namespace danikk_space_engine
 		Texture border_texture;
 		Texture container_texture;
 
+		/**
+		 * @brief Performs the load operation.
+		 */
 		void load();
+
+		/**
+		 * @brief Loads minecraft skin.
+		 */
 		HumanSkinId loadMinecraftSkin(const char* texture_name);
+
+		/**
+		 * @brief Returns minecraft skin.
+		 */
 		Texture& getMinecraftSkin(HumanSkinId skin_id);
 	};
 
@@ -39,7 +54,6 @@ namespace danikk_space_engine
 		static constexpr uint32 axis_size = 2048;
 		static constexpr uint32 texture_axis_size = 128;
 		static constexpr uint32 texture_axis_count = axis_size / texture_axis_size;
-
 		Texture& getAtlas(uint index);
 
 		Sprite getTextureFromAtlas(uint atlas_index, uint in_atlas_index);

@@ -9,6 +9,10 @@ namespace danikk_space_engine
 {
 	// Builds a blue cube at the same position used by Build -> Create WorldBody.
 	// Geometry is camera-relative to retain precision while previewing far from the origin.
+
+	/**
+	 * @brief Draws world body placement preview.
+	 */
 	void drawWorldBodyPlacementPreview(World& world, const RaycastHit& hit)
 	{
 		if(!hit.hit) return;

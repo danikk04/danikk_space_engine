@@ -9,6 +9,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Processes player input, face selection, and active tool actions.
+	 */
 	class LocalPlayerControllerComponent
 	{
 	public:
@@ -28,11 +32,29 @@ namespace danikk_space_engine
 		double dragged_human_distance = 0.0;
 		bool dragged_human_followed_ground = true;
 
+		/**
+		 * @brief Performs the tick operation.
+		 */
 		void tick(World& world);
 	};
 
+	/**
+	 * @brief Constructs local player controller component.
+	 */
 	void constructLocalPlayerControllerComponent(void* destination, const void* init_data);
+
+	/**
+	 * @brief Moves local player controller component.
+	 */
 	void moveLocalPlayerControllerComponent(void* destination, void* source);
+
+	/**
+	 * @brief Removes and releases local player controller component.
+	 */
 	void destroyLocalPlayerControllerComponent(void* data);
+
+	/**
+	 * @brief Runs one simulation tick for local player controller component.
+	 */
 	void tickLocalPlayerControllerComponent(PointComponentSlot& slot, World& world);
 }

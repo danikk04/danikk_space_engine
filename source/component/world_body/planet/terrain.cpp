@@ -9,6 +9,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Performs the planet noise seed offset operation.
+		 */
 		glm::dvec3 planetNoiseSeedOffset(uint64 seed)
 		{
 			const uint32 first = static_cast<uint32>(seed) * 0x9E3779B9u;
@@ -17,11 +21,17 @@ namespace danikk_space_engine
 			return glm::dvec3(first % 10000u, second % 10000u, third % 10000u) * 0.01;
 		}
 
+		/**
+		 * @brief Computes a sample for planet terrain height.
+		 */
 		double samplePlanetTerrainHeight(const glm::dvec3& position, uint64 noise_seed)
 		{
 			return math::fractalNoise3D(position * 0.02 + planetNoiseSeedOffset(noise_seed), 3, 0.5) * 16.0;
 		}
 
+		/**
+		 * @brief Computes a sample for planet surface radius.
+		 */
 		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed)
 		{
 			double surface_radius = radius;
@@ -32,6 +42,9 @@ namespace danikk_space_engine
 			return surface_radius;
 		}
 
+		/**
+		 * @brief Computes a sample for planet core density.
+		 */
 		double samplePlanetCoreDensity(
 			const glm::dvec3& position,
 			double distance_from_center,
@@ -51,6 +64,10 @@ namespace danikk_space_engine
 	// Combines the radial terrain field, cave carving, persistent edits, and a deterministic noisy
 	// solid core. The core floor is applied last, ensuring edits and cave noise cannot hollow it out;
 	// its configured radius varies slightly with deterministic seeded noise.
+
+	/**
+	 * @brief Computes a sample for planet scalar field.
+	 */
 	double samplePlanetScalarField(
 		const glm::dvec3& position_relative_to_planet_center,
 		double radius,
@@ -81,6 +98,9 @@ namespace danikk_space_engine
 		return density;
 	}
 
+	/**
+	 * @brief Returns planet surface material.
+	 */
 	MaterialId getPlanetSurfaceMaterial(
 		const glm::dvec3& position_relative_to_planet_center,
 		double radius,

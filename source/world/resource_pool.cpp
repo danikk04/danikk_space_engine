@@ -3,6 +3,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Logs world resource capacity change.
+	 */
 	void logWorldResourceCapacityChange(const char* resource_name, const char* array_name,
 		size_t old_capacity, size_t new_capacity)
 	{
@@ -11,6 +15,9 @@ namespace danikk_space_engine
 			resource_name, array_name, old_capacity, new_capacity);
 	}
 
+	/**
+	 * @brief Finds world resource id.
+	 */
 	size_t findWorldResourceId(const DynamicArray<uint32>& ids, uint32 id)
 	{
 		size_t first = 0;
@@ -24,6 +31,9 @@ namespace danikk_space_engine
 		return first;
 	}
 
+	/**
+	 * @brief Performs the insert world resource id operation.
+	 */
 	void insertWorldResourceId(DynamicArray<uint32>& ids, uint32 id)
 	{
 		const size_t index = findWorldResourceId(ids, id);
@@ -35,6 +45,9 @@ namespace danikk_space_engine
 		ids[index] = id;
 	}
 
+	/**
+	 * @brief Erases world resource id.
+	 */
 	bool eraseWorldResourceId(DynamicArray<uint32>& ids, uint32 id)
 	{
 		const size_t index = findWorldResourceId(ids, id);

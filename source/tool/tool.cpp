@@ -10,6 +10,9 @@ namespace danikk_space_engine
 		constexpr ToolActionId place_actions[] = {ToolActionId::machinegun, ToolActionId::create_body};
 		constexpr ToolActionId human_actions[] = {ToolActionId::drag, ToolActionId::create_human};
 
+		/**
+		 * @brief Returns actions.
+		 */
 		const ToolActionId* getActions(ToolId tool, size_t& count)
 		{
 			switch(tool)
@@ -36,6 +39,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Advances tool.
+	 */
 	ToolId stepTool(ToolId current, int direction)
 	{
 		constexpr int tool_count = static_cast<int>(ToolId::count);
@@ -45,6 +51,9 @@ namespace danikk_space_engine
 		return static_cast<ToolId>(next);
 	}
 
+	/**
+	 * @brief Returns first tool action.
+	 */
 	ToolActionId getFirstToolAction(ToolId tool)
 	{
 		size_t count = 0;
@@ -52,6 +61,9 @@ namespace danikk_space_engine
 		return count == 0 ? ToolActionId::none : actions[0];
 	}
 
+	/**
+	 * @brief Advances tool action.
+	 */
 	ToolActionId stepToolAction(ToolId tool, ToolActionId current, int direction)
 	{
 		size_t count = 0;
@@ -69,6 +81,9 @@ namespace danikk_space_engine
 		return actions[next];
 	}
 
+	/**
+	 * @brief Returns tool name.
+	 */
 	const char* getToolName(ToolId tool)
 	{
 		switch(tool)
@@ -83,6 +98,9 @@ namespace danikk_space_engine
 		return "Unknown";
 	}
 
+	/**
+	 * @brief Returns tool action name.
+	 */
 	const char* getToolActionName(ToolActionId action)
 	{
 		switch(action)
@@ -99,6 +117,9 @@ namespace danikk_space_engine
 		return "Unknown";
 	}
 
+	/**
+	 * @brief Applies tool.
+	 */
 	ToolApplyResult applyTool(
 		ToolId tool,
 		ToolActionId action,

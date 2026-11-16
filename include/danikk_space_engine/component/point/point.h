@@ -27,6 +27,9 @@ namespace danikk_space_engine
 	using PointComponentDestroyFunction = void (*)(void* data);
 using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& world);
 
+	/**
+	 * @brief Represents point component type data and behavior.
+	 */
 	struct PointComponentType
 	{
 		size_t data_size = 0;
@@ -39,8 +42,14 @@ using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& w
 		PointComponentUpdateFunction frame = nullptr;
 	};
 
+	/**
+	 * @brief Returns point component type.
+	 */
 	const PointComponentType& getPointComponentType(PointComponentTypeId type_id);
 
+	/**
+	 * @brief Associates component data and callbacks with a world point.
+	 */
 	struct PointComponentSlot
 	{
 		static constexpr size_t inline_data_capacity = 32;
@@ -55,16 +64,25 @@ using PointComponentUpdateFunction = void (*)(PointComponentSlot& slot, World& w
 			void* external_data;
 		};
 
+		/**
+		 * @brief Returns data.
+		 */
 		void* getData()
 		{
 			return uses_external_data ? external_data : inline_data;
 		}
 
+		/**
+		 * @brief Returns data.
+		 */
 		const void* getData() const
 		{
 			return uses_external_data ? external_data : inline_data;
 		}
 
+		/**
+		 * @brief Performs the dispose operation.
+		 */
 		void dispose()
 		{
 			*this = PointComponentSlot();

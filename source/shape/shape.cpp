@@ -10,6 +10,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Adds quad.
+	 */
 	static void addQuad(DynamicMesh<DefaultVertex>& mesh, const vec3& a, const vec3& b,
 			const vec3& c, const vec3& d, const vec3& normal, float u_size, float v_size)
 	{
@@ -26,6 +30,10 @@ namespace danikk_space_engine
 	// Creates a unit cube mesh whose face UV ranges tile according to the requested dimensions.
 	// Allocates a Mesh, emits six independently normaled quads with size-based UV extents,
 	// uploads the generated vertices and indices, and configures the vertex attributes.
+
+	/**
+	 * @brief Creates cube mesh.
+	 */
 	static Mesh* createCubeMesh(vec3 size)
 	{
 		void* memory = malloc(sizeof(Mesh));
@@ -52,6 +60,9 @@ namespace danikk_space_engine
 	static bool shape_table_initialized = false;
 	static constexpr size_t shape_mesh_cache_capacity = 1024;
 
+	/**
+	 * @brief Initializes shape table.
+	 */
 	void initShapeTable()
 	{
 		if(shape_table_initialized)
@@ -65,6 +76,9 @@ namespace danikk_space_engine
 		shape_table_initialized = true;
 	}
 
+	/**
+	 * @brief Returns mesh entry.
+	 */
 	ShapeMesh* ShapeDefinition::getMeshEntry(vec3 size)
 	{
 		for(ShapeMesh& entry : meshes)
@@ -88,6 +102,9 @@ namespace danikk_space_engine
 		return &meshes.pushCtor(size, mesh);
 	}
 
+	/**
+	 * @brief Finds shape.
+	 */
 	ShapeDefinition* findShape(ShapeId id)
 	{
 		for(size_t index = 0; index < shape_table_size; ++index)
@@ -100,6 +117,9 @@ namespace danikk_space_engine
 		return nullptr;
 	}
 
+	/**
+	 * @brief Clears shape mesh cache.
+	 */
 	void clearShapeMeshCache()
 	{
 		for(ShapeDefinition& shape : shape_table)

@@ -12,8 +12,14 @@ namespace danikk_space_engine
 		constexpr double chunk_update_distance = planet_voxel_size * 2.0;
 	}
 
+	/**
+	 * @brief Queues planet requests.
+	 */
 	void queuePlanetRequests(PlanetComponent& planet, World& world, const WorldBodyComponentSlot& slot)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Planet::queueRequests");
 		for(ChunkGenerationRequest& request : planet.pending_requests)
 		{
@@ -24,8 +30,14 @@ namespace danikk_space_engine
 		world.replaceChunkGenerationRequests(slot.slot_id, planet.pending_requests);
 	}
 
+	/**
+	 * @brief Unloads planet chunks outside desired set.
+	 */
 	void unloadPlanetChunksOutsideDesiredSet(PlanetComponent& planet, World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Planet::unloadChunks");
 		for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 		{
@@ -38,8 +50,14 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Clears planet face selection.
+	 */
 	void clearPlanetFaceSelection(World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Planet::clearFaceSelection");
 		if(!world.data.isPointComponentSlotActive(world.local_player_controller_component_slot_id)) return;
 		LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
@@ -52,12 +70,19 @@ namespace danikk_space_engine
 	 * missing entries, and unloads records outside the new set. Requests capture terrain edits so the
 	 * worker sees a stable snapshot while generation runs asynchronously.
 	 */
+
+	/**
+	 * @brief Updates planet chunks.
+	 */
 	void updatePlanetChunks(
 		PlanetComponent& planet,
 		WorldBodyComponentSlot& slot,
 		World& world,
 		const glm::dvec3& camera_position)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Planet chunk set update");
 		planet.last_chunk_update_position = camera_position;
 		planet.last_chunk_update_revision = planet.terrain_revision;
@@ -115,12 +140,18 @@ namespace danikk_space_engine
 		clearPlanetFaceSelection(world);
 	}
 
+	/**
+	 * @brief Invalidates planet chunks around edit.
+	 */
 	void invalidatePlanetChunksAroundEdit(
 		PlanetComponent& planet,
 		World& world,
 		const glm::dvec3& center,
 		double radius)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Planet::invalidateChunks");
 		for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 		{

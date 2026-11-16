@@ -7,6 +7,10 @@ namespace danikk_space_engine::collision_internal
 {
 	namespace
 	{
+
+		/**
+		 * @brief Adds direction.
+		 */
 		void addDirection(DynamicArray<glm::dvec3>& directions, glm::dvec3 direction)
 		{
 			const double length = glm::length(direction);
@@ -21,6 +25,10 @@ namespace danikk_space_engine::collision_internal
 
 		// Projects both colliders onto an axis, rejects disjoint intervals and retains
 		// the smallest translation needed to separate overlapping intervals.
+
+		/**
+		 * @brief Performs the test axis operation.
+		 */
 		bool testAxis(const ConvexChunkCollider& a, const ConvexChunkCollider& b,
 			const glm::dvec3& translation, glm::dvec3 axis, BodyContact& contact)
 		{
@@ -52,6 +60,9 @@ namespace danikk_space_engine::collision_internal
 			return true;
 		}
 
+		/**
+		 * @brief Performs the support center operation.
+		 */
 		glm::dvec3 supportCenter(const ConvexChunkCollider& shape, const glm::dvec3& normal)
 		{
 			double maximum = -std::numeric_limits<double>::max();
@@ -68,6 +79,10 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	// Builds convex chunk proxies from unique mesh vertices, face normals and edge directions.
+
+	/**
+	 * @brief Creates collider.
+	 */
 	BodyCollider createCollider(const World& world, WorldBodyId id, WorldBodyId dragged_id)
 	{
 		BodyCollider collider;
@@ -121,6 +136,10 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	// Rejects separated spheres, runs SAT on face and edge axes, then computes the support contact.
+
+	/**
+	 * @brief Finds contact.
+	 */
 	bool findContact(const ConvexChunkCollider& a, const ConvexChunkCollider& b,
 		const glm::dvec3& translation, BodyContact& contact)
 	{

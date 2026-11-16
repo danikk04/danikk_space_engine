@@ -16,6 +16,10 @@ namespace danikk_space_engine
 
 	namespace
 	{
+
+		/**
+		 * @brief Performs the world body component name operation.
+		 */
 		const char* worldBodyComponentName(WorldBodyComponentTypeId type_id)
 		{
 			switch(type_id)
@@ -26,42 +30,66 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Returns camera slot.
+	 */
 	PointComponentSlot& World::getCameraSlot()
 	{
 		return data.getPointComponentSlot(camera_component_slot_id);
 	}
 
+	/**
+	 * @brief Returns camera slot.
+	 */
 	const PointComponentSlot& World::getCameraSlot() const
 	{
 		return data.getPointComponentSlot(camera_component_slot_id);
 	}
 
+	/**
+	 * @brief Returns camera component.
+	 */
 	CameraComponent& World::getCameraComponent()
 	{
 		return *static_cast<CameraComponent*>(getCameraSlot().getData());
 	}
 
+	/**
+	 * @brief Returns camera component.
+	 */
 	const CameraComponent& World::getCameraComponent() const
 	{
 		return *static_cast<const CameraComponent*>(getCameraSlot().getData());
 	}
 
+	/**
+	 * @brief Returns camera point.
+	 */
 	Point& World::getCameraPoint()
 	{
 		return data.getPoint(getCameraSlot().point_id);
 	}
 
+	/**
+	 * @brief Returns camera point.
+	 */
 	const Point& World::getCameraPoint() const
 	{
 		return data.getPoint(getCameraSlot().point_id);
 	}
 
+	/**
+	 * @brief Returns camera world position.
+	 */
 	glm::dvec3 World::getCameraWorldPosition() const
 	{
 		const PointComponentSlot& camera_slot = getCameraSlot();
 		return getPointWorldPosition(camera_slot.chunk_id, camera_slot.point_id);
 	}
 
+	/**
+	 * @brief Returns chunk world position.
+	 */
 	glm::dvec3 World::getChunkWorldPosition(ChunkId chunk_id) const
 	{
 		const Chunk& chunk = data.getChunk(chunk_id);
@@ -69,6 +97,9 @@ namespace danikk_space_engine
 		return body.position + body.rotation * chunk.position;
 	}
 
+	/**
+	 * @brief Returns point world position.
+	 */
 	glm::dvec3 World::getPointWorldPosition(ChunkId chunk_id, PointId point_id) const
 	{
 		const Chunk& chunk = data.getChunk(chunk_id);
@@ -77,22 +108,37 @@ namespace danikk_space_engine
 			* (chunk.position + glm::dvec3(data.getPoint(point_id).position));
 	}
 
+	/**
+	 * @brief Returns local player controller component.
+	 */
 	LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent()
 	{
 		PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_component_slot_id);
 		return *static_cast<LocalPlayerControllerComponent*>(slot.getData());
 	}
 
+	/**
+	 * @brief Returns local player controller component.
+	 */
 	const LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent() const
 	{
 		const PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_component_slot_id);
 		return *static_cast<const LocalPlayerControllerComponent*>(slot.getData());
 	}
 
+	/**
+	 * @brief Performs the tick operation.
+	 */
 	void World::tick()
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher tick_scope("tick");
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher world_body_components_scope("WorldBody components");
 			const DynamicArray<WorldBodyId> world_body_ids(data.getUsedWorldBodyIds());
 			DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
@@ -121,6 +167,9 @@ namespace danikk_space_engine
 					const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
 					if(type.tick != nullptr)
 					{
+						/**
+						 * @brief Disables copying to ensure a measured scope is recorded once.
+						 */
 						Watcher component_scope(worldBodyComponentName(slot.type_id));
 						type.tick(slot, *this);
 					}
@@ -140,6 +189,9 @@ namespace danikk_space_engine
 		physics.tick(*this);
 	}
 
+	/**
+	 * @brief Performs the defer point destruction operation.
+	 */
 	void World::deferPointDestruction(PointId point_id)
 	{
 		if(!data.isPointActive(point_id)) return;
@@ -150,6 +202,9 @@ namespace danikk_space_engine
 		pending_point_destruction_ids.push(point_id);
 	}
 
+	/**
+	 * @brief Performs the replace chunk generation requests operation.
+	 */
 	void World::replaceChunkGenerationRequests(
 		WorldBodyComponentSlotId component_slot_id,
 		const DynamicArray<ChunkGenerationRequest>& requests)
@@ -176,6 +231,9 @@ namespace danikk_space_engine
 		chunk_generation_requests_dirty = true;
 	}
 
+	/**
+	 * @brief Removes chunk generation request.
+	 */
 	void World::removeChunkGenerationRequest(
 		WorldBodyComponentSlotId component_slot_id,
 		const glm::ivec3& grid_coordinate)
@@ -197,10 +255,19 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Performs the frame operation.
+	 */
 	void World::frame()
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher frame_scope("World::frame");
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher world_body_components_scope("WorldBody components");
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
@@ -212,6 +279,9 @@ namespace danikk_space_engine
 					const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
 					if(type.frame != nullptr)
 					{
+						/**
+						 * @brief Disables copying to ensure a measured scope is recorded once.
+						 */
 						Watcher component_scope(worldBodyComponentName(slot.type_id));
 						type.frame(slot, *this);
 					}
@@ -220,6 +290,9 @@ namespace danikk_space_engine
 		}
 		if(chunk_generation_requests_dirty)
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher request_update_scope("ChunkLoader::updatePendingRequests");
 			chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
 			chunk_generation_requests_dirty = false;
@@ -238,6 +311,9 @@ namespace danikk_space_engine
 				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
 				if(type.accept_generated_chunk != nullptr)
 				{
+					/**
+					 * @brief Disables copying to ensure a measured scope is recorded once.
+					 */
 					Watcher accept_scope("Accept generated chunk");
 					type.accept_generated_chunk(slot, *this, generated_chunk);
 				}
@@ -249,6 +325,9 @@ namespace danikk_space_engine
 		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera.getUp());
 		setViewMatrix(view);
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher chunk_frame_scope("Chunk mesh and component frame");
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
@@ -262,6 +341,9 @@ namespace danikk_space_engine
 			}
 		}
 		{
+			/**
+			 * @brief Disables copying to ensure a measured scope is recorded once.
+			 */
 			Watcher chunk_draw_scope("Chunk draw");
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
@@ -285,6 +367,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Performs the init operation.
+	 */
 	void World::init()
 	{
 		chunk_loader.start();
@@ -297,6 +382,9 @@ namespace danikk_space_engine
 		startBaseScenario(*this);
 	}
 
+	/**
+	 * @brief Performs the shutdown operation.
+	 */
 	void World::shutdown()
 	{
 		chunk_loader.stop();

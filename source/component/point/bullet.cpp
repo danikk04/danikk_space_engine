@@ -12,6 +12,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Constructs bullet component.
+	 */
 	void constructBulletComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr)
@@ -28,6 +32,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Moves bullet component.
+	 */
 	void moveBulletComponent(void* destination, void* source)
 	{
 		if(destination == nullptr || source == nullptr)
@@ -39,6 +46,9 @@ namespace danikk_space_engine
 		std::destroy_at(source_component);
 	}
 
+	/**
+	 * @brief Removes and releases bullet component.
+	 */
 	void destroyBulletComponent(void* data)
 	{
 		if(data == nullptr)
@@ -50,9 +60,17 @@ namespace danikk_space_engine
 
 	// Advances the projectile over this simulation step, raycasts the swept segment to prevent
 	// tunneling through world cells, and queues the point for cleanup on impact or timeout.
+
+	/**
+	 * @brief Runs one simulation tick for bullet component.
+	 */
 	void tickBulletComponent(PointComponentSlot& slot, World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("BulletComponent::tick");
+
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Bullet component tick received null data");
@@ -90,12 +108,18 @@ namespace danikk_space_engine
 
 	// Builds a camera-independent orientation from the velocity and draws a narrow, bright sphere
 	// along the travel axis so the fast-moving projectile remains visible as a short tracer.
+
+	/**
+	 * @brief Processes one frame for bullet component.
+	 */
 	void frameBulletComponent(PointComponentSlot& slot, World& world)
 	{
+
 		if(slot.getData() == nullptr)
 		{
 			danikk_engine::formatFatalError("Bullet component frame received null data");
 		}
+
 		if(static_asset_collection.low_poly_sphere_mesh.isNull())
 		{
 			danikk_engine::formatFatalError("Bullet component has no loaded sphere mesh");

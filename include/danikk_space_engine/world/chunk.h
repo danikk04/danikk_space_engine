@@ -12,6 +12,10 @@
 
 namespace danikk_space_engine
 {
+
+	/**
+	 * @brief Represents chunk material range data and behavior.
+	 */
 	struct ChunkMaterialRange
 	{
 		MaterialId material_id = default_materials::void_material;
@@ -19,6 +23,9 @@ namespace danikk_space_engine
 		uint32 index_count = 0;
 	};
 
+	/**
+	 * @brief Stores local geometry, components, and the mesh for a region of a world body.
+	 */
 	class Chunk
 	{
 		Mesh* mesh = nullptr;
@@ -45,14 +52,49 @@ namespace danikk_space_engine
 		Chunk& operator=(Chunk&& other) noexcept;
 		~Chunk();
 
+		/**
+		 * @brief Creates mesh.
+		 */
 		Mesh& createMesh();
+
+		/**
+		 * @brief Adds point component slot.
+		 */
 		void addPointComponentSlot(PointComponentSlotId slot_id);
+
+		/**
+		 * @brief Adds graph component slot.
+		 */
 		void addGraphComponentSlot(GraphComponentSlotId slot_id);
+
+		/**
+		 * @brief Performs the tick operation.
+		 */
 		void tick(World& world);
+
+		/**
+		 * @brief Performs the frame operation.
+		 */
 		void frame(World& world);
+
+		/**
+		 * @brief Creates world matrix.
+		 */
 		mat4 createWorldMatrix(const World& world) const;
+
+		/**
+		 * @brief Performs the draw operation.
+		 */
 		void draw(World& world);
+
+		/**
+		 * @brief Removes and releases mesh.
+		 */
 		void destroyMesh();
+
+		/**
+		 * @brief Invalidates mesh.
+		 */
 		void invalidateMesh();
 		bool hasValidBounds() const { return bounds_valid; }
 	};

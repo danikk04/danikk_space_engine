@@ -19,6 +19,9 @@ namespace danikk_space_engine
 		ItemDefinition item_definitions[item_definition_ids::count];
 		bool item_catalog_loaded = false;
 
+		/**
+		 * @brief Returns human at point.
+		 */
 		HumanComponent* getHumanAtPoint(World& world, PointId point_id)
 		{
 			for(PointComponentSlotId slot_id : world.data.getUsedPointComponentSlotIds())
@@ -31,6 +34,9 @@ namespace danikk_space_engine
 			return nullptr;
 		}
 
+		/**
+		 * @brief Performs the equip weapon operation.
+		 */
 		bool equipWeapon(World& world, PointId owner_point_id, const ItemDefinition&)
 		{
 			HumanComponent* human = getHumanAtPoint(world, owner_point_id);
@@ -39,6 +45,9 @@ namespace danikk_space_engine
 			return true;
 		}
 
+		/**
+		 * @brief Performs the unequip weapon operation.
+		 */
 		bool unequipWeapon(World& world, PointId owner_point_id, const ItemDefinition&)
 		{
 			HumanComponent* human = getHumanAtPoint(world, owner_point_id);
@@ -47,6 +56,9 @@ namespace danikk_space_engine
 			return true;
 		}
 
+		/**
+		 * @brief Draws weapon.
+		 */
 		void drawWeapon(ItemDefinition& definition, const mat4& world_matrix)
 		{
 			if(definition.mesh.isNull())
@@ -58,12 +70,18 @@ namespace danikk_space_engine
 			definition.mesh.draw();
 		}
 
+		/**
+		 * @brief Performs the validate item catalog operation.
+		 */
 		void validateItemCatalog()
 		{
 			if(!item_catalog_loaded) formatFatalError("Item catalog has not been loaded");
 		}
 	}
 
+	/**
+	 * @brief Loads item catalog.
+	 */
 	void loadItemCatalog()
 	{
 		ItemDefinition& mg42 = item_definitions[item_definition_ids::mg42];
@@ -76,12 +94,18 @@ namespace danikk_space_engine
 		item_catalog_loaded = true;
 	}
 
+	/**
+	 * @brief Returns item type.
+	 */
 	const ItemType& getItemType(ItemTypeId id)
 	{
 		if(id >= item_type_ids::count) formatFatalError("Invalid item type ID %", id);
 		return item_types[id];
 	}
 
+	/**
+	 * @brief Returns item definition.
+	 */
 	const ItemDefinition& getItemDefinition(ItemDefinitionId id)
 	{
 		validateItemCatalog();
@@ -90,6 +114,9 @@ namespace danikk_space_engine
 		return item_definitions[id];
 	}
 
+	/**
+	 * @brief Returns weapon item parameters.
+	 */
 	const WeaponItemParameters& getWeaponItemParameters(ItemDefinitionId id)
 	{
 		const ItemDefinition& definition = getItemDefinition(id);
@@ -98,6 +125,9 @@ namespace danikk_space_engine
 		return definition.parameters.weapon;
 	}
 
+	/**
+	 * @brief Performs the use item operation.
+	 */
 	bool useItem(World& world, PointId owner_point_id, InventorySlot& slot)
 	{
 		if(slot.isEmpty() || slot.count == 0) return false;
@@ -106,6 +136,9 @@ namespace danikk_space_engine
 		return type.use != nullptr && type.use(world, owner_point_id, slot, definition);
 	}
 
+	/**
+	 * @brief Performs the equip item operation.
+	 */
 	bool equipItem(World& world, PointId owner_point_id, ItemDefinitionId id)
 	{
 		const ItemDefinition& definition = getItemDefinition(id);
@@ -113,6 +146,9 @@ namespace danikk_space_engine
 		return type.equip != nullptr && type.equip(world, owner_point_id, definition);
 	}
 
+	/**
+	 * @brief Performs the unequip item operation.
+	 */
 	bool unequipItem(World& world, PointId owner_point_id, ItemDefinitionId id)
 	{
 		const ItemDefinition& definition = getItemDefinition(id);
@@ -120,6 +156,9 @@ namespace danikk_space_engine
 		return type.unequip != nullptr && type.unequip(world, owner_point_id, definition);
 	}
 
+	/**
+	 * @brief Draws item.
+	 */
 	void drawItem(ItemDefinitionId id, const mat4& world_matrix)
 	{
 		validateItemCatalog();

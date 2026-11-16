@@ -13,6 +13,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Performs the project to uv operation.
+		 */
 		vec2 projectToUV(const vec3& position, const vec3& normal)
 		{
 			const vec3 absolute_normal = glm::abs(normal);
@@ -34,8 +38,12 @@ namespace danikk_space_engine
 	 * appending it skips inactive resources and degenerate triangles, computes flat face normals and
 	 * projected UVs, then calculates the local bounding sphere before uploading the buffers.
 	 */
+
 	Mesh& Chunk::createMesh()
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("Chunk::createMesh");
 		if(mesh == nullptr)
 		{

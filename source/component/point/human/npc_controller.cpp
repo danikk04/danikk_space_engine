@@ -9,6 +9,10 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+
+		/**
+		 * @brief Performs the random unit operation.
+		 */
 		float randomUnit(NpcControllerComponent& controller)
 		{
 			uint32& state = controller.random_state;
@@ -20,6 +24,10 @@ namespace danikk_space_engine
 
 		// Alternates idle pauses and short trips around a fixed local centre. A timeout releases
 		// unreachable targets so unloaded terrain or an edge cannot leave an NPC walking forever.
+
+		/**
+		 * @brief Updates wandering.
+		 */
 		void updateWandering(NpcControllerComponent& controller, const HumanComponent& human,
 			const vec3& position, float dt)
 		{
@@ -52,6 +60,9 @@ namespace danikk_space_engine
 			controller.wander_timer = 3.0f + radius * 2.0f / glm::max(human.movement_speed, 0.1f);
 		}
 
+		/**
+		 * @brief Updates random look.
+		 */
 		void updateRandomLook(NpcControllerComponent& controller, HumanComponent& human, float dt)
 		{
 			controller.look_timer -= dt;
@@ -66,6 +77,9 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Constructs npc controller component.
+	 */
 	void constructNpcControllerComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr) formatFatalError("NPC controller construction received null destination");
@@ -73,6 +87,9 @@ namespace danikk_space_engine
 			? NpcControllerComponent() : *static_cast<const NpcControllerComponent*>(init_data));
 	}
 
+	/**
+	 * @brief Moves npc controller component.
+	 */
 	void moveNpcControllerComponent(void* destination, void* source)
 	{
 		if(destination == nullptr || source == nullptr) formatFatalError("NPC controller move received null memory");
@@ -80,6 +97,9 @@ namespace danikk_space_engine
 		static_cast<NpcControllerComponent*>(source)->~NpcControllerComponent();
 	}
 
+	/**
+	 * @brief Removes and releases npc controller component.
+	 */
 	void destroyNpcControllerComponent(void* data)
 	{
 		if(data == nullptr) formatFatalError("NPC controller destruction received null data");
@@ -88,8 +108,15 @@ namespace danikk_space_engine
 
 	// Chooses random local trips or follows an explicit target, then writes the next movement command.
 	// Random head turns replace camera tracking by default; the human handles support checks.
+
+	/**
+	 * @brief Runs one simulation tick for npc controller component.
+	 */
 	void tickNpcControllerComponent(PointComponentSlot& slot, World& world)
 	{
+		/**
+		 * @brief Disables copying to ensure a measured scope is recorded once.
+		 */
 		Watcher watcher("NpcControllerComponent::tick");
 		NpcControllerComponent& controller = *static_cast<NpcControllerComponent*>(slot.getData());
 		if(!world.data.isPointComponentSlotActive(controller.human_slot_id)) return;

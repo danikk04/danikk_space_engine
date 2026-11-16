@@ -9,8 +9,15 @@ namespace danikk_space_engine
 {
 	using namespace danikk_framework;
 
+	/**
+	 * @brief Collects function timings and reports them when a performance threshold is exceeded.
+	 */
 	class Profiler
 	{
+
+		/**
+		 * @brief Represents node data and behavior.
+		 */
 		struct Node
 		{
 			const char* name = nullptr;
@@ -30,7 +37,14 @@ namespace danikk_space_engine
 		std::chrono::steady_clock::time_point tick_start_time;
 		std::chrono::steady_clock::time_point report_start_time;
 
+		/**
+		 * @brief Begins scope.
+		 */
 		uint32 beginScope(const char* name);
+
+		/**
+		 * @brief Ends scope.
+		 */
 		void endScope(uint32 node_id, uint64 elapsed_nanoseconds);
 		friend class Watcher;
 	public:
@@ -38,11 +52,25 @@ namespace danikk_space_engine
 		Profiler(const Profiler&) = delete;
 		Profiler& operator=(const Profiler&) = delete;
 
+		/**
+		 * @brief Begins tick.
+		 */
 		void beginTick();
+
+		/**
+		 * @brief Ends tick.
+		 */
 		void endTick();
+
+		/**
+		 * @brief Sets report interval milliseconds.
+		 */
 		void setReportIntervalMilliseconds(uint64 milliseconds);
 	};
 
+	/**
+	 * @brief Represents watcher data and behavior.
+	 */
 	class Watcher
 	{
 		uint32 node_id = static_cast<uint32>(-1);
@@ -50,6 +78,10 @@ namespace danikk_space_engine
 
 	public:
 		// The profiler retains this name pointer for reports; pass a string with static lifetime.
+
+		/**
+		 * @brief Performs the watcher operation.
+		 */
 		explicit Watcher(const char* name);
 		Watcher(const Watcher&) = delete;
 		Watcher& operator=(const Watcher&) = delete;

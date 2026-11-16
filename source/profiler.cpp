@@ -12,6 +12,10 @@ namespace danikk_space_engine
 	{
 		constexpr uint32 invalid_node_id = static_cast<uint32>(-1);
 		thread_local DynamicArray<uint32> scope_stack;
+
+		/**
+		 * @brief Represents scope cache entry data and behavior.
+		 */
 		struct ScopeCacheEntry
 		{
 			const char* name = nullptr;
@@ -21,13 +25,18 @@ namespace danikk_space_engine
 		thread_local danikk_framework::DynamicArray<ScopeCacheEntry> scope_cache;
 	}
 
+	/**
+	 * @brief Initializes the profiler reporting interval.
+	 */
 	Profiler::Profiler()
 		: report_start_time(std::chrono::steady_clock::now())
 	{
 	}
-
 	Profiler profiler;
 
+	/**
+	 * @brief Begins scope.
+	 */
 	uint32 Profiler::beginScope(const char* name)
 	{
 		const uint32 parent_id = scope_stack.size() == 0 ? invalid_node_id : scope_stack.peek();
@@ -62,8 +71,12 @@ namespace danikk_space_engine
 		return node_id;
 	}
 
+	/**
+	 * @brief Ends scope.
+	 */
 	void Profiler::endScope(uint32 node_id, uint64 elapsed_nanoseconds)
 	{
+
 		if(scope_stack.size() > 0 && scope_stack.peek() == node_id)
 		{
 			scope_stack.resize(scope_stack.size() - 1);
@@ -74,6 +87,9 @@ namespace danikk_space_engine
 		nodes[node_id].tick_calls++;
 	}
 
+	/**
+	 * @brief Begins tick.
+	 */
 	void Profiler::beginTick()
 	{
 		// Tick counters are cleared by endTick so worker-thread scopes finishing between
@@ -84,6 +100,10 @@ namespace danikk_space_engine
 	// Accumulates scope totals for the reporting interval and records any tick over 30 ms.
 	// At the interval boundary, logs only if FPS is below 20 or a slow tick occurred.
 	// Every interval resets its counters, including intervals whose reports are suppressed.
+
+	/**
+	 * @brief Ends tick.
+	 */
 	void Profiler::endTick()
 	{
 		DynamicArray<Node> report_nodes;
@@ -158,18 +178,28 @@ namespace danikk_space_engine
 		}
 	}
 
+	/**
+	 * @brief Sets report interval milliseconds.
+	 */
 	void Profiler::setReportIntervalMilliseconds(uint64 milliseconds)
 	{
 		std::lock_guard<std::mutex> guard(mutex);
 		report_interval_milliseconds = milliseconds == 0 ? 1 : milliseconds;
 	}
 
+	/**
+	 * @brief Starts timing a named profiler scope.
+	 */
 	Watcher::Watcher(const char* name)
 		: node_id(profiler.beginScope(name == nullptr ? "(unnamed)" : name)),
+
 		  start_time(std::chrono::steady_clock::now())
 	{
 	}
 
+	/**
+	 * @brief Records the elapsed time for the watched scope.
+	 */
 	Watcher::~Watcher()
 	{
 		const auto elapsed = std::chrono::steady_clock::now() - start_time;
