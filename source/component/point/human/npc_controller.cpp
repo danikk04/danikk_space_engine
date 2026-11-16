@@ -129,7 +129,7 @@ namespace danikk_space_engine
 			const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 			const glm::dvec3 head_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id)
-				+ body.rotation * glm::dvec3(human.up * (human.height * 0.875f));
+				+ body.rotation * glm::dvec3(human.up * (human.height * 0.375f));
 			const vec3 direction = vec3(glm::conjugate(body.rotation)
 				* (world.getCameraWorldPosition() - head_position));
 			const vec3 right = glm::normalize(glm::cross(human.forward, human.up));

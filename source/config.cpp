@@ -16,6 +16,7 @@ namespace danikk_space_engine
 		values.bind("show_chunk_bounds", settings.show_chunk_bounds);
 		values.bind("show_face_highlight", settings.show_face_highlight);
 		values.bind("show_world_body_preview", settings.show_world_body_preview);
+		values.bind("planet_radius", settings.planet_radius);
 	}
 
 	bool Config::load()
@@ -73,6 +74,9 @@ namespace danikk_space_engine
 		contents << "show_chunk_bounds=" << (settings.show_chunk_bounds ? "true" : "false") << '\n';
 		contents << "show_face_highlight=" << (settings.show_face_highlight ? "true" : "false") << '\n';
 		contents << "show_world_body_preview=" << (settings.show_world_body_preview ? "true" : "false") << '\n';
+		char planet_radius_text[64];
+		std::snprintf(planet_radius_text, sizeof(planet_radius_text), "%.17g", settings.planet_radius);
+		contents << "planet_radius=" << planet_radius_text << '\n';
 
 		std::FILE* file = std::fopen(path.c_string(), "wb");
 		if(file == nullptr)

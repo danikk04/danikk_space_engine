@@ -7,7 +7,8 @@ namespace danikk_space_engine
 	{
 		constexpr ToolActionId terrain_actions[] = {ToolActionId::extrude, ToolActionId::erase};
 		constexpr ToolActionId body_actions[] = {ToolActionId::extrude, ToolActionId::erase, ToolActionId::drag};
-		constexpr ToolActionId place_actions[] = {ToolActionId::machinegun, ToolActionId::create_body, ToolActionId::npc};
+		constexpr ToolActionId place_actions[] = {ToolActionId::machinegun, ToolActionId::create_body};
+		constexpr ToolActionId human_actions[] = {ToolActionId::drag, ToolActionId::create_human};
 
 		const ToolActionId* getActions(ToolId tool, size_t& count)
 		{
@@ -22,6 +23,9 @@ namespace danikk_space_engine
 				case ToolId::place:
 					count = sizeof(place_actions) / sizeof(place_actions[0]);
 					return place_actions;
+				case ToolId::human:
+					count = sizeof(human_actions) / sizeof(human_actions[0]);
+					return human_actions;
 				case ToolId::none:
 				case ToolId::count:
 					count = 0;
@@ -73,6 +77,7 @@ namespace danikk_space_engine
 			case ToolId::terrain: return "Terrain";
 			case ToolId::body: return "Body";
 			case ToolId::place: return "Place";
+			case ToolId::human: return "Human";
 			case ToolId::count: break;
 		}
 		return "Unknown";
@@ -88,7 +93,7 @@ namespace danikk_space_engine
 			case ToolActionId::drag: return "Drag";
 			case ToolActionId::machinegun: return "Machinegun";
 			case ToolActionId::create_body: return "Body";
-			case ToolActionId::npc: return "NPC";
+			case ToolActionId::create_human: return "Create";
 			case ToolActionId::count: break;
 		}
 		return "Unknown";
@@ -115,6 +120,8 @@ namespace danikk_space_engine
 					world, action, selected_faces, selected_face_count, has_hovered_face, hovered_face);
 			case ToolId::place:
 				return applyPlaceTool(world, hit, action);
+			case ToolId::human:
+				return applyHumanTool(world, hit, action);
 			case ToolId::count:
 				break;
 		}

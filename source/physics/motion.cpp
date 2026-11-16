@@ -4,6 +4,7 @@
 #include <danikk_space_engine/world_physics.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
+#include "internal.h"
 
 namespace danikk_space_engine
 {
@@ -66,6 +67,7 @@ namespace danikk_space_engine
 			if(is_planet) continue;
 
 			WorldBody& body = world.data.getWorldBody(body_id);
+			if(!collision_internal::hasLoadedChunk(world, body)) continue;
 			glm::dvec3 acceleration(0.0);
 			for(const PlanetCollisionTarget& target : planets)
 			{

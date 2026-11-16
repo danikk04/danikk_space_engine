@@ -7,7 +7,9 @@ namespace danikk_space_engine
 	{
 		Watcher watcher("WorldPhysics::tick");
 		integrateMotion(world);
+		destroyEntitiesInsidePlanetCore(world);
 		resolvePlanetCollisions(world);
 		resolveBodyCollisions(world);
+		resolveHumanCollisions(world);
 	}
 }

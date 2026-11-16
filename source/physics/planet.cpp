@@ -208,6 +208,7 @@ namespace danikk_space_engine
 				}
 			}
 			if(is_planet_body) continue;
+			if(!hasLoadedChunk(world, moving_body)) continue;
 			const BodyMassProperties mass_properties = calculateMassProperties(moving_body);
 			if(mass_properties.mass <= 0.0) continue;
 			bool has_surface_mesh = false;

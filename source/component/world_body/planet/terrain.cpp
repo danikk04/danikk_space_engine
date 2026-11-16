@@ -21,8 +21,26 @@ namespace danikk_space_engine
 		{
 			return math::fractalNoise3D(position * 0.02 + planetNoiseSeedOffset(noise_seed), 3, 0.5) * 16.0;
 		}
+
+		double samplePlanetCoreDensity(
+			const glm::dvec3& position,
+			double distance_from_center,
+			uint64 noise_seed)
+		{
+			constexpr double core_radius = 5.0;
+			constexpr double core_surface_roughness = 0.75;
+			const double surface_noise = math::fractalNoise3D(
+				position * 0.25 + planetNoiseSeedOffset(noise_seed ^ 0x6C8E9CF570932BD5ull),
+				3,
+				0.5);
+			const double uneven_radius = core_radius + core_surface_roughness * (surface_noise + 1.0);
+			return uneven_radius - distance_from_center;
+		}
 	}
 
+	// Combines the radial terrain field, cave carving, persistent edits, and a deterministic noisy
+	// solid core. The core floor is applied last, ensuring edits and cave noise cannot hollow out its
+	// 5-metre interior while its outer boundary varies smoothly with seeded noise.
 	double samplePlanetScalarField(
 		const glm::dvec3& position_relative_to_planet_center,
 		double radius,
@@ -37,7 +55,8 @@ namespace danikk_space_engine
 			position_relative_to_planet_center * 0.009 + planetNoiseSeedOffset(noise_seed ^ 0xA511E9B3u),
 			4,
 			0.5));
-		const double cave_density = (cave_noise - 0.07) * 100.0;
+		constexpr double cave_threshold = 0.04;
+		const double cave_density = (cave_noise - cave_threshold) * 100.0;
 		density = std::min(density, cave_density);
 
 		for(const PlanetTerrainEdit& edit : edits)
@@ -46,6 +65,8 @@ namespace danikk_space_engine
 			if(edit.adds_solid_terrain) density = std::max(density, edit.radius - distance);
 			else density = std::min(density, distance - edit.radius);
 		}
+		density = std::max(density, samplePlanetCoreDensity(
+			position_relative_to_planet_center, distance_from_center, noise_seed));
 		return density;
 	}
 

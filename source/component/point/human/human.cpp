@@ -11,22 +11,24 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		// Probes below the proposed foot position. Only support on the current body is accepted;
-		// Grounded movement uses step limits; falling supplies the full tick travel to avoid tunnelling.
+		// Derives the feet from the center point, then probes for support on the current body.
+		// Grounded movement uses step limits; falling checks full tick travel to avoid tunnelling.
 		bool findGroundPosition(World& world, const Chunk& chunk, const WorldBody& body,
-			const vec3& up, const vec3& proposed, vec3& supported,
+			const vec3& up, float human_height, const vec3& proposed, vec3& supported,
 			float step_height = 0.5f, float maximum_drop = 0.75f)
 		{
+			const vec3 proposed_foot = proposed - up * (human_height * 0.5f);
 			const glm::dvec3 foot = body.position
-				+ body.rotation * (chunk.position + glm::dvec3(proposed));
+				+ body.rotation * (chunk.position + glm::dvec3(proposed_foot));
 			const vec3 world_up = vec3(body.rotation * glm::dvec3(up));
 			const RaycastHit hit = world.raycast(foot + glm::dvec3(world_up) * static_cast<double>(step_height),
 				-world_up, step_height + maximum_drop);
 			if(!hit.hit || !world.data.isChunkActive(hit.face.chunk_id)
 				|| world.data.getChunk(hit.face.chunk_id).world_body_id != chunk.world_body_id
 				|| glm::dot(hit.normal, world_up) < 0.5f) return false;
-			supported = vec3(glm::conjugate(body.rotation) * (hit.position - body.position) - chunk.position)
-				+ up * 0.02f;
+			const vec3 supported_foot = vec3(glm::conjugate(body.rotation)
+				* (hit.position - body.position) - chunk.position) + up * 0.02f;
+			supported = supported_foot + up * (human_height * 0.5f);
 			return true;
 		}
 
@@ -44,11 +46,12 @@ namespace danikk_space_engine
 			}
 			vec3 support;
 			if(human.vertical_speed <= 0.0f
-				&& findGroundPosition(world, chunk, body, human.up, point.position, support)
+				&& findGroundPosition(world, chunk, body, human.up, human.height, point.position, support)
 				&& std::abs(glm::dot(support - point.position, human.up)) <= 0.08f)
 			{
 				point.position = support;
-				if(findGroundPosition(world, chunk, body, human.up, point.position + velocity * dt, support))
+				if(findGroundPosition(world, chunk, body, human.up, human.height,
+					point.position + velocity * dt, support))
 					point.position = support;
 				human.vertical_speed = 0.0f;
 				human.grounded = true;
@@ -59,7 +62,7 @@ namespace danikk_space_engine
 			const float vertical_displacement = human.vertical_speed * dt - 0.5f * gravity * dt * dt;
 			human.vertical_speed -= gravity * dt;
 			if(vertical_displacement <= 0.0f
-				&& findGroundPosition(world, chunk, body, human.up, point.position, support,
+				&& findGroundPosition(world, chunk, body, human.up, human.height, point.position, support,
 					0.0f, -vertical_displacement + 0.02f))
 			{
 				point.position = support;
@@ -95,9 +98,15 @@ namespace danikk_space_engine
 					weapon_orientation[0] = vec4(0, 1, 0, 0);
 					weapon_orientation[1] = vec4(0, 0, 1, 0);
 					weapon_orientation[2] = vec4(1, 0, 0, 0);
-					const vec3 attachment_position = vec3(0.11f, 0.37f, 0.72f) * human.height;
+					const vec3 shoulder_position = vec3(0.1875f, 0.0f, 0.25f) * human.height;
+					const vec3 attachment_offset = (vec3(0.11f, 0.37f, 0.22f)
+						- vec3(0.1875f, 0.0f, 0.25f)) * human.height;
+					const mat4 weapon_pitch = glm::rotate(mat4(1.0f),
+						glm::clamp(human.head_rotation.y, -0.8f, 0.8f), vec3(1, 0, 0));
 					const mat4 weapon_matrix = body_matrix
-						* glm::translate(mat4(1.0f), attachment_position)
+						* glm::translate(mat4(1.0f), shoulder_position)
+						* weapon_pitch
+						* glm::translate(mat4(1.0f), attachment_offset)
 						* weapon_orientation
 						* glm::scale(mat4(1.0f), vec3(0.25f));
 					drawItem(inventory_slot.item_definition_id, weapon_matrix);
@@ -147,7 +156,7 @@ namespace danikk_space_engine
 			const PlanetComponent& planet = *static_cast<const PlanetComponent*>(
 				world.data.getWorldBodyComponentSlot(component_id).getData());
 			gravity = static_cast<float>(glm::max(planet.surface_gravity, 0.0));
-			const glm::dvec3 radial = chunk.position + glm::dvec3(point.position);
+			const glm::dvec3 radial = chunk.position + glm::dvec3(point.position - human.up * (human.height * 0.5f));
 			if(glm::length(radial) > 1e-6) human.up = vec3(glm::normalize(radial));
 			break;
 		}
@@ -204,7 +213,10 @@ namespace danikk_space_engine
 		const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 		const mat4 body_matrix = glm::translate(mat4(1.0f), vec3(position - world.getCameraWorldPosition()))
 			* orientation;
-		drawHumanAppearance(human, body_matrix * glm::scale(mat4(1.0f), vec3(human.height)));
+		const mat4 feet_matrix = body_matrix
+			* glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, -0.5f))
+			* glm::scale(mat4(1.0f), vec3(human.height));
+		drawHumanAppearance(human, feet_matrix);
 		drawEquippedWeapons(slot, human, body_matrix, world);
 	}
 }

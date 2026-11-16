@@ -21,6 +21,11 @@ namespace danikk_space_engine
 		WorldBodyId dragged_world_body_id = static_cast<WorldBodyId>(-1);
 		double dragged_body_distance = 0.0;
 		glm::dvec3 dragged_hit_offset = glm::dvec3(0.0);
+		PointId dragged_human_point_id = static_cast<PointId>(-1);
+		ChunkId dragged_human_chunk_id = static_cast<ChunkId>(-1);
+		PointComponentSlotId dragged_human_slot_id = static_cast<PointComponentSlotId>(-1);
+		double dragged_human_distance = 0.0;
+		bool dragged_human_followed_ground = true;
 
 		void tick(World& world);
 	};

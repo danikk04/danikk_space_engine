@@ -135,8 +135,11 @@ namespace danikk_space_engine
 		const float mouse_scroll_delta = getMouseScrollDelta();
 		const bool alt_pressed = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
-		const bool dragging = active_tool == ToolId::body
+		const bool body_dragging = active_tool == ToolId::body
 			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
+		const bool human_dragging = active_tool == ToolId::human
+			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
+		const bool dragging = body_dragging || human_dragging;
 		if(!dragging && alt_pressed)
 		{
 			tool_action_scroll_accumulator += mouse_scroll_delta;
@@ -169,17 +172,25 @@ namespace danikk_space_engine
 		}
 
 		RaycastHit hit = world.raycastFromCamera();
-		if(active_tool == ToolId::body && selected_tool_action == ToolActionId::drag)
+		if(body_dragging)
 		{
 			tickDragTool(
 				world, *this, hit, true, left_mouse_state,
 				left_mouse_down ? mouse_scroll_delta : 0.0f,
 				alt_pressed,
 				getCursorDelta() * getMouseSensivity());
+			tickHumanDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false);
+		}
+		else if(human_dragging)
+		{
+			tickDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false, vec2(0.0f));
+			tickHumanDragTool(world, *this, hit, true, left_mouse_state,
+				alt_pressed ? mouse_scroll_delta : 0.0f, alt_pressed);
 		}
 		else
 		{
 			tickDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false, vec2(0.0f));
+			tickHumanDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false);
 			if(active_tool != ToolId::none && left_mouse_state == button_states::press)
 			{
 				ToolApplyResult result = applyTool(

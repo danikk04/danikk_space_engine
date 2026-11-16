@@ -46,6 +46,7 @@ namespace danikk_space_engine
 
 	struct HumanComponent
 	{
+		// The attached point is the character's vertical center; feet are center - up * height / 2.
 		HumanAppearance appearance;
 		HumanArmPose arm_pose = HumanArmPose::relaxed;
 		vec3 forward = vec3(0.0f, 1.0f, 0.0f);

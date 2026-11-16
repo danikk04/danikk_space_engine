@@ -32,7 +32,8 @@ namespace danikk_space_engine
 		DynamicArray<BodyCollider> colliders;
 		for(WorldBodyId id : world.data.getUsedWorldBodyIds())
 		{
-			if(isPlanetBody(world, world.data.getWorldBody(id))) continue;
+			const WorldBody& body = world.data.getWorldBody(id);
+			if(isPlanetBody(world, body) || !hasLoadedChunk(world, body)) continue;
 			BodyCollider collider = createCollider(world, id, dragged_id);
 			if(collider.chunks.size() > 0) colliders.push(static_cast<BodyCollider&&>(collider));
 		}

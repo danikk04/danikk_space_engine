@@ -10,7 +10,7 @@
 namespace danikk_space_engine
 {
 	// Creates an NPC in a separate component chunk so unloading generated terrain does not delete it.
-	// Input position/orientation are body-local. Returns the controller slot for later commands.
+	// Input position is the body-local ground/feet location; the point is placed at the human center.
 	PointComponentSlotId createHumanSoldier(World& world, WorldBodyId world_body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward)
 	{
@@ -19,6 +19,7 @@ namespace danikk_space_engine
 		chunk.position = position;
 		const ChunkId chunk_id = chunk.chunk_id;
 		const PointId point_id = world.data.createPoint();
+		Point& point = world.data.getPoint(point_id);
 		HumanComponent human;
 		human.appearance.skin_id = static_asset_collection.usmc_marpat_woodland_skin_id;
 		human.up = glm::length(up) > 1e-6f ? glm::normalize(up) : vec3(0, 0, 1);
@@ -29,6 +30,7 @@ namespace danikk_space_engine
 			human.forward = reference - human.up * glm::dot(reference, human.up);
 		}
 		human.forward = glm::normalize(human.forward);
+		point.position = human.up * (human.height * 0.5f);
 		const PointComponentSlotId human_id = world.data.createPointComponentSlot(
 			point_id, PointComponentTypeId::human, &human);
 		world.data.addPointComponentSlotToChunk(chunk_id, human_id);

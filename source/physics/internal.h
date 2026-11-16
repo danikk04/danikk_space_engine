@@ -6,6 +6,15 @@
 
 namespace danikk_space_engine::collision_internal
 {
+	inline bool hasLoadedChunk(const World& world, const WorldBody& body)
+	{
+		for(ChunkId chunk_id : body.chunk_ids)
+		{
+			if(world.data.isChunkActive(chunk_id)) return true;
+		}
+		return false;
+	}
+
 	struct BodyMassProperties
 	{
 		double mass = 0.0;

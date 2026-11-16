@@ -12,7 +12,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr uint32 chunk_save_magic = 0x4443484Bu;
-		constexpr uint32 chunk_save_version = 6;
+		constexpr uint32 chunk_save_version = 8;
 		constexpr uint32 terrain_edits_magic = 0x44504544u;
 		constexpr uint32 terrain_edits_version = 1;
 
@@ -42,25 +42,60 @@ namespace danikk_space_engine
 			uint32 edit_count;
 		};
 
-		std::filesystem::path terrainSaveDirectory()
+		std::filesystem::path saveRootDirectory()
 		{
 			return std::filesystem::path(danikk_framework::getExecutableDirectory().c_string())
-				/ "saves" / "default" / "terrain";
+				/ "saves" / "default";
+		}
+
+		std::filesystem::path worldBodyTerrainDirectory(WorldBodyId world_body_id)
+		{
+			return saveRootDirectory() / "world_bodies" / std::to_string(world_body_id) / "terrain";
+		}
+
+		std::filesystem::path chunkSaveFileName(
+			const ChunkGenerationRequest& request,
+			bool include_version,
+			uint32 version,
+			bool include_body_id)
+		{
+			const std::string body_id_prefix = include_body_id
+				? std::to_string(request.world_body_id) + "_" : "";
+			const std::string version_prefix = include_version ? "v" + std::to_string(version) + "_" : "";
+			return version_prefix + body_id_prefix + std::to_string(request.noise_seed)
+				+ "_" + std::to_string(request.terrain_revision)
+				+ "_" + std::to_string(request.grid_coordinate.x)
+				+ "_" + std::to_string(request.grid_coordinate.y)
+				+ "_" + std::to_string(request.grid_coordinate.z) + ".bin";
 		}
 
 		std::filesystem::path chunkSaveFilePath(const ChunkGenerationRequest& request)
 		{
-			return terrainSaveDirectory()
-				/ ("v6_" + std::to_string(request.world_body_id) + "_" + std::to_string(request.noise_seed)
-					+ "_" + std::to_string(request.terrain_revision)
-					+ "_" + std::to_string(request.grid_coordinate.x)
-					+ "_" + std::to_string(request.grid_coordinate.y)
-					+ "_" + std::to_string(request.grid_coordinate.z) + ".bin");
+			return worldBodyTerrainDirectory(request.world_body_id) / "chunks"
+				/ chunkSaveFileName(request, false, chunk_save_version, false);
+		}
+
+		std::filesystem::path versionedChunkSaveFilePath(const ChunkGenerationRequest& request)
+		{
+			return worldBodyTerrainDirectory(request.world_body_id) / "chunks"
+				/ chunkSaveFileName(request, true, chunk_save_version, false);
+		}
+
+		std::filesystem::path legacyChunkSaveFilePath(const ChunkGenerationRequest& request)
+		{
+			return saveRootDirectory() / "terrain"
+				/ chunkSaveFileName(request, true, 6, true);
 		}
 
 		std::filesystem::path terrainEditsFilePath(WorldBodyId world_body_id, uint64 noise_seed)
 		{
-			return terrainSaveDirectory()
+			return worldBodyTerrainDirectory(world_body_id)
+				/ ("edits_" + std::to_string(noise_seed) + ".bin");
+		}
+
+		std::filesystem::path legacyTerrainEditsFilePath(WorldBodyId world_body_id, uint64 noise_seed)
+		{
+			return saveRootDirectory() / "terrain"
 				/ ("edits_" + std::to_string(world_body_id) + "_" + std::to_string(noise_seed) + ".bin");
 		}
 	}
@@ -72,7 +107,23 @@ namespace danikk_space_engine
 	 */
 	bool loadPlanetChunk(const ChunkGenerationRequest& request, GeneratedChunkData& result)
 	{
-		std::ifstream input(chunkSaveFilePath(request), std::ios::binary);
+		const std::filesystem::path new_file_path = chunkSaveFilePath(request);
+		const std::filesystem::path versioned_file_path = versionedChunkSaveFilePath(request);
+		const std::filesystem::path legacy_file_path = legacyChunkSaveFilePath(request);
+		std::ifstream input(new_file_path, std::ios::binary);
+		std::filesystem::path loaded_file_path = new_file_path;
+		if(!input)
+		{
+			input.clear();
+			input.open(versioned_file_path, std::ios::binary);
+			if(input) loaded_file_path = versioned_file_path;
+		}
+		if(!input)
+		{
+			input.clear();
+			input.open(legacy_file_path, std::ios::binary);
+			if(input) loaded_file_path = legacy_file_path;
+		}
 		if(!input) return false;
 		ChunkSaveHeader header{};
 		input.read(reinterpret_cast<char*>(&header), sizeof(header));
@@ -113,6 +164,14 @@ namespace danikk_space_engine
 		result.terrain_revision = request.terrain_revision;
 		result.grid_coordinate = request.grid_coordinate;
 		result.chunk_position = request.chunk_position;
+		if(loaded_file_path != new_file_path)
+		{
+			input.close();
+			savePlanetChunk(request, result);
+			std::error_code error;
+			if(std::filesystem::exists(new_file_path, error) && !error)
+				std::filesystem::remove(loaded_file_path, error);
+		}
 		return true;
 	}
 
@@ -168,7 +227,16 @@ namespace danikk_space_engine
 		DynamicArray<PlanetTerrainEdit>& edits,
 		uint64& terrain_revision)
 	{
-		std::ifstream input(terrainEditsFilePath(world_body_id, noise_seed), std::ios::binary);
+		const std::filesystem::path new_file_path = terrainEditsFilePath(world_body_id, noise_seed);
+		const std::filesystem::path legacy_file_path = legacyTerrainEditsFilePath(world_body_id, noise_seed);
+		std::ifstream input(new_file_path, std::ios::binary);
+		bool loaded_legacy_file = false;
+		if(!input)
+		{
+			input.clear();
+			input.open(legacy_file_path, std::ios::binary);
+			loaded_legacy_file = static_cast<bool>(input);
+		}
 		if(!input) return false;
 		TerrainEditsHeader header{};
 		input.read(reinterpret_cast<char*>(&header), sizeof(header));
@@ -191,6 +259,15 @@ namespace danikk_space_engine
 		}
 		edits = static_cast<DynamicArray<PlanetTerrainEdit>&&>(loaded_edits);
 		terrain_revision = header.terrain_revision;
+		if(loaded_legacy_file)
+		{
+			input.close();
+			savePlanetTerrainEdits(
+				world_body_id, planet_radius, noise_seed, edits, terrain_revision);
+			std::error_code error;
+			if(std::filesystem::exists(new_file_path, error) && !error)
+				std::filesystem::remove(legacy_file_path, error);
+		}
 		return true;
 	}
 

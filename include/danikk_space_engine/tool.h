@@ -12,6 +12,7 @@ namespace danikk_space_engine
 		terrain,
 		body,
 		place,
+		human,
 		count
 	};
 
@@ -23,7 +24,7 @@ namespace danikk_space_engine
 		drag,
 		machinegun,
 		create_body,
-		npc,
+		create_human,
 		count
 	};
 
@@ -56,6 +57,7 @@ namespace danikk_space_engine
 		bool has_hovered_face,
 		const FacePtr& hovered_face);
 	ToolApplyResult applyPlaceTool(World& world, const RaycastHit& hit, ToolActionId action);
+	ToolApplyResult applyHumanTool(World& world, const RaycastHit& hit, ToolActionId action);
 	ToolApplyResult applyBodyExtrudeTool(World& world, const FacePtr& face, double distance);
 	void tickDragTool(
 		World& world,
@@ -66,4 +68,12 @@ namespace danikk_space_engine
 		float scroll_delta,
 		bool alt_pressed,
 		const vec2& cursor_delta);
+	void tickHumanDragTool(
+		World& world,
+		LocalPlayerControllerComponent& controller,
+		const RaycastHit& hit,
+		bool enabled,
+		int mouse_state,
+		float scroll_delta,
+		bool alt_pressed);
 }
