@@ -1,1 +1,1 @@
-sources += files('base.cpp')
+sources += files('base.cpp', 'npc_diagnostics.cpp')

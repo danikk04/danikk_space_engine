@@ -137,7 +137,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("MachinegunComponent::tick");
+		DSE_WATCH();
 
 		if(slot.getData() == nullptr)
 		{
@@ -194,7 +194,7 @@ namespace danikk_space_engine
 	 */
 	void frameMachinegunComponent(PointComponentSlot& slot, World& world)
 	{
-		Watcher watcher("MachinegunComponent::frame");
+		DSE_WATCH();
 
 		if(slot.getData() == nullptr)
 		{

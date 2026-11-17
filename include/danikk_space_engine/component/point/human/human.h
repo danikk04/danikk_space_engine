@@ -90,6 +90,40 @@ namespace danikk_space_engine
 	 */
 	struct HumanComponent
 	{
+		/** @brief Records the inputs for which the planet field last confirmed ground support. */
+		struct GroundSupportCache
+		{
+			/** @brief Supported capsule center relative to the planet body. */
+			glm::dvec3 center = glm::dvec3(0.0);
+			/** @brief Up axis used by the support probe, in body coordinates. */
+			vec3 up = vec3(0.0f);
+			/** @brief Height used by the support probe. */
+			float height = 0.0f;
+			/** @brief Chunk owning the supported point, or the unattached sentinel for an empty cache. */
+			ChunkId chunk_id = PointComponentSlot::no_chunk;
+			/** @brief Instance token of the planet component that supplied the field. */
+			uint64 planet_generation_id = 0;
+			/** @brief Terrain edit revision used by the support probe. */
+			uint64 terrain_revision = 0;
+		};
+
+		/** @brief Tracks capsule changes and pending checks for human-to-human collisions. */
+		struct CollisionActivity
+		{
+			/** @brief Capsule center at the start of the previous collision tick, in world coordinates. */
+			glm::dvec3 center = glm::dvec3(0.0);
+			/** @brief World-space up axis sampled with the center. */
+			glm::dvec3 up = glm::dvec3(0.0);
+			/** @brief Owning chunk at the previous sample, or the unattached sentinel before the first check. */
+			ChunkId chunk_id = PointComponentSlot::no_chunk;
+			/** @brief Capsule height at the previous sample. */
+			float height = 0.0f;
+			/** @brief True when this capsule needs contact checks during the current collision tick. */
+			bool active = true;
+			/** @brief Keeps contacts eligible next tick after a correction or an unresolved overlap. */
+			bool recheck_next_tick = false;
+		};
+
 		/** @brief Faction of this person, independent of the body they stand on. */
 		FactionId faction_id = static_cast<FactionId>(-1);
 		/** @brief Skin/model choice; the attached point remains the vertical center of the body. */
@@ -141,10 +175,16 @@ namespace danikk_space_engine
 		float death_time = 0.0f;
 		/** @brief Velocity along `up`; negative values indicate falling. */
 		float vertical_speed = 0.0f;
-		/** @brief True when the current tick found a supporting surface beneath the character. */
+		/** @brief True when the current tick confirmed or reused a supporting surface. */
 		bool grounded = false;
 		/** @brief Enables support probing, slope-constrained walking, and falling integration. */
 		bool follow_ground = true;
+		/** @brief Reusable support query result for the planet's scalar field. */
+		GroundSupportCache ground_support;
+		/** @brief Collision activity owned by the human contact solver. */
+		CollisionActivity collision_activity;
+		/** @brief Temporary marker used by WorldPhysics to restore ground clearance after human collisions. */
+		bool displaced_by_human_collision = false;
 	};
 
 	/**

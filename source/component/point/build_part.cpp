@@ -101,7 +101,7 @@ namespace danikk_space_engine
 	/** @copydoc frameBuildPartComponent */
 	void frameBuildPartComponent(PointComponentSlot& slot, World& world)
 	{
-		Watcher watcher("BuildPartComponent::frame");
+		DSE_WATCH();
 		if(!world.data.isPointActive(slot.point_id)
 			|| !world.data.isChunkActive(slot.chunk_id))
 		{

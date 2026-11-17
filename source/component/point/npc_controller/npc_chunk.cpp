@@ -48,9 +48,7 @@ namespace danikk_space_engine::npc_internal
 				const PointComponentSlotId id = old_chunk.point_component_slot_ids[i];
 				if(world.data.getPointComponentSlot(id).point_id != point_id) { ++i; continue; }
 				moved.push(id);
-				for(size_t j = i; j + 1 < old_chunk.point_component_slot_ids.size(); ++j)
-					old_chunk.point_component_slot_ids[j] = old_chunk.point_component_slot_ids[j + 1];
-				old_chunk.point_component_slot_ids.resize(old_chunk.point_component_slot_ids.size() - 1);
+				world.data.removePointComponentSlotFromChunk(id);
 			}
 			for(size_t i = 0; i < old_chunk.point_ids.size(); ++i)
 			{

@@ -23,7 +23,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("editPlanetGround");
+		DSE_WATCH();
 		if(!world.data.isChunkActive(face.chunk_id)
 			|| !world.data.isGroundTriangleActive(face.ground_triangle_id)) return false;
 		Chunk& chunk = world.data.getChunk(face.chunk_id);

@@ -17,6 +17,7 @@ namespace danikk_space_engine::npc_internal
 		bool updateCombat(World& world, PointId point_id, ChunkId chunk_id,
 			NpcControllerComponent& controller, HumanComponent& human, float dt)
 		{
+			DSE_WATCH();
 			const Chunk& own_chunk = world.data.getChunk(chunk_id);
 			const glm::ivec3 own_coordinate = glm::ivec3(glm::floor(
 				(own_chunk.position + glm::dvec3(world.data.getPoint(point_id).position)) / planet_chunk_width));

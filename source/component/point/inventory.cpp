@@ -49,7 +49,7 @@ namespace danikk_space_engine
 	/** @copydoc tickInventoryComponent */
 	void tickInventoryComponent(PointComponentSlot& slot, World&)
 	{
-		Watcher watcher("InventoryComponent::tick");
+		DSE_WATCH();
 		InventoryComponent& inventory = *static_cast<InventoryComponent*>(slot.getData());
 		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
 		for(InventorySlot& item : inventory.slots)

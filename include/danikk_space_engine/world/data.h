@@ -116,6 +116,13 @@ namespace danikk_space_engine
 		void addPointComponentSlotToChunk(ChunkId chunk_id, PointComponentSlotId slot_id);
 
 		/**
+		 * @brief Detaches a point component from its owner and clears the slot's chunk ID.
+		 * @param slot_id Active slot to detach. An unattached slot is left alone.
+		 * The caller manages the chunk's point reference separately.
+		 */
+		void removePointComponentSlotFromChunk(PointComponentSlotId slot_id);
+
+		/**
 		 * @brief Allocates a point-component slot and constructs its inline or external payload.
 		 * @param point_id Active point to which the component is attached.
 		 * @param type_id Registered type that provides payload layout and lifecycle callbacks.

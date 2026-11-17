@@ -162,7 +162,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("WorldData::destroyPoint");
+		DSE_WATCH();
 		if(!isPointActive(id)) return;
 
 		eraseIdFromChunks(*this, chunks.usedIds(), id, &Chunk::point_ids);
@@ -193,7 +193,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("WorldData::destroyGroundTriangle");
+		DSE_WATCH();
 		if(!isGroundTriangleActive(id)) return;
 		GroundTriangle& triangle = ground_triangles[id];
 		if(triangle.chunk_id != GroundTriangle::no_chunk)
@@ -233,7 +233,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("WorldData::destroyChunk");
+		DSE_WATCH();
 		if(!isChunkActive(id)) return;
 
 		Chunk& chunk = chunks[id];
@@ -303,7 +303,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Detaches a point component from chunk lists and releases its payload and slot.
+	 * @brief Detaches a point component from its owning chunk and releases its payload and slot.
 	 * @param id Component slot ID to destroy; inactive IDs are ignored.
 	 */
 	void WorldData::destroyPointComponentSlot(PointComponentSlotId id)
@@ -321,13 +321,23 @@ namespace danikk_space_engine
 					if(child.parent_slot_id == id) child.parent_slot_id = no_build_part_parent;
 				}
 		}
-		eraseIdFromChunks(*this, chunks.usedIds(), id, &Chunk::point_component_slot_ids);
+		removePointComponentSlotFromChunk(id);
 
 		PointComponentSlot& slot = point_components[id];
 		const PointComponentType& type = getPointComponentType(slot.type_id);
 		destroyComponentPayload(slot, type, id, "Point");
 		slot.dispose();
 		point_components.free(id);
+	}
+
+	/** @copydoc WorldData::removePointComponentSlotFromChunk */
+	void WorldData::removePointComponentSlotFromChunk(PointComponentSlotId slot_id)
+	{
+		PointComponentSlot& slot = getPointComponentSlot(slot_id);
+		if(slot.chunk_id == PointComponentSlot::no_chunk) return;
+
+		getChunk(slot.chunk_id).removePointComponentSlot(slot_id, slot.type_id);
+		slot.chunk_id = PointComponentSlot::no_chunk;
 	}
 
 	/**

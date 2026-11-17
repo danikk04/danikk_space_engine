@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/asset.h>
@@ -6,6 +8,7 @@
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/localization.h>
 #include <danikk_space_engine/material.h>
+#include <danikk_space_engine/scenario/npc_diagnostics.h>
 #include <danikk_engine/dynamic_mesh.h>
 #include <danikk_engine/input.h>
 #include <danikk_framework/memory.h>
@@ -15,11 +18,13 @@ namespace danikk_engine_game
 	using namespace danikk_space_engine;
 
     /**
-     * @brief Engine pre-initialization callback; currently performs no work.
+     * @brief Runs the opt-in NPC measurements before graphics and asset initialization.
      */
     void pre_begin()
     {
-
+		const char* diagnostics = std::getenv("DSE_MEASURE_NPCS");
+		if(diagnostics != nullptr && diagnostics[0] == '1' && diagnostics[1] == '\0')
+			std::exit(runNpcDiagnostics());
     }
 
 	/**
@@ -70,12 +75,12 @@ namespace danikk_engine_game
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			Watcher frame_watcher("frame");
+			DSE_WATCH();
 			{
 				/**
 				 * @brief Measures the duration of the enclosing profiler scope.
 				 */
-				Watcher gui_scope("GUI::frame");
+				DSE_WATCH_SCOPE("GUI::frame");
 				gui.frame();
 			}
 			if(getKeyboardState(keyboard_buttons::escape) == button_states::press)

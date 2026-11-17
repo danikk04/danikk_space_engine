@@ -195,7 +195,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("CameraComponent::tick");
+		DSE_WATCH();
 
 		if(slot.getData() == nullptr)
 		{
@@ -280,7 +280,7 @@ namespace danikk_space_engine
 	 */
 	void frameCameraComponent(PointComponentSlot& slot, World&)
 	{
-		Watcher watcher("CameraComponent::frame");
+		DSE_WATCH();
 
 		if(slot.getData() == nullptr)
 		{

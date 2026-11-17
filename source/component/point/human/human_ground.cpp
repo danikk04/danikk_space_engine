@@ -15,20 +15,20 @@ namespace danikk_space_engine::human_internal
 		constexpr float minimum_ground_normal_dot = 0.2f;
 
 		/**
-		 * @brief Finds the planet component attached to a world body, if any.
+		 * @brief Finds the active planet component slot attached to a world body, if any.
 		 * @param data World resource pools used to validate component-slot IDs.
 		 * @param body World body whose component slots are inspected.
-		 * @return Planet payload for the first planet component, or null for non-planet bodies.
+		 * @return The first planet slot, or null for non-planet bodies.
 		 */
-		const PlanetComponent* getPlanet(const WorldData& data, const WorldBody& body)
+		const WorldBodyComponentSlot* findPlanetSlot(const WorldData& data, const WorldBody& body)
 		{
-			Watcher watcher("getPlanet");
+			DSE_WATCH();
 			for(WorldBodyComponentSlotId component_id : body.component_slot_ids)
 			{
 				if(!data.isWorldBodyComponentSlotActive(component_id)) continue;
 				const WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(component_id);
 				if(slot.type_id == WorldBodyComponentTypeId::planet)
-					return static_cast<const PlanetComponent*>(slot.getData());
+					return &slot;
 			}
 			return nullptr;
 		}
@@ -39,7 +39,6 @@ namespace danikk_space_engine::human_internal
 		 * Brackets the density transition along `up`, bisects it, estimates the surface normal
 		 * from a finite-difference gradient, and rejects contacts steeper than the walkable limit.
 		 * @param chunk Chunk containing the human point.
-		 * @param body Owning world body; used for the planet-relative transform context.
 		 * @param planet Scalar-field parameters and terrain edit stamps.
 		 * @param up Character's local up direction.
 		 * @param human_height Character capsule height.
@@ -49,11 +48,11 @@ namespace danikk_space_engine::human_internal
 		 * @param maximum_drop Maximum downward support probe distance.
 		 * @return True if a walkable surface supports the character within the probe interval.
 		 */
-		bool findPlanetGroundPosition(const Chunk& chunk, const WorldBody& body,
-			const PlanetComponent& planet, const vec3& up, float human_height,
+		bool findPlanetGroundPosition(const Chunk& chunk, const PlanetComponent& planet,
+			const vec3& up, float human_height,
 			const vec3& proposed, vec3& supported, float step_height, float maximum_drop)
 		{
-			Watcher watcher("findPlanetGroundPosition");
+			DSE_WATCH();
 			const double capsule_radius = human_height * 0.14;
 			const double half_axis = human_height * 0.5 - capsule_radius;
 			const glm::dvec3 bottom_center = chunk.position
@@ -65,12 +64,16 @@ namespace danikk_space_engine::human_internal
 			};
 			double upper = step_height;
 			double lower = -maximum_drop;
+			double upper_density = densityAtOffset(upper);
 			// Physics corrections or terrain edits can leave the capsule slightly inside the field.
 			// Find a nearby air sample before bisecting instead of treating penetration as free fall.
 			constexpr double max_penetration_recovery = 2.0;
-			while(upper < max_penetration_recovery && densityAtOffset(upper) > -capsule_radius)
+			while(upper < max_penetration_recovery && upper_density > -capsule_radius)
+			{
 				upper = glm::min(upper + 0.25, max_penetration_recovery);
-			if(densityAtOffset(upper) > -capsule_radius || densityAtOffset(lower) < -capsule_radius) return false;
+				upper_density = densityAtOffset(upper);
+			}
+			if(upper_density > -capsule_radius || densityAtOffset(lower) < -capsule_radius) return false;
 			for(uint8 iteration = 0; iteration < 8; iteration++)
 			{
 				const double middle = (upper + lower) * 0.5;
@@ -95,15 +98,15 @@ namespace danikk_space_engine::human_internal
 				< minimum_ground_normal_dot) return false;
 			const glm::dvec3 supported_bottom = contact_position + glm::dvec3(up) * 0.02;
 			supported = vec3(supported_bottom - chunk.position) + up * static_cast<float>(half_axis);
-			(void)body;
 			return true;
 		}
 
 		/**
-		 * @brief Finds a walkable support position using scalar-field sampling or world raycast.
+		 * @brief Finds a walkable support position using the planet field or a raycast on the owning body.
 		 * @param world World used for scalar-field data and raycast queries.
 		 * @param chunk Chunk containing the character.
 		 * @param body Body whose terrain or mesh surfaces can support the character.
+		 * @param planet The already resolved planet component, or null for mesh support.
 		 * @param up Character-local up direction.
 		 * @param human_height Character height used to locate the feet.
 		 * @param proposed Candidate center position in chunk-local coordinates.
@@ -112,23 +115,23 @@ namespace danikk_space_engine::human_internal
 		 * @param maximum_drop Maximum downward distance to search for support.
 		 * @return True when a sufficiently upward-facing surface is found within the interval.
 		 */
-		bool findGroundPosition(World& world, const Chunk& chunk, const WorldBody& body,
+		bool findGroundPosition(World& world, const Chunk& chunk, const WorldBody& body, const PlanetComponent* planet,
 			const vec3& up, float human_height, const vec3& proposed, vec3& supported,
 			float step_height = 0.5f, float maximum_drop = 0.75f)
 		{
-			Watcher watcher("findGroundPosition");
-			if(const PlanetComponent* planet = getPlanet(world.data, body))
-				return findPlanetGroundPosition(chunk, body, *planet, up, human_height,
+			DSE_WATCH();
+			if(planet != nullptr)
+				return findPlanetGroundPosition(chunk, *planet, up, human_height,
 					proposed, supported, step_height, maximum_drop);
 
 			const vec3 proposed_foot = proposed - up * (human_height * 0.5f);
 			const glm::dvec3 foot = body.position
 				+ body.rotation * (chunk.position + glm::dvec3(proposed_foot));
 			const vec3 world_up = vec3(body.rotation * glm::dvec3(up));
-			const RaycastHit hit = world.raycast(foot + glm::dvec3(world_up) * static_cast<double>(step_height),
+			const RaycastHit hit = world.raycastBody(chunk.world_body_id,
+				foot + glm::dvec3(world_up) * static_cast<double>(step_height),
 				-world_up, step_height + maximum_drop);
-			if(!hit.hit || hit.body_id != chunk.world_body_id
-				|| glm::dot(hit.normal, world_up) < minimum_ground_normal_dot) return false;
+			if(!hit.hit || glm::dot(hit.normal, world_up) < minimum_ground_normal_dot) return false;
 			const vec3 supported_foot = vec3(glm::conjugate(body.rotation)
 				* (hit.position - body.position) - chunk.position) + up * 0.02f;
 			supported = supported_foot + up * (human_height * 0.5f);
@@ -139,8 +142,9 @@ namespace danikk_space_engine::human_internal
 		 * @brief Applies tangential movement while supported, or integrates and sweeps a fall.
 		 *
 		 * When ground following is disabled, movement is unconstrained and vertical speed is reset.
-		 * Otherwise the helper keeps the character on nearby support, limits step/drop probes,
-		 * applies gravity after support loss, and checks the full downward travel before landing.
+		 * Confirmed planet support can be reused while the capsule and terrain revision match.
+		 * A nonzero step probes its destination. Without support, the helper applies gravity
+		 * and checks the full downward travel before landing.
 		 * @param world World used by support queries.
 		 * @param chunk Owning chunk used for local/world coordinate conversion.
 		 * @param body Owning world body and transform.
@@ -153,39 +157,69 @@ namespace danikk_space_engine::human_internal
 		void moveWithGround(World& world, const Chunk& chunk, const WorldBody& body,
 			HumanComponent& human, Point& point, const vec3& velocity, float gravity, float dt)
 		{
-			Watcher watcher("moveWithGround");
+			DSE_WATCH();
+			const vec3 step = velocity * dt;
+			auto& cache = human.ground_support;
 			if(!human.follow_ground)
 			{
-				point.position += velocity * dt;
+				point.position += step;
 				human.vertical_speed = 0.0f;
 				human.grounded = false;
+				cache.chunk_id = PointComponentSlot::no_chunk;
 				return;
 			}
-			vec3 support;
-			if(human.vertical_speed <= 0.0f
-				&& findGroundPosition(world, chunk, body, human.up, human.getHeight(), point.position, support)
-				&& glm::dot(support - point.position, human.up) >= -0.08f
-				&& glm::dot(support - point.position, human.up) <= 2.0f)
+
+			const WorldBodyComponentSlot* planet_slot = findPlanetSlot(world.data, body);
+			const PlanetComponent* planet = planet_slot == nullptr
+				? nullptr : static_cast<const PlanetComponent*>(planet_slot->getData());
+			const float height = human.getHeight();
+			const bool cached_support = planet != nullptr && human.grounded && human.vertical_speed == 0.0f
+				&& cache.chunk_id == chunk.chunk_id && cache.planet_generation_id == planet_slot->generation_id
+				&& cache.terrain_revision == planet->terrain_revision && cache.height == height
+				&& cache.up == human.up && cache.center == chunk.position + glm::dvec3(point.position);
+
+			if(cached_support && point.position + step == point.position) return;
+
+			const auto setGrounded = [&](const vec3& supported_position)
 			{
-				point.position = support;
-				if(findGroundPosition(world, chunk, body, human.up, human.getHeight(),
-					point.position + velocity * dt, support))
-					point.position = support;
+				point.position = supported_position;
 				human.vertical_speed = 0.0f;
 				human.grounded = true;
+				if(planet == nullptr) cache.chunk_id = PointComponentSlot::no_chunk;
+				else cache = {chunk.position + glm::dvec3(supported_position), human.up, height,
+					chunk.chunk_id, planet_slot->generation_id, planet->terrain_revision};
+			};
+
+			vec3 support;
+			vec3 supported_position = point.position;
+			bool has_support = cached_support;
+			if(!has_support && human.vertical_speed <= 0.0f
+				&& findGroundPosition(world, chunk, body, planet, human.up, height, point.position, support))
+			{
+				const float lift = glm::dot(support - point.position, human.up);
+				has_support = lift >= -0.08f && lift <= 2.0f;
+				if(has_support) supported_position = support;
+			}
+
+			if(has_support)
+			{
+				const vec3 proposed = supported_position + step;
+				if(proposed != supported_position
+					&& findGroundPosition(world, chunk, body, planet, human.up, height, proposed, support))
+					supported_position = support;
+				setGrounded(supported_position);
 				return;
 			}
 
 			human.grounded = false;
+			cache.chunk_id = PointComponentSlot::no_chunk;
 			const float vertical_displacement = human.vertical_speed * dt - 0.5f * gravity * dt * dt;
 			human.vertical_speed -= gravity * dt;
 			if(vertical_displacement <= 0.0f
-				&& findGroundPosition(world, chunk, body, human.up, human.getHeight(), point.position, support,
+				&& findGroundPosition(world, chunk, body, planet, human.up, height, point.position, support,
 					0.0f, -vertical_displacement + 0.02f))
 			{
-				point.position = support;
-				human.vertical_speed = 0.0f;
-				human.grounded = true;
+				setGrounded(support);
 			}
 			else
 			{

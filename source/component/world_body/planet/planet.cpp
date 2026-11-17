@@ -43,7 +43,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("constructPlanetComponent");
+		DSE_WATCH();
 		if(destination == nullptr) danikk_engine::formatFatalError("Planet component construction received null destination");
 		new (destination) PlanetComponent();
 		if(init_data != nullptr)
@@ -69,7 +69,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("movePlanetComponent");
+		DSE_WATCH();
 		if(destination == nullptr || source == nullptr)
 		{
 			danikk_engine::formatFatalError("Planet component move received null memory");
@@ -88,7 +88,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("destroyPlanetComponent");
+		DSE_WATCH();
 		if(data == nullptr) danikk_engine::formatFatalError("Planet component destruction received null data");
 		static_cast<PlanetComponent*>(data)->~PlanetComponent();
 	}
@@ -107,7 +107,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("updatePlanetComponent");
+		DSE_WATCH();
 		/**
 		 * @brief Keeps a camera-centered set of 3D chunks loaded and refreshes it after movement or edits.
 		 * The scalar field remains defined throughout the planet volume; this set controls loaded surface work.

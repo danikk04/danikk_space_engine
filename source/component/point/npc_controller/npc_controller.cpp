@@ -16,6 +16,22 @@ namespace danikk_space_engine
 	using npc_internal::updateNpcChunk;
 	using npc_internal::updateCombat;
 
+	namespace
+	{
+		/** @brief Queues the controller's slot ID for migration after chunk callbacks finish. */
+		void queueNpcChunkUpdate(World& world, const PointComponentSlot& slot)
+		{
+			DSE_WATCH();
+			for(PointComponentSlotId id : world.data.getChunk(slot.chunk_id).point_component_slot_ids)
+			{
+				if(!world.data.isPointComponentSlotActive(id) || &world.data.getPointComponentSlot(id) != &slot)
+					continue;
+				world.pending_npc_chunk_updates.push(id);
+				return;
+			}
+		}
+	}
+
 	/**
 	 * @brief Creates default NPC state or copies optional behavior state into slot storage.
 	 * @param destination Destination storage owned by the point-component slot.
@@ -63,15 +79,10 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("NpcControllerComponent::tick");
+		DSE_WATCH();
 		NpcControllerComponent& controller = *static_cast<NpcControllerComponent*>(slot.getData());
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id)) return;
-		for(PointComponentSlotId id : world.data.getChunk(slot.chunk_id).point_component_slot_ids)
-			if(world.data.isPointComponentSlotActive(id) && &world.data.getPointComponentSlot(id) == &slot)
-			{
-				world.pending_npc_chunk_updates.push(id);
-				break;
-			}
+		queueNpcChunkUpdate(world, slot);
 		if(!world.data.isPointComponentSlotActive(controller.human_slot_id)) return;
 		PointComponentSlot& human_slot = world.data.getPointComponentSlot(controller.human_slot_id);
 		if(human_slot.type_id != PointComponentTypeId::human

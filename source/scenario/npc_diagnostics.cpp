@@ -1,0 +1,201 @@
+#include <cmath>
+#include <cstdlib>
+#include <limits>
+
+#include <danikk_framework/log.h>
+#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/scenario/npc_diagnostics.h>
+#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/human/npc_controller.h>
+#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/world/world.h>
+
+namespace danikk_space_engine
+{
+	namespace
+	{
+		constexpr size_t npc_columns = 20;
+		constexpr size_t npc_rows = 10;
+		constexpr size_t npc_count = npc_columns * npc_rows;
+		constexpr double spacing = 2.4;
+		constexpr double hill_radius = 96.0;
+
+		/** @brief Tracks a diagnostic NPC and its center at the start of each phase. */
+		struct DiagnosticNpc
+		{
+			PointComponentSlotId slot_id;
+			glm::dvec3 start_position;
+		};
+
+		/** @brief Counts survivors, grounded characters and net movement at a phase boundary. */
+		struct PhaseResult
+		{
+			size_t active = 0;
+			size_t grounded = 0;
+			size_t moved = 0;
+		};
+
+		/** @brief Reads the point center in planet coordinates without adding profiler scopes. */
+		glm::dvec3 getNpcPosition(const WorldData& data, const PointComponentSlot& slot)
+		{
+			return data.getChunk(slot.chunk_id).position + glm::dvec3(data.getPoint(slot.point_id).position);
+		}
+
+		/**
+		 * @brief Attaches the regular human, health and controller components without render assets.
+		 * The controller still processes chunk membership. Movement comes from the scenario so
+		 * faction combat and input cannot change the test.
+		 */
+		PointComponentSlotId spawnDiagnosticNpc(WorldData& data, ChunkId chunk_id, FactionId faction_id,
+			const glm::dvec3& feet)
+		{
+			const PointId point_id = data.createPoint();
+			HumanComponent human;
+			human.faction_id = faction_id;
+			human.up = vec3(glm::normalize(feet));
+			const glm::dvec3 center = feet + glm::dvec3(human.up) * (human.getHeight() * 0.5);
+			data.getPoint(point_id).position = vec3(center - data.getChunk(chunk_id).position);
+
+			const PointComponentSlotId human_id = data.createPointComponentSlot(point_id, PointComponentTypeId::human, &human);
+			data.addPointComponentSlotToChunk(chunk_id, human_id);
+			const PointComponentSlotId health_id = data.createPointComponentSlot(point_id, PointComponentTypeId::damageable);
+			data.addPointComponentSlotToChunk(chunk_id, health_id);
+
+			NpcControllerComponent controller;
+			controller.human_slot_id = human_id;
+			controller.enabled = false;
+			const PointComponentSlotId controller_id = data.createPointComponentSlot(
+				point_id, PointComponentTypeId::npc_controller, &controller);
+			data.addPointComponentSlotToChunk(chunk_id, controller_id);
+			return human_id;
+		}
+
+		/**
+		 * @brief Creates a small loaded region around an in-memory hill and spawns a grid of NPCs.
+		 * The hill sits above the surrounding procedural terrain so cave placement and player saves
+		 * cannot affect the initial support. Chunks retain the normal planet grid ownership.
+		 */
+		void createNpcFixture(WorldData& data, WorldBodyId body_id, PlanetComponent& planet,
+			DiagnosticNpc (&npcs)[npc_count])
+		{
+			const glm::dvec3 hill_center(0.0, 0.0, planet.radius + 64.0 - hill_radius);
+			planet.terrain_edits.push({hill_center, hill_radius, true});
+			++planet.terrain_revision;
+			const int32 top_chunk_z = static_cast<int32>(std::floor((hill_center.z + hill_radius) / planet_chunk_width));
+			for(int32 z = top_chunk_z - 1; z <= top_chunk_z + 1; ++z)
+				for(int32 y = -1; y <= 1; ++y)
+					for(int32 x = -1; x <= 1; ++x)
+					{
+						Chunk& chunk = data.createChunk(body_id);
+						chunk.grid_coordinate = glm::ivec3(x, y, z);
+						chunk.position = glm::dvec3(chunk.grid_coordinate) * planet_chunk_width;
+						planet.chunk_lookup.setChunk(chunk.grid_coordinate, chunk.chunk_id);
+					}
+
+			for(size_t i = 0; i < npc_count; ++i)
+			{
+				const double x = (static_cast<double>(i % npc_columns) - (npc_columns - 1) * 0.5) * spacing;
+				const double y = (static_cast<double>(i / npc_columns) - (npc_rows - 1) * 0.5) * spacing;
+				const double z = hill_center.z + std::sqrt(hill_radius * hill_radius - x * x - y * y);
+				const glm::dvec3 feet(x, y, z + 0.03);
+				const glm::ivec3 coord(glm::floor((feet + glm::dvec3(0.0, 0.0, 0.9)) / planet_chunk_width));
+				ChunkId chunk_id;
+				if(!planet.chunk_lookup.getChunk(coord, chunk_id)) formatFatalError("NPC diagnostics spawn chunk is missing");
+				const FactionId faction = i % 2 == 0 ? base_faction_ids::player : base_faction_ids::pirates;
+				npcs[i].slot_id = spawnDiagnosticNpc(data, chunk_id, faction, feet);
+			}
+		}
+
+		/**
+		 * @brief Measures a fixed number of simulation ticks and checks the actors at the phase boundary.
+		 * Scripts the same velocity for each live NPC before the measured tick starts. Forces a
+		 * profiler report after the final tick so short or fast phases are always logged.
+		 */
+		PhaseResult measureNpcPhase(World& world, DiagnosticNpc (&npcs)[npc_count], const char* name,
+			uint32 ticks, const vec3& velocity)
+		{
+			formatLogInfo("NPC diagnostics phase=% ticks=%", name, ticks);
+			for(DiagnosticNpc& npc : npcs)
+				if(world.data.isPointComponentSlotActive(npc.slot_id))
+					npc.start_position = getNpcPosition(world.data, world.data.getPointComponentSlot(npc.slot_id));
+
+			for(uint32 tick = 0; tick < ticks; ++tick)
+			{
+				for(const DiagnosticNpc& npc : npcs)
+				{
+					if(!world.data.isPointComponentSlotActive(npc.slot_id)) continue;
+					PointComponentSlot& slot = world.data.getPointComponentSlot(npc.slot_id);
+					static_cast<HumanComponent*>(slot.getData())->desired_velocity = velocity;
+				}
+				profiler.beginTick();
+				world.tick();
+				profiler.endTick(tick + 1 == ticks);
+			}
+
+			PhaseResult result;
+			for(const DiagnosticNpc& npc : npcs)
+			{
+				if(!world.data.isPointComponentSlotActive(npc.slot_id)) continue;
+				const PointComponentSlot& slot = world.data.getPointComponentSlot(npc.slot_id);
+				const auto& human = *static_cast<const HumanComponent*>(slot.getData());
+				++result.active;
+				if(human.grounded) ++result.grounded;
+				if(glm::length(getNpcPosition(world.data, slot) - npc.start_position) > 0.001) ++result.moved;
+			}
+			formatLogInfo("NPC diagnostics result phase=% active=% grounded=% moved=%",
+				name, result.active, result.grounded, result.moved);
+			return result;
+		}
+	}
+
+	/** @copydoc runNpcDiagnostics */
+	int runNpcDiagnostics()
+	{
+		World scene;
+		scene.camera_component_slot_id = static_cast<PointComponentSlotId>(-1);
+		scene.local_player_controller_component_slot_id = static_cast<PointComponentSlotId>(-1);
+		scene.data.factions.create(faction_definition_ids::celestial_body);
+		scene.data.factions.create(faction_definition_ids::player);
+		scene.data.factions.create(faction_definition_ids::pirates);
+
+		const WorldBodyId body_id = scene.data.createWorldBody();
+		const auto& settings = getPlanetSettings(planet_settings_ids::earth);
+		const WorldBodyComponentSlotId planet_id = scene.data.createWorldBodyComponentSlot(
+			body_id, WorldBodyComponentTypeId::planet, &settings);
+		auto& planet = *static_cast<PlanetComponent*>(scene.data.getWorldBodyComponentSlot(planet_id).getData());
+		DiagnosticNpc npcs[npc_count]{};
+		createNpcFixture(scene.data, body_id, planet, npcs);
+
+		formatLogInfo("NPC diagnostics population=% PlayerFaction=% Pirates=%", npc_count, npc_count / 2, npc_count / 2);
+		profiler.setReportIntervalMilliseconds(std::numeric_limits<uint64>::max());
+		const PhaseResult warmup = measureNpcPhase(scene, npcs, "warmup", 60, vec3(0.0f));
+		const PhaseResult idle = measureNpcPhase(scene, npcs, "idle", 120, vec3(0.0f));
+		const PhaseResult walking = measureNpcPhase(scene, npcs, "walking", 120, vec3(1.5f, 0.0f, 0.0f));
+
+		bool lost_support = false;
+		double drop = 0.0;
+		if(scene.data.isPointComponentSlotActive(npcs[0].slot_id))
+		{
+			const auto& before = scene.data.getPointComponentSlot(npcs[0].slot_id);
+			const glm::dvec3 center = getNpcPosition(scene.data, before);
+			planet.terrain_edits.push({center, 2.0, false});
+			++planet.terrain_revision;
+			measureNpcPhase(scene, npcs, "excavation", 1, vec3(0.0f));
+
+			if(scene.data.isPointComponentSlotActive(npcs[0].slot_id))
+			{
+				const auto& after = scene.data.getPointComponentSlot(npcs[0].slot_id);
+				const auto& human = *static_cast<const HumanComponent*>(after.getData());
+				drop = glm::dot(center - getNpcPosition(scene.data, after), glm::dvec3(human.up));
+				lost_support = !human.grounded && drop > 0.0001;
+			}
+		}
+		const bool passed = warmup.grounded == npc_count
+			&& idle.grounded == npc_count && idle.moved == 0
+			&& walking.grounded == npc_count && walking.moved == npc_count && lost_support;
+		formatLogInfo("NPC diagnostics excavation lost_support=% drop_m=%", lost_support, drop);
+		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
+		scene.data.release();
+		return passed ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
+}

@@ -281,7 +281,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("generatePlanetChunk");
+		DSE_WATCH();
 		GeneratedChunkData result;
 
 		if(!loadPlanetChunk(request, result))

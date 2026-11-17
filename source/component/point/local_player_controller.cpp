@@ -122,7 +122,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("tickLocalPlayerControllerComponent");
+		DSE_WATCH();
 
 		if(slot.getData() == nullptr)
 		{
@@ -173,7 +173,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("LocalPlayerControllerComponent::tick");
+		DSE_WATCH();
 		if(tool_catalog_open) return;
 		if(getKeyboardState(keyboard_buttons::slash) == button_states::press)
 		{

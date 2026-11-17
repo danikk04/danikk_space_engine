@@ -27,7 +27,7 @@ namespace danikk_space_engine
 	PointComponentSlotId createHumanSoldier(World& world, ChunkId chunk_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward)
 	{
-		Watcher watcher("createHumanSoldier");
+		DSE_WATCH();
 		if(!world.data.isChunkActive(chunk_id)) formatFatalError("Cannot create NPC in an invalid chunk");
 		const glm::dvec3 chunk_position = world.data.getChunk(chunk_id).position;
 		const PointId point_id = world.data.createPoint();
@@ -80,7 +80,7 @@ namespace danikk_space_engine
 	PointComponentSlotId createNpc(World& world, ChunkId chunk_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward)
 	{
-		Watcher watcher("createNpc");
+		DSE_WATCH();
 		return createHumanSoldier(world, chunk_id, position, up, forward);
 	}
 }

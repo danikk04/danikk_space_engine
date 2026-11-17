@@ -17,7 +17,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("WorldPhysics::tick");
+		DSE_WATCH();
 		integrateMotion(world);
 		destroyEntitiesInsidePlanetCore(world);
 		resolvePlanetCollisions(world);

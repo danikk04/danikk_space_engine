@@ -47,7 +47,7 @@ namespace danikk_space_engine
 	Mesh& Chunk::createMesh()
 	{
 		/** @brief Measures the mesh rebuild duration for the profiler. */
-		Watcher watcher("Chunk::createMesh");
+		DSE_WATCH();
 		if(mesh == nullptr)
 		{
 			void* memory = malloc(sizeof(Mesh));

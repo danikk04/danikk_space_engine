@@ -87,7 +87,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("BulletComponent::tick");
+		DSE_WATCH();
 
 		if(slot.getData() == nullptr)
 		{
@@ -182,7 +182,7 @@ namespace danikk_space_engine
 	 */
 	void frameBulletComponent(PointComponentSlot& slot, World& world)
 	{
-		Watcher watcher("BulletComponent::frame");
+		DSE_WATCH();
 
 		if(slot.getData() == nullptr)
 		{

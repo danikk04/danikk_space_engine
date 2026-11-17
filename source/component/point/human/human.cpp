@@ -24,8 +24,11 @@ namespace danikk_space_engine
 	void constructHumanComponent(void* destination, const void* init_data)
 	{
 		if(destination == nullptr) formatFatalError("Human construction received null destination");
-		new (destination) HumanComponent(init_data == nullptr
+		auto& human = *new (destination) HumanComponent(init_data == nullptr
 			? HumanComponent() : *static_cast<const HumanComponent*>(init_data));
+		human.ground_support = {};
+		human.collision_activity = {};
+		human.displaced_by_human_collision = false;
 	}
 
 	/**
@@ -60,7 +63,7 @@ namespace danikk_space_engine
 	 */
 	void tickHumanComponent(PointComponentSlot& slot, World& world)
 	{
-		Watcher watcher("HumanComponent::tick");
+		DSE_WATCH();
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id))
 			formatFatalError("Human references an invalid point or chunk");
 		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
@@ -116,7 +119,7 @@ namespace danikk_space_engine
 	 */
 	void frameHumanComponent(PointComponentSlot& slot, World& world)
 	{
-		Watcher watcher("HumanComponent::frame");
+		DSE_WATCH();
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id)) return;
 		const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);

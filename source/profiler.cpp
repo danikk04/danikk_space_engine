@@ -104,10 +104,10 @@ namespace danikk_space_engine
 	 *
 	 * The interval is considered slow when any frame exceeds 30 ms or when
 	 * ticks / elapsed seconds is below 20. Totals and maxima reset after every
-	 * interval regardless of whether a log is emitted; logged child times are
-	 * inclusive of nested Watcher scopes.
+	 * interval regardless of whether a log is emitted. Report rows are grouped by
+	 * parent scope and times include nested Watchers.
 	 */
-	void Profiler::endTick()
+	void Profiler::endTick(bool force_report)
 	{
 		DynamicArray<Node> report_nodes;
 		uint64 ticks_in_report = 0;
@@ -132,10 +132,10 @@ namespace danikk_space_engine
 			const auto elapsed_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
 				now - report_start_time).count();
 			elapsed_milliseconds = static_cast<double>(elapsed_nanoseconds) / 1000000.0;
-			if(elapsed_milliseconds < report_interval_milliseconds) return;
+			if(!force_report && elapsed_milliseconds < report_interval_milliseconds) return;
 
 			ticks_in_report = report_tick_count;
-			should_log = report_has_slow_tick
+			should_log = force_report || report_has_slow_tick
 				|| static_cast<double>(ticks_in_report) * 1000000000.0
 					< static_cast<double>(elapsed_nanoseconds) * 20.0;
 			if(should_log) report_nodes = nodes;
@@ -155,29 +155,43 @@ namespace danikk_space_engine
 			"CPU profile: % ticks in % ms",
 			ticks_in_report,
 			elapsed_milliseconds);
-		static const char* indentation[] = {"", "  ", "    ", "      ", "        ", "          ", "            ", "              "};
-		for(const Node& node : report_nodes)
+
+		const size_t root = report_nodes.size();
+		const size_t no_node = static_cast<size_t>(-1);
+		DynamicArray<size_t> first_child(root + 1, no_node);
+		DynamicArray<size_t> next_sibling(root, no_node);
+		// Prepending in reverse preserves the order in which each parent's children were discovered.
+		for(size_t index = root; index > 0;)
 		{
-			if(node.total_calls == 0) continue;
-			uint32 depth = 0;
-			uint32 parent_id = node.parent_id;
-			while(parent_id != invalid_node_id && parent_id < report_nodes.size())
-			{
-				depth++;
-				parent_id = report_nodes[parent_id].parent_id;
-			}
-			if(depth >= sizeof(indentation) / sizeof(indentation[0]))
-			{
-				depth = sizeof(indentation) / sizeof(indentation[0]) - 1;
-			}
-			formatLogInfo(
-				"% %: avg % ms/tick, max % ms/tick, calls %",
-				indentation[depth],
-				node.name,
-				static_cast<double>(node.total_nanoseconds) / ticks_in_report / 1000000.0,
-				static_cast<double>(node.maximum_tick_nanoseconds) / 1000000.0,
-				node.total_calls);
+			--index;
+			const size_t parent_id = report_nodes[index].parent_id;
+			const size_t parent = parent_id < root ? parent_id : root;
+			next_sibling[index] = first_child[parent];
+			first_child[parent] = index;
 		}
+
+		static constexpr char indentation[] = "                                ";
+		constexpr size_t max_indent = sizeof(indentation) - 1;
+		const auto report_children = [&](const auto& report, size_t parent, size_t depth) -> void
+		{
+			for(size_t index = first_child[parent]; index != no_node; index = next_sibling[index])
+			{
+				const Node& node = report_nodes[index];
+				if(node.total_calls > 0)
+				{
+					const size_t spaces = depth < max_indent / 2 ? depth * 2 : max_indent;
+					formatLogInfo(
+						"% %: avg % ms/tick, max % ms/tick, calls %",
+						indentation + max_indent - spaces,
+						node.name,
+						static_cast<double>(node.total_nanoseconds) / ticks_in_report / 1000000.0,
+						static_cast<double>(node.maximum_tick_nanoseconds) / 1000000.0,
+						node.total_calls);
+				}
+				report(report, index, depth + 1);
+			}
+		};
+		report_children(report_children, root, 0);
 	}
 
 	/**

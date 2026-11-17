@@ -43,7 +43,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("WorldPhysics::integrateMotion");
+		DSE_WATCH();
 		const float delta_time = danikk_engine::getTargetFrameDelay();
 		if(delta_time <= 0.0f) return;
 

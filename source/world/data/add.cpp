@@ -129,19 +129,19 @@ namespace danikk_space_engine
 	/**
 	 * @brief Attaches a point component to its scheduling chunk and references its point.
 	 *
-	 * The component slot receives the owning chunk ID after it is added to the chunk's update list.
+	 * The owning chunk indexes the slot for updates and also caches human slots for spatial queries.
 	 * @param chunk_id Active chunk that will tick and frame the component.
 	 * @param slot_id Active component whose point belongs to that chunk.
 	 */
 	void WorldData::addPointComponentSlotToChunk(ChunkId chunk_id, PointComponentSlotId slot_id)
 	{
+		Chunk& chunk = getChunk(chunk_id);
+		PointComponentSlot& slot = getPointComponentSlot(slot_id);
+		if(slot.chunk_id != PointComponentSlot::no_chunk)
+			danikk_engine::formatFatalError("Point component % already belongs to chunk %", slot_id, slot.chunk_id);
 
-		addUniqueResourceToChunk(*this, chunk_id, slot_id, isPointComponentSlotActive(slot_id), "point component",
-			&Chunk::point_component_slot_ids,
-			[this, chunk_id, slot_id]
-			{
-				addPointReferenceToChunk(chunk_id, getPointComponentSlot(slot_id).point_id);
-			});
-		getPointComponentSlot(slot_id).chunk_id = chunk_id;
+		addPointReferenceToChunk(chunk_id, slot.point_id);
+		chunk.addPointComponentSlot(slot_id, slot.type_id);
+		slot.chunk_id = chunk_id;
 	}
 }

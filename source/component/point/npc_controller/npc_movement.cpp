@@ -1,5 +1,6 @@
 #include <cmath>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/world.h>
 #include "internal.h"
 
@@ -8,6 +9,7 @@ namespace danikk_space_engine::npc_internal
 	/** @brief Updates an NPC movement command and optional camera tracking. */
 	void updateNpcMovement(World& world, PointComponentSlot& slot, NpcControllerComponent& controller, HumanComponent& human, float dt)
 	{
+		DSE_WATCH();
 		if(controller.has_movement_target)
 		{
 			vec3 offset = controller.target_position - world.data.getPoint(slot.point_id).position;

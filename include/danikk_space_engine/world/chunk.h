@@ -40,16 +40,34 @@ namespace danikk_space_engine
 	 */
 	class Chunk
 	{
+		friend class WorldData;
+
 		/** @brief Manually allocated GPU mesh, created lazily from active ground triangles. */
 		Mesh* mesh = nullptr;
 		/** @brief Draw ranges partitioning the mesh indices by triangle material. */
 		DynamicArray<ChunkMaterialRange> material_ranges;
 		/** @brief True when bounds describe the most recently built, non-dirty mesh. */
 		bool bounds_valid = false;
+		/** @brief Subset of the point-component list containing only human slots. */
+		DynamicArray<PointComponentSlotId> human_component_slot_ids;
+
+		/** @brief Registers a unique slot and updates the human subset when applicable. */
+		void addPointComponentSlot(PointComponentSlotId slot_id, PointComponentTypeId type_id);
+
+		/** @brief Removes an owned slot from the update list and, for humans, from the human subset. */
+		void removePointComponentSlot(PointComponentSlotId slot_id, PointComponentTypeId type_id);
+
+		/** @brief Runs tick callbacks for the chunk's active point components. */
+		void tickPointComponents(World& world);
+
+		/** @brief Runs frame callbacks for the chunk's active point components. */
+		void framePointComponents(World& world);
 
 	public:
 		/** @brief Set when geometry or material membership requires GPU mesh reconstruction. */
 		bool mesh_dirty = true;
+		/** @brief Whether at least one human in this chunk needs checks during the current collision tick. */
+		bool has_active_human_collisions = false;
 		/** @brief Center of the local-space bounding sphere used by raycast broadphase. */
 		vec3 bounds_center = vec3(0.0f);
 		/** @brief Radius of the local-space bounding sphere used by raycast broadphase. */
@@ -94,11 +112,11 @@ namespace danikk_space_engine
 		 */
 		Mesh& createMesh();
 
-		/**
-		 * @brief Appends a point-component slot ID to this chunk's update list.
-		 * @param slot_id Active slot registered by WorldData; duplicates are not checked here.
-		 */
-		void addPointComponentSlot(PointComponentSlotId slot_id);
+		/** @brief Returns the human component IDs in the chunk's update order. */
+		const DynamicArray<PointComponentSlotId>& getHumanComponentSlotIds() const
+		{
+			return human_component_slot_ids;
+		}
 
 		/**
 		 * @brief Appends a graph-component slot ID to this chunk's update list.

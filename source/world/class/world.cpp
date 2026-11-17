@@ -87,6 +87,7 @@ namespace danikk_space_engine
 	 */
 	glm::dvec3 World::getPointWorldPosition(ChunkId chunk_id, PointId point_id) const
 	{
+		DSE_WATCH();
 		const Chunk& chunk = data.getChunk(chunk_id);
 		const WorldBody& body = data.getWorldBody(chunk.world_body_id);
 		return body.position + body.rotation
@@ -118,12 +119,12 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher tick_scope("World::tick");
+		DSE_WATCH();
 		{
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			Watcher world_body_components_scope("WorldBody components");
+			DSE_WATCH_SCOPE("WorldBody components");
 			const DynamicArray<WorldBodyId> world_body_ids(data.getUsedWorldBodyIds());
 			DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
 			DynamicArray<ChunkId> chunk_ids;
@@ -259,12 +260,12 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher frame_scope("World::frame");
+		DSE_WATCH();
 		{
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			Watcher world_body_components_scope("WorldBody components");
+			DSE_WATCH_SCOPE("WorldBody components");
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
 				const WorldBody& body = data.getWorldBody(body_id);
@@ -285,7 +286,7 @@ namespace danikk_space_engine
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			Watcher request_update_scope("ChunkLoader::updatePendingRequests");
+			DSE_WATCH_SCOPE("ChunkLoader::updatePendingRequests");
 			chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
 			chunk_generation_requests_dirty = false;
 		}
@@ -306,7 +307,7 @@ namespace danikk_space_engine
 					/**
 					 * @brief Measures the duration of the enclosing profiler scope.
 					 */
-					Watcher accept_scope("Accept generated chunk");
+					DSE_WATCH_SCOPE("Accept generated chunk");
 					type.accept_generated_chunk(slot, *this, generated_chunk);
 				}
 			}
@@ -320,7 +321,7 @@ namespace danikk_space_engine
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			Watcher chunk_frame_scope("Chunk mesh and component frame");
+			DSE_WATCH_SCOPE("Chunk mesh and component frame");
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
 				const WorldBody& body = data.getWorldBody(body_id);
@@ -336,7 +337,7 @@ namespace danikk_space_engine
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			Watcher chunk_draw_scope("Chunk draw");
+			DSE_WATCH_SCOPE("Chunk draw");
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
 				const WorldBody& body = data.getWorldBody(body_id);

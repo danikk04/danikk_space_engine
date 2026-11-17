@@ -59,6 +59,10 @@ namespace danikk_space_engine
 	 */
 	class World
 	{
+		/** @brief Traces a ray through the supplied active bodies and returns their nearest hit. */
+		RaycastHit raycastBodies(const WorldBodyId* body_ids, size_t body_count,
+			const glm::dvec3& origin, const vec3& direction, float max_distance) const;
+
 	public:
 		/** @brief Owns all indexed geometry, chunks, bodies, and component-slot pools. */
 		WorldData data;
@@ -142,7 +146,7 @@ namespace danikk_space_engine
 		void shutdown();
 
 		/**
-		 * @brief Finds the nearest ground-triangle hit, using planet grid traversal and chunk spheres as broadphase.
+		 * @brief Finds the nearest hit against terrain or a BuildPart in the world.
 		 *
 		 * Planet chunks are visited with a 3D grid DDA; other bodies scan their chunk lists. Valid
 		 * chunk bounds reject misses before triangle tests. The supplied direction is normalized here.
@@ -152,6 +156,17 @@ namespace danikk_space_engine
 		 * @return Closest hit data, or a default result with `hit == false`.
 		 */
 		RaycastHit raycast(const glm::dvec3& origin, const vec3& direction, float max_distance = 10000.0f) const;
+
+		/**
+		 * @brief Finds the nearest hit against terrain or a BuildPart in one WorldBody.
+		 * @param body_id Body that owns the geometry to query.
+		 * @param origin Ray origin in world coordinates.
+		 * @param direction Ray direction; need not be normalized.
+		 * @param max_distance Maximum accepted ray length in world units.
+		 * @return Closest hit in the specified body, or a default miss if the body is inactive or no hit was found.
+		 */
+		RaycastHit raycastBody(WorldBodyId body_id, const glm::dvec3& origin,
+			const vec3& direction, float max_distance) const;
 
 		/**
 		 * @brief Casts a ray from the active camera along its current forward axis.

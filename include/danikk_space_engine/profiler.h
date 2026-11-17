@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <mutex>
+#include <string_view>
 
 #include <danikk_framework/dynamic_array.h>
 
@@ -85,12 +86,13 @@ namespace danikk_space_engine
 
 		/**
 		 * @brief Accumulates this frame and emits a hierarchical report at interval boundaries.
+		 * @param force_report Flushes an explicit measurement interval regardless of wall time or frame rate.
 		 *
 		 * Scope counters are aggregated under a mutex. Once the interval elapses,
 		 * the report is suppressed unless a frame took over 30 ms or average FPS
 		 * was below 20. Interval counters reset even when logging is suppressed.
 		 */
-		void endTick();
+		void endTick(bool force_report = false);
 
 		/**
 		 * @brief Changes the aggregation and logging interval.
@@ -109,7 +111,6 @@ namespace danikk_space_engine
 		/** @brief Monotonic timestamp captured when the watched scope begins. */
 		std::chrono::steady_clock::time_point start_time;
 
-	public:
 		/**
 		 * @brief Starts timing a named scope and registers it beneath the current parent scope.
 		 * @param name Name retained for logging; it must have static or otherwise
@@ -118,6 +119,11 @@ namespace danikk_space_engine
 		 * scope is ended exactly once by its destructor.
 		 */
 		explicit Watcher(const char* name);
+
+	public:
+		/** @brief Creates a timing scope for the instrumentation macros. */
+		[[nodiscard]] static Watcher create(const char* name) { return Watcher(name); }
+
 		/** @brief Disabled so the same timed scope cannot be ended by multiple destructors. */
 		Watcher(const Watcher&) = delete;
 		/** @brief Disabled so one measured scope cannot be ended more than once. */
@@ -128,4 +134,106 @@ namespace danikk_space_engine
 
 	/** @brief Process-wide profiler instance used by all Watcher objects. */
 	extern Profiler profiler;
+
+	namespace profiler_internal
+	{
+		/** @brief Owns the null-terminated name retained by the profiler. */
+		template<size_t capacity>
+		struct WatcherName
+		{
+			char text[capacity]{};
+		};
+
+		/** @brief Finds the function token before its parameters, including names such as operator(). */
+		constexpr size_t findFunctionName(std::string_view signature, std::string_view function)
+		{
+			for(size_t start = signature.find(function); start != std::string_view::npos;
+				start = signature.find(function, start + 1))
+			{
+				const size_t end = start + function.size();
+				if(end == signature.size() || signature[end] != '(') continue;
+				if(start == 0 || signature[start - 1] == ' '
+					|| (start >= 2 && signature.substr(start - 2, 2) == "::")) return start;
+			}
+			return std::string_view::npos;
+		}
+
+		/**
+		 * @brief Extracts the nearest named class or namespace from a decorated signature.
+		 * Anonymous namespace markers and class template arguments are dropped.
+		 */
+		constexpr std::string_view findWatcherOwner(std::string_view prefix)
+		{
+			while(prefix.ends_with("::"))
+			{
+				prefix.remove_suffix(2);
+				constexpr std::string_view gcc_anonymous = "{anonymous}";
+				constexpr std::string_view clang_anonymous = "(anonymous namespace)";
+				constexpr std::string_view msvc_anonymous = "`anonymous namespace'";
+				if(prefix.ends_with(gcc_anonymous)) prefix.remove_suffix(gcc_anonymous.size());
+				else if(prefix.ends_with(clang_anonymous)) prefix.remove_suffix(clang_anonymous.size());
+				else if(prefix.ends_with(msvc_anonymous)) prefix.remove_suffix(msvc_anonymous.size());
+				else
+				{
+					if(prefix.ends_with(">"))
+					{
+						size_t depth = 0;
+						for(size_t index = prefix.size(); index > 0;)
+						{
+							const char character = prefix[--index];
+							if(character == '>') ++depth;
+							if(character == '<' && --depth == 0)
+							{
+								prefix = prefix.substr(0, index);
+								break;
+							}
+						}
+					}
+					const size_t start = prefix.find_last_of(": \t*&");
+					return start == std::string_view::npos ? prefix : prefix.substr(start + 1);
+				}
+			}
+			return {};
+		}
+
+		/** @brief Builds a stable owner::function label entirely at compile time. */
+		template<size_t capacity>
+		consteval WatcherName<capacity> makeWatcherName(const char (&signature)[capacity], std::string_view function)
+		{
+			const std::string_view decorated(signature, capacity - 1);
+			const size_t start = findFunctionName(decorated, function);
+			const auto owner = start == std::string_view::npos
+				? std::string_view{} : findWatcherOwner(decorated.substr(0, start));
+
+			WatcherName<capacity> result;
+			size_t length = 0;
+			for(char character : owner) result.text[length++] = character;
+			if(!owner.empty())
+			{
+				result.text[length++] = ':';
+				result.text[length++] = ':';
+			}
+			for(char character : function) result.text[length++] = character;
+			return result;
+		}
+	}
 }
+
+#if defined(__clang__) || defined(__GNUC__)
+	#define DSE_WATCH_SIGNATURE __PRETTY_FUNCTION__
+#elif defined(_MSC_VER)
+	#define DSE_WATCH_SIGNATURE __FUNCSIG__
+#else
+	#define DSE_WATCH_SIGNATURE __func__
+#endif
+
+/** @brief Profiles the enclosing function under its short name. Declare once per scope. */
+#define DSE_WATCH() \
+	static constexpr auto dse_watcher_name = ::danikk_space_engine::profiler_internal::makeWatcherName( \
+		DSE_WATCH_SIGNATURE, __func__); \
+	[[maybe_unused]] const auto dse_watcher = ::danikk_space_engine::Watcher::create(dse_watcher_name.text)
+
+/** @brief Profiles a custom scope with a string literal label. Declare once per scope. */
+#define DSE_WATCH_SCOPE(name) \
+	static constexpr char dse_watcher_name[] = name; \
+	[[maybe_unused]] const auto dse_watcher = ::danikk_space_engine::Watcher::create(dse_watcher_name)

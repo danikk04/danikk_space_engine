@@ -56,24 +56,38 @@ namespace danikk_space_engine
 		}
 	}
 
+	/** @copydoc World::raycast */
+	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
+	{
+		DSE_WATCH();
+		const auto& body_ids = data.getUsedWorldBodyIds();
+		return raycastBodies(body_ids.begin(), body_ids.size(), origin, direction, max_distance);
+	}
+
+	/** @copydoc World::raycastBody */
+	RaycastHit World::raycastBody(WorldBodyId body_id, const glm::dvec3& origin,
+		const vec3& direction, float max_distance) const
+	{
+		DSE_WATCH();
+		if(!data.isWorldBodyActive(body_id)) return RaycastHit{};
+		return raycastBodies(&body_id, 1, origin, direction, max_distance);
+	}
+
 	/**
-	 * @brief Traverses likely chunks, intersects their triangles, and records the nearest hit.
+	 * @brief Traverses candidate chunks in each supplied body and records the nearest triangle hit.
 	 *
-	 * Planet bodies use a body-level sphere test followed by 3D DDA through the chunk-coordinate
-	 * grid. Other bodies scan their chunk IDs. Per-chunk bounds reject misses before ray-triangle
-	 * tests; dirty or invalid bounds do not cull the chunk. The DDA visits only grid cells crossed
-	 * by the ray, then the shared triangle routine tests geometry in candidate chunks.
+	 * Planet bodies use a sphere test followed by 3D DDA through crossed grid cells. Other
+	 * bodies scan their chunk IDs. Valid per-chunk bounds reject misses before triangle tests.
+	 * @param body_ids IDs of active bodies to query.
+	 * @param body_count Number of body IDs in the range.
 	 * @param origin Ray origin in world coordinates.
 	 * @param direction Ray direction, normalized internally.
 	 * @param max_distance Maximum accepted distance in world units.
-	 * @return Nearest triangle hit or a default miss result.
+	 * @return Nearest hit or a default miss result.
 	 */
-	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
+	RaycastHit World::raycastBodies(const WorldBodyId* body_ids, size_t body_count,
+		const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
-		/**
-		 * @brief Measures the duration of the enclosing profiler scope.
-		 */
-		Watcher watcher("World::raycast");
 		RaycastHit result;
 		const float direction_length = glm::length(direction);
 		if(direction_length <= 0.000001f || max_distance < 0.0f) return result;
@@ -82,8 +96,9 @@ namespace danikk_space_engine
 		const Ray ray{vec3(0.0f), normalized_direction};
 		float nearest_distance = max_distance;
 
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+		for(size_t body_index = 0; body_index < body_count; ++body_index)
 		{
+			const WorldBodyId body_id = body_ids[body_index];
 			const WorldBody& body = data.getWorldBody(body_id);
 			const PlanetComponent* planet = getPlanetComponent(data, body);
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);

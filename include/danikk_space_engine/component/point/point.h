@@ -79,11 +79,13 @@ namespace danikk_space_engine
 	{
 		/** @brief Maximum payload size stored directly inside a slot. */
 		static constexpr size_t inline_data_capacity = 32;
+		/** @brief Owner ID for a slot that has not been attached to a chunk. */
+		static constexpr ChunkId no_chunk = static_cast<ChunkId>(-1);
 
 		/** @brief Point whose behavior and data this slot represents. */
 		PointId point_id = 0;
 		/** @brief Chunk that owns and schedules this component slot. */
-		uint32 chunk_id = static_cast<uint32>(-1);
+		ChunkId chunk_id = no_chunk;
 		/** @brief Type-table entry used to interpret the payload and dispatch callbacks. */
 		PointComponentTypeId type_id = PointComponentTypeId::none;
 		/** @brief Incarnation token used to distinguish reused component slots. */

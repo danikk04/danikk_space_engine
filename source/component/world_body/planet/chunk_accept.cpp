@@ -54,7 +54,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("acceptPlanetGeneratedChunk");
+		DSE_WATCH();
 		/**
 		 * @brief Rejects stale results and records valid empty chunks without allocating geometry.
 		 * Non-empty results convert local mesh indices into WorldData points and ground triangles.

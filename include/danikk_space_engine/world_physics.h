@@ -63,8 +63,9 @@ namespace danikk_space_engine
 		/**
 		 * @brief Separates overlapping human capsules and restores ground clearance afterward.
 		 *
-		 * Uses four pairwise positional-correction passes. Human dimensions and up
-		 * vectors define capsule axes; corrections are projected onto each person's
+		 * Uses up to four positional-correction passes, visiting each candidate chunk pair
+		 * once per pass. Human dimensions and up vectors define capsule axes.
+		 * Corrections are projected onto each person's
 		 * local tangent plane. A short raycast may lift a person after separation,
 		 * but this stage does not apply collision impulses or resolve against terrain.
 		 * @param world World whose human point positions are adjusted.

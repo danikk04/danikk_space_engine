@@ -31,6 +31,7 @@ namespace danikk_space_engine::npc_internal
 		void collectCandidates(World& world, PointId point_id, ChunkId chunk_id, FactionId faction,
 			NpcControllerComponent& controller)
 		{
+			DSE_WATCH();
 			controller.enemy_candidates.clear();
 			controller.candidate_index = 0;
 			const Chunk& owner = world.data.getChunk(chunk_id);
