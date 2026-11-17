@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/item.h>
@@ -293,7 +294,8 @@ namespace danikk_space_engine
 		if(glm::length(human.up) < 1e-6f) human.up = vec3(0, 0, 1);
 		human.up = glm::normalize(human.up);
 		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
-		vec3 velocity = human.health > 0.0f ? human.desired_velocity : vec3(0.0f);
+		const DamageableComponent* damageable = findDamageable(world, slot.chunk_id, slot.point_id);
+		vec3 velocity = damageable == nullptr || damageable->health > 0.0f ? human.desired_velocity : vec3(0.0f);
 		human.desired_velocity = vec3(0.0f);
 		velocity -= human.up * glm::dot(velocity, human.up);
 		const float speed = glm::length(velocity);

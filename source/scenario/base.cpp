@@ -100,6 +100,8 @@ namespace danikk_space_engine
 		world.data.factions.create(faction_definition_ids::celestial_body);
 		world.data.factions.create(faction_definition_ids::player);
 		world.data.factions.create(faction_definition_ids::pirates);
+		world.data.factions.setRelation(base_faction_ids::player, base_faction_ids::pirates,
+			{FactionRelationType::hostile, 0.0f});
 
 		const WorldBodyId planet_body_id = world.data.createWorldBody();
 		world.data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;

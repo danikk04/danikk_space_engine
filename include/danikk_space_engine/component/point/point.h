@@ -21,6 +21,7 @@ namespace danikk_space_engine
 		npc_controller, ///< Autonomous human movement and head-look command generator.
 		inventory, ///< Dynamic item-stack storage attached to a point.
 		build_part, ///< Structural cube or slope with rendering and collision geometry.
+		damageable, ///< Health and damage resistance for a point-attached object.
 		count ///< Number of entries in the point-component type table.
 	};
 
@@ -85,6 +86,8 @@ namespace danikk_space_engine
 		uint32 chunk_id = static_cast<uint32>(-1);
 		/** @brief Type-table entry used to interpret the payload and dispatch callbacks. */
 		PointComponentTypeId type_id = PointComponentTypeId::none;
+		/** @brief Incarnation token used to distinguish reused component slots. */
+		uint64 generation_id = 0;
 		/** @brief Selects the external pointer instead of the inline byte buffer. */
 		bool uses_external_data = false;
 		union

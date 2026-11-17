@@ -12,6 +12,10 @@ namespace danikk_space_engine
 	{
 		/** @brief Projectile velocity in the owning chunk's local frame, measured in units per second. */
 		vec3 velocity = vec3(0.0f);
+		/** @brief Shooter point; excluded from projectile collision. */
+		PointId owner_point_id = static_cast<PointId>(-1);
+		/** @brief Damage dealt to a human on impact. */
+		float damage = 0.0f;
 		/** @brief Simulation time elapsed since this projectile was spawned. */
 		float age = 0.0f;
 		/** @brief Maximum projectile lifetime before its point is queued for destruction. */
@@ -19,6 +23,9 @@ namespace danikk_space_engine
 		/** @brief Prevents duplicate deferred-destruction requests after impact or timeout. */
 		bool destruction_queued = false;
 	};
+
+	/** @brief Creates a projectile point and attaches its component to a chunk. */
+	void spawnBullet(World& world, ChunkId chunk_id, const vec3& position, const BulletComponent& bullet);
 
 	/**
 	 * @brief Placement-constructs a bullet, copying optional initial velocity and lifetime.

@@ -29,6 +29,7 @@ namespace danikk_space_engine
 				case PointComponentTypeId::npc_controller: return "NPC controller";
 				case PointComponentTypeId::inventory: return "Inventory";
 				case PointComponentTypeId::build_part: return "BuildPart";
+				case PointComponentTypeId::damageable: return "Damageable";
 				default: return "Unknown point component";
 			}
 		}
@@ -163,6 +164,7 @@ namespace danikk_space_engine
 				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
 
 				PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+				if(slot.chunk_id != chunk_id) continue;
 				const PointComponentType& type = getPointComponentType(slot.type_id);
 				if(slot.uses_external_data && slot.external_data == nullptr)
 				{

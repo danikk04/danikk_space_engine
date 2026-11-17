@@ -10,6 +10,7 @@
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/effects/polygon_highlight.h>
 #include <danikk_space_engine/scenario/base.h>
+#include <danikk_space_engine/component/point/human/npc_controller.h>
 
 namespace danikk_space_engine
 {
@@ -175,6 +176,8 @@ namespace danikk_space_engine
 				}
 			}
 		}
+		for(PointComponentSlotId slot_id : pending_npc_chunk_updates) updateNpcChunkAfterTick(*this, slot_id);
+		pending_npc_chunk_updates.clear();
 		for(PointId point_id : pending_point_destruction_ids)
 		{
 			if(data.isPointActive(point_id)) data.destroyPoint(point_id);
@@ -393,6 +396,7 @@ namespace danikk_space_engine
 		chunk_generation_requests_dirty = false;
 		chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
 		pending_point_destruction_ids.clear();
+		pending_npc_chunk_updates.clear();
 		startBaseScenario(*this);
 	}
 
@@ -409,5 +413,6 @@ namespace danikk_space_engine
 		clearBuildPartMeshCache();
 		data.release();
 		pending_point_destruction_ids.clear();
+		pending_npc_chunk_updates.clear();
 	}
 }

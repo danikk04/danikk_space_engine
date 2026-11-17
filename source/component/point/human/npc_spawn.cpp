@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/item.h>
 #include <danikk_space_engine/asset.h>
@@ -13,22 +14,20 @@ namespace danikk_space_engine
 	 * @brief Creates a soldier in a standalone chunk with a skin, equipped MG-42, and NPC controller.
 	 *
 	 * The input position is the world-body-local location of the feet. The point is placed half a
-	 * human height along `up`, and a new chunk is created so terrain streaming does not unload the NPC.
+	 * human height along `up`, relative to the existing owning chunk.
 	 * The human, inventory, and controller slots share the same point and chunk.
 	 * @param world World receiving the new chunk, point, and component slots.
-	 * @param world_body_id Active body that owns the new NPC chunk.
+	 * @param chunk_id Active chunk receiving the NPC components.
 	 * @param position Feet position in world-body-local coordinates.
 	 * @param up Local vertical direction; normalized, with +Z used if the input is degenerate.
 	 * @param forward Initial facing direction, projected onto the plane perpendicular to `up`.
 	 * @return ID of the attached NPC controller slot.
 	 */
-	PointComponentSlotId createHumanSoldier(World& world, WorldBodyId world_body_id,
+	PointComponentSlotId createHumanSoldier(World& world, ChunkId chunk_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward)
 	{
-		if(!world.data.isWorldBodyActive(world_body_id)) formatFatalError("Cannot create NPC on an invalid body");
-		Chunk& chunk = world.data.createChunk(world_body_id);
-		chunk.position = position;
-		const ChunkId chunk_id = chunk.chunk_id;
+		if(!world.data.isChunkActive(chunk_id)) formatFatalError("Cannot create NPC in an invalid chunk");
+		const glm::dvec3 chunk_position = world.data.getChunk(chunk_id).position;
 		const PointId point_id = world.data.createPoint();
 		Point& point = world.data.getPoint(point_id);
 		HumanComponent human;
@@ -43,10 +42,15 @@ namespace danikk_space_engine
 			human.forward = reference - human.up * glm::dot(reference, human.up);
 		}
 		human.forward = glm::normalize(human.forward);
-		point.position = human.up * (human.height * 0.5f);
+		point.position = vec3(position - chunk_position) + human.up * (human.height * 0.5f);
 		const PointComponentSlotId human_id = world.data.createPointComponentSlot(
 			point_id, PointComponentTypeId::human, &human);
 		world.data.addPointComponentSlotToChunk(chunk_id, human_id);
+		DamageableComponent damageable;
+		damageable.health = getDamageableDefinition(damageable.definition_id).max_health;
+		const PointComponentSlotId damageable_id = world.data.createPointComponentSlot(
+			point_id, PointComponentTypeId::damageable, &damageable);
+		world.data.addPointComponentSlotToChunk(chunk_id, damageable_id);
 
 		InventoryComponent inventory;
 		inventory.slots.pushCtor();
@@ -72,15 +76,15 @@ namespace danikk_space_engine
 	/**
 	 * @brief Creates the current default NPC archetype by delegating to createHumanSoldier().
 	 * @param world World receiving the NPC resources.
-	 * @param world_body_id Active body that owns the NPC.
+	 * @param chunk_id Active chunk receiving the NPC.
 	 * @param position Feet position in body-local coordinates.
 	 * @param up Initial local up direction.
 	 * @param forward Initial local facing direction.
 	 * @return ID of the NPC controller slot created with the human.
 	 */
-	PointComponentSlotId createNpc(World& world, WorldBodyId world_body_id,
+	PointComponentSlotId createNpc(World& world, ChunkId chunk_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward)
 	{
-		return createHumanSoldier(world, world_body_id, position, up, forward);
+		return createHumanSoldier(world, chunk_id, position, up, forward);
 	}
 }

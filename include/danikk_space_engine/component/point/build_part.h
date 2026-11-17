@@ -21,8 +21,6 @@ namespace danikk_space_engine
 		mat4 rotation = mat4(1.0f);
 		/** @brief Per-axis dimensions in metres, scaling the unit local shape. */
 		vec3 size = vec3(1.0f);
-		/** @brief Structural health for this individual part. */
-		float health = 100.0f;
 		/** @brief Construction completion in the inclusive range [0, 1]. */
 		float construction_progress = 1.0f;
 	};

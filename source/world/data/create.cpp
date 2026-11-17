@@ -137,6 +137,8 @@ namespace danikk_space_engine
 		slot.point_id = point_id;
 		slot.chunk_id = static_cast<uint32>(-1);
 		slot.type_id = type_id;
+		slot.generation_id = next_point_component_generation_id++;
+		if(next_point_component_generation_id == 0) next_point_component_generation_id = 1;
 		constructComponentPayload(slot, type, init_data, type_id, "point");
 		return id;
 	}

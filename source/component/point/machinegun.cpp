@@ -14,7 +14,6 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr float bullet_interval = 0.25f;
-		constexpr float bullet_speed = 120.0f;
 		constexpr float muzzle_forward_offset = 4.4f;
 		constexpr float muzzle_vertical_offset = 0.31f;
 
@@ -63,17 +62,15 @@ namespace danikk_space_engine
 		 * @param direction Unit travel direction inherited from the weapon barrel.
 		 * @param world WorldData used to allocate and register the projectile resources.
 		 */
-		void spawnBullet(ChunkId chunk_id, const vec3& position, const vec3& direction, World& world)
+		void spawnMachinegunBullet(ChunkId chunk_id, const vec3& position, const vec3& direction, World& world)
 		{
-			const PointId point_id = world.data.createPoint();
-			world.data.getPoint(point_id).position = position;
+			const WeaponItemParameters& weapon = getWeaponItemParameters(item_definition_ids::mg42);
+			const ProjectileDefinition& projectile = getProjectileDefinition(weapon.projectile_id);
 			BulletComponent bullet;
-			bullet.velocity = direction * bullet_speed;
-			const PointComponentSlotId bullet_slot_id = world.data.createPointComponentSlot(
-				point_id,
-				PointComponentTypeId::bullet,
-				&bullet);
-			world.data.addPointComponentSlotToChunk(chunk_id, bullet_slot_id);
+			bullet.velocity = direction * projectile.speed;
+			bullet.lifetime = projectile.lifetime;
+			bullet.damage = weapon.damage;
+			spawnBullet(world, chunk_id, position, bullet);
 		}
 	}
 
@@ -186,7 +183,7 @@ namespace danikk_space_engine
 
 		for(uint32 shot_index = 0; shot_index < shot_count; shot_index++)
 		{
-			spawnBullet(chunk_id, muzzle_position, direction, world);
+			spawnMachinegunBullet(chunk_id, muzzle_position, direction, world);
 		}
 	}
 

@@ -42,7 +42,8 @@ namespace danikk_space_engine
 		/** @brief Spawns the weapon's configured projectile in its human owner's chunk. */
 		bool useWeapon(World& world, PointId owner_point_id, InventorySlot& slot, const ItemDefinition& definition)
 		{
-			if(!slot.is_equipped || definition.parameters.weapon.projectile_id == projectile_definition_ids::none)
+			if(!slot.is_equipped || slot.instance_state.weapon.cooldown > 0.0f
+				|| definition.parameters.weapon.projectile_id == projectile_definition_ids::none)
 				return false;
 			HumanComponent* human = getHumanAtPoint(world, owner_point_id);
 			if(human == nullptr || !world.data.isPointActive(owner_point_id)) return false;
@@ -67,11 +68,11 @@ namespace danikk_space_engine
 			BulletComponent bullet;
 			bullet.velocity = direction * projectile.speed;
 			bullet.lifetime = projectile.lifetime;
-			const PointId bullet_point = world.data.createPoint();
-			world.data.getPoint(bullet_point).position = muzzle;
-			const PointComponentSlotId bullet_slot = world.data.createPointComponentSlot(
-				bullet_point, PointComponentTypeId::bullet, &bullet);
-			world.data.addPointComponentSlotToChunk(chunk_id, bullet_slot);
+			bullet.owner_point_id = owner_point_id;
+			bullet.damage = definition.parameters.weapon.damage;
+			const float rate = definition.parameters.weapon.rounds_per_minute;
+			slot.instance_state.weapon.cooldown = rate > 0.0f ? 60.0f / rate : 0.25f;
+			spawnBullet(world, chunk_id, muzzle, bullet);
 			return true;
 		}
 
@@ -144,7 +145,7 @@ namespace danikk_space_engine
 		mg42.max_stack = 1;
 		mg42.mesh.loadObj("MG-42", "MG-42");
 		mg42.render_color = vec4(0.4f, 0.4f, 0.4f, 1.0f);
-		mg42.parameters.weapon = WeaponItemParameters{projectile_definition_ids::mg42_bullet, 0.0f, 0.0f, 0.0f, 0.0f};
+		mg42.parameters.weapon = WeaponItemParameters{projectile_definition_ids::mg42_bullet, 25.0f, 0.0f, 0.0f, 240.0f};
 		item_catalog_loaded = true;
 	}
 

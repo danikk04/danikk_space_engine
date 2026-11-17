@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	struct WeaponItemState
 	{
 		float cooldown = 0.0f; ///< Seconds remaining until the weapon may fire.
-		uint32 ammunition = 0; ///< Number of rounds currently loaded.
+		uint32 ammunition = 0; ///< Reserved for ammunition; weapons currently use an unlimited supply.
 	};
 
 	/** @brief Category-specific item state; select the member matching the item type. */
@@ -100,4 +100,6 @@ namespace danikk_space_engine
 	 * @param data Address of the live inventory payload.
 	 */
 	void destroyInventoryComponent(void* data);
+	/** @brief Advances cooldowns of weapon items in this inventory. */
+	void tickInventoryComponent(PointComponentSlot& slot, World& world);
 }

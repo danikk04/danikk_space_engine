@@ -65,11 +65,32 @@ namespace danikk_space_engine
 			|| planet.chunk_lookup.isGenerated(generated_chunk.grid_coordinate)) return;
 
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
+		planet.chunk_lookup.getChunk(generated_chunk.grid_coordinate, chunk_id);
+		if(world.data.isChunkActive(chunk_id))
+		{
+			Chunk& existing = world.data.getChunk(chunk_id);
+			DynamicArray<PointId> old_points;
+			for(GroundTriangleId triangle_id : existing.ground_triangle_ids)
+			{
+				const GroundTriangle& triangle = world.data.getGroundTriangle(triangle_id);
+				for(PointId id : triangle.points) old_points.push(id);
+			}
+			while(existing.ground_triangle_ids.size() > 0)
+				world.data.destroyGroundTriangle(existing.ground_triangle_ids[existing.ground_triangle_ids.size() - 1]);
+			for(PointId id : old_points)
+			{
+				if(!world.data.isPointActive(id) || world.data.getPoint(id).referencing_chunk_count != 1) continue;
+				bool used_by_component = false;
+				for(PointComponentSlotId slot_id : existing.point_component_slot_ids)
+					if(world.data.getPointComponentSlot(slot_id).point_id == id) { used_by_component = true; break; }
+				if(!used_by_component && existing.graph_component_slot_ids.size() == 0) world.data.destroyPoint(id);
+			}
+		}
 
 		if(generated_chunk.triangle_point_indices.size() > 0)
 		{
-			Chunk& chunk = world.data.createChunk(slot.world_body_id);
-			chunk_id = chunk.chunk_id;
+			if(!world.data.isChunkActive(chunk_id)) chunk_id = world.data.createChunk(slot.world_body_id).chunk_id;
+			Chunk& chunk = world.data.getChunk(chunk_id);
 			chunk.grid_coordinate = generated_chunk.grid_coordinate;
 			chunk.position = generated_chunk.chunk_position;
 			DynamicArray<PointId> point_ids;

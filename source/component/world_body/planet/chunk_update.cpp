@@ -49,7 +49,7 @@ namespace danikk_space_engine
 		Watcher watcher("Planet::unloadChunks");
 		for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 		{
-			if(!entry.has_record || planet.chunk_lookup.isDesired(entry.grid_coordinate)) continue;
+			if((!entry.has_record && entry.chunk_id == static_cast<ChunkId>(-1)) || planet.chunk_lookup.isDesired(entry.grid_coordinate)) continue;
 			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(entry.chunk_id))
 			{
 				world.data.destroyChunk(entry.chunk_id);
@@ -170,7 +170,7 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("Planet::invalidateChunks");
-		for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
+		for(PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 		{
 			if(!entry.has_record) continue;
 			const glm::dvec3 minimum = glm::dvec3(entry.grid_coordinate) * planet_chunk_width;
@@ -183,9 +183,9 @@ namespace danikk_space_engine
 			}
 			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(entry.chunk_id))
 			{
-				world.data.destroyChunk(entry.chunk_id);
+				entry.has_record = false;
 			}
-			planet.chunk_lookup.remove(entry.grid_coordinate);
+			else planet.chunk_lookup.remove(entry.grid_coordinate);
 		}
 	}
 }

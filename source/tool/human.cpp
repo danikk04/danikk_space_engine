@@ -118,7 +118,7 @@ namespace danikk_space_engine
 			const vec3 local_normal = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			if(glm::dot(up, local_normal) < 0.5f) return;
 			const vec3 forward = vec3(inverse_rotation * (world.getCameraWorldPosition() - hit.position));
-			createNpc(world, body_id, local_position + glm::dvec3(up * 0.02f), up, forward);
+			createNpc(world, hit.chunk_id, local_position + glm::dvec3(up * 0.02f), up, forward);
 		}
 	}
 
@@ -136,7 +136,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Captures the nearest ray-hit human capsule and moves its chunk in front of the camera.
+	 * @brief Captures the nearest ray-hit human capsule and moves its point in front of the camera.
 	 * @param world World used for ray tests, transforms, and resource access.
 	 * @param controller Local controller storing the dragged human IDs and distance.
 	 * @param hit Nearest surface raycast hit, used to prevent selecting a human through geometry.
@@ -145,8 +145,8 @@ namespace danikk_space_engine
 	 * @param scroll_delta Wheel movement changes distance only while Alt is held.
 	 * @param alt_pressed Enables wheel distance adjustment.
 	 * On press, capsule intersections are considered only when closer than the
-	 * surface hit. While captured, ground-follow is disabled and the owning chunk
-	 * origin is moved so the human point stays at the camera-relative target.
+	 * surface hit. While captured, ground-follow is disabled and the human point
+	 * moves to the camera-relative target.
 	 * Alt-wheel multiplies the retained distance by 1.2 per wheel unit and clamps
 	 * it to 0.5–10,000 world units. Releasing the button or disabling this action
 	 * restores the ground-follow value saved when capture began.
@@ -199,6 +199,8 @@ namespace danikk_space_engine
 		}
 
 		if(controller.dragged_human_slot_id == no_human_slot) return;
+		if(world.data.isPointComponentSlotActive(controller.dragged_human_slot_id))
+			controller.dragged_human_chunk_id = world.data.getPointComponentSlot(controller.dragged_human_slot_id).chunk_id;
 
 		if(!world.data.isPointComponentSlotActive(controller.dragged_human_slot_id)
 			|| !world.data.isPointActive(controller.dragged_human_point_id)
@@ -218,7 +220,6 @@ namespace danikk_space_engine
 		const glm::dvec3 target = world.getCameraWorldPosition()
 			+ glm::dvec3(world.getCameraComponent().getFront()) * controller.dragged_human_distance;
 		const glm::dvec3 body_local_target = glm::conjugate(body.rotation) * (target - body.position);
-		world.data.getChunk(controller.dragged_human_chunk_id).position =
-			body_local_target - glm::dvec3(world.data.getPoint(controller.dragged_human_point_id).position);
+		world.data.getPoint(controller.dragged_human_point_id).position = vec3(body_local_target - chunk.position);
 	}
 }

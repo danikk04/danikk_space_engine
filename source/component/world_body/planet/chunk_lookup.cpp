@@ -112,7 +112,7 @@ namespace danikk_space_engine
 		{
 			if(entry.state != occupied_bucket) continue;
 			entry.desired = false;
-			if(entry.has_record) continue;
+			if(entry.has_record || entry.chunk_id != static_cast<ChunkId>(-1)) continue;
 			entry.state = deleted_bucket;
 			entry_count--;
 		}
@@ -216,7 +216,7 @@ namespace danikk_space_engine
 		const size_t index = findChunkBucket(entries, grid_coordinate, false);
 		if(index == static_cast<size_t>(-1)) return false;
 		const PlanetChunkLookupEntry& entry = entries[index];
-		if(!entry.has_record || entry.chunk_id == static_cast<ChunkId>(-1)) return false;
+		if(entry.chunk_id == static_cast<ChunkId>(-1)) return false;
 		chunk_id = entry.chunk_id;
 		return true;
 	}

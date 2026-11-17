@@ -27,7 +27,7 @@ namespace danikk_space_engine
 			const glm::dvec3 local_position = inverse_rotation * (ground.position - body_position);
 			const vec3 local_up = glm::normalize(vec3(inverse_rotation * glm::dvec3(ground.normal)));
 			const vec3 forward = vec3(inverse_rotation * (world.getCameraWorldPosition() - ground.position));
-			const PointComponentSlotId controller_id = createNpc(world, body_id,
+			const PointComponentSlotId controller_id = createNpc(world, ground.chunk_id,
 				local_position + glm::dvec3(local_up * 0.02f), local_up, forward);
 			const NpcControllerComponent& controller = *static_cast<const NpcControllerComponent*>(
 				world.data.getPointComponentSlot(controller_id).getData());

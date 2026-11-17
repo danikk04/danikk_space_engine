@@ -109,8 +109,6 @@ namespace danikk_space_engine
 		vec2 head_rotation = vec2(0.0f);
 		/** @brief Full character height in world units; the point origin is half this height above the feet. */
 		float height = 1.8f;
-		/** @brief Health; non-positive health suppresses commanded locomotion. */
-		float health = 100.0f;
 		/** @brief Maximum tangential walking speed in world units per second. */
 		float movement_speed = 1.5f;
 		/** @brief Accumulated walking animation phase, advanced by actual ground travel. */
@@ -134,16 +132,16 @@ namespace danikk_space_engine
 	/**
 	 * @brief Creates a human at a world-body-relative position and equips it with the soldier loadout.
 	 *
-	 * Creates a point and standalone chunk, attaches the human and inventory components,
+	 * Creates a point in an existing chunk and attaches the human and inventory components,
 	 * selects the loaded USMC MARPAT Woodland skin, and equips the initial MG-42 stack.
 	 * @param world World whose resource pools receive the new point, chunk, and component slots.
-	 * @param world_body_id Body that owns the new chunk.
+	 * @param chunk_id Existing chunk that owns the new point and components.
 	 * @param position Feet position in world-body-local coordinates.
 	 * @param up Initial local up direction.
 	 * @param forward Initial local facing direction.
 	 * @return ID of the new human component slot.
 	 */
-	PointComponentSlotId createHumanSoldier(World& world, WorldBodyId world_body_id,
+	PointComponentSlotId createHumanSoldier(World& world, ChunkId chunk_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward);
 
 	/**

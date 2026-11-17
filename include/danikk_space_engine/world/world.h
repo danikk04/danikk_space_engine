@@ -70,6 +70,8 @@ namespace danikk_space_engine
 		ChunkLoader chunk_loader;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
+		/** @brief NPC slots awaiting a chunk transition after component iteration. */
+		DynamicArray<PointComponentSlotId> pending_npc_chunk_updates;
 		/** @brief Slot ID of the active camera point component. */
 		PointComponentSlotId camera_component_slot_id = 0;
 		/** @brief Slot ID of the active local player controller component. */

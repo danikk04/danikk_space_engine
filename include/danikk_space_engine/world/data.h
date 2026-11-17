@@ -41,6 +41,8 @@ namespace danikk_space_engine
 		WorldResourcePool<GraphComponentSlot, GraphComponentSlotId> graph_components{"GraphComponentSlot"};
 		/** @brief Monotonically advanced token assigned to WorldBody component slot incarnations. */
 		uint64 next_world_body_component_generation_id = 1;
+		/** @brief Monotonic incarnation token for point-component slots. */
+		uint64 next_point_component_generation_id = 1;
 
 	public:
 		/** @brief Factions and their symmetric relations in this world. */

@@ -34,6 +34,8 @@ namespace danikk_space_engine
 	using FactionId = uint32;
 	/** @brief Index of a built-in faction template. */
 	using FactionDefinitionId = uint32;
+	/** @brief Index into the damageable-object definition table. */
+	using DamageableDefinitionId = uint32;
 
 	/** @brief 32-bit handle for a point-component slot in WorldData. */
 	using PointComponentSlotId = uint32;

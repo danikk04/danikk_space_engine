@@ -3,6 +3,7 @@
 #include <danikk_space_engine/world/cube_mesh.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/build_part.h>
+#include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 
 #include <cmath>
@@ -74,6 +75,14 @@ namespace danikk_space_engine
 			const PointComponentSlotId part_slot_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::build_part, &part);
 			world.data.addPointComponentSlotToChunk(chunk_id, part_slot_id);
+			DamageableComponent damageable;
+			damageable.definition_id = damageable_definition_ids::build_part;
+			const float volume_factor = shape == BuildPartShape::slope ? 0.5f : 1.0f;
+			damageable.health = getDamageableDefinition(damageable.definition_id).max_health
+				* size.x * size.y * size.z * volume_factor;
+			const PointComponentSlotId damageable_id = world.data.createPointComponentSlot(
+				point_id, PointComponentTypeId::damageable, &damageable);
+			world.data.addPointComponentSlotToChunk(chunk_id, damageable_id);
 			double shape_radius = 0.0;
 			const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
 			for(const vec3& position : geometry.positions)

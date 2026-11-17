@@ -5,15 +5,21 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Candidate identity validated against both its component slot and point. */
+	struct NpcTarget
+	{
+		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1);
+		PointId point_id = static_cast<PointId>(-1);
+		uint64 generation_id = 0; ///< Incarnation of the human component slot.
+		float visibility_age = 0.0f; ///< Seconds since the last successful visibility check.
+	};
 
 	/**
-	 * @brief Stores a human's movement target and deterministic wandering/look state.
+	 * @brief Stores a human's movement target, optional camera tracking, and combat state.
 	 *
 	 * The controller is attached to the same point and chunk as its HumanComponent. Each tick
 	 * writes a one-tick velocity command to that human; the human component handles movement,
-	 * gravity, and ground support separately. Autonomous wandering alternates idle waits with
-	 * disk-sampled destinations around the initial position. Each controller owns its deterministic
-	 * pseudorandom state, so NPCs do not share or reseed a global random generator.
+	 * gravity, and ground support separately.
 	 */
 	struct NpcControllerComponent
 	{
@@ -27,42 +33,34 @@ namespace danikk_space_engine
 		bool look_at_camera = false;
 		/** @brief Pauses command generation while preserving the component and its state. */
 		bool enabled = true;
-		/** @brief Enables autonomous trips around `wander_center`; disabled by explicit moveTo(). */
-		bool wander_enabled = true;
-		/** @brief Indicates that the initial local wander center has been captured. */
-		bool wander_initialized = false;
-		/** @brief Local origin around which autonomous destinations are sampled. */
-		vec3 wander_center = vec3(0.0f);
-		/** @brief Maximum horizontal distance of randomly selected wander destinations. */
-		float wander_radius = 4.0f;
-		/** @brief Remaining wait or destination timeout before choosing the next wandering action. */
-		float wander_timer = 0.0f;
-		/** @brief Time until the next random head-look target is selected. */
-		float look_timer = 0.0f;
-		/** @brief Current target head yaw and pitch for smooth look interpolation, in radians. */
-		vec2 look_target = vec2(0.0f);
-		/** @brief Per-controller xorshift state, initialized from point and component IDs. */
-		uint32 random_state = 0;
+		/** @brief Candidate list built from nearby chunks and checked over successive ticks. */
+		DynamicArray<NpcTarget> enemy_candidates;
+		/** @brief Next candidate awaiting its visibility raycast. */
+		size_t candidate_index = 0;
+		/** @brief Up to three currently visible enemy identities. */
+		NpcTarget targeted_enemy[3]{};
+		/** @brief Index of the target currently being engaged. */
+		uint8 target_index = 0;
+		/** @brief Seconds accumulated toward switching targets. */
+		float target_switch_timer = 0.0f;
 
 		/**
-		 * @brief Replaces autonomous wandering with an explicit local-space movement destination.
+		 * @brief Sets an explicit local-space movement destination.
 		 * @param position Destination in the same chunk-local frame as the controlled human.
 		 */
 		void moveTo(const vec3& position)
 		{
-			wander_enabled = false;
 			target_position = position;
 			has_movement_target = true;
 		}
 
 		/**
-		 * @brief Cancels wandering and clears the pending movement target.
+		 * @brief Clears the pending movement target.
 		 *
 		 * The controller remains attached and can be re-enabled or given another target later.
 		 */
 		void stop()
 		{
-			wander_enabled = false;
 			has_movement_target = false;
 		}
 	};
@@ -70,13 +68,13 @@ namespace danikk_space_engine
 	/**
 	 * @brief Creates a human and attaches an autonomous controller to the same point.
 	 * @param world World receiving the human, chunk, and controller resources.
-	 * @param world_body_id Body that owns the new character.
+	 * @param chunk_id Existing chunk that owns the new character.
 	 * @param position Initial world-body-local position of the character's feet.
 	 * @param up Initial local up axis for the human.
 	 * @param forward Initial local facing axis for the human.
 	 * @return ID of the created human component slot.
 	 */
-	PointComponentSlotId createNpc(World& world, WorldBodyId world_body_id,
+	PointComponentSlotId createNpc(World& world, ChunkId chunk_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward);
 
 	/**
@@ -105,4 +103,6 @@ namespace danikk_space_engine
 	 * @param world World used to resolve component ownership and camera position.
 	 */
 	void tickNpcControllerComponent(PointComponentSlot& slot, World& world);
+	/** @brief Updates the owning chunk of an active NPC after component traversal. */
+	void updateNpcChunkAfterTick(World& world, PointComponentSlotId slot_id);
 }
