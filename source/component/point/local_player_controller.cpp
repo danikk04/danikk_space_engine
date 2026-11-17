@@ -175,6 +175,10 @@ namespace danikk_space_engine
 		 */
 		Watcher watcher("LocalPlayerControllerComponent::tick");
 		if(tool_catalog_open) return;
+		if(getKeyboardState(keyboard_buttons::slash) == button_states::press)
+		{
+			mode = mode == PlayerMode::god ? PlayerMode::commander : PlayerMode::god;
+		}
 
 		if(selected_faces.size() > selected_face_count)
 		{

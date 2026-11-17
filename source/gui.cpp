@@ -431,6 +431,7 @@ namespace danikk_space_engine
 		}
 		String text;
 		formatAppend(text, "FPS:%\n", fps_counter.getValue());
+		formatAppend(text, "MODE:%\n", controller.mode == PlayerMode::god ? "GOD" : "COMMANDER");
 		const size_t whole_mebibytes = memory_sample_bytes / mib(1);
 		const size_t tenths_of_mebibyte = (memory_sample_bytes % mib(1)) * 10 / mib(1);
 		formatAppend(text,

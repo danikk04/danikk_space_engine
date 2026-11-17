@@ -10,6 +10,12 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Player interaction mode, selected with the slash key. */
+	enum class PlayerMode : uint8
+	{
+		god, ///< Unrestricted editing mode.
+		commander ///< Commander mode for directing units.
+	};
 
 	/**
 	 * @brief Processes player input, hotbar selection, face selection, and active tool actions.
@@ -17,6 +23,8 @@ namespace danikk_space_engine
 	class LocalPlayerControllerComponent
 	{
 	public:
+		/** @brief Current player mode; starts in God mode. */
+		PlayerMode mode = PlayerMode::god;
 		/**
 		 * @brief Selected faces occupy the prefix; at most one non-selected hovered face follows it.
 		 * At the start of each tick, any old hover suffix is removed before raycasting again.
