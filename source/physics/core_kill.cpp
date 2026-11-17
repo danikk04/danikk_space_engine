@@ -71,7 +71,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("World::planet core entity removal");
+		Watcher watcher("WorldPhysics::destroyEntitiesInsidePlanetCore");
 		DynamicArray<PlanetCoreTarget> planets;
 		const DynamicArray<WorldBodyId> world_body_ids(world.data.getUsedWorldBodyIds());
 		for(WorldBodyId body_id : world_body_ids)

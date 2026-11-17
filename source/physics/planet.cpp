@@ -242,7 +242,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("World::planet collisions");
+		Watcher watcher("WorldPhysics::resolvePlanetCollisions");
 		DynamicArray<PlanetCollisionTarget> planets;
 
 		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())

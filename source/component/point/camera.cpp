@@ -280,6 +280,7 @@ namespace danikk_space_engine
 	 */
 	void frameCameraComponent(PointComponentSlot& slot, World&)
 	{
+		Watcher watcher("CameraComponent::frame");
 
 		if(slot.getData() == nullptr)
 		{

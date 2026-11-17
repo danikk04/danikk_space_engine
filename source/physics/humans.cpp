@@ -145,7 +145,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("World::human collisions");
+		Watcher watcher("WorldPhysics::resolveHumanCollisions");
 		DynamicArray<HumanCollider> humans;
 
 		for(PointComponentSlotId slot_id : world.data.getUsedPointComponentSlotIds())

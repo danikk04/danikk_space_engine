@@ -107,7 +107,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("Planet component frame");
+		Watcher watcher("updatePlanetComponent");
 		/**
 		 * @brief Keeps a camera-centered set of 3D chunks loaded and refreshes it after movement or edits.
 		 * The scalar field remains defined throughout the planet volume; this set controls loaded surface work.

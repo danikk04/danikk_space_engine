@@ -13,39 +13,6 @@ namespace danikk_space_engine
 	namespace
 	{
 
-		/**
-		 * @brief Returns the profiler display name for the point-component type, or the fallback label for an unknown type.
-		 */
-		const char* pointComponentName(PointComponentTypeId type_id)
-		{
-			switch(type_id)
-			{
-				case PointComponentTypeId::camera: return "Camera";
-				case PointComponentTypeId::local_player_controller_component: return "Local player controller";
-				case PointComponentTypeId::machine_gun: return "Machinegun";
-				case PointComponentTypeId::bullet: return "Bullet";
-				case PointComponentTypeId::engine: return "Engine";
-				case PointComponentTypeId::human: return "Human";
-				case PointComponentTypeId::npc_controller: return "NPC controller";
-				case PointComponentTypeId::inventory: return "Inventory";
-				case PointComponentTypeId::build_part: return "BuildPart";
-				case PointComponentTypeId::damageable: return "Damageable";
-				default: return "Unknown point component";
-			}
-		}
-
-		/**
-		 * @brief Returns the profiler display name for a graph-component type, or the fallback label for an unknown type.
-		 */
-		const char* graphComponentName(GraphComponentTypeId type_id)
-		{
-			switch(type_id)
-			{
-				case GraphComponentTypeId::pipe: return "Pipe";
-				case GraphComponentTypeId::wire: return "Wire";
-				default: return "Unknown graph component";
-			}
-		}
 	}
 
 	/**
@@ -172,8 +139,6 @@ namespace danikk_space_engine
 				}
 				if(type.tick != nullptr)
 				{
-					/** @brief Measures execution time for this point-component callback. */
-					Watcher component_scope(pointComponentName(slot.type_id));
 					type.tick(slot, world);
 				}
 			}
@@ -198,8 +163,6 @@ namespace danikk_space_engine
 				}
 				if(type.tick != nullptr)
 				{
-					/** @brief Measures execution time for this graph-component callback. */
-					Watcher component_scope(graphComponentName(slot.type_id));
 					type.tick(slot, world);
 				}
 			}
@@ -235,8 +198,6 @@ namespace danikk_space_engine
 				const PointComponentType& type = getPointComponentType(slot.type_id);
 				if(type.frame != nullptr)
 				{
-					/** @brief Measures execution time for this point-component frame callback. */
-					Watcher component_scope(pointComponentName(slot.type_id));
 					type.frame(slot, world);
 				}
 			}
@@ -261,8 +222,6 @@ namespace danikk_space_engine
 				}
 				if(type.frame != nullptr)
 				{
-					/** @brief Measures execution time for this graph-component frame callback. */
-					Watcher component_scope(graphComponentName(slot.type_id));
 					type.frame(slot, world);
 				}
 			}

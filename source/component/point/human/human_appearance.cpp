@@ -2,6 +2,7 @@
 
 #include <danikk_framework/log.h>
 #include <danikk_engine/texture_methods.h>
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/asset.h>
 
@@ -21,6 +22,7 @@ namespace danikk_space_engine
 		 */
 		void drawMinecraftHuman(const HumanComponent& human, const mat4& base, HumanSkinId skin_id)
 		{
+			Watcher watcher("drawMinecraftHuman");
 			HumanDefinition& definition = static_asset_collection.human_definition;
 			Texture& skin = static_asset_collection.getMinecraftSkin(skin_id);
 			const bool has_skin = !skin.isNull();
@@ -83,6 +85,7 @@ namespace danikk_space_engine
 	 */
 	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix)
 	{
+		Watcher watcher("drawHumanAppearance");
 		switch(human.appearance.render_type)
 		{
 			case HumanRenderType::minecraft_style:

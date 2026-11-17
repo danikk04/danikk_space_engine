@@ -112,6 +112,8 @@ namespace danikk_space_engine
 		static constexpr float base_height = 1.8f;
 		/** @brief Default walking speed in metres per second before modifiers. */
 		static constexpr float base_movement_speed = 1.5f;
+		/** @brief Default firing deviation contributed by the person, in degrees before skills. */
+		static constexpr float base_spread_degrees = 1.0f;
 	public:
 		/** @brief Returns the current body-facing direction. */
 		vec3 getForward() const { return forward; }
@@ -129,6 +131,8 @@ namespace danikk_space_engine
 		float getHeight() const { return base_height; }
 		/** @brief Returns walking speed; modifiers can be applied here in the future. */
 		float getMovementSpeed() const { return base_movement_speed; }
+		/** @brief Returns firing spread before skill modifiers are applied. */
+		float getSpreadDegrees() const { return base_spread_degrees; }
 		/** @brief Accumulated walking animation phase, advanced by actual ground travel. */
 		float walk_phase = 0.0f;
 		/** @brief Current leg-swing magnitude derived from movement speed. */

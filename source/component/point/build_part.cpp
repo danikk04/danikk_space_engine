@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <new>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/world/world.h>
@@ -100,6 +101,7 @@ namespace danikk_space_engine
 	/** @copydoc frameBuildPartComponent */
 	void frameBuildPartComponent(PointComponentSlot& slot, World& world)
 	{
+		Watcher watcher("BuildPartComponent::frame");
 		if(!world.data.isPointActive(slot.point_id)
 			|| !world.data.isChunkActive(slot.chunk_id))
 		{

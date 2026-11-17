@@ -281,7 +281,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("Generate planet chunk");
+		Watcher watcher("generatePlanetChunk");
 		GeneratedChunkData result;
 
 		if(!loadPlanetChunk(request, result))

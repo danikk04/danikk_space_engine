@@ -22,6 +22,7 @@ namespace danikk_space_engine::human_internal
 		 */
 		const PlanetComponent* getPlanet(const WorldData& data, const WorldBody& body)
 		{
+			Watcher watcher("getPlanet");
 			for(WorldBodyComponentSlotId component_id : body.component_slot_ids)
 			{
 				if(!data.isWorldBodyComponentSlotActive(component_id)) continue;
@@ -52,6 +53,7 @@ namespace danikk_space_engine::human_internal
 			const PlanetComponent& planet, const vec3& up, float human_height,
 			const vec3& proposed, vec3& supported, float step_height, float maximum_drop)
 		{
+			Watcher watcher("findPlanetGroundPosition");
 			const double capsule_radius = human_height * 0.14;
 			const double half_axis = human_height * 0.5 - capsule_radius;
 			const glm::dvec3 bottom_center = chunk.position
@@ -114,6 +116,7 @@ namespace danikk_space_engine::human_internal
 			const vec3& up, float human_height, const vec3& proposed, vec3& supported,
 			float step_height = 0.5f, float maximum_drop = 0.75f)
 		{
+			Watcher watcher("findGroundPosition");
 			if(const PlanetComponent* planet = getPlanet(world.data, body))
 				return findPlanetGroundPosition(chunk, body, *planet, up, human_height,
 					proposed, supported, step_height, maximum_drop);
@@ -150,6 +153,7 @@ namespace danikk_space_engine::human_internal
 		void moveWithGround(World& world, const Chunk& chunk, const WorldBody& body,
 			HumanComponent& human, Point& point, const vec3& velocity, float gravity, float dt)
 		{
+			Watcher watcher("moveWithGround");
 			if(!human.follow_ground)
 			{
 				point.position += velocity * dt;

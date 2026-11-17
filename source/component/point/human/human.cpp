@@ -60,9 +60,6 @@ namespace danikk_space_engine
 	 */
 	void tickHumanComponent(PointComponentSlot& slot, World& world)
 	{
-		/**
-		 * @brief Measures the duration of the enclosing profiler scope.
-		 */
 		Watcher watcher("HumanComponent::tick");
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id))
 			formatFatalError("Human references an invalid point or chunk");
@@ -119,6 +116,7 @@ namespace danikk_space_engine
 	 */
 	void frameHumanComponent(PointComponentSlot& slot, World& world)
 	{
+		Watcher watcher("HumanComponent::frame");
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id)) return;
 		const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);

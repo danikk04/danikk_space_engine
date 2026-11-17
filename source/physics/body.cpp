@@ -42,7 +42,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("World::body collisions");
+		Watcher watcher("WorldPhysics::resolveBodyCollisions");
 		WorldBodyId dragged_id = static_cast<WorldBodyId>(-1);
 		if(world.data.isPointComponentSlotActive(world.local_player_controller_component_slot_id))
 			dragged_id = world.getLocalPlayerControllerComponent().dragged_world_body_id;

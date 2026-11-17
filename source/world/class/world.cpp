@@ -19,17 +19,6 @@ namespace danikk_space_engine
 	namespace
 	{
 
-		/**
-		 * @brief Returns the profiler display name for the component type, or “Unknown world body component” for an unsupported type.
-		 */
-		const char* worldBodyComponentName(WorldBodyComponentTypeId type_id)
-		{
-			switch(type_id)
-			{
-				case WorldBodyComponentTypeId::planet: return "Planet";
-				default: return "Unknown world body component";
-			}
-		}
 	}
 
 	/** @brief Resolves camera_component_slot_id to the active camera slot. */
@@ -129,7 +118,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher tick_scope("tick");
+		Watcher tick_scope("World::tick");
 		{
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
@@ -162,10 +151,6 @@ namespace danikk_space_engine
 					const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
 					if(type.tick != nullptr)
 					{
-						/**
-						 * @brief Measures the duration of the enclosing profiler scope.
-						 */
-						Watcher component_scope(worldBodyComponentName(slot.type_id));
 						type.tick(slot, *this);
 					}
 				}
@@ -290,10 +275,6 @@ namespace danikk_space_engine
 					const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
 					if(type.frame != nullptr)
 					{
-						/**
-						 * @brief Measures the duration of the enclosing profiler scope.
-						 */
-						Watcher component_scope(worldBodyComponentName(slot.type_id));
 						type.frame(slot, *this);
 					}
 				}

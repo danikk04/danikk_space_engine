@@ -111,7 +111,7 @@ namespace danikk_space_engine
 	{
 		DynamicArray<Node> report_nodes;
 		uint64 ticks_in_report = 0;
-		uint64 elapsed_milliseconds = 0;
+		double elapsed_milliseconds = 0.0;
 		bool should_log = false;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
@@ -129,13 +129,12 @@ namespace danikk_space_engine
 				node.tick_nanoseconds = 0;
 				node.tick_calls = 0;
 			}
-			elapsed_milliseconds = static_cast<uint64>(
-				std::chrono::duration_cast<std::chrono::milliseconds>(now - report_start_time).count());
+			const auto elapsed_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
+				now - report_start_time).count();
+			elapsed_milliseconds = static_cast<double>(elapsed_nanoseconds) / 1000000.0;
 			if(elapsed_milliseconds < report_interval_milliseconds) return;
 
 			ticks_in_report = report_tick_count;
-			const auto elapsed_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
-				now - report_start_time).count();
 			should_log = report_has_slow_tick
 				|| static_cast<double>(ticks_in_report) * 1000000000.0
 					< static_cast<double>(elapsed_nanoseconds) * 20.0;
@@ -172,11 +171,11 @@ namespace danikk_space_engine
 				depth = sizeof(indentation) / sizeof(indentation[0]) - 1;
 			}
 			formatLogInfo(
-				"% %: avg % ns/tick, max % ns/tick, calls %",
+				"% %: avg % ms/tick, max % ms/tick, calls %",
 				indentation[depth],
 				node.name,
-				node.total_nanoseconds / ticks_in_report,
-				node.maximum_tick_nanoseconds,
+				static_cast<double>(node.total_nanoseconds) / ticks_in_report / 1000000.0,
+				static_cast<double>(node.maximum_tick_nanoseconds) / 1000000.0,
 				node.total_calls);
 		}
 	}

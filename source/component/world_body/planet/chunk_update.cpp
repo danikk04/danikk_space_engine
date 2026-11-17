@@ -23,7 +23,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("Planet::queueRequests");
+		Watcher watcher("queuePlanetRequests");
 		for(ChunkGenerationRequest& request : planet.pending_requests)
 		{
 			request.world_body_id = slot.world_body_id;
@@ -46,7 +46,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("Planet::unloadChunks");
+		Watcher watcher("unloadPlanetChunksOutsideDesiredSet");
 		for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 		{
 			if((!entry.has_record && entry.chunk_id == static_cast<ChunkId>(-1)) || planet.chunk_lookup.isDesired(entry.grid_coordinate)) continue;
@@ -67,7 +67,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("Planet::clearFaceSelection");
+		Watcher watcher("clearPlanetFaceSelection");
 		if(!world.data.isPointComponentSlotActive(world.local_player_controller_component_slot_id)) return;
 		LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
 		controller.selected_faces.clear();
@@ -96,7 +96,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("Planet chunk set update");
+		Watcher watcher("updatePlanetChunks");
 		planet.last_chunk_update_position = camera_position;
 		planet.last_chunk_update_revision = planet.terrain_revision;
 		planet.chunk_set_initialized = true;
@@ -169,7 +169,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
-		Watcher watcher("Planet::invalidateChunks");
+		Watcher watcher("invalidatePlanetChunksAroundEdit");
 		for(PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 		{
 			if(!entry.has_record) continue;

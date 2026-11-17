@@ -64,7 +64,9 @@ namespace danikk_space_engine
 			const vec3 muzzle = world.data.getPoint(owner_point_id).position
 				+ up * (human->getHeight() * 0.2f) + direction * (human->getHeight() * 0.6f);
 			BulletComponent bullet;
-			bullet.velocity = direction * projectile.speed;
+			const vec3 weapon_spread_direction = applyAngularSpread(direction, definition.parameters.weapon.spread_degrees);
+			const vec3 shot_direction = applyAngularSpread(weapon_spread_direction, human->getSpreadDegrees());
+			bullet.velocity = shot_direction * projectile.speed;
 			bullet.lifetime = projectile.lifetime;
 			bullet.owner_point_id = owner_point_id;
 			bullet.damage = definition.parameters.weapon.damage;
@@ -143,7 +145,7 @@ namespace danikk_space_engine
 		mg42.max_stack = 1;
 		mg42.mesh.loadObj("MG-42", "MG-42");
 		mg42.render_color = vec4(0.4f, 0.4f, 0.4f, 1.0f);
-		mg42.parameters.weapon = WeaponItemParameters{projectile_definition_ids::mg42_bullet, 25.0f, 0.0f, 0.0f, 240.0f};
+			mg42.parameters.weapon = WeaponItemParameters{projectile_definition_ids::mg42_bullet, 25.0f, 0.0f, 0.0f, 240.0f, 1.0f};
 		item_catalog_loaded = true;
 	}
 
@@ -153,6 +155,21 @@ namespace danikk_space_engine
 		if(id == projectile_definition_ids::none || id >= sizeof(projectile_definitions) / sizeof(projectile_definitions[0]))
 			formatFatalError("Invalid projectile definition ID %", id);
 		return projectile_definitions[id];
+	}
+
+	vec3 applyAngularSpread(const vec3& direction, float spread_degrees)
+	{
+		const float direction_length = glm::length(direction);
+		if(direction_length <= 1e-6f || spread_degrees <= 0.0f) return direction;
+
+		const vec3 forward = direction / direction_length;
+		const vec3 reference = std::abs(forward.z) < 0.9f ? vec3(0.0f, 0.0f, 1.0f) : vec3(0.0f, 1.0f, 0.0f);
+		const vec3 tangent = glm::normalize(glm::cross(forward, reference));
+		const vec3 bitangent = glm::cross(forward, tangent);
+		const float angle = glm::radians(spread_degrees * (default_random.nextFloat() * 0.5f + 0.5f));
+		const float azimuth = default_random.nextFloat() * pi;
+		const vec3 offset = tangent * std::cos(azimuth) + bitangent * std::sin(azimuth);
+		return glm::normalize(forward * std::cos(angle) + offset * std::sin(angle));
 	}
 
 	/**

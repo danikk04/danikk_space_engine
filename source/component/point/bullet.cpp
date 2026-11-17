@@ -182,6 +182,7 @@ namespace danikk_space_engine
 	 */
 	void frameBulletComponent(PointComponentSlot& slot, World& world)
 	{
+		Watcher watcher("BulletComponent::frame");
 
 		if(slot.getData() == nullptr)
 		{

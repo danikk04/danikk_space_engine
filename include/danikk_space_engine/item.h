@@ -56,6 +56,8 @@ namespace danikk_space_engine
 		float caliber_mm;
 		/** @brief Nominal firing rate in rounds per minute. */
 		float rounds_per_minute;
+		/** @brief Maximum random firing deviation contributed by the weapon, in degrees. */
+		float spread_degrees;
 	};
 
 	/**
@@ -192,6 +194,14 @@ namespace danikk_space_engine
 	 * @return Reference to the definition's weapon parameter record.
 	 */
 	const WeaponItemParameters& getWeaponItemParameters(ItemDefinitionId id);
+
+	/**
+	 * @brief Randomly deflects a direction by at most the given angle.
+	 * @param direction Base direction to perturb.
+	 * @param spread_degrees Maximum angular deviation in degrees; non-positive values preserve direction.
+	 * @return Normalized direction with a uniformly selected angular offset and azimuth.
+	 */
+	vec3 applyAngularSpread(const vec3& direction, float spread_degrees);
 
 	/**
 	 * @brief Uses the stack's definition callback when the slot contains at least one item.

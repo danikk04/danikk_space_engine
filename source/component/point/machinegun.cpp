@@ -67,7 +67,7 @@ namespace danikk_space_engine
 			const WeaponItemParameters& weapon = getWeaponItemParameters(item_definition_ids::mg42);
 			const ProjectileDefinition& projectile = getProjectileDefinition(weapon.projectile_id);
 			BulletComponent bullet;
-			bullet.velocity = direction * projectile.speed;
+			bullet.velocity = applyAngularSpread(direction, weapon.spread_degrees) * projectile.speed;
 			bullet.lifetime = projectile.lifetime;
 			bullet.damage = weapon.damage;
 			spawnBullet(world, chunk_id, position, bullet);
@@ -194,6 +194,7 @@ namespace danikk_space_engine
 	 */
 	void frameMachinegunComponent(PointComponentSlot& slot, World& world)
 	{
+		Watcher watcher("MachinegunComponent::frame");
 
 		if(slot.getData() == nullptr)
 		{

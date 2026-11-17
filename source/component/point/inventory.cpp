@@ -1,3 +1,4 @@
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/item.h>
 #include <danikk_engine/danikk_engine.h>
@@ -48,6 +49,7 @@ namespace danikk_space_engine
 	/** @copydoc tickInventoryComponent */
 	void tickInventoryComponent(PointComponentSlot& slot, World&)
 	{
+		Watcher watcher("InventoryComponent::tick");
 		InventoryComponent& inventory = *static_cast<InventoryComponent*>(slot.getData());
 		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
 		for(InventorySlot& item : inventory.slots)
