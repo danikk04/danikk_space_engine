@@ -4,6 +4,7 @@
 
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
+#include <danikk_space_engine/factions.h>
 
 namespace danikk_space_engine
 {
@@ -20,6 +21,8 @@ namespace danikk_space_engine
 	class WorldBody
 	{
 	public:
+		/** @brief Faction owning this body, or no_faction if unassigned. */
+		FactionId faction_id = no_faction;
 		/** @brief Body origin in double-precision world coordinates. */
 		glm::dvec3 position = glm::dvec3(0.0);
 		/** @brief Body orientation mapping body-local coordinates into world orientation. */

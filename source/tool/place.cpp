@@ -49,6 +49,7 @@ namespace danikk_space_engine
 			{
 				body_id = world.data.createWorldBody();
 				WorldBody& body = world.data.getWorldBody(body_id);
+				body.faction_id = base_faction_ids::player;
 				body.position = anchor_world_position;
 				body.mass = 1.0;
 				body.collision_radius = 0.0;

@@ -28,6 +28,10 @@ namespace danikk_space_engine
 	using ToolCatalogEntryId = uint32;
 	/** @brief 32-bit index identifying a category in the tool-command catalog. */
 	using ToolCategoryId = uint32;
+	/** @brief Index of a faction in the current world. */
+	using FactionId = uint32;
+	/** @brief Index of a built-in faction template. */
+	using FactionDefinitionId = uint32;
 
 	/** @brief 32-bit handle for a point-component slot in WorldData. */
 	using PointComponentSlotId = uint32;

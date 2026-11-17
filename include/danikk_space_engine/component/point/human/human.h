@@ -90,6 +90,8 @@ namespace danikk_space_engine
 	 */
 	struct HumanComponent
 	{
+		/** @brief Faction of this person, independent of the body they stand on. */
+		FactionId faction_id = static_cast<FactionId>(-1);
 		/** @brief Skin/model choice; the attached point remains the vertical center of the body. */
 		HumanAppearance appearance;
 		/** @brief Current arm animation mode, also used to attach equipped weapons. */

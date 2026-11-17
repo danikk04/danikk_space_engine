@@ -97,8 +97,12 @@ namespace danikk_space_engine
 	void startBaseScenario(World& world)
 	{
 		world.data.clear();
+		world.data.factions.create(faction_definition_ids::celestial_body);
+		world.data.factions.create(faction_definition_ids::player);
+		world.data.factions.create(faction_definition_ids::pirates);
 
 		const WorldBodyId planet_body_id = world.data.createWorldBody();
+		world.data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
 		const PlanetComponentSettings& planet_settings = getPlanetSettings(planet_settings_ids::earth);
 		world.data.createWorldBodyComponentSlot(
 			planet_body_id, WorldBodyComponentTypeId::planet, &planet_settings);

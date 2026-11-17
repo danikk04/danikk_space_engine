@@ -32,6 +32,7 @@ namespace danikk_space_engine
 		const PointId point_id = world.data.createPoint();
 		Point& point = world.data.getPoint(point_id);
 		HumanComponent human;
+		human.faction_id = base_faction_ids::player;
 		human.appearance.skin_id = static_asset_collection.usmc_marpat_woodland_skin_id;
 		human.up = glm::length(up) > 1e-6f ? glm::normalize(up) : vec3(0, 0, 1);
 		human.forward = forward - human.up * glm::dot(forward, human.up);

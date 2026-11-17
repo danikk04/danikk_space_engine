@@ -2,6 +2,7 @@ sources = files(
 	'asset.cpp', 
 	'tool_catalog.cpp',
 	'config.cpp',
+	'factions.cpp',
 	'gui.cpp', 
 	'item.cpp',
 	'localization.cpp', 

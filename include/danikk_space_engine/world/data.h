@@ -8,6 +8,7 @@
 #include <danikk_space_engine/world/body.h>
 #include <danikk_space_engine/world/resource_pool.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
+#include <danikk_space_engine/factions.h>
 
 #include <danikk_framework/dynamic_array.h>
 
@@ -42,6 +43,8 @@ namespace danikk_space_engine
 		uint64 next_world_body_component_generation_id = 1;
 
 	public:
+		/** @brief Factions and their symmetric relations in this world. */
+		FactionData factions;
 
 		/**
 		 * @brief Allocates or reuses a point slot and returns its ID.
