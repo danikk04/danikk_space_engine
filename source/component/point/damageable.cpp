@@ -27,10 +27,18 @@ namespace danikk_space_engine
 		return nullptr;
 	}
 
-	void applyBallisticDamage(DamageableComponent& damageable, float damage)
+	void DamageableComponent::setHealth(float value, PointId point_id)
+	{
+		const float next = glm::max(0.0f, value);
+		if(next == health) return;
+		(void)point_id;
+		health = next;
+	}
+
+	void applyBallisticDamage(DamageableComponent& damageable, float damage, PointId point_id)
 	{
 		const float resistance = glm::clamp(getDamageableDefinition(damageable.definition_id).ballistic_resistance, 0.0f, 1.0f);
-		damageable.health = glm::max(0.0f, damageable.health - glm::max(0.0f, damage) * (1.0f - resistance));
+		damageable.setHealth(damageable.getHealth() - glm::max(0.0f, damage) * (1.0f - resistance), point_id);
 	}
 
 	void constructDamageableComponent(void* destination, const void* init_data)

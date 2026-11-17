@@ -179,9 +179,9 @@ namespace danikk_space_engine
 				const glm::dvec3 center = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 				const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(human.up));
 				double distance = 0.0;
-				const double radius = static_cast<double>(human.height) * 0.14;
+				const double radius = static_cast<double>(human.getHeight()) * 0.14;
 				if(rayIntersectsHumanCapsule(ray_origin, ray_direction, center, up,
-					human.height, radius, distance) && distance < closest_distance)
+					human.getHeight(), radius, distance) && distance < closest_distance)
 				{
 					closest_distance = distance;
 					controller.dragged_human_point_id = slot.point_id;

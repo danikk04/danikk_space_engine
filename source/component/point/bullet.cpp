@@ -118,14 +118,14 @@ namespace danikk_space_engine
 					|| !world.data.isPointActive(candidate.point_id) || !world.data.isChunkActive(candidate.chunk_id)) continue;
 				const HumanComponent& human = *static_cast<const HumanComponent*>(candidate.getData());
 				const DamageableComponent* health = findDamageable(world, candidate.chunk_id, candidate.point_id);
-				if(health == nullptr || health->health <= 0.0f) continue;
+				if(health == nullptr || health->getHealth() <= 0.0f) continue;
 				const Chunk& human_chunk = world.data.getChunk(candidate.chunk_id);
 				const glm::dvec3 up = glm::normalize(world.data.getWorldBody(human_chunk.world_body_id).rotation * glm::dvec3(human.up));
 				const glm::dvec3 center = world.getPointWorldPosition(candidate.chunk_id, candidate.point_id);
-				const double radius = human.height * 0.14;
+				const double radius = human.getHeight() * 0.14;
 				for(int i = -2; i <= 2; ++i)
 				{
-					const glm::dvec3 offset = center + up * (i * human.height * 0.18) - start_world_position;
+					const glm::dvec3 offset = center + up * (i * human.getHeight() * 0.18) - start_world_position;
 					const double along = glm::dot(offset, direction);
 					const double perpendicular = glm::dot(offset, offset) - along * along;
 					if(perpendicular > radius * radius) continue;
@@ -139,7 +139,7 @@ namespace danikk_space_engine
 			{
 				const PointComponentSlot& victim = world.data.getPointComponentSlot(victim_id);
 				DamageableComponent* health = findDamageable(world, victim.chunk_id, victim.point_id);
-				if(health != nullptr) applyBallisticDamage(*health, bullet.damage);
+				if(health != nullptr) applyBallisticDamage(*health, bullet.damage, victim.point_id);
 				bullet.destruction_queued = true;
 				world.deferPointDestruction(slot.point_id);
 				return;
@@ -152,8 +152,8 @@ namespace danikk_space_engine
 					DamageableComponent* health = findDamageable(world, part.chunk_id, part.point_id);
 					if(health != nullptr)
 					{
-						applyBallisticDamage(*health, bullet.damage);
-						if(health->health <= 0.0f) world.deferPointDestruction(part.point_id);
+						applyBallisticDamage(*health, bullet.damage, part.point_id);
+						if(health->getHealth() <= 0.0f) world.deferPointDestruction(part.point_id);
 					}
 				}
 				point.position = vec3(glm::conjugate(body_rotation) * (hit.position - world.getChunkWorldPosition(slot.chunk_id)));

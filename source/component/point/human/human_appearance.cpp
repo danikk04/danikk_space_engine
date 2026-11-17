@@ -27,7 +27,7 @@ namespace danikk_space_engine
 			if(has_skin) skin.bind();
 			else white_texture.bind();
 			const float swing = std::sin(human.walk_phase) * human.walk_amplitude;
-			const float weapon_arm_pitch = 1.570796327f + glm::clamp(human.head_rotation.y, -0.8f, 0.8f);
+			const float weapon_arm_pitch = 1.570796327f + glm::clamp(human.getHeadRotation().y, -0.8f, 0.8f);
 			mat4 joint_matrices[static_cast<size_t>(HumanPart::count)];
 			for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
 			{
@@ -35,8 +35,8 @@ namespace danikk_space_engine
 				mat4 joint(1.0f);
 				if(index == static_cast<size_t>(HumanPart::head))
 				{
-					joint = glm::rotate(joint, human.head_rotation.x, vec3(0, 0, 1));
-					joint = glm::rotate(joint, human.head_rotation.y, vec3(1, 0, 0));
+					joint = glm::rotate(joint, human.getHeadRotation().x, vec3(0, 0, 1));
+					joint = glm::rotate(joint, human.getHeadRotation().y, vec3(1, 0, 0));
 				}
 				else if(index >= 2)
 				{

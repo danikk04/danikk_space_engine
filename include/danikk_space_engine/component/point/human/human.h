@@ -96,8 +96,6 @@ namespace danikk_space_engine
 		HumanAppearance appearance;
 		/** @brief Current arm animation mode, also used to attach equipped weapons. */
 		HumanArmPose arm_pose = HumanArmPose::relaxed;
-		/** @brief Character forward direction in owning-chunk coordinates. */
-		vec3 forward = vec3(0.0f, 1.0f, 0.0f);
 		/** @brief Local direction opposite gravity; defines feet and the walking plane. */
 		vec3 up = vec3(0.0f, 0.0f, 1.0f);
 		/**
@@ -105,16 +103,38 @@ namespace danikk_space_engine
 		 * The human tick consumes and resets this command after applying movement.
 		 */
 		vec3 desired_velocity = vec3(0.0f);
-		/** @brief Head yaw and pitch relative to the torso, in radians. */
+	private:
+		/** @brief Current body and head orientation in chunk-local coordinates. */
+		vec3 forward = vec3(0.0f, 1.0f, 0.0f);
 		vec2 head_rotation = vec2(0.0f);
-		/** @brief Full character height in world units; the point origin is half this height above the feet. */
-		float height = 1.8f;
-		/** @brief Maximum tangential walking speed in world units per second. */
-		float movement_speed = 1.5f;
+		vec3 target_look_direction = vec3(0.0f);
+		/** @brief Default height in metres before modifiers. */
+		static constexpr float base_height = 1.8f;
+		/** @brief Default walking speed in metres per second before modifiers. */
+		static constexpr float base_movement_speed = 1.5f;
+	public:
+		/** @brief Returns the current body-facing direction. */
+		vec3 getForward() const { return forward; }
+		/** @brief Returns the current head yaw and pitch. */
+		vec2 getHeadRotation() const { return head_rotation; }
+		/** @brief Sets the initial body-facing direction before the human is spawned. */
+		void setInitialForward(const vec3& direction);
+		/** @brief Requests a chunk-local look direction for the next human update. */
+		void lookAtDirection(const vec3& direction);
+		/** @brief Returns the direction in which the currently held weapon points. */
+		vec3 getWeaponDirection() const;
+		/** @brief Advances body and head orientation toward the latest request or movement direction. */
+		void updateOrientation(const vec3& displacement, float dt);
+		/** @brief Returns character height; modifiers can be applied here in the future. */
+		float getHeight() const { return base_height; }
+		/** @brief Returns walking speed; modifiers can be applied here in the future. */
+		float getMovementSpeed() const { return base_movement_speed; }
 		/** @brief Accumulated walking animation phase, advanced by actual ground travel. */
 		float walk_phase = 0.0f;
 		/** @brief Current leg-swing magnitude derived from movement speed. */
 		float walk_amplitude = 0.0f;
+		/** @brief Elapsed time since health reached zero, used for the death animation. */
+		float death_time = 0.0f;
 		/** @brief Velocity along `up`; negative values indicate falling. */
 		float vertical_speed = 0.0f;
 		/** @brief True when the current tick found a supporting surface beneath the character. */

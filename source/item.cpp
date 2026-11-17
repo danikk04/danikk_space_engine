@@ -59,12 +59,10 @@ namespace danikk_space_engine
 			}
 			if(!world.data.isChunkActive(chunk_id)) return false;
 			const ProjectileDefinition& projectile = getProjectileDefinition(definition.parameters.weapon.projectile_id);
-			const vec3 forward = glm::normalize(human->forward);
 			const vec3 up = glm::normalize(human->up);
-			const float pitch = glm::clamp(human->head_rotation.y, -0.8f, 0.8f);
-			const vec3 direction = glm::normalize(forward * std::cos(pitch) + up * std::sin(pitch));
+			const vec3 direction = human->getWeaponDirection();
 			const vec3 muzzle = world.data.getPoint(owner_point_id).position
-				+ up * (human->height * 0.2f) + direction * (human->height * 0.6f);
+				+ up * (human->getHeight() * 0.2f) + direction * (human->getHeight() * 0.6f);
 			BulletComponent bullet;
 			bullet.velocity = direction * projectile.speed;
 			bullet.lifetime = projectile.lifetime;

@@ -34,20 +34,13 @@ namespace danikk_space_engine
 		human.faction_id = base_faction_ids::player;
 		human.appearance.skin_id = static_asset_collection.usmc_marpat_woodland_skin_id;
 		human.up = glm::length(up) > 1e-6f ? glm::normalize(up) : vec3(0, 0, 1);
-		human.forward = forward - human.up * glm::dot(forward, human.up);
-
-		if(glm::length(human.forward) < 1e-6f)
-		{
-			const vec3 reference = std::abs(human.up.y) < 0.9f ? vec3(0, 1, 0) : vec3(1, 0, 0);
-			human.forward = reference - human.up * glm::dot(reference, human.up);
-		}
-		human.forward = glm::normalize(human.forward);
-		point.position = vec3(position - chunk_position) + human.up * (human.height * 0.5f);
+		human.setInitialForward(forward);
+		point.position = vec3(position - chunk_position) + human.up * (human.getHeight() * 0.5f);
 		const PointComponentSlotId human_id = world.data.createPointComponentSlot(
 			point_id, PointComponentTypeId::human, &human);
 		world.data.addPointComponentSlotToChunk(chunk_id, human_id);
 		DamageableComponent damageable;
-		damageable.health = getDamageableDefinition(damageable.definition_id).max_health;
+		damageable.setHealth(getDamageableDefinition(damageable.definition_id).max_health, point_id);
 		const PointComponentSlotId damageable_id = world.data.createPointComponentSlot(
 			point_id, PointComponentTypeId::damageable, &damageable);
 		world.data.addPointComponentSlotToChunk(chunk_id, damageable_id);

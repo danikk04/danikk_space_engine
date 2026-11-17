@@ -78,8 +78,8 @@ namespace danikk_space_engine
 			DamageableComponent damageable;
 			damageable.definition_id = damageable_definition_ids::build_part;
 			const float volume_factor = shape == BuildPartShape::slope ? 0.5f : 1.0f;
-			damageable.health = getDamageableDefinition(damageable.definition_id).max_health
-				* size.x * size.y * size.z * volume_factor;
+			damageable.setHealth(getDamageableDefinition(damageable.definition_id).max_health
+				* size.x * size.y * size.z * volume_factor, point_id);
 			const PointComponentSlotId damageable_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::damageable, &damageable);
 			world.data.addPointComponentSlotToChunk(chunk_id, damageable_id);

@@ -155,11 +155,11 @@ namespace danikk_space_engine
 			if(slot.type_id != PointComponentTypeId::human || !world.data.isChunkActive(slot.chunk_id)
 				|| !world.data.isPointActive(slot.point_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
-			if(human.height <= 0.0f) continue;
+			if(human.getHeight() <= 0.0f) continue;
 			const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 			const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(glm::normalize(human.up)));
-			const double height = human.height;
+			const double height = human.getHeight();
 			humans.push(HumanCollider{
 				slot.point_id,
 				slot.chunk_id,
