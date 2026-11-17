@@ -8,13 +8,15 @@ namespace danikk_space_engine
 		constexpr ToolCategoryId tools_category_id = 1;
 		constexpr ToolCategoryId parts_category_id = 2;
 		constexpr ToolCategoryId human_category_id = 3;
+		constexpr ToolCategoryId event_category_id = 4;
 
 		const ToolCategoryDefinition categories[]
 		{
 			{"All"},
 			{"Tools"},
 			{"Parts"},
-			{"Human"}
+			{"Human"},
+			{"Event"}
 		};
 
 		const ToolCatalogEntry entries[]
@@ -26,7 +28,8 @@ namespace danikk_space_engine
 			{parts_category_id, "Cube", "CUBE", ToolId::place, ToolActionId::create_body},
 			{parts_category_id, "Slope", "SLOPE", ToolId::place, ToolActionId::create_slope},
 			{parts_category_id, "MG-42", "MG42", ToolId::place, ToolActionId::machinegun},
-			{human_category_id, "Create human", "HUMAN", ToolId::human, ToolActionId::create_human}
+			{human_category_id, "Create human", "HUMAN", ToolId::human, ToolActionId::create_human},
+			{event_category_id, "Raid", "RAID", ToolId::event, ToolActionId::raid}
 		};
 	}
 

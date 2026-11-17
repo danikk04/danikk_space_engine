@@ -6,6 +6,20 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Mutable state belonging to one weapon instance. */
+	struct WeaponItemState
+	{
+		float cooldown = 0.0f; ///< Seconds remaining until the weapon may fire.
+		uint32 ammunition = 0; ///< Number of rounds currently loaded.
+	};
+
+	/** @brief Category-specific item state; select the member matching the item type. */
+	union ItemInstanceState
+	{
+		WeaponItemState weapon; ///< State used by weapon items.
+		/** @brief Initializes weapon state to an empty magazine and no cooldown. */
+		ItemInstanceState() : weapon{} {}
+	};
 
 	/**
 	 * @brief Represents one inventory stack and the state shared by its item instances.
@@ -26,7 +40,7 @@ namespace danikk_space_engine
 		/** @brief Number of items represented by this stack. */
 		uint32 count = 0;
 		/** @brief Item-type-specific state shared by every item represented by this stack. */
-		uint64 instance_state = 0;
+		ItemInstanceState instance_state;
 		/** @brief Whether this stack is currently worn or held as equipment. */
 		bool is_equipped = false;
 

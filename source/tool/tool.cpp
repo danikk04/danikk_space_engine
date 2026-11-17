@@ -29,6 +29,8 @@ namespace danikk_space_engine
 				return applyPlaceTool(world, hit, action, build_part_size);
 			case ToolId::human:
 				return applyHumanTool(world, hit, action);
+			case ToolId::event:
+				return applyEventTool(world, hit, action);
 			case ToolId::drag:
 				return ToolApplyResult();
 			case ToolId::count:

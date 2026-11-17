@@ -52,6 +52,7 @@ namespace danikk_space_engine
 		inventory.slots.pushCtor();
 		InventorySlot& weapon_slot = inventory.slots[0];
 		weapon_slot.item_definition_id = item_definition_ids::mg42;
+		weapon_slot.instance_state.weapon = WeaponItemState{};
 		weapon_slot.count = 1;
 		weapon_slot.is_equipped = true;
 		const PointComponentSlotId inventory_id = world.data.createPointComponentSlot(

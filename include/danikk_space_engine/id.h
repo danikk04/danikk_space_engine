@@ -24,6 +24,8 @@ namespace danikk_space_engine
 	using ItemTypeId = uint32;
 	/** @brief 32-bit index into the concrete item-definition catalog. */
 	using ItemDefinitionId = uint32;
+	/** @brief Index of a projectile definition. */
+	using ProjectileDefinitionId = uint32;
 	/** @brief 32-bit index into the selectable tool-command catalog. */
 	using ToolCatalogEntryId = uint32;
 	/** @brief 32-bit index identifying a category in the tool-command catalog. */

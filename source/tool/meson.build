@@ -4,4 +4,5 @@ sources += files(
 	'drag.cpp',
 	'place.cpp',
 	'human.cpp',
+	'event.cpp',
 )

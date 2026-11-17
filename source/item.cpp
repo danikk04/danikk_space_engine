@@ -1,21 +1,26 @@
 #include <danikk_space_engine/item.h>
 
 #include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/bullet.h>
 #include <danikk_space_engine/world/world.h>
+
+#include <cmath>
 
 namespace danikk_space_engine
 {
 	namespace
 	{
 		bool equipWeapon(World& world, PointId owner_point_id, const ItemDefinition& definition);
+		bool useWeapon(World& world, PointId owner_point_id, InventorySlot& slot, const ItemDefinition& definition);
 		bool unequipWeapon(World& world, PointId owner_point_id, const ItemDefinition& definition);
 		void drawWeapon(ItemDefinition& definition, const mat4& world_matrix);
 
 		ItemType item_types[item_type_ids::count] =
 		{
 			{},
-			{"Weapon", nullptr, equipWeapon, unequipWeapon, drawWeapon}
+			{"Weapon", useWeapon, equipWeapon, unequipWeapon, drawWeapon}
 		};
+		const ProjectileDefinition projectile_definitions[] = {{0.0f, 0.0f}, {120.0f, 5.0f}};
 		ItemDefinition item_definitions[item_definition_ids::count];
 		bool item_catalog_loaded = false;
 
@@ -32,6 +37,42 @@ namespace danikk_space_engine
 				return static_cast<HumanComponent*>(slot.getData());
 			}
 			return nullptr;
+		}
+
+		/** @brief Spawns the weapon's configured projectile in its human owner's chunk. */
+		bool useWeapon(World& world, PointId owner_point_id, InventorySlot& slot, const ItemDefinition& definition)
+		{
+			if(!slot.is_equipped || definition.parameters.weapon.projectile_id == projectile_definition_ids::none)
+				return false;
+			HumanComponent* human = getHumanAtPoint(world, owner_point_id);
+			if(human == nullptr || !world.data.isPointActive(owner_point_id)) return false;
+			ChunkId chunk_id = static_cast<ChunkId>(-1);
+			for(PointComponentSlotId id : world.data.getUsedPointComponentSlotIds())
+			{
+				const PointComponentSlot& owner = world.data.getPointComponentSlot(id);
+				if(owner.point_id == owner_point_id && owner.type_id == PointComponentTypeId::human)
+				{
+					chunk_id = owner.chunk_id;
+					break;
+				}
+			}
+			if(!world.data.isChunkActive(chunk_id)) return false;
+			const ProjectileDefinition& projectile = getProjectileDefinition(definition.parameters.weapon.projectile_id);
+			const vec3 forward = glm::normalize(human->forward);
+			const vec3 up = glm::normalize(human->up);
+			const float pitch = glm::clamp(human->head_rotation.y, -0.8f, 0.8f);
+			const vec3 direction = glm::normalize(forward * std::cos(pitch) + up * std::sin(pitch));
+			const vec3 muzzle = world.data.getPoint(owner_point_id).position
+				+ up * (human->height * 0.2f) + direction * (human->height * 0.6f);
+			BulletComponent bullet;
+			bullet.velocity = direction * projectile.speed;
+			bullet.lifetime = projectile.lifetime;
+			const PointId bullet_point = world.data.createPoint();
+			world.data.getPoint(bullet_point).position = muzzle;
+			const PointComponentSlotId bullet_slot = world.data.createPointComponentSlot(
+				bullet_point, PointComponentTypeId::bullet, &bullet);
+			world.data.addPointComponentSlotToChunk(chunk_id, bullet_slot);
+			return true;
 		}
 
 		/**
@@ -103,8 +144,16 @@ namespace danikk_space_engine
 		mg42.max_stack = 1;
 		mg42.mesh.loadObj("MG-42", "MG-42");
 		mg42.render_color = vec4(0.4f, 0.4f, 0.4f, 1.0f);
-		mg42.parameters.weapon = WeaponItemParameters{0.0f, 0.0f, 0.0f, 0.0f};
+		mg42.parameters.weapon = WeaponItemParameters{projectile_definition_ids::mg42_bullet, 0.0f, 0.0f, 0.0f, 0.0f};
 		item_catalog_loaded = true;
+	}
+
+	/** @copydoc getProjectileDefinition */
+	const ProjectileDefinition& getProjectileDefinition(ProjectileDefinitionId id)
+	{
+		if(id == projectile_definition_ids::none || id >= sizeof(projectile_definitions) / sizeof(projectile_definitions[0]))
+			formatFatalError("Invalid projectile definition ID %", id);
+		return projectile_definitions[id];
 	}
 
 	/**

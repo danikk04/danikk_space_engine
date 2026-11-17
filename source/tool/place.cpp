@@ -144,6 +144,7 @@ namespace danikk_space_engine
 			case ToolActionId::erase:
 			case ToolActionId::drag:
 			case ToolActionId::create_human:
+			case ToolActionId::raid:
 			case ToolActionId::count:
 				break;
 		}

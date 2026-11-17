@@ -18,6 +18,7 @@ namespace danikk_space_engine
 		terrain, ///< Supports Extrude and Erase terrain stamps.
 		place, ///< Supports Machinegun placement and primitive WorldBody creation.
 		human, ///< Creates human entities.
+		event, ///< Triggers a world event.
 		drag, ///< Captures and moves either a human or a WorldBody.
 		count ///< Number of selectable category values, including `none`.
 	};
@@ -38,6 +39,7 @@ namespace danikk_space_engine
 		create_body, ///< Creates a WorldBody with a cube BuildPart.
 		create_slope, ///< Creates a WorldBody with a slope BuildPart.
 		create_human, ///< Creates a human at a supported surface hit.
+		raid, ///< Spawns a group of pirate soldiers near a surface hit.
 		count ///< Number of action identifiers; not a selectable action.
 	};
 
@@ -101,6 +103,9 @@ namespace danikk_space_engine
 	 * @return Tool result describing any changed face selection.
 	 */
 	ToolApplyResult applyHumanTool(World& world, const RaycastHit& hit, ToolActionId action);
+
+	/** @brief Creates pirate soldiers near the targeted surface for the selected event. */
+	ToolApplyResult applyEventTool(World& world, const RaycastHit& hit, ToolActionId action);
 
 	/**
 	 * @brief Updates capture, distance, and rotation controls for a dragged WorldBody.

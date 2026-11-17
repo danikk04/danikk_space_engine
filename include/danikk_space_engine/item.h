@@ -24,11 +24,30 @@ namespace danikk_space_engine
 		inline constexpr ItemDefinitionId count = 2; ///< Number of entries in the item-definition table.
 	}
 
+	/** @brief Indices of projectile definitions. */
+	namespace projectile_definition_ids
+	{
+		inline constexpr ProjectileDefinitionId none = 0;
+		inline constexpr ProjectileDefinitionId mg42_bullet = 1;
+	}
+
+	/** @brief Parameters used to construct a projectile when a weapon is used. */
+	struct ProjectileDefinition
+	{
+		float speed; ///< Initial speed in metres per second.
+		float lifetime; ///< Maximum lifetime in seconds.
+	};
+
+	/** @brief Returns the projectile parameters for a valid nonzero ID. */
+	const ProjectileDefinition& getProjectileDefinition(ProjectileDefinitionId id);
+
 	/**
 	 * @brief Stores the damage, armor penetration, and firing values used by a weapon item.
 	 */
 	struct WeaponItemParameters
 	{
+		/** @brief Projectile definition spawned by this weapon. */
+		ProjectileDefinitionId projectile_id;
 		/** @brief Base damage per hit, before target resistance. */
 		float damage;
 		/** @brief Penetration capability used against armor. */
