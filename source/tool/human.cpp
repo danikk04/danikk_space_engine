@@ -123,7 +123,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Handles the Human -> Create action using the current surface raycast hit.
+	 * @brief Handles Human -> Create using the current surface raycast hit.
 	 * @param world World receiving the new human resources.
 	 * @param hit Current camera raycast result.
 	 * @param action Selected Human action; drag is updated separately each tick.
@@ -140,7 +140,7 @@ namespace danikk_space_engine
 	 * @param world World used for ray tests, transforms, and resource access.
 	 * @param controller Local controller storing the dragged human IDs and distance.
 	 * @param hit Nearest surface raycast hit, used to prevent selecting a human through geometry.
-	 * @param enabled Whether Human -> Drag remains the active interaction.
+	 * @param enabled Whether the unified Drag tool should process a human capture.
 	 * @param mouse_state Current left-button state; release or disable restores ground following.
 	 * @param scroll_delta Wheel movement changes distance only while Alt is held.
 	 * @param alt_pressed Enables wheel distance adjustment.

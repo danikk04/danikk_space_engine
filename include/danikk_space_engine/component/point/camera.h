@@ -70,8 +70,8 @@ namespace danikk_space_engine
 	 * The update transports the yaw frame when the camera's radial up direction changes and
 	 * rebases large local offsets into the owning chunk to preserve float precision. Mouse motion
 	 * is rotated by the current roll so horizontal and vertical input remain aligned with the window.
-	 * During Body -> Drag with left mouse and Alt held, camera mouse-look is suppressed so the
-	 * controller can use the cursor delta to rotate the captured body.
+	 * During the unified Drag tool with left mouse and Alt held, camera mouse-look is suppressed so
+	 * the controller can use the cursor delta to rotate a captured WorldBody.
 	 * @param slot Slot containing this camera and its point/chunk IDs.
 	 * @param world World providing input context, transforms, and component state.
 	 */

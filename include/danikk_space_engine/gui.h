@@ -82,7 +82,7 @@ namespace danikk_space_engine
 		 * The debug label uses the shared bitmap font and 0.014 screen-relative character dimensions.
 		 * The hotbar contains twelve columns and three rows of gray slots, centered near the bottom
 		 * edge. Its bottom row shows number symbols, middle row shows Shift shortcuts, and top row
-		 * shows Ctrl shortcuts. The tool catalog uses Terrain, Body, Place, and Human categories.
+		 * shows Ctrl shortcuts. The tool catalog uses All, Tools, Parts, and Human categories.
 		 */
 		void define();
 

@@ -258,10 +258,9 @@ namespace danikk_space_engine
 		}
 		const float tool_mouse_scroll_delta = control_pressed || adjusting_build_part_size
 			? 0.0f : mouse_scroll_delta;
-		const bool body_dragging = active_tool == ToolId::body
-			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
-		const bool human_dragging = active_tool == ToolId::human
-			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
+		const bool drag_tool_selected = active_tool == ToolId::drag
+			&& selected_tool_action == ToolActionId::drag;
+		const bool drag_tool_down = drag_tool_selected && left_mouse_down;
 		if(control_pressed)
 		{
 			if(mouse_scroll_delta != 0.0f)
@@ -278,26 +277,22 @@ namespace danikk_space_engine
 		}
 
 		RaycastHit hit = world.raycastFromCamera();
-		if(body_dragging)
+		if(drag_tool_down)
 		{
-			tickDragTool(
-				world, *this, hit, true, left_mouse_state,
-				left_mouse_down ? tool_mouse_scroll_delta : 0.0f,
-				alt_pressed,
-				getCursorDelta() * getMouseSensivity());
-			tickHumanDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false);
-		}
-		else if(human_dragging)
-		{
-			tickDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false, vec2(0.0f));
 			tickHumanDragTool(world, *this, hit, true, left_mouse_state,
 				alt_pressed ? tool_mouse_scroll_delta : 0.0f, alt_pressed);
+			const bool dragging_human = dragged_human_slot_id != static_cast<PointComponentSlotId>(-1);
+			tickDragTool(
+				world, *this, hit, !dragging_human, left_mouse_state,
+				tool_mouse_scroll_delta, alt_pressed,
+				getCursorDelta() * getMouseSensivity());
 		}
 		else
 		{
 			tickDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false, vec2(0.0f));
 			tickHumanDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false);
-			if(active_tool != ToolId::none && left_mouse_state == button_states::press)
+			if(active_tool != ToolId::none && active_tool != ToolId::drag
+				&& left_mouse_state == button_states::press)
 			{
 				ToolApplyResult result = applyTool(
 					active_tool,

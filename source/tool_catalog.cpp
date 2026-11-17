@@ -4,27 +4,31 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+		constexpr ToolCategoryId all_category_id = 0;
+		constexpr ToolCategoryId tools_category_id = 1;
+		constexpr ToolCategoryId parts_category_id = 2;
+		constexpr ToolCategoryId human_category_id = 3;
+
 		const ToolCategoryDefinition categories[]
 		{
-			{0, "Terrain"},
-			{1, "Body"},
-			{2, "Place"},
-			{3, "Human"}
+			{"All"},
+			{"Tools"},
+			{"Parts"},
+			{"Human"}
 		};
 
 		const ToolCatalogEntry entries[]
 		{
-			{no_tool_catalog_entry, 0, "None", "", ToolId::none, ToolActionId::none},
-			{1, 0, "Extrude terrain", "T-EXT", ToolId::terrain, ToolActionId::extrude},
-			{2, 0, "Erase terrain", "T-ERS", ToolId::terrain, ToolActionId::erase},
-			{3, 1, "Extrude body", "B-EXT", ToolId::body, ToolActionId::extrude},
-			{4, 1, "Erase body", "B-ERS", ToolId::body, ToolActionId::erase},
-			{5, 1, "Drag body", "B-DRG", ToolId::body, ToolActionId::drag},
-			{6, 2, "Cube", "CUBE", ToolId::place, ToolActionId::create_body},
-			{7, 2, "Slope", "SLOPE", ToolId::place, ToolActionId::create_slope},
-			{8, 2, "MG-42", "MG42", ToolId::place, ToolActionId::machinegun},
-			{9, 3, "Drag human", "H-DRG", ToolId::human, ToolActionId::drag},
-			{10, 3, "Create human", "HUMAN", ToolId::human, ToolActionId::create_human}
+			{all_category_id, "None", "", ToolId::none, ToolActionId::none},
+			{tools_category_id, "Extrude terrain", "T-EXT", ToolId::terrain, ToolActionId::extrude},
+			{tools_category_id, "Erase terrain", "T-ERS", ToolId::terrain, ToolActionId::erase},
+			{tools_category_id, "Extrude body", "B-EXT", ToolId::body, ToolActionId::extrude},
+			{tools_category_id, "Erase body", "B-ERS", ToolId::body, ToolActionId::erase},
+			{tools_category_id, "Drag", "DRAG", ToolId::drag, ToolActionId::drag},
+			{parts_category_id, "Cube", "CUBE", ToolId::place, ToolActionId::create_body},
+			{parts_category_id, "Slope", "SLOPE", ToolId::place, ToolActionId::create_slope},
+			{parts_category_id, "MG-42", "MG42", ToolId::place, ToolActionId::machinegun},
+			{human_category_id, "Create human", "HUMAN", ToolId::human, ToolActionId::create_human}
 		};
 	}
 
@@ -63,6 +67,7 @@ namespace danikk_space_engine
 	/** @copydoc getToolCatalogEntryCount */
 	uint32 getToolCatalogEntryCount(ToolCategoryId category_id)
 	{
+		if(category_id == all_category_id) return getToolCatalogEntryTotalCount();
 		uint32 count = 0;
 		for(uint32 id = 1; id < sizeof(entries) / sizeof(entries[0]); ++id)
 		{
@@ -74,6 +79,11 @@ namespace danikk_space_engine
 	/** @copydoc getToolCatalogEntryId */
 	ToolCatalogEntryId getToolCatalogEntryId(ToolCategoryId category_id, uint32 index)
 	{
+		if(category_id == all_category_id)
+		{
+			if(index < getToolCatalogEntryTotalCount()) return index + 1;
+			danikk_engine::formatFatalError("Tool catalog index % is out of range for category %", index, category_id);
+		}
 		for(uint32 id = 1; id < sizeof(entries) / sizeof(entries[0]); ++id)
 		{
 			if(entries[id].category_id != category_id) continue;

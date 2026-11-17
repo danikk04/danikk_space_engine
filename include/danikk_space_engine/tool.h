@@ -16,9 +16,10 @@ namespace danikk_space_engine
 	{
 		none = 0, ///< No action is dispatched.
 		terrain, ///< Supports Extrude and Erase terrain stamps.
-		body, ///< Supports Extrude, Erase, and Drag for non-planet mesh bodies.
+		body, ///< Supports Extrude and Erase for non-planet mesh bodies.
 		place, ///< Supports Machinegun placement and primitive WorldBody creation.
-		human, ///< Supports human Drag and Create actions.
+		human, ///< Creates human entities.
+		drag, ///< Captures and moves either a human or a WorldBody.
 		count ///< Number of selectable category values, including `none`.
 	};
 
@@ -145,7 +146,7 @@ namespace danikk_space_engine
 	 * @param world World providing the camera ray and target bodies.
 	 * @param controller Local controller storing capture state.
 	 * @param hit Current raycast result used to begin a capture.
-	 * @param enabled Whether the active category/action is Body -> Drag.
+	 * @param enabled Whether the unified Drag tool should process a WorldBody capture.
 	 * @param mouse_state Current left mouse button state.
 	 * @param scroll_delta Wheel delta for rotation or Alt-distance adjustment.
 	 * @param alt_pressed Whether Alt changes wheel/mouse gestures to drag controls.
@@ -166,7 +167,7 @@ namespace danikk_space_engine
 	 * @param world World used for ray and capsule hit tests.
 	 * @param controller Local controller holding the human-drag state.
 	 * @param hit Current world raycast result.
-	 * @param enabled Whether the Human -> Drag action is active.
+	 * @param enabled Whether the unified Drag tool should process a human capture.
 	 * @param mouse_state Current left mouse button state.
 	 * @param scroll_delta Wheel delta used to adjust capture distance when Alt is pressed.
 	 * @param alt_pressed Enables distance adjustment while dragging.

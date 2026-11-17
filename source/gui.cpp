@@ -21,6 +21,7 @@ namespace danikk_space_engine
 	{
 		constexpr float hotbar_slot_height = 0.070f;
 		constexpr float hotbar_slot_gap = 0.0045f;
+		constexpr float hotbar_bottom_margin = 0.025f;
 		Mesh build_part_preview_meshes[static_cast<size_t>(BuildPartShape::count)];
 		bool build_part_preview_meshes_initialized = false;
 
@@ -194,11 +195,9 @@ namespace danikk_space_engine
 		catalog_text_style.absolute_char_width = 0.009f;
 		catalog_text_style.absolute_char_height = 0.016f;
 		catalog_text_style.color = vec4(0.84f, 0.85f, 0.86f, 1.0f);
-		catalog_panel.anchor = GUIAnchor::center;
-		catalog_panel.pos = vec2(0.0f, 0.08f);
-		catalog_panel.relative_size = vec2(0.68f, 0.60f);
-		catalog_panel.draw_style = &catalog_panel_style;
-		catalog_panel.border_draw_style = &catalog_border_style;
+		catalog_panel.anchor = GUIAnchor::down_left;
+		catalog_panel.pos = vec2(0.0f);
+		catalog_panel.relative_size = vec2(1.0f);
 		catalog_panel.name = "tool_catalog_panel";
 		catalog_panel.flags.set(GUIElementFlags::visible, false);
 		if(getToolCategoryCount() > catalog_category_capacity
@@ -211,13 +210,16 @@ namespace danikk_space_engine
 		catalog_item_buttons.resize(getToolCatalogEntryTotalCount());
 		catalog_item_labels.resize(getToolCatalogEntryTotalCount());
 		const float hotbar_slot_width = hotbar_slot_height * getPixelSize().x / getPixelSize().y;
-		const vec2 catalog_item_relative_size = vec2(hotbar_slot_width, hotbar_slot_height)
-			/ catalog_panel.relative_size;
-		const float catalog_item_gap = hotbar_slot_gap / catalog_panel.relative_size.x;
+		const float horizontal_step = hotbar_slot_width + hotbar_slot_gap;
+		constexpr float vertical_step = hotbar_slot_height + hotbar_slot_gap;
+		const uint32 catalog_rows = (getToolCatalogEntryTotalCount() + hotbar_column_count - 1)
+			/ hotbar_column_count;
+		const float catalog_bottom = hotbar_bottom_margin + hotbar_row_count * vertical_step;
+		const float tabs_bottom = catalog_bottom + catalog_rows * vertical_step;
 
-		catalog_close_button.anchor = GUIAnchor::top_right;
-		catalog_close_button.pos = vec2(0.04f, 0.04f);
-		catalog_close_button.relative_size = vec2(0.09f, 0.13f);
+		catalog_close_button.anchor = GUIAnchor::down;
+		catalog_close_button.pos = vec2((hotbar_column_count - 1) * 0.5f * horizontal_step, tabs_bottom);
+		catalog_close_button.relative_size = vec2(hotbar_slot_width, hotbar_slot_height * 0.5f);
 		catalog_close_button.draw_style = &catalog_button_style;
 		catalog_close_button.border_draw_style = &catalog_border_style;
 		catalog_close_button.name = "tool_catalog_close";
@@ -234,9 +236,11 @@ namespace danikk_space_engine
 		{
 			GUIElement& button = catalog_category_buttons[index];
 			GUIElement& label = catalog_category_labels[index];
-			button.anchor = GUIAnchor::top_left;
-			button.pos = vec2(0.04f, 0.22f + index * 0.18f);
-			button.relative_size = vec2(0.23f, 0.13f);
+			button.anchor = GUIAnchor::down;
+			const float tab_width = hotbar_slot_width * 2.0f + hotbar_slot_gap;
+			button.pos = vec2((static_cast<float>(index) * 2.0f
+				- (hotbar_column_count - 2) * 0.5f) * horizontal_step, tabs_bottom);
+			button.relative_size = vec2(tab_width, hotbar_slot_height * 0.5f);
 			button.draw_style = &catalog_button_style;
 			button.border_draw_style = &catalog_border_style;
 			button.name = "tool_catalog_category";
@@ -247,7 +251,7 @@ namespace danikk_space_engine
 			label.name = "tool_catalog_category_label";
 			button.on_click = [this, index]()
 			{
-				selected_tool_category = getToolCategory(index).id;
+				selected_tool_category = index;
 				refreshToolCatalog();
 			};
 		}
@@ -256,9 +260,12 @@ namespace danikk_space_engine
 		{
 			GUIElement& button = catalog_item_buttons[index];
 			GUIElement& label = catalog_item_labels[index];
-			button.anchor = GUIAnchor::top_left;
-			button.pos = vec2(0.32f + index * (catalog_item_relative_size.x + catalog_item_gap), 0.24f);
-			button.relative_size = catalog_item_relative_size;
+			button.anchor = GUIAnchor::down;
+			button.pos = vec2(
+				(static_cast<float>(index % hotbar_column_count) - (hotbar_column_count - 1) * 0.5f)
+					* horizontal_step,
+				catalog_bottom + (index / hotbar_column_count) * vertical_step);
+			button.relative_size = vec2(hotbar_slot_width, hotbar_slot_height);
 			button.draw_style = &catalog_button_style;
 			button.border_draw_style = &catalog_border_style;
 			button.name = "tool_catalog_item";
@@ -282,10 +289,6 @@ namespace danikk_space_engine
 			};
 		}
 
-		constexpr float bottom_margin = 0.025f;
-		const float horizontal_step = hotbar_slot_width + hotbar_slot_gap;
-		constexpr float vertical_step = hotbar_slot_height + hotbar_slot_gap;
-
 		for(uint32 row = 0; row < hotbar_row_count; ++row)
 		{
 			for(uint32 column = 0; column < hotbar_column_count; ++column)
@@ -296,7 +299,7 @@ namespace danikk_space_engine
 				slot.anchor = GUIAnchor::down;
 				slot.pos = vec2(
 					(static_cast<float>(column) - (hotbar_column_count - 1) * 0.5f) * horizontal_step,
-					bottom_margin + row * vertical_step);
+					hotbar_bottom_margin + row * vertical_step);
 				slot.relative_size = vec2(hotbar_slot_width, hotbar_slot_height);
 				slot.draw_style = &hotbar_slot_fill_style;
 				slot.border_draw_style = &hotbar_slot_border_style;
@@ -373,7 +376,7 @@ namespace danikk_space_engine
 		for(uint32 index = 0; index < catalog_category_buttons.size(); ++index)
 		{
 			catalog_category_buttons[index].draw_style =
-				getToolCategory(index).id == selected_tool_category
+				index == selected_tool_category
 					? &catalog_selected_button_style : &catalog_button_style;
 		}
 		const uint32 item_count = getToolCatalogEntryCount(selected_tool_category);

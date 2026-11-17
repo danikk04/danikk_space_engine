@@ -11,8 +11,6 @@ namespace danikk_space_engine
 	/** @brief Display record for one top-level tool-menu category. */
 	struct ToolCategoryDefinition
 	{
-		/** @brief Category ID referenced by command records. */
-		ToolCategoryId id = 0;
 		/** @brief Label shown in the tool menu. */
 		const char* name = "";
 	};
@@ -20,8 +18,6 @@ namespace danikk_space_engine
 	/** @brief Selectable command shown in the tool menu and assignable to a hotbar slot. */
 	struct ToolCatalogEntry
 	{
-		/** @brief Stable catalog ID stored in a hotbar slot. */
-		ToolCatalogEntryId id = no_tool_catalog_entry;
 		/** @brief Menu category that contains this command. */
 		ToolCategoryId category_id = 0;
 		/** @brief Full command name. */

@@ -50,11 +50,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Updates capture, distance, and rotation for the Body -> Drag action.
+	 * @brief Updates capture, distance, and rotation when the unified Drag tool targets a WorldBody.
 	 * @param world World providing camera transforms and target body resources.
 	 * @param controller Local controller storing the captured body and local hit offset.
 	 * @param hit Current raycast hit used to begin capture on a mouse press.
-	 * @param enabled Whether Body -> Drag is the active action.
+	 * @param enabled Whether the unified Drag tool should process a WorldBody capture.
 	 * @param mouse_state Current left mouse button state; release or disable clears capture.
 	 * @param scroll_delta Wheel movement supplied while the mouse button is held.
 	 * @param alt_pressed Changes wheel input from rotation to grab-distance adjustment.
