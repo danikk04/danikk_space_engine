@@ -12,10 +12,11 @@ namespace danikk_space_engine
 	 * @param hit Raycast result defining the placement point and outward normal.
 	 * @param shape BuildPart primitive selected for placement.
 	 * @param size Local dimensions in metres applied to the primitive.
+	 * @param axis Selected local size axis: 0 for X, 1 for Y, 2 for Z.
 	 * Does nothing on a miss. The shape is offset 0.03 m along the hit
 	 * normal and rendered in camera-relative coordinates to retain precision at
 	 * large world positions; it does not allocate a WorldBody or Chunk.
 	 */
 	void drawWorldBodyPlacementPreview(
-		World& world, const RaycastHit& hit, BuildPartShape shape, const vec3& size);
+		World& world, const RaycastHit& hit, BuildPartShape shape, const vec3& size, uint8 axis);
 }
