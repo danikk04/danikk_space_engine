@@ -1,5 +1,6 @@
 sources = files(
 	'asset.cpp', 
+	'build_catalog.cpp',
 	'config.cpp',
 	'gui.cpp', 
 	'item.cpp',

@@ -374,7 +374,7 @@ namespace danikk_space_engine
 			const RaycastHit hit = raycastFromCamera();
 			const BuildPartShape shape = controller.selected_tool_action == ToolActionId::create_slope
 				? BuildPartShape::slope : BuildPartShape::cube;
-			drawWorldBodyPlacementPreview(*this, hit, shape);
+			drawWorldBodyPlacementPreview(*this, hit, shape, controller.build_part_size);
 		}
 	}
 

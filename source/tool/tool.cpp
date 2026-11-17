@@ -145,6 +145,7 @@ namespace danikk_space_engine
 	 * @param has_hovered_face Whether hovered_face is valid.
 	 * @param hovered_face Current cursor target.
 	 * @param hit Current camera raycast result.
+	 * @param build_part_size Per-axis size for BuildPart placement actions.
 	 * @return Handler result for optional selection replacement; unsupported category IDs return an empty result.
 	 */
 	ToolApplyResult applyTool(
@@ -155,7 +156,8 @@ namespace danikk_space_engine
 		size_t selected_face_count,
 		bool has_hovered_face,
 		const FacePtr& hovered_face,
-		const RaycastHit& hit)
+		const RaycastHit& hit,
+		const vec3& build_part_size)
 	{
 		switch(tool)
 		{
@@ -167,7 +169,7 @@ namespace danikk_space_engine
 				return applyBodyTool(
 					world, action, selected_faces, selected_face_count, has_hovered_face, hovered_face);
 			case ToolId::place:
-				return applyPlaceTool(world, hit, action);
+				return applyPlaceTool(world, hit, action, build_part_size);
 			case ToolId::human:
 				return applyHumanTool(world, hit, action);
 			case ToolId::count:

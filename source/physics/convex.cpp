@@ -164,7 +164,7 @@ namespace danikk_space_engine::collision_internal
 				for(const vec3& local_position : geometry.positions)
 				{
 					const glm::dvec3 part_position = anchor
-						+ glm::dvec3(part.rotation * vec4(local_position, 0.0f));
+						+ glm::dvec3(part.rotation * vec4(local_position * part.size, 0.0f));
 					const glm::dvec3 body_position = body.rotation * part_position;
 					part_shape.vertices.push(body_position);
 					part_shape.center += body_position;

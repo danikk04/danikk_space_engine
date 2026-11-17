@@ -4,6 +4,7 @@
 #include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/tool.h>
+#include <danikk_space_engine/build_catalog.h>
 
 #include <danikk_framework/dynamic_array.h>
 
@@ -11,7 +12,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Processes player input, face selection, and active tool actions.
+	 * @brief Processes player input, hotbar selection, face selection, and active tool actions.
 	 */
 	class LocalPlayerControllerComponent
 	{
@@ -29,6 +30,16 @@ namespace danikk_space_engine
 		float tool_scroll_accumulator = 0.0f;
 		/** @brief Selected hotbar slot index in row-major order, starting at the bottom-left. */
 		uint32 selected_hotbar_slot = 0;
+		/** @brief Build catalog definition assigned to each of the 36 hotbar slots. */
+		BuildDefinitionId hotbar_item_ids[36]{};
+		/** @brief Whether the modal build-catalog GUI is open. */
+		bool build_catalog_open = false;
+		/** @brief Preview and next placement dimensions for the selected BuildPart shape, in metres. */
+		vec3 build_part_size = vec3(1.0f);
+		/** @brief Local BuildPart dimension axis currently adjusted by Shift plus mouse wheel. */
+		uint8 build_part_size_axis = 2;
+		/** @brief Fractional wheel delta retained until the selected dimension changes by one step. */
+		float build_part_size_scroll_accumulator = 0.0f;
 		/** @brief Active action within the selected tool, changed by Alt plus wheel scrolling. */
 		ToolActionId selected_tool_action = ToolActionId::none;
 		/** @brief Fractional Alt-wheel delta retained until it changes the selected tool action. */
@@ -56,7 +67,9 @@ namespace danikk_space_engine
 		 * @brief Polls input, updates raycast selection, and applies the active tool or drag action.
 		 *
 		 * Number keys select the bottom hotbar row, Shift-number selects the middle row, and
-		 * Ctrl-number selects the top row. Selection state is kept in one array: its first `selected_face_count` entries are
+		 * Ctrl-number selects the top row. A populated hotbar slot activates its catalog definition;
+		 * an empty slot clears the active tool. The catalog modal suspends controller input. Face
+		 * selection state is kept in one array: its first `selected_face_count` entries are
 		 * persistent selections and any remaining entry is the current hover target. Wheel priority
 		 * is Ctrl (camera speed), then Alt (tool action), then category. Category/action cycling is
 		 * suppressed during a drag; without Ctrl, Drag consumes the wheel for rotation or distance
@@ -65,6 +78,13 @@ namespace danikk_space_engine
 		 * @param world World providing camera state, raycasts, component lookup, and tool targets.
 		 */
 		void tick(World& world);
+
+		/**
+		 * @brief Selects a hotbar slot and activates its assigned build definition.
+		 * @param slot_index Row-major slot index in the range [0, 35].
+		 * An empty slot clears the active tool; a populated slot selects its catalog action.
+		 */
+		void selectHotbarSlot(uint32 slot_index);
 	};
 
 	/**

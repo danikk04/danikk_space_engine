@@ -138,9 +138,12 @@ namespace danikk_space_engine
 					const glm::dvec3 anchor = chunk.position + glm::dvec3(data.getPoint(slot.point_id).position);
 					for(const CubeTriangle& triangle : geometry.triangles)
 					{
-						const vec3 a = vec3(anchor + glm::dvec3(part.rotation * vec4(geometry.positions[triangle.points[0]], 0.0f)));
-						const vec3 b = vec3(anchor + glm::dvec3(part.rotation * vec4(geometry.positions[triangle.points[1]], 0.0f)));
-						const vec3 c = vec3(anchor + glm::dvec3(part.rotation * vec4(geometry.positions[triangle.points[2]], 0.0f)));
+					const vec3 a = vec3(anchor + glm::dvec3(part.rotation
+						* vec4(geometry.positions[triangle.points[0]] * part.size, 0.0f)));
+					const vec3 b = vec3(anchor + glm::dvec3(part.rotation
+						* vec4(geometry.positions[triangle.points[1]] * part.size, 0.0f)));
+					const vec3 c = vec3(anchor + glm::dvec3(part.rotation
+						* vec4(geometry.positions[triangle.points[2]] * part.size, 0.0f)));
 						const RayTriangleIntersection intersection = intersectRayTriangle(body_local_ray, a, b, c);
 						if(!intersection.hit || intersection.distance > nearest_distance) continue;
 

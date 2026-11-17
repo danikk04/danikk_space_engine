@@ -107,6 +107,7 @@ namespace danikk_space_engine
 	 * @param has_hovered_face Whether hovered_face contains a valid current face.
 	 * @param hovered_face Face under the cursor, when available.
 	 * @param hit Raycast hit used by placement and terrain actions.
+	 * @param build_part_size Dimensions used when placing a BuildPart shape.
 	 * @return Optional replacement face selection; unsupported category/action combinations
 	 *         leave the world and selection unchanged.
 	 */
@@ -118,7 +119,8 @@ namespace danikk_space_engine
 		size_t selected_face_count,
 		bool has_hovered_face,
 		const FacePtr& hovered_face,
-		const RaycastHit& hit);
+		const RaycastHit& hit,
+		const vec3& build_part_size);
 
 	/**
 	 * @brief Applies terrain deformation or erasure at a planet surface raycast hit.
@@ -154,9 +156,11 @@ namespace danikk_space_engine
 	 * @param world World receiving the placed resources.
 	 * @param hit Hit defining the requested placement location.
 	 * @param action Placement action selected in the Place category.
+	 * @param build_part_size Per-axis size used for cube and slope BuildParts.
 	 * @return Tool result; placement does not replace face selection.
 	 */
-	ToolApplyResult applyPlaceTool(World& world, const RaycastHit& hit, ToolActionId action);
+	ToolApplyResult applyPlaceTool(
+		World& world, const RaycastHit& hit, ToolActionId action, const vec3& build_part_size);
 
 	/**
 	 * @brief Creates a human at a supported surface hit or delegates other human actions.

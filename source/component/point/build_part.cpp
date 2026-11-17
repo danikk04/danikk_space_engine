@@ -109,7 +109,8 @@ namespace danikk_space_engine
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 		const mat4 world_matrix = chunk.createWorldMatrix(world)
 			* glm::translate(mat4(1.0f), world.data.getPoint(slot.point_id).position)
-			* part.rotation;
+			* part.rotation
+			* glm::scale(mat4(1.0f), part.size);
 		setWorldMatrix(world_matrix);
 		white_texture.bind();
 		setDrawColor(vec4(0.65f, 0.68f, 0.72f, 1.0f));

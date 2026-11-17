@@ -90,7 +90,7 @@ namespace danikk_space_engine
 				for(const vec3& vertex : geometry.positions)
 				{
 					local_points.push(anchor
-						+ glm::dvec3(part.rotation * vec4(vertex, 0.0f)));
+						+ glm::dvec3(part.rotation * vec4(vertex * part.size, 0.0f)));
 				}
 			}
 			for(const glm::dvec3& local_point : local_points)

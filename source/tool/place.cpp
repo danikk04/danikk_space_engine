@@ -19,7 +19,8 @@ namespace danikk_space_engine
 		 * A hit on terrain creates a new WorldBody with one chunk and anchor point. A hit
 		 * on a BuildPart adds a child part to that part's body and stores its slot as parent.
 		 */
-		void createBuildPartAtHit(World& world, const RaycastHit& hit, BuildPartShape shape)
+		void createBuildPartAtHit(
+			World& world, const RaycastHit& hit, BuildPartShape shape, const vec3& size)
 		{
 			constexpr double surface_offset = 0.03;
 			vec3 up = hit.normal;
@@ -29,7 +30,8 @@ namespace danikk_space_engine
 			WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 			ChunkId chunk_id = static_cast<ChunkId>(-1);
 			PointComponentSlotId parent_slot_id = no_build_part_parent;
-			glm::dvec3 anchor_world_position = hit.position + glm::dvec3(up) * (0.5 + surface_offset);
+			glm::dvec3 anchor_world_position = hit.position
+				+ glm::dvec3(up) * (static_cast<double>(size.z) * 0.5 + surface_offset);
 			if(hit.hit_build_part
 				&& world.data.isPointComponentSlotActive(hit.build_part_slot_id))
 			{
@@ -49,7 +51,7 @@ namespace danikk_space_engine
 				WorldBody& body = world.data.getWorldBody(body_id);
 				body.position = anchor_world_position;
 				body.mass = 1.0;
-				body.collision_radius = 0.87;
+				body.collision_radius = 0.0;
 				Chunk& chunk = world.data.createChunk(body_id);
 				chunk_id = chunk.chunk_id;
 				anchor_world_position = body.position;
@@ -65,13 +67,22 @@ namespace danikk_space_engine
 
 			BuildPartComponent part;
 			part.shape = shape;
+			part.size = size;
 			part.parent_slot_id = parent_slot_id;
 			part.rotation = createBuildPartRotation(vec3(inverse_body_rotation * glm::dvec3(up)));
 			const PointComponentSlotId part_slot_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::build_part, &part);
 			world.data.addPointComponentSlotToChunk(chunk_id, part_slot_id);
+			double shape_radius = 0.0;
+			const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
+			for(const vec3& position : geometry.positions)
+			{
+				const vec3 scaled_position = position * size;
+				const vec3 rotated_position = vec3(part.rotation * vec4(scaled_position, 0.0f));
+				shape_radius = glm::max(shape_radius, static_cast<double>(glm::length(rotated_position)));
+			}
 			body.collision_radius = glm::max(body.collision_radius,
-				glm::length(chunk.position + glm::dvec3(world.data.getPoint(point_id).position)) + 0.87);
+				glm::length(anchor_body_position) + shape_radius);
 			if(parent_slot_id != no_build_part_parent) body.mass += 1.0;
 		}
 
@@ -112,7 +123,8 @@ namespace danikk_space_engine
 	 * @param action Place action; unsupported values are ignored.
 	 * @return Empty selection result; a miss leaves the world unchanged.
 	 */
-	ToolApplyResult applyPlaceTool(World& world, const RaycastHit& hit, ToolActionId action)
+	ToolApplyResult applyPlaceTool(
+		World& world, const RaycastHit& hit, ToolActionId action, const vec3& build_part_size)
 	{
 		if(!hit.hit) return ToolApplyResult();
 		switch(action)
@@ -121,10 +133,10 @@ namespace danikk_space_engine
 				createMachinegunAtHit(world, hit);
 				break;
 			case ToolActionId::create_body:
-				createBuildPartAtHit(world, hit, BuildPartShape::cube);
+				createBuildPartAtHit(world, hit, BuildPartShape::cube, build_part_size);
 				break;
 			case ToolActionId::create_slope:
-				createBuildPartAtHit(world, hit, BuildPartShape::slope);
+				createBuildPartAtHit(world, hit, BuildPartShape::slope, build_part_size);
 				break;
 			case ToolActionId::none:
 			case ToolActionId::extrude:

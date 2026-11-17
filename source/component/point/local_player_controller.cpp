@@ -162,6 +162,7 @@ namespace danikk_space_engine
 	 * `1.25^scroll_delta`, clamped to 0.01–1,000,000 m/s. Otherwise Alt-wheel
 	 * changes the selected action and unmodified wheel changes category; cycling is
 	 * suppressed during a drag, where non-Ctrl wheel and mouse input go to that drag handler.
+	 * During Place -> Cube/Slope, X/Y/Z selects the size axis and Shift-wheel resizes it in 0.25 m steps.
 	 * Each tick raycasts from the camera. A left-button press applies the current
 	 * tool when no drag is active. Persistent selected faces occupy the array prefix;
 	 * a distinct hovered face is appended last for rendering and tool dispatch.
@@ -173,6 +174,7 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("LocalPlayerControllerComponent::tick");
+		if(build_catalog_open) return;
 
 		if(selected_faces.size() > selected_face_count)
 		{
@@ -199,6 +201,34 @@ namespace danikk_space_engine
 			|| left_shift_state == button_states::hold
 			|| right_shift_state == button_states::press
 			|| right_shift_state == button_states::hold;
+		const bool placing_build_part = active_tool == ToolId::place
+			&& (selected_tool_action == ToolActionId::create_body
+				|| selected_tool_action == ToolActionId::create_slope);
+		if(placing_build_part && !alt_pressed && !control_pressed && !shift_pressed)
+		{
+			if(getKeyboardState(keyboard_buttons::x) == button_states::press) build_part_size_axis = 0;
+			if(getKeyboardState(keyboard_buttons::y) == button_states::press) build_part_size_axis = 1;
+			if(getKeyboardState(keyboard_buttons::z) == button_states::press) build_part_size_axis = 2;
+			build_part_size_scroll_accumulator = 0.0f;
+		}
+		const bool adjusting_build_part_size = placing_build_part
+			&& shift_pressed && !control_pressed && !alt_pressed;
+		if(adjusting_build_part_size)
+		{
+			build_part_size_scroll_accumulator += mouse_scroll_delta;
+			while(build_part_size_scroll_accumulator >= 1.0f)
+			{
+				build_part_size[build_part_size_axis] = glm::min(
+					build_part_size[build_part_size_axis] + 0.25f, 100.0f);
+				build_part_size_scroll_accumulator -= 1.0f;
+			}
+			while(build_part_size_scroll_accumulator <= -1.0f)
+			{
+				build_part_size[build_part_size_axis] = glm::max(
+					build_part_size[build_part_size_axis] - 0.25f, 0.25f);
+				build_part_size_scroll_accumulator += 1.0f;
+			}
+		}
 		if(!alt_pressed && !(control_pressed && shift_pressed))
 		{
 			constexpr int hotbar_key_codes[12] =
@@ -221,12 +251,13 @@ namespace danikk_space_engine
 			{
 				if(getKeyboardState(hotbar_key_codes[index]) == button_states::press)
 				{
-					selected_hotbar_slot = row_offset + index;
+					selectHotbarSlot(row_offset + index);
 					break;
 				}
 			}
 		}
-		const float tool_mouse_scroll_delta = control_pressed ? 0.0f : mouse_scroll_delta;
+		const float tool_mouse_scroll_delta = control_pressed || adjusting_build_part_size
+			? 0.0f : mouse_scroll_delta;
 		const bool body_dragging = active_tool == ToolId::body
 			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
 		const bool human_dragging = active_tool == ToolId::human
@@ -255,6 +286,10 @@ namespace danikk_space_engine
 				selected_tool_action = stepToolAction(active_tool, selected_tool_action, -1);
 				tool_action_scroll_accumulator += 1.0f;
 			}
+		}
+		else if(adjusting_build_part_size)
+		{
+			// Shift-wheel was consumed above to adjust the active BuildPart dimension.
 		}
 		else if(!dragging)
 		{
@@ -303,7 +338,8 @@ namespace danikk_space_engine
 					selected_face_count,
 					hit.hit && !hit.hit_build_part,
 					hit.face,
-					hit);
+					hit,
+					build_part_size);
 				if(result.replace_selected_faces)
 				{
 					selected_faces = static_cast<DynamicArray<FacePtr>&&>(result.selected_faces);
@@ -333,5 +369,25 @@ namespace danikk_space_engine
 		{
 			selected_faces = DynamicArray<FacePtr>();
 		}
+	}
+
+	/** @copydoc LocalPlayerControllerComponent::selectHotbarSlot */
+	void LocalPlayerControllerComponent::selectHotbarSlot(uint32 slot_index)
+	{
+		if(slot_index >= 36)
+		{
+			danikk_engine::formatFatalError("Hotbar slot index % is out of range", slot_index);
+		}
+		selected_hotbar_slot = slot_index;
+		const BuildDefinitionId definition_id = hotbar_item_ids[slot_index];
+		if(definition_id == build_definition_ids::none)
+		{
+			active_tool = ToolId::none;
+			selected_tool_action = ToolActionId::none;
+			return;
+		}
+		const BuildDefinition& definition = getBuildDefinition(definition_id);
+		active_tool = definition.tool;
+		selected_tool_action = definition.action;
 	}
 }

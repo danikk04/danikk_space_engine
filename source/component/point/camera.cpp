@@ -208,10 +208,11 @@ namespace danikk_space_engine
 		}
 
 		CameraComponent& camera = *static_cast<CameraComponent*>(slot.getData());
+		const LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
+		if(controller.build_catalog_open) return;
 		updateCameraSurfaceFrame(camera, slot, world);
 
 		const vec2 cursor_delta = getCursorDelta() * getMouseSensivity();
-		const LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
 		const int left_mouse_state = getMouseState(mouse_buttons::left);
 		const bool left_mouse_down = left_mouse_state == button_states::press
 			|| left_mouse_state == button_states::hold;
