@@ -4,15 +4,15 @@
 #include <danikk_engine/fps.h>
 #include <danikk_engine/style.h>
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/build_catalog.h>
+#include <danikk_space_engine/tool_catalog.h>
 
 namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Owns the debug overlay, 3x12 hotbar, and modal build-detail catalog.
+	 * @brief Owns the debug overlay, 3x12 hotbar, and modal tool catalog.
 	 *
-	 * The GUI text reports FPS, process memory, active tool/action, camera speed,
+	 * The GUI text reports FPS, process memory, BuildPart size when applicable, camera speed,
 	 * and camera position. Process memory is sampled at roughly one-second
 	 * intervals; a zero reading is displayed as unavailable.
 	 */
@@ -22,8 +22,10 @@ namespace danikk_space_engine
 		static constexpr uint32 hotbar_column_count = 12;
 		/** @brief Number of rows in the visual build hotbar. */
 		static constexpr uint32 hotbar_row_count = 3;
-		/** @brief Maximum number of items shown in one catalog category. */
-		static constexpr uint32 catalog_item_capacity = 2;
+		/** @brief Capacity for category-tab widgets; catalog data remains table-driven. */
+		static constexpr uint32 catalog_category_capacity = 16;
+		/** @brief Capacity for detail-cell widgets; catalog data remains table-driven. */
+		static constexpr uint32 catalog_item_capacity = 64;
 		/** @brief Empty toolbar slot elements, laid out row by row from the bottom. */
 		GUIElement hotbar_slots[hotbar_column_count * hotbar_row_count];
 		/** @brief Small keyboard shortcut labels drawn above each slot's background. */
@@ -40,18 +42,20 @@ namespace danikk_space_engine
 		TextStyle hotbar_slot_text_style;
 		/** @brief Shared small-font style for assigned hotbar item names. */
 		TextStyle hotbar_item_text_style;
-		/** @brief Modal category-and-item picker opened by the G key. */
+		/** @brief Modal tool catalog opened by the G key. */
 		GUIElement catalog_panel;
 		/** @brief Button that closes the catalog window. */
 		GUIElement catalog_close_button;
 		/** @brief Text shown inside the catalog close button. */
 		GUIElement catalog_close_label;
-		/** @brief Category tab backgrounds. */
-		GUIElement catalog_category_buttons[2];
-		/** @brief Category tab text. */
-		GUIElement catalog_category_labels[2];
-		/** @brief Detail entry buttons for the active category. */
-		GUIElement catalog_item_buttons[catalog_item_capacity];
+		/** @brief Category tab backgrounds, sized from the category definition table. */
+		Array<GUIElement, catalog_category_capacity> catalog_category_buttons;
+		/** @brief Category tab text, sized from the category definition table. */
+		Array<GUIElement, catalog_category_capacity> catalog_category_labels;
+		/** @brief Detail entry buttons, sized from the tool catalog table. */
+		Array<GUIElement, catalog_item_capacity> catalog_item_buttons;
+		/** @brief Compact names displayed inside catalog command cells. */
+		Array<GUIElement, catalog_item_capacity> catalog_item_labels;
 		/** @brief Shared text style for catalog labels. */
 		TextStyle catalog_text_style;
 		/** @brief Fill and outline styles used by the catalog window and buttons. */
@@ -59,10 +63,8 @@ namespace danikk_space_engine
 		DrawStyle catalog_button_style;
 		DrawStyle catalog_selected_button_style;
 		BorderDrawStyle catalog_border_style;
-		/** @brief Category currently shown in the catalog item list. */
-		BuildCategoryId selected_build_category = BuildCategoryId::structural;
-		/** @brief Detail selected for assignment to a hotbar slot, or none. */
-		BuildDefinitionId pending_build_definition_id = build_definition_ids::none;
+		/** @brief Tool category currently shown in the menu. */
+		ToolCategoryId selected_tool_category = 0;
 		/** @brief Engine GUI element used to display the game's multiline debug readout. */
 		GUIElement debug_info_label;
 		/** @brief Most recently sampled process memory usage in bytes; zero means unavailable. */
@@ -70,24 +72,22 @@ namespace danikk_space_engine
 		/** @brief Elapsed frame time since the previous process-memory sample. */
 		float memory_sample_timer = 1.0f;
 
-		/** @brief Refreshes visible catalog entries and category highlighting. */
-		void refreshBuildCatalog();
-		/** @brief Assigns the pending definition to one clicked hotbar slot. */
-		void assignBuildDefinitionToSlot(uint32 slot_index);
+		/** @brief Refreshes visible commands and category highlighting in the tool menu. */
+		void refreshToolCatalog();
 	public:
 
 		/**
-		 * @brief Configures the debug label and positions the empty three-row build hotbar.
+		 * @brief Configures the debug label and positions the empty three-row tool hotbar.
 		 *
 		 * The debug label uses the shared bitmap font and 0.014 screen-relative character dimensions.
 		 * The hotbar contains twelve columns and three rows of gray slots, centered near the bottom
 		 * edge. Its bottom row shows number symbols, middle row shows Shift shortcuts, and top row
-		 * shows Ctrl shortcuts. The build catalog is configured with Structural and Weapons categories.
+		 * shows Ctrl shortcuts. The tool catalog uses Terrain, Body, Place, and Human categories.
 		 */
 		void define();
 
 		/**
-		 * @brief Adds the debug overlay, hotbar, and build catalog hierarchy to the engine GUI root.
+		 * @brief Adds the debug overlay, hotbar, and tool catalog hierarchy to the engine GUI root.
 		 * Call after define() so parent/child relationships and callbacks are registered.
 		 */
 		void compose();
@@ -96,9 +96,9 @@ namespace danikk_space_engine
 		 * @brief Refreshes debug text, hotbar selection, catalog visibility, and sampled memory.
 		 *
 		 * Samples process memory when the accumulated target-frame delay reaches one second, then
-		 * builds one multiline string in this order: FPS, RAM in MiB, active tool, selected action,
+		 * builds one multiline string containing FPS, RAM in MiB, relevant BuildPart controls,
 		 * camera speed in m/s, and camera position truncated to hundredths. A zero memory sample is
-		 * shown as unavailable. Pressing G toggles the modal build catalog; selected slot borders are
+		 * shown as unavailable. Pressing G toggles the modal tool catalog; selected slot borders are
 		 * updated from controller state. Rendering is driven by the surrounding engine frame loop.
 		 */
 		void frame();

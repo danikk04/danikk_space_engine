@@ -4,7 +4,7 @@
 #include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/tool.h>
-#include <danikk_space_engine/build_catalog.h>
+#include <danikk_space_engine/tool_catalog.h>
 
 #include <danikk_framework/dynamic_array.h>
 
@@ -24,26 +24,22 @@ namespace danikk_space_engine
 		DynamicArray<FacePtr> selected_faces;
 		/** @brief Number of committed selections at the start of `selected_faces`. */
 		size_t selected_face_count = 0;
-		/** @brief Currently active top-level tool, advanced by unmodified wheel scrolling. */
+		/** @brief Tool category dispatched for the command assigned to the selected hotbar slot. */
 		ToolId active_tool = ToolId::none;
-		/** @brief Fractional wheel delta retained until it reaches a whole tool-selection step. */
-		float tool_scroll_accumulator = 0.0f;
 		/** @brief Selected hotbar slot index in row-major order, starting at the bottom-left. */
 		uint32 selected_hotbar_slot = 0;
-		/** @brief Build catalog definition assigned to each of the 36 hotbar slots. */
-		BuildDefinitionId hotbar_item_ids[36]{};
-		/** @brief Whether the modal build-catalog GUI is open. */
-		bool build_catalog_open = false;
+		/** @brief Tool-menu command assigned to each of the 36 hotbar slots. */
+		ToolCatalogEntryId hotbar_entry_ids[36]{};
+		/** @brief Whether the modal tool catalog is open. */
+		bool tool_catalog_open = false;
 		/** @brief Preview and next placement dimensions for the selected BuildPart shape, in metres. */
 		vec3 build_part_size = vec3(1.0f);
 		/** @brief Local BuildPart dimension axis currently adjusted by Shift plus mouse wheel. */
 		uint8 build_part_size_axis = 2;
 		/** @brief Fractional wheel delta retained until the selected dimension changes by one step. */
 		float build_part_size_scroll_accumulator = 0.0f;
-		/** @brief Active action within the selected tool, changed by Alt plus wheel scrolling. */
+		/** @brief Action dispatched for the command assigned to the selected hotbar slot. */
 		ToolActionId selected_tool_action = ToolActionId::none;
-		/** @brief Fractional Alt-wheel delta retained until it changes the selected tool action. */
-		float tool_action_scroll_accumulator = 0.0f;
 		/** @brief Camera travel speed in world units per second, adjustable with Ctrl plus wheel. */
 		float camera_movement_speed = 1.0f;
 		/** @brief World body currently held by the body drag action, or invalid ID when idle. */
@@ -67,24 +63,29 @@ namespace danikk_space_engine
 		 * @brief Polls input, updates raycast selection, and applies the active tool or drag action.
 		 *
 		 * Number keys select the bottom hotbar row, Shift-number selects the middle row, and
-		 * Ctrl-number selects the top row. A populated hotbar slot activates its catalog definition;
+		 * Ctrl-number selects the top row. A populated hotbar slot activates its tool-menu command;
 		 * an empty slot clears the active tool. The catalog modal suspends controller input. Face
 		 * selection state is kept in one array: its first `selected_face_count` entries are
-		 * persistent selections and any remaining entry is the current hover target. Wheel priority
-		 * is Ctrl (camera speed), then Alt (tool action), then category. Category/action cycling is
-		 * suppressed during a drag; without Ctrl, Drag consumes the wheel for rotation or distance
-		 * depending on Alt. Ctrl wins over Alt and still changes camera speed during a drag. A camera raycast is refreshed each tick, and a
+		 * persistent selections and any remaining entry is the current hover target. Ctrl-wheel adjusts
+		 * camera speed; Shift-wheel changes the selected BuildPart dimension. During a drag, wheel and
+		 * mouse input control the captured object, with Alt changing the wheel behavior. A camera raycast is refreshed each tick, and a
 		 * pressed left button dispatches the current tool unless a drag owns the gesture.
 		 * @param world World providing camera state, raycasts, component lookup, and tool targets.
 		 */
 		void tick(World& world);
 
 		/**
-		 * @brief Selects a hotbar slot and activates its assigned build definition.
+		 * @brief Selects a hotbar slot and activates its assigned tool-menu command.
 		 * @param slot_index Row-major slot index in the range [0, 35].
 		 * An empty slot clears the active tool; a populated slot selects its catalog action.
 		 */
 		void selectHotbarSlot(uint32 slot_index);
+
+		/**
+		 * @brief Assigns a menu command to the selected hotbar slot and activates it.
+		 * @param entry_id Command ID selected in the tool catalog; the none entry clears the slot.
+		 */
+		void selectToolCatalogEntry(ToolCatalogEntryId entry_id);
 	};
 
 	/**

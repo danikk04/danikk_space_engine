@@ -209,7 +209,7 @@ namespace danikk_space_engine
 
 		CameraComponent& camera = *static_cast<CameraComponent*>(slot.getData());
 		const LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
-		if(controller.build_catalog_open) return;
+		if(controller.tool_catalog_open) return;
 		updateCameraSurfaceFrame(camera, slot, world);
 
 		const vec2 cursor_delta = getCursorDelta() * getMouseSensivity();

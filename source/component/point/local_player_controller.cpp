@@ -158,10 +158,10 @@ namespace danikk_space_engine
 	/**
 	 * @brief Updates tool/camera controls, runs drag behavior, applies pressed actions, and refreshes the hover face.
 	 *
-	 * Ctrl-wheel takes precedence over Alt and multiplies camera speed by
-	 * `1.25^scroll_delta`, clamped to 0.01–1,000,000 m/s. Otherwise Alt-wheel
-	 * changes the selected action and unmodified wheel changes category; cycling is
-	 * suppressed during a drag, where non-Ctrl wheel and mouse input go to that drag handler.
+	 * Ctrl-wheel multiplies camera speed by `1.25^scroll_delta`, clamped to
+	 * 0.01–1,000,000 m/s. Wheel cycling is not used; commands are selected from
+	 * the tool catalog and assigned to hotbar slots. During a drag, wheel and
+	 * mouse input go to that drag handler.
 	 * During Place -> Cube/Slope, X/Y/Z selects the size axis and Shift-wheel resizes it in 0.25 m steps.
 	 * Each tick raycasts from the camera. A left-button press applies the current
 	 * tool when no drag is active. Persistent selected faces occupy the array prefix;
@@ -174,7 +174,7 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		Watcher watcher("LocalPlayerControllerComponent::tick");
-		if(build_catalog_open) return;
+		if(tool_catalog_open) return;
 
 		if(selected_faces.size() > selected_face_count)
 		{
@@ -262,7 +262,6 @@ namespace danikk_space_engine
 			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
 		const bool human_dragging = active_tool == ToolId::human
 			&& selected_tool_action == ToolActionId::drag && left_mouse_down;
-		const bool dragging = body_dragging || human_dragging;
 		if(control_pressed)
 		{
 			if(mouse_scroll_delta != 0.0f)
@@ -273,39 +272,9 @@ namespace danikk_space_engine
 					1000000.0f);
 			}
 		}
-		else if(!dragging && alt_pressed)
-		{
-			tool_action_scroll_accumulator += tool_mouse_scroll_delta;
-			while(tool_action_scroll_accumulator >= 1.0f)
-			{
-				selected_tool_action = stepToolAction(active_tool, selected_tool_action, 1);
-				tool_action_scroll_accumulator -= 1.0f;
-			}
-			while(tool_action_scroll_accumulator <= -1.0f)
-			{
-				selected_tool_action = stepToolAction(active_tool, selected_tool_action, -1);
-				tool_action_scroll_accumulator += 1.0f;
-			}
-		}
 		else if(adjusting_build_part_size)
 		{
 			// Shift-wheel was consumed above to adjust the active BuildPart dimension.
-		}
-		else if(!dragging)
-		{
-			tool_scroll_accumulator += tool_mouse_scroll_delta;
-			while(tool_scroll_accumulator >= 1.0f)
-			{
-				active_tool = stepTool(active_tool, 1);
-				selected_tool_action = getFirstToolAction(active_tool);
-				tool_scroll_accumulator -= 1.0f;
-			}
-			while(tool_scroll_accumulator <= -1.0f)
-			{
-				active_tool = stepTool(active_tool, -1);
-				selected_tool_action = getFirstToolAction(active_tool);
-				tool_scroll_accumulator += 1.0f;
-			}
 		}
 
 		RaycastHit hit = world.raycastFromCamera();
@@ -379,15 +348,17 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Hotbar slot index % is out of range", slot_index);
 		}
 		selected_hotbar_slot = slot_index;
-		const BuildDefinitionId definition_id = hotbar_item_ids[slot_index];
-		if(definition_id == build_definition_ids::none)
-		{
-			active_tool = ToolId::none;
-			selected_tool_action = ToolActionId::none;
-			return;
-		}
-		const BuildDefinition& definition = getBuildDefinition(definition_id);
-		active_tool = definition.tool;
-		selected_tool_action = definition.action;
+		const ToolCatalogEntry& entry = getToolCatalogEntry(hotbar_entry_ids[slot_index]);
+		active_tool = entry.tool;
+		selected_tool_action = entry.action;
+	}
+
+	/** @copydoc LocalPlayerControllerComponent::selectToolCatalogEntry */
+	void LocalPlayerControllerComponent::selectToolCatalogEntry(ToolCatalogEntryId entry_id)
+	{
+		const ToolCatalogEntry& entry = getToolCatalogEntry(entry_id);
+		hotbar_entry_ids[selected_hotbar_slot] = entry_id;
+		active_tool = entry.tool;
+		selected_tool_action = entry.action;
 	}
 }

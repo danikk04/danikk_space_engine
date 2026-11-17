@@ -9,8 +9,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Top-level categories used to group editing and placement actions.
 	 *
-	 * Categories cycle in declaration order, including `none`: none, terrain, body, place,
-	 * and human. `count` is a table-size sentinel and is not a selectable category.
+	 * The current command is selected from the tool catalog and stored in a hotbar slot.
+	 * `count` is a table-size sentinel and is not a selectable category.
 	 */
 	enum class ToolId : uint8
 	{
@@ -26,9 +26,7 @@ namespace danikk_space_engine
 	 * @brief Actions registered within a top-level tool category.
 	 *
 	 * Action IDs are interpreted together with ToolId; not every action is valid in every category.
-	 * The category tables define the supported subset and cycling order: Terrain has
-	 * Extrude/Erase, Body has Extrude/Erase/Drag, Place has Machinegun/Cube/Slope, and Human
-	 * has Drag/Create. None has no action list.
+	 * Tool-catalog entries define the available category/action combinations.
 	 */
 	enum class ToolActionId : uint8
 	{
@@ -57,44 +55,6 @@ namespace danikk_space_engine
 		/** @brief Replacement face list, meaningful only when replace_selected_faces is true. */
 		DynamicArray<FacePtr> selected_faces;
 	};
-
-	/**
-	 * @brief Moves through available top-level tool categories with wraparound.
-	 * @param current Current category; invalid values are handled by the implementation fallback.
-	 * @param direction Negative moves backward; zero and positive values advance.
-	 * @return The resulting category.
-	 */
-	ToolId stepTool(ToolId current, int direction);
-
-	/**
-	 * @brief Returns the first action registered for a tool category.
-	 * @param tool Category whose action list is queried.
-	 * @return First supported action, or ToolActionId::none for a category without actions.
-	 */
-	ToolActionId getFirstToolAction(ToolId tool);
-
-	/**
-	 * @brief Steps through one category's registered actions with wraparound.
-	 * @param tool Category whose action list is used.
-	 * @param current Current action; an unsupported action falls back to the first.
-	 * @param direction Negative moves backward; zero and positive values advance.
-	 * @return The resulting action, or none when the category has no actions.
-	 */
-	ToolActionId stepToolAction(ToolId tool, ToolActionId current, int direction);
-
-	/**
-	 * @brief Returns the display label for a top-level tool category.
-	 * @param tool Tool category ID.
-	 * @return Static label string, or "Unknown" for an unsupported value.
-	 */
-	const char* getToolName(ToolId tool);
-
-	/**
-	 * @brief Returns the display label for an action ID.
-	 * @param action Action ID.
-	 * @return Static label string, or "Unknown" for an unsupported value.
-	 */
-	const char* getToolActionName(ToolActionId action);
 
 	/**
 	 * @brief Dispatches a click/action to the handler for the selected tool category.

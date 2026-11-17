@@ -21,8 +21,8 @@ namespace danikk_space_engine
 	{
 		constexpr float hotbar_slot_height = 0.070f;
 		constexpr float hotbar_slot_gap = 0.0045f;
-	Mesh build_part_preview_meshes[static_cast<size_t>(BuildPartShape::count)];
-	bool build_part_preview_meshes_initialized = false;
+		Mesh build_part_preview_meshes[static_cast<size_t>(BuildPartShape::count)];
+		bool build_part_preview_meshes_initialized = false;
 
 	/** @brief Builds cached GPU meshes used by the catalog's cube and slope thumbnails. */
 	void initializeBuildPartPreviewMeshes()
@@ -65,8 +65,9 @@ namespace danikk_space_engine
 	 * the projection or view uniforms used for the next world frame. BuildPart meshes
 	 * use shared primitive geometry; the weapon thumbnail draws the catalogued MG-42 mesh.
 	 */
-	void drawBuildCatalogPreview(BuildDefinitionId definition_id, const vec2& cell_position, const vec2& cell_size)
+	void drawToolCatalogPreview(ToolCatalogEntryId entry_id, const vec2& cell_position, const vec2& cell_size)
 	{
+		const ToolCatalogEntry& entry = getToolCatalogEntry(entry_id);
 		const CameraComponent& camera = world.getCameraComponent();
 		const float depth = 1.0f;
 		const float half_height = tan(glm::radians(camera.vertical_fov_degrees) * 0.5f) * depth;
@@ -80,10 +81,10 @@ namespace danikk_space_engine
 		const mat4 cell_transform = camera_world * glm::translate(mat4(1.0f), view_center);
 		static_asset_collection.base3d_shader.use();
 
-		if(definition_id == build_definition_ids::cube || definition_id == build_definition_ids::slope)
+		if(entry.action == ToolActionId::create_body || entry.action == ToolActionId::create_slope)
 		{
 			initializeBuildPartPreviewMeshes();
-			const BuildPartShape shape = definition_id == build_definition_ids::slope
+			const BuildPartShape shape = entry.action == ToolActionId::create_slope
 				? BuildPartShape::slope : BuildPartShape::cube;
 			const vec3 view_size(
 				2.0f * half_width * cell_size.x * 0.76f,
@@ -99,7 +100,7 @@ namespace danikk_space_engine
 			return;
 		}
 
-		if(definition_id == build_definition_ids::machinegun)
+		if(entry.action == ToolActionId::machinegun)
 		{
 			const mat4 rotation = glm::rotate(mat4(1.0f), glm::radians(58.0f), vec3(1.0f, 0.0f, 0.0f))
 				* glm::rotate(mat4(1.0f), glm::radians(-18.0f), vec3(0.0f, 1.0f, 0.0f))
@@ -198,8 +199,17 @@ namespace danikk_space_engine
 		catalog_panel.relative_size = vec2(0.68f, 0.60f);
 		catalog_panel.draw_style = &catalog_panel_style;
 		catalog_panel.border_draw_style = &catalog_border_style;
-		catalog_panel.name = "build_catalog_panel";
+		catalog_panel.name = "tool_catalog_panel";
 		catalog_panel.flags.set(GUIElementFlags::visible, false);
+		if(getToolCategoryCount() > catalog_category_capacity
+			|| getToolCatalogEntryTotalCount() > catalog_item_capacity)
+		{
+			danikk_engine::formatFatalError("Tool catalog exceeds GUI widget capacity");
+		}
+		catalog_category_buttons.resize(getToolCategoryCount());
+		catalog_category_labels.resize(getToolCategoryCount());
+		catalog_item_buttons.resize(getToolCatalogEntryTotalCount());
+		catalog_item_labels.resize(getToolCatalogEntryTotalCount());
 		const float hotbar_slot_width = hotbar_slot_height * getPixelSize().x / getPixelSize().y;
 		const vec2 catalog_item_relative_size = vec2(hotbar_slot_width, hotbar_slot_height)
 			/ catalog_panel.relative_size;
@@ -210,17 +220,17 @@ namespace danikk_space_engine
 		catalog_close_button.relative_size = vec2(0.09f, 0.13f);
 		catalog_close_button.draw_style = &catalog_button_style;
 		catalog_close_button.border_draw_style = &catalog_border_style;
-		catalog_close_button.name = "build_catalog_close";
+		catalog_close_button.name = "tool_catalog_close";
 		catalog_close_label.anchor = GUIAnchor::center;
 		catalog_close_label.relative_size = vec2(1.0f);
 		catalog_close_label.text = "X";
 		catalog_close_label.text_style = &catalog_text_style;
 		catalog_close_button.on_click = [this]()
 		{
-			world.getLocalPlayerControllerComponent().build_catalog_open = false;
+			world.getLocalPlayerControllerComponent().tool_catalog_open = false;
 		};
 
-		for(uint32 index = 0; index < 2; ++index)
+		for(uint32 index = 0; index < getToolCategoryCount(); ++index)
 		{
 			GUIElement& button = catalog_category_buttons[index];
 			GUIElement& label = catalog_category_labels[index];
@@ -229,39 +239,46 @@ namespace danikk_space_engine
 			button.relative_size = vec2(0.23f, 0.13f);
 			button.draw_style = &catalog_button_style;
 			button.border_draw_style = &catalog_border_style;
-			button.name = "build_catalog_category";
+			button.name = "tool_catalog_category";
 			label.anchor = GUIAnchor::center;
 			label.relative_size = vec2(1.0f);
-			label.text = index == 0 ? "Structural" : "Weapons";
+			label.text = getToolCategory(index).name;
 			label.text_style = &catalog_text_style;
-			label.name = "build_catalog_category_label";
+			label.name = "tool_catalog_category_label";
 			button.on_click = [this, index]()
 			{
-				selected_build_category = static_cast<BuildCategoryId>(index);
-				refreshBuildCatalog();
+				selected_tool_category = getToolCategory(index).id;
+				refreshToolCatalog();
 			};
 		}
 
-		for(uint32 index = 0; index < catalog_item_capacity; ++index)
+		for(uint32 index = 0; index < catalog_item_buttons.size(); ++index)
 		{
 			GUIElement& button = catalog_item_buttons[index];
+			GUIElement& label = catalog_item_labels[index];
 			button.anchor = GUIAnchor::top_left;
 			button.pos = vec2(0.32f + index * (catalog_item_relative_size.x + catalog_item_gap), 0.24f);
 			button.relative_size = catalog_item_relative_size;
 			button.draw_style = &catalog_button_style;
 			button.border_draw_style = &catalog_border_style;
-			button.name = "build_catalog_item";
+			button.name = "tool_catalog_item";
+			label.anchor = GUIAnchor::center;
+			label.relative_size = vec2(1.0f);
+			label.text_style = &catalog_text_style;
+			label.name = "tool_catalog_item_label";
 			button.on_click = [this, index]()
 			{
-				if(index >= getBuildDefinitionCount(selected_build_category)) return;
-				pending_build_definition_id = getBuildDefinitionId(selected_build_category, index);
-				refreshBuildCatalog();
+				if(index >= getToolCatalogEntryCount(selected_tool_category)) return;
+				LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
+				controller.selectToolCatalogEntry(getToolCatalogEntryId(selected_tool_category, index));
+				controller.tool_catalog_open = false;
+				refreshToolCatalog();
 			};
 			button.draw_callback = [this, index](vec2 position, vec2 size)
 			{
-				if(index >= getBuildDefinitionCount(selected_build_category)) return;
-				drawBuildCatalogPreview(
-					getBuildDefinitionId(selected_build_category, index), position, size);
+				if(index >= getToolCatalogEntryCount(selected_tool_category)) return;
+				drawToolCatalogPreview(
+					getToolCatalogEntryId(selected_tool_category, index), position, size);
 			};
 		}
 
@@ -307,8 +324,12 @@ namespace danikk_space_engine
 
 				slot.on_click = [this, index]()
 				{
-					if(!world.getLocalPlayerControllerComponent().build_catalog_open) return;
-					assignBuildDefinitionToSlot(index);
+					LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
+					if(controller.tool_catalog_open)
+					{
+						controller.selectHotbarSlot(index);
+						refreshToolCatalog();
+					}
 				};
 			}
 		}
@@ -334,48 +355,40 @@ namespace danikk_space_engine
 		gui_root.addChild(catalog_panel);
 		catalog_panel.addChild(catalog_close_button);
 		catalog_close_button.addChild(catalog_close_label);
-		for(uint32 index = 0; index < 2; ++index)
+		for(uint32 index = 0; index < catalog_category_buttons.size(); ++index)
 		{
 			catalog_panel.addChild(catalog_category_buttons[index]);
 			catalog_category_buttons[index].addChild(catalog_category_labels[index]);
 		}
-		for(uint32 index = 0; index < catalog_item_capacity; ++index)
+		for(uint32 index = 0; index < catalog_item_buttons.size(); ++index)
 		{
 			catalog_panel.addChild(catalog_item_buttons[index]);
+			catalog_item_buttons[index].addChild(catalog_item_labels[index]);
 		}
-		refreshBuildCatalog();
 	}
 
-	/** @brief Refreshes the visible category items and the selected-definition prompt. */
-	void GUI::refreshBuildCatalog()
+	/** @brief Refreshes visible tool commands and category highlighting. */
+	void GUI::refreshToolCatalog()
 	{
-		for(uint32 index = 0; index < 2; ++index)
+		for(uint32 index = 0; index < catalog_category_buttons.size(); ++index)
 		{
 			catalog_category_buttons[index].draw_style =
-				static_cast<uint32>(selected_build_category) == index
+				getToolCategory(index).id == selected_tool_category
 					? &catalog_selected_button_style : &catalog_button_style;
 		}
-		const uint32 item_count = getBuildDefinitionCount(selected_build_category);
-		for(uint32 index = 0; index < catalog_item_capacity; ++index)
+		const uint32 item_count = getToolCatalogEntryCount(selected_tool_category);
+		const LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
+		const ToolCatalogEntryId selected_entry_id = controller.hotbar_entry_ids[controller.selected_hotbar_slot];
+		for(uint32 index = 0; index < catalog_item_buttons.size(); ++index)
 		{
 			const bool has_item = index < item_count;
 			catalog_item_buttons[index].flags.set(GUIElementFlags::visible, has_item);
 			if(!has_item) continue;
-			const BuildDefinitionId definition_id = getBuildDefinitionId(selected_build_category, index);
-			catalog_item_buttons[index].draw_style = definition_id == pending_build_definition_id
+			const ToolCatalogEntryId entry_id = getToolCatalogEntryId(selected_tool_category, index);
+			catalog_item_labels[index].text = getToolCatalogEntry(entry_id).short_name;
+			catalog_item_buttons[index].draw_style = entry_id == selected_entry_id
 				? &catalog_selected_button_style : &catalog_button_style;
 		}
-	}
-
-	/** @brief Assigns the pending catalog detail to a hotbar slot and activates that slot. */
-	void GUI::assignBuildDefinitionToSlot(uint32 slot_index)
-	{
-		if(pending_build_definition_id == build_definition_ids::none) return;
-		LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
-		controller.hotbar_item_ids[slot_index] = pending_build_definition_id;
-		controller.selectHotbarSlot(slot_index);
-		hotbar_item_labels[slot_index].text.clear();
-		hotbar_item_labels[slot_index].text << getBuildDefinition(pending_build_definition_id).short_name;
 	}
 
 	/**
@@ -384,7 +397,7 @@ namespace danikk_space_engine
 	 * A zero memory reading is formatted as unavailable. The camera coordinates
 	 * are truncated to two decimal places before formatting. The completed
 	 * framework String replaces the label text once after all fields are appended. Values are
-	 * ordered as FPS, RAM, tool, action, camera speed, and camera position.
+	 * ordered as FPS, RAM, optional BuildPart controls, camera speed, and camera position.
 	 */
 	void GUI::frame()
 	{
@@ -399,18 +412,19 @@ namespace danikk_space_engine
 		LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
 		if(getKeyboardState(keyboard_buttons::g) == button_states::press)
 		{
-			controller.build_catalog_open = !controller.build_catalog_open;
-			refreshBuildCatalog();
+			controller.tool_catalog_open = !controller.tool_catalog_open;
+			refreshToolCatalog();
 		}
-		catalog_panel.flags.set(GUIElementFlags::visible, controller.build_catalog_open);
+		catalog_panel.flags.set(GUIElementFlags::visible, controller.tool_catalog_open);
 		for(uint32 index = 0; index < hotbar_column_count * hotbar_row_count; ++index)
 		{
+			const ToolCatalogEntryId entry_id = controller.hotbar_entry_ids[index];
+			hotbar_item_labels[index].text = entry_id == no_tool_catalog_entry
+				? "" : getToolCatalogEntry(entry_id).short_name;
 			hotbar_slots[index].border_draw_style = index == controller.selected_hotbar_slot
 				? &hotbar_selected_slot_border_style
 				: &hotbar_slot_border_style;
 		}
-		const char* active_tool_name = getToolName(controller.active_tool);
-		const char* selected_tool_action_name = getToolActionName(controller.selected_tool_action);
 		String text;
 		formatAppend(text, "FPS:%\n", fps_counter.getValue());
 		const size_t whole_mebibytes = memory_sample_bytes / mib(1);
@@ -419,8 +433,6 @@ namespace danikk_space_engine
 			memory_sample_bytes == 0 ? "RAM: unavailable\n" : "RAM:%.% MiB\n",
 			whole_mebibytes, tenths_of_mebibyte);
 
-		formatAppend(text, "TOOL:%\n", active_tool_name);
-		formatAppend(text, "ACTION:%\n", selected_tool_action_name);
 		if(controller.active_tool == ToolId::place
 			&& (controller.selected_tool_action == ToolActionId::create_body
 				|| controller.selected_tool_action == ToolActionId::create_slope))

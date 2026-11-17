@@ -24,8 +24,10 @@ namespace danikk_space_engine
 	using ItemTypeId = uint32;
 	/** @brief 32-bit index into the concrete item-definition catalog. */
 	using ItemDefinitionId = uint32;
-	/** @brief 32-bit index into the buildable-detail catalog. */
-	using BuildDefinitionId = uint32;
+	/** @brief 32-bit index into the selectable tool-command catalog. */
+	using ToolCatalogEntryId = uint32;
+	/** @brief 32-bit index identifying a category in the tool-command catalog. */
+	using ToolCategoryId = uint32;
 
 	/** @brief 32-bit handle for a point-component slot in WorldData. */
 	using PointComponentSlotId = uint32;
