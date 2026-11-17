@@ -3,6 +3,8 @@ sources += files(
 	'chunk/create_mesh.cpp',
 	'chunk_loader.cpp',
 	'class/world.cpp',
+	'class/world_tick.cpp',
+	'class/world_frame.cpp',
 	'data/create.cpp',
 	'data/add.cpp',
 	'data/destroy.cpp',
