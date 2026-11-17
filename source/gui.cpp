@@ -269,9 +269,10 @@ namespace danikk_space_engine
 			button.draw_style = &catalog_button_style;
 			button.border_draw_style = &catalog_border_style;
 			button.name = "tool_catalog_item";
-			label.anchor = GUIAnchor::center;
-			label.relative_size = vec2(1.0f);
-			label.text_style = &catalog_text_style;
+			label.anchor = GUIAnchor::down;
+			label.pos = vec2(0.0f, 0.04f);
+			label.relative_size = vec2(1.0f, 0.36f);
+			label.text_style = &hotbar_item_text_style;
 			label.name = "tool_catalog_item_label";
 			button.on_click = [this, index]()
 			{

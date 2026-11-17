@@ -298,10 +298,6 @@ namespace danikk_space_engine
 					active_tool,
 					selected_tool_action,
 					world,
-					selected_faces,
-					selected_face_count,
-					hit.hit && !hit.hit_build_part,
-					hit.face,
 					hit,
 					build_part_size);
 				if(result.replace_selected_faces)

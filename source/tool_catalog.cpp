@@ -22,8 +22,6 @@ namespace danikk_space_engine
 			{all_category_id, "None", "", ToolId::none, ToolActionId::none},
 			{tools_category_id, "Extrude terrain", "T-EXT", ToolId::terrain, ToolActionId::extrude},
 			{tools_category_id, "Erase terrain", "T-ERS", ToolId::terrain, ToolActionId::erase},
-			{tools_category_id, "Extrude body", "B-EXT", ToolId::body, ToolActionId::extrude},
-			{tools_category_id, "Erase body", "B-ERS", ToolId::body, ToolActionId::erase},
 			{tools_category_id, "Drag", "DRAG", ToolId::drag, ToolActionId::drag},
 			{parts_category_id, "Cube", "CUBE", ToolId::place, ToolActionId::create_body},
 			{parts_category_id, "Slope", "SLOPE", ToolId::place, ToolActionId::create_slope},
