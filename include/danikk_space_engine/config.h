@@ -23,8 +23,6 @@ namespace danikk_space_engine
 	{
 		/** @brief Enables the chunk boundary overlay; defaults to true. */
 		bool show_chunk_bounds = true;
-		/** @brief Enables highlighting of selected and hovered editable faces; defaults to true. */
-		bool show_face_highlight = true;
 		/** @brief Enables the translucent cube shown by Place -> Body; defaults to true. */
 		bool show_world_body_preview = true;
 		/** @brief Initial camera placement mode; defaults to sky for a fresh application start. */
@@ -37,8 +35,8 @@ namespace danikk_space_engine
 	 * The file uses one `key=value` entry per line. `load()` leaves current field
 	 * values unchanged for absent keys and creates a zero-byte file when none exists;
 	 * on the normal first application start those values are the Settings defaults.
-	 * The keys are `show_chunk_bounds`, `show_face_highlight`,
-	 * `show_world_body_preview`, and `default_camera_position`; the latter accepts
+	 * The keys are `show_chunk_bounds`, `show_world_body_preview`,
+	 * and `default_camera_position`; the latter accepts
 	 * only `sky` or `ground`. `save()` rewrites the file with all supported keys
 	 * and their current values, using lowercase `true`/`false` for booleans.
 	 */

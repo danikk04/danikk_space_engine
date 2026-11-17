@@ -10,8 +10,6 @@ namespace danikk_space_engine
 	using ChunkId = uint32;
 	/** @brief 32-bit handle for a world-space body and its transform. */
 	using WorldBodyId = uint32;
-	/** @brief 32-bit handle for a ground triangle stored in WorldData. */
-	using GroundTriangleId = uint32;
 	/** @brief 32-bit index identifying a material definition. */
 	using MaterialId = uint32;
 	/** @brief 32-bit index identifying a registered shape definition. */

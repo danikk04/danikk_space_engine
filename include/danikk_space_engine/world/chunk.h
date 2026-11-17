@@ -5,7 +5,6 @@
 
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/component/graph/graph.h>
-#include <danikk_space_engine/world/ground_triangle.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/fwd.h>
@@ -33,10 +32,9 @@ namespace danikk_space_engine
 	 * @brief Owns local surface geometry, component-slot lists, and one lazily built GPU mesh.
 	 *
 	 * A Chunk is positioned relative to its WorldBody and references pooled point
-	 * and triangle IDs. Its mesh is a render cache built only from active GroundTriangle records,
-	 * grouped into contiguous material ranges; it does not own source geometry and does not perform
-	 * volume-cell face culling. Each triangle contributes three separate vertices with one flat
-	 * normal and planar UV projection. Planet streaming metadata uses grid_coordinate.
+	 * and component lists. Planet meshes are uploaded from temporary generated buffers and retained
+	 * only by the GPU mesh; the chunk does not keep terrain vertices or triangles in WorldData.
+	 * Planet streaming metadata uses grid_coordinate.
 	 */
 	class Chunk
 	{
@@ -48,6 +46,8 @@ namespace danikk_space_engine
 		DynamicArray<ChunkMaterialRange> material_ranges;
 		/** @brief True when bounds describe the most recently built, non-dirty mesh. */
 		bool bounds_valid = false;
+		/** @brief True when this chunk represents a streamed planet terrain cell. */
+		bool planet_terrain = false;
 		/** @brief Subset of the point-component list containing only human slots. */
 		DynamicArray<PointComponentSlotId> human_component_slot_ids;
 
@@ -64,8 +64,6 @@ namespace danikk_space_engine
 		void framePointComponents(World& world);
 
 	public:
-		/** @brief Set when geometry or material membership requires GPU mesh reconstruction. */
-		bool mesh_dirty = true;
 		/** @brief Whether at least one human in this chunk needs checks during the current collision tick. */
 		bool has_active_human_collisions = false;
 		/** @brief Center of the local-space bounding sphere used by raycast broadphase. */
@@ -80,9 +78,7 @@ namespace danikk_space_engine
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		/** @brief Chunk origin relative to its WorldBody origin, in double precision. */
 		glm::dvec3 position = glm::dvec3(0.0);
-		/** @brief Ground triangle IDs rendered and raycast as this chunk's surface; each triangle has one material. */
-		DynamicArray<GroundTriangleId> ground_triangle_ids;
-		/** @brief Point IDs referenced by this chunk's triangles and point components. */
+		/** @brief Point IDs referenced by this chunk's point and graph components. */
 		DynamicArray<PointId> point_ids;
 		/** @brief Point-attached component slots ticked and framed by this chunk. */
 		DynamicArray<PointComponentSlotId> point_component_slot_ids;
@@ -103,14 +99,21 @@ namespace danikk_space_engine
 		~Chunk();
 
 		/**
-		 * @brief Rebuilds the GPU mesh from active ground triangles and groups indices by material.
-		 *
-		 * Invalid point references and degenerate triangles are skipped. Vertices are duplicated
-		 * per triangle to preserve flat normals; UVs are planar projections selected from the
-		 * dominant normal axis. A local bounding sphere is computed from the emitted vertices.
-		 * @return Reference to the newly created or updated mesh.
+		 * @brief Uploads transient indexed geometry into this chunk's GPU mesh.
+	 *
+	 * Inputs are consumed synchronously and are not retained. Vertices are duplicated per
+	 * triangle for flat normals and grouped into material ranges. Bounds are computed from the
+	 * emitted vertices for raycast broadphase.
+	 * @param positions Chunk-local source positions.
+	 * @param position_count Number of source positions.
+	 * @param triangle_indices Three source-position indices per triangle.
+	 * @param index_count Number of indices; must be divisible by three.
+	 * @param triangle_material_ids One material ID per triangle.
+	 * @param material_count Number of triangle material IDs.
 		 */
-		Mesh& createMesh();
+		void createMesh(const vec3* positions, size_t position_count,
+			const uint32* triangle_indices, size_t index_count,
+			const MaterialId* triangle_material_ids, size_t material_count);
 
 		/** @brief Returns the human component IDs in the chunk's update order. */
 		const DynamicArray<PointComponentSlotId>& getHumanComponentSlotIds() const
@@ -160,12 +163,11 @@ namespace danikk_space_engine
 		 */
 		void draw(World& world);
 
-		/** @brief Deletes the owned GPU mesh; `invalidateMesh()` separately clears stale ranges and bounds. */
+		/** @brief Deletes the owned GPU mesh and clears its material ranges and bounds. */
 		void destroyMesh();
-
-		/** @brief Marks the cached mesh and its bounds stale after geometry changes. */
-		void invalidateMesh();
 		/** @brief Reports whether bounds are valid for the current, non-dirty mesh. */
 		bool hasValidBounds() const { return bounds_valid; }
+		/** @brief Reports whether this chunk stores a streamed planet-terrain mesh. */
+		bool isPlanetTerrain() const { return planet_terrain; }
 	};
 }

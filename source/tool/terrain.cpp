@@ -40,14 +40,14 @@ namespace danikk_space_engine
 	 */
 	ToolApplyResult applyTerrainTool(World& world, ToolActionId action, const RaycastHit& hit)
 	{
-		if(!hit.hit || hit.hit_build_part || !isPlanetChunk(world, hit.face.chunk_id)) return ToolApplyResult();
+		if(!hit.hit || hit.hit_build_part || !isPlanetChunk(world, hit.chunk_id)) return ToolApplyResult();
 		switch(action)
 		{
 			case ToolActionId::extrude:
-				editPlanetGround(world, hit.face, 6.0, true);
+				editPlanetGround(world, hit.body_id, hit.position, 6.0, true);
 				break;
 			case ToolActionId::erase:
-				editPlanetGround(world, hit.face, 6.0, false);
+				editPlanetGround(world, hit.body_id, hit.position, 6.0, false);
 				break;
 			default:
 				break;

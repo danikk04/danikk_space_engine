@@ -34,11 +34,6 @@ namespace danikk_space_engine
 	struct HumanComponent;
 
 	/**
-	 * @brief Identifies a terrain face by its owning chunk and face index.
-	 */
-	struct FacePtr;
-
-	/**
 	 * @brief Holds worker-generated chunk coordinates, vertices, indices, and material data before world resources are created.
 	 */
 	struct GeneratedChunkData;

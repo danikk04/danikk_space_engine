@@ -1,7 +1,6 @@
 #pragma once
 
 #include <danikk_space_engine/component/point/point.h>
-#include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/tool_catalog.h>
@@ -25,13 +24,6 @@ namespace danikk_space_engine
 	public:
 		/** @brief Current player mode; starts in God mode. */
 		PlayerMode mode = PlayerMode::god;
-		/**
-		 * @brief Selected faces occupy the prefix; at most one non-selected hovered face follows it.
-		 * At the start of each tick, any old hover suffix is removed before raycasting again.
-		 */
-		DynamicArray<FacePtr> selected_faces;
-		/** @brief Number of committed selections at the start of `selected_faces`. */
-		size_t selected_face_count = 0;
 		/** @brief Tool category dispatched for the command assigned to the selected hotbar slot. */
 		ToolId active_tool = ToolId::none;
 		/** @brief Selected hotbar slot index in row-major order, starting at the bottom-left. */
@@ -72,9 +64,7 @@ namespace danikk_space_engine
 		 *
 		 * Number keys select the bottom hotbar row, Shift-number selects the middle row, and
 		 * Ctrl-number selects the top row. A populated hotbar slot activates its tool-menu command;
-		 * an empty slot clears the active tool. The catalog modal suspends controller input. Face
-		 * selection state is kept in one array: its first `selected_face_count` entries are
-		 * persistent selections and any remaining entry is the current hover target. Ctrl-wheel adjusts
+		 * an empty slot clears the active tool. The catalog modal suspends controller input. Ctrl-wheel adjusts
 		 * camera speed; Shift-wheel changes the selected BuildPart dimension. During a drag, wheel and
 		 * mouse input control the captured object, with Alt changing the wheel behavior. A camera raycast is refreshed each tick, and a
 		 * pressed left button dispatches the current tool unless a drag owns the gesture.

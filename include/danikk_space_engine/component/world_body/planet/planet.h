@@ -221,5 +221,8 @@ namespace danikk_space_engine
 	 * A later planet update invalidates intersecting loaded chunks and requests
 	 * their regeneration; this call does not synchronously rebuild geometry.
 	 */
-	bool editPlanetGround(World& world, const FacePtr& face, double radius, bool adds_solid_terrain);
+
+	/** @brief Applies a terrain stamp at a world-space position on the given planet body. */
+	bool editPlanetGround(World& world, WorldBodyId body_id, const glm::dvec3& position,
+		double radius, bool adds_solid_terrain);
 }

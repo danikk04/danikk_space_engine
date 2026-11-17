@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Batches visible chunk-boundary edge prisms and submits them as a single black draw.
 	 * @param world World containing the loaded chunks to inspect.
-	 * Chunks with any ground triangles use a fixed local box from zero to the
+	 * Planet terrain chunks use a fixed local box from zero to the
 	 * generation width; chunks without triangles derive bounds from active point
 	 * positions. The current branch checks triangle presence rather than the body
 	 * component type. Coordinates are transformed with each chunk's camera-relative
@@ -48,7 +48,7 @@ namespace danikk_space_engine
 				vec3 maximum(0.0f);
 				bool bounds_found = false;
 
-				if(chunk.ground_triangle_ids.size() > 0)
+				if(chunk.isPlanetTerrain())
 				{
 					maximum = vec3(static_cast<float>(planet_chunk_width));
 					bounds_found = true;

@@ -8,7 +8,6 @@
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/config.h>
-#include <danikk_space_engine/effects/polygon_highlight.h>
 #include <danikk_space_engine/scenario/base.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 
@@ -328,7 +327,6 @@ namespace danikk_space_engine
 				for(ChunkId chunk_id : body.chunk_ids)
 				{
 					Chunk& chunk = data.getChunk(chunk_id);
-					if(chunk.mesh_dirty) chunk.createMesh();
 					chunk.frame(*this);
 				}
 			}
@@ -349,7 +347,6 @@ namespace danikk_space_engine
 			}
 		}
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
-		if(settings.show_face_highlight) drawPolygonHighlights(*this);
 		const LocalPlayerControllerComponent& controller = getLocalPlayerControllerComponent();
 		if(settings.show_world_body_preview
 			&& controller.active_tool == ToolId::place

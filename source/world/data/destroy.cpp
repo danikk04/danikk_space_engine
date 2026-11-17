@@ -35,27 +35,25 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Detaches a resource ID from each listed chunk and optionally invalidates changed meshes.
+		 * @brief Detaches a resource ID from each listed chunk.
 		 * @tparam array_t Chunk member type holding resource IDs.
 		 * @tparam id_t Resource ID type.
 		 * @param world_data Data pools used to resolve chunks.
 		 * @param chunk_ids Chunks whose ownership lists are searched.
 		 * @param id Resource ID to remove.
 		 * @param chunk_array Member pointer selecting the relevant ID list.
-		 * @param invalidate_mesh Whether changed chunks must rebuild their rendered mesh.
 		 */
 		template<typename array_t, typename id_t>
 		void eraseIdFromChunks(
 			WorldData& world_data,
 			const DynamicArray<ChunkId>& chunk_ids,
 			id_t id,
-			array_t Chunk::* chunk_array,
-			bool invalidate_mesh = false)
+			array_t Chunk::* chunk_array)
 		{
 			for(ChunkId chunk_id : chunk_ids)
 			{
 				Chunk& chunk = world_data.getChunk(chunk_id);
-				if(eraseId(chunk.*chunk_array, id) && invalidate_mesh) chunk.invalidateMesh();
+				eraseId(chunk.*chunk_array, id);
 			}
 		}
 
@@ -171,54 +169,11 @@ namespace danikk_space_engine
 		destroyMatchingResources(point_components,
 			[id](const PointComponentSlot& slot) { return slot.point_id == id; },
 			[this](PointComponentSlotId slot_id) { destroyPointComponentSlot(slot_id); });
-		destroyMatchingResources(ground_triangles,
-			[id](const GroundTriangle& triangle)
-			{
-				return triangle.points[0] == id || triangle.points[1] == id || triangle.points[2] == id;
-			},
-			[this](GroundTriangleId triangle_id) { destroyGroundTriangle(triangle_id); });
 		destroyMatchingResources(graph_components,
 			[id](const GraphComponentSlot& graph) { return graph.point_a == id || graph.point_b == id; },
 			[this](GraphComponentSlotId graph_id) { destroyGraphComponentSlot(graph_id); });
 
 		points.free(id);
-	}
-
-	/**
-	 * @brief Removes a triangle from its owning chunk with swap-remove and repairs the moved triangle's index.
-	 * @param id Triangle ID to destroy; inactive IDs are ignored.
-	 */
-	void WorldData::destroyGroundTriangle(GroundTriangleId id)
-	{
-		/**
-		 * @brief Measures the duration of the enclosing profiler scope.
-		 */
-		DSE_WATCH();
-		if(!isGroundTriangleActive(id)) return;
-		GroundTriangle& triangle = ground_triangles[id];
-		if(triangle.chunk_id != GroundTriangle::no_chunk)
-		{
-			if(!isChunkActive(triangle.chunk_id))
-			{
-				danikk_engine::formatFatalError("Ground triangle % references invalid chunk %", id, triangle.chunk_id);
-			}
-			Chunk& chunk = getChunk(triangle.chunk_id);
-			const size_t index = triangle.index_in_chunk;
-			if(index >= chunk.ground_triangle_ids.size() || chunk.ground_triangle_ids[index] != id)
-			{
-				danikk_engine::formatFatalError("Ground triangle % has an invalid chunk index", id);
-			}
-			const size_t last_index = chunk.ground_triangle_ids.size() - 1;
-			if(index != last_index)
-			{
-				const GroundTriangleId moved_id = chunk.ground_triangle_ids[last_index];
-				chunk.ground_triangle_ids[index] = moved_id;
-				ground_triangles[moved_id].index_in_chunk = index;
-			}
-			chunk.ground_triangle_ids.resize(last_index);
-			chunk.invalidateMesh();
-		}
-		ground_triangles.free(id);
 	}
 
 	/**
@@ -242,8 +197,6 @@ namespace danikk_space_engine
 			[this](PointComponentSlotId slot_id) { destroyPointComponentSlot(slot_id); });
 		destroyLastUntilEmpty(chunk.graph_component_slot_ids,
 			[this](GraphComponentSlotId slot_id) { destroyGraphComponentSlot(slot_id); });
-		destroyLastUntilEmpty(chunk.ground_triangle_ids,
-			[this](GroundTriangleId triangle_id) { destroyGroundTriangle(triangle_id); });
 		chunk.destroyMesh();
 
 		while(chunk.point_ids.size() > 0)
@@ -266,7 +219,9 @@ namespace danikk_space_engine
 		chunk.world_body_id = 0;
 		chunk.grid_coordinate = glm::ivec3(0);
 		chunk.position = glm::dvec3(0.0);
-		chunk.mesh_dirty = false;
+		chunk.planet_terrain = false;
+		chunk.bounds_valid = false;
+		chunk.material_ranges.clear();
 		chunks.free(id);
 	}
 
@@ -368,7 +323,7 @@ namespace danikk_space_engine
 			[this](PointComponentSlotId id) { destroyPointComponentSlot(id); });
 		destroyLastUntilEmpty(graph_components.usedIds(),
 			[this](GraphComponentSlotId id) { destroyGraphComponentSlot(id); });
-		clearPools(point_components, graph_components, world_body_components, chunks, world_bodies, points, ground_triangles);
+		clearPools(point_components, graph_components, world_body_components, chunks, world_bodies, points);
 	}
 
 	/**
@@ -378,6 +333,6 @@ namespace danikk_space_engine
 	{
 		clear();
 		factions.release();
-		releasePools(points, ground_triangles, chunks, world_bodies, world_body_components, point_components, graph_components);
+		releasePools(points, chunks, world_bodies, world_body_components, point_components, graph_components);
 	}
 }

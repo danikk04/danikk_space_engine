@@ -1,7 +1,6 @@
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/world/world.h>
 
@@ -56,22 +55,6 @@ namespace danikk_space_engine
 			}
 			planet.chunk_lookup.remove(entry.grid_coordinate);
 		}
-	}
-
-	/**
-	 * @brief Clears selected/hovered face references before their terrain chunks are replaced.
-	 * @param world World containing the local-player controller component, if one is active.
-	 */
-	void clearPlanetFaceSelection(World& world)
-	{
-		/**
-		 * @brief Measures the duration of the enclosing profiler scope.
-		 */
-		DSE_WATCH();
-		if(!world.data.isPointComponentSlotActive(world.local_player_controller_component_slot_id)) return;
-		LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
-		controller.selected_faces.clear();
-		controller.selected_face_count = 0;
 	}
 
 	/**
@@ -150,7 +133,6 @@ namespace danikk_space_engine
 
 		planet.pending_requests = static_cast<DynamicArray<ChunkGenerationRequest>&&>(requests);
 		unloadPlanetChunksOutsideDesiredSet(planet, world);
-		clearPlanetFaceSelection(world);
 	}
 
 	/**

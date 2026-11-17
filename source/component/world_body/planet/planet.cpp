@@ -142,7 +142,6 @@ namespace danikk_space_engine
 				queuePlanetRequests(planet, world, slot);
 				planet.chunk_updates_active = false;
 				planet.chunk_set_initialized = false;
-				clearPlanetFaceSelection(world);
 			}
 			return;
 		}

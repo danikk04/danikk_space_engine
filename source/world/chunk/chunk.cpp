@@ -32,12 +32,12 @@ namespace danikk_space_engine
 	Chunk::Chunk(Chunk&& other) noexcept
 		: mesh(other.mesh), material_ranges(static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges)),
 		bounds_valid(other.bounds_valid),
+		planet_terrain(other.planet_terrain),
 		human_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids)),
-		mesh_dirty(other.mesh_dirty), has_active_human_collisions(other.has_active_human_collisions),
+		has_active_human_collisions(other.has_active_human_collisions),
 		bounds_center(other.bounds_center), bounds_radius(other.bounds_radius),
 		chunk_id(other.chunk_id), world_body_id(other.world_body_id),
 		grid_coordinate(other.grid_coordinate), position(other.position),
-		ground_triangle_ids(static_cast<DynamicArray<GroundTriangleId>&&>(other.ground_triangle_ids)),
 		point_ids(static_cast<DynamicArray<PointId>&&>(other.point_ids)),
 		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids)),
 		graph_component_slot_ids(static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids))
@@ -53,16 +53,15 @@ namespace danikk_space_engine
 		}
 
 		destroyMesh();
-		mesh_dirty = other.mesh_dirty;
 		has_active_human_collisions = other.has_active_human_collisions;
 		bounds_valid = other.bounds_valid;
+		planet_terrain = other.planet_terrain;
 		bounds_center = other.bounds_center;
 		bounds_radius = other.bounds_radius;
 		chunk_id = other.chunk_id;
 		world_body_id = other.world_body_id;
 		grid_coordinate = other.grid_coordinate;
 		position = other.position;
-		ground_triangle_ids = static_cast<DynamicArray<GroundTriangleId>&&>(other.ground_triangle_ids);
 		point_ids = static_cast<DynamicArray<PointId>&&>(other.point_ids);
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
 		human_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids);
@@ -95,16 +94,10 @@ namespace danikk_space_engine
 			free(mesh);
 			mesh = nullptr;
 		}
-	}
-
-	/**
-	 * @brief Marks geometry stale and invalidates both material draw ranges and raycast bounds.
-	 */
-	void Chunk::invalidateMesh()
-	{
-		mesh_dirty = true;
-		bounds_valid = false;
 		material_ranges.clear();
+		bounds_valid = false;
+		bounds_center = vec3(0.0f);
+		bounds_radius = 0.0f;
 	}
 
 	/** @copydoc Chunk::addPointComponentSlot */

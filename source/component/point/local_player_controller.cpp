@@ -180,10 +180,6 @@ namespace danikk_space_engine
 			mode = mode == PlayerMode::god ? PlayerMode::commander : PlayerMode::god;
 		}
 
-		if(selected_faces.size() > selected_face_count)
-		{
-			selected_faces.resize(selected_face_count);
-		}
 
 		const int left_alt_state = getKeyboardState(keyboard_buttons::left_alt);
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
@@ -298,41 +294,16 @@ namespace danikk_space_engine
 			if(active_tool != ToolId::none && active_tool != ToolId::drag
 				&& left_mouse_state == button_states::press)
 			{
-				ToolApplyResult result = applyTool(
+				applyTool(
 					active_tool,
 					selected_tool_action,
 					world,
 					hit,
 					build_part_size);
-				if(result.replace_selected_faces)
-				{
-					selected_faces = static_cast<DynamicArray<FacePtr>&&>(result.selected_faces);
-					selected_face_count = selected_faces.size();
-				}
 				hit = world.raycastFromCamera();
 			}
 		}
 
-		if(hit.hit && !hit.hit_build_part)
-		{
-			bool already_selected = false;
-			for(size_t i = 0; i < selected_face_count; i++)
-			{
-				if(selected_faces[i] == hit.face)
-				{
-					already_selected = true;
-					break;
-				}
-			}
-			if(!already_selected)
-			{
-				selected_faces.push(hit.face);
-			}
-		}
-		else if(selected_face_count == 0 && selected_faces.size() == 0)
-		{
-			selected_faces = DynamicArray<FacePtr>();
-		}
 	}
 
 	/** @copydoc LocalPlayerControllerComponent::selectHotbarSlot */

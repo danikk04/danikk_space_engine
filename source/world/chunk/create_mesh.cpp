@@ -1,53 +1,50 @@
-#include <limits>
 #include <cstdlib>
+#include <limits>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_framework/glm.h>
-
 #include <danikk_space_engine/world/chunk.h>
-#include <danikk_space_engine/world/world.h>
 
 #include <danikk_engine/mesh.h>
+#include <danikk_framework/glm.h>
 
 namespace danikk_space_engine
 {
 	namespace
 	{
-
-		/**
-		 * @brief Projects a face-local position onto a stable tangent basis to produce texture coordinates.
-		 */
+		/** @brief Projects a chunk-local vertex onto a planar UV basis chosen by its face normal. */
 		vec2 projectToUV(const vec3& position, const vec3& normal)
 		{
 			const vec3 absolute_normal = glm::abs(normal);
 			if(absolute_normal.x >= absolute_normal.y && absolute_normal.x >= absolute_normal.z)
-			{
 				return vec2(position.z, position.y);
-			}
-			if(absolute_normal.y >= absolute_normal.z)
-			{
-				return vec2(position.x, position.z);
-			}
+			if(absolute_normal.y >= absolute_normal.z) return vec2(position.x, position.z);
 			return vec2(position.x, position.y);
 		}
 	}
 
 	/**
-	 * @brief Rebuilds the chunk's indexed GPU mesh from active ground triangles, grouped by material.
-	 * @return Reference to the chunk-owned mesh after upload.
-	 * For each material ID, active triangles with three active points are appended
-	 * contiguously; missing points and degenerate triangles are skipped. Every
-	 * triangle gets a flat normal and planar UVs projected along the dominant
-	 * normal axis. The method records index ranges per non-empty material, derives
-	 * a local bounding sphere from generated vertices, uploads the mesh, and clears
-	 * mesh_dirty. It builds a triangle surface mesh; there is no VolumeCell
-	 * meshing or internal-face culling in the current world representation.
+	 * @brief Builds and uploads a material-grouped GPU mesh from a temporary generated buffer.
+	 * @param positions Source positions, valid only for the duration of this call.
+	 * @param position_count Number of source positions.
+	 * @param triangle_indices Three indices per triangle.
+	 * @param index_count Number of indices.
+	 * @param triangle_material_ids Material ID for each triangle.
+	 * @param material_count Number of material IDs.
+	 * The method expands indexed triangles into flat-shaded vertices, calculates UVs
+	 * from the dominant normal axis, records material draw ranges, computes a local
+	 * bounding sphere, and uploads the result. No CPU copy of terrain triangles or
+	 * vertices is retained by the chunk.
 	 */
-
-	Mesh& Chunk::createMesh()
+	void Chunk::createMesh(const vec3* positions, size_t position_count,
+		const uint32* triangle_indices, size_t index_count,
+		const MaterialId* triangle_material_ids, size_t material_count)
 	{
-		/** @brief Measures the mesh rebuild duration for the profiler. */
 		DSE_WATCH();
+		if(index_count % 3 != 0 || material_count != index_count / 3
+			|| (index_count > 0 && (positions == nullptr || triangle_indices == nullptr || triangle_material_ids == nullptr)))
+		{
+			danikk_engine::formatFatalError("Invalid temporary chunk mesh buffer");
+		}
 		if(mesh == nullptr)
 		{
 			void* memory = malloc(sizeof(Mesh));
@@ -58,41 +55,42 @@ namespace danikk_space_engine
 		DynamicArray<DefaultVertex> vertices;
 		DynamicArray<gl_point_index_t> indices;
 		material_ranges.clear();
-		vertices.reserve(ground_triangle_ids.size() * 3);
-		indices.reserve(ground_triangle_ids.size() * 3);
+		vertices.reserve(index_count);
+		indices.reserve(index_count);
 
 		for(MaterialId material_id = 0; material_id < getMaterialCount(); material_id++)
 		{
 			const uint32 first_index = static_cast<uint32>(indices.size());
-			for(GroundTriangleId triangle_id : ground_triangle_ids)
+			for(size_t triangle = 0; triangle < material_count; triangle++)
 			{
-				if(!world.data.isGroundTriangleActive(triangle_id)) continue;
-				const GroundTriangle& triangle = world.data.getGroundTriangle(triangle_id);
-				if(triangle.material_id != material_id
-					|| !world.data.isPointActive(triangle.points[0])
-					|| !world.data.isPointActive(triangle.points[1])
-					|| !world.data.isPointActive(triangle.points[2])) continue;
-
-				if(vertices.size() + 3 > static_cast<size_t>(std::numeric_limits<gl_point_index_t>::max()) + 1)
+				if(triangle_material_ids[triangle] != material_id) continue;
+				const uint32 source_indices[3] =
 				{
-					std::abort();
-				}
-				const vec3 a = world.data.getPoint(triangle.points[0]).position;
-				const vec3 b = world.data.getPoint(triangle.points[1]).position;
-				const vec3 c = world.data.getPoint(triangle.points[2]).position;
+					triangle_indices[triangle * 3],
+					triangle_indices[triangle * 3 + 1],
+					triangle_indices[triangle * 3 + 2]
+				};
+				if(source_indices[0] >= position_count || source_indices[1] >= position_count || source_indices[2] >= position_count)
+					danikk_engine::formatFatalError("Generated chunk mesh has an invalid vertex index");
+				const vec3& a = positions[source_indices[0]];
+				const vec3& b = positions[source_indices[1]];
+				const vec3& c = positions[source_indices[2]];
 				const vec3 cross_product = glm::cross(b - a, c - a);
 				const float normal_length = glm::length(cross_product);
 				if(normal_length <= 0.000001f) continue;
+				if(vertices.size() + 3 > static_cast<size_t>(std::numeric_limits<gl_point_index_t>::max()) + 1)
+					std::abort();
 				const vec3 normal = cross_product / normal_length;
-				const vec3 positions[3] = {a, b, c};
+				const vec3 triangle_positions[3] = {a, b, c};
 				for(uint8 corner = 0; corner < 3; corner++)
 				{
 					indices.push(static_cast<gl_point_index_t>(vertices.size()));
-					vertices.pushCtor(positions[corner], normal, projectToUV(positions[corner], normal));
+					vertices.pushCtor(triangle_positions[corner], normal, projectToUV(triangle_positions[corner], normal));
 				}
 			}
-			const uint32 index_count = static_cast<uint32>(indices.size()) - first_index;
-			if(index_count > 0) material_ranges.push(ChunkMaterialRange{material_id, first_index, index_count});
+			const uint32 index_count_for_material = static_cast<uint32>(indices.size()) - first_index;
+			if(index_count_for_material > 0)
+				material_ranges.push(ChunkMaterialRange{material_id, first_index, index_count_for_material});
 		}
 
 		if(vertices.size() == 0)
@@ -113,9 +111,7 @@ namespace danikk_space_engine
 			bounds_center = (minimum + maximum) * 0.5f;
 			bounds_radius = 0.0f;
 			for(const DefaultVertex& vertex : vertices)
-			{
 				bounds_radius = glm::max(bounds_radius, glm::length(vertex.pos - bounds_center));
-			}
 			bounds_radius += 0.0001f;
 			bounds_valid = true;
 		}
@@ -126,7 +122,6 @@ namespace danikk_space_engine
 			indices.data(),
 			indices.size());
 		DefaultVertex::setAttributes();
-		mesh_dirty = false;
-		return *mesh;
+		planet_terrain = true;
 	}
 }

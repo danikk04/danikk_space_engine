@@ -43,8 +43,6 @@ namespace danikk_space_engine
 
 	/** @copydoc WorldData::isPointActive */
 	bool WorldData::isPointActive(PointId id) const { return points.isActive(id); }
-	/** @copydoc WorldData::isGroundTriangleActive */
-	bool WorldData::isGroundTriangleActive(GroundTriangleId id) const { return ground_triangles.isActive(id); }
 	/** @copydoc WorldData::isChunkActive */
 	bool WorldData::isChunkActive(ChunkId id) const { return chunks.isActive(id); }
 	/** @copydoc WorldData::isWorldBodyActive */
@@ -58,8 +56,6 @@ namespace danikk_space_engine
 
 	/** @copydoc WorldData::getUsedPointIds */
 	const DynamicArray<PointId>& WorldData::getUsedPointIds() const { return points.usedIds(); }
-	/** @copydoc WorldData::getUsedGroundTriangleIds */
-	const DynamicArray<GroundTriangleId>& WorldData::getUsedGroundTriangleIds() const { return ground_triangles.usedIds(); }
 	/** @copydoc WorldData::getUsedChunkIds */
 	const DynamicArray<ChunkId>& WorldData::getUsedChunkIds() const { return chunks.usedIds(); }
 	/** @copydoc WorldData::getUsedWorldBodyIds */
@@ -75,10 +71,6 @@ namespace danikk_space_engine
 	Point& WorldData::getPoint(PointId id) { return getCheckedResource(points, id, "point"); }
 	/** @copydoc WorldData::getPoint */
 	const Point& WorldData::getPoint(PointId id) const { return getCheckedResource(points, id, "point"); }
-	/** @copydoc WorldData::getGroundTriangle */
-	GroundTriangle& WorldData::getGroundTriangle(GroundTriangleId id) { return getCheckedResource(ground_triangles, id, "ground triangle"); }
-	/** @copydoc WorldData::getGroundTriangle */
-	const GroundTriangle& WorldData::getGroundTriangle(GroundTriangleId id) const { return getCheckedResource(ground_triangles, id, "ground triangle"); }
 	/** @copydoc WorldData::getChunk */
 	Chunk& WorldData::getChunk(ChunkId id) { return getCheckedResource(chunks, id, "chunk"); }
 	/** @copydoc WorldData::getChunk */
@@ -102,8 +94,6 @@ namespace danikk_space_engine
 
 	/** @copydoc WorldData::getPointSlotCount */
 	size_t WorldData::getPointSlotCount() const { return points.size(); }
-	/** @copydoc WorldData::getGroundTriangleSlotCount */
-	size_t WorldData::getGroundTriangleSlotCount() const { return ground_triangles.size(); }
 	/** @copydoc WorldData::getChunkSlotCount */
 	size_t WorldData::getChunkSlotCount() const { return chunks.size(); }
 	/** @copydoc WorldData::getWorldBodySlotCount */

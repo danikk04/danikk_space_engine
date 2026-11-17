@@ -74,10 +74,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Traverses candidate chunks in each supplied body and records the nearest triangle hit.
+		 * @brief Traverses candidate chunks and records the nearest scalar-field or BuildPart hit.
 	 *
 	 * Planet bodies use a sphere test followed by 3D DDA through crossed grid cells. Other
-	 * bodies scan their chunk IDs. Valid per-chunk bounds reject misses before triangle tests.
+		 * bodies scan their chunk IDs. Planet terrain is sampled from the scalar field; BuildParts
+		 * are tested against their component-defined triangles.
 	 * @param body_ids IDs of active bodies to query.
 	 * @param body_count Number of body IDs in the range.
 	 * @param origin Ray origin in world coordinates.
@@ -93,7 +94,6 @@ namespace danikk_space_engine
 		if(direction_length <= 0.000001f || max_distance < 0.0f) return result;
 
 		const vec3 normalized_direction = direction / direction_length;
-		const Ray ray{vec3(0.0f), normalized_direction};
 		float nearest_distance = max_distance;
 
 		for(size_t body_index = 0; body_index < body_count; ++body_index)
@@ -113,34 +113,9 @@ namespace danikk_space_engine
 				if(chunk.world_body_id != body_id) return;
 				const vec3 chunk_relative_position = vec3(getChunkWorldPosition(chunk_id) - origin);
 				const vec3 rotated_bounds_center = vec3(body.rotation * glm::dvec3(chunk.bounds_center));
-				if(chunk.hasValidBounds() && !chunk.mesh_dirty
+				if(chunk.hasValidBounds()
 					&& !rayIntersectsSphere(chunk_relative_position + rotated_bounds_center,
 						chunk.bounds_radius, normalized_direction, nearest_distance)) return;
-
-				for(GroundTriangleId triangle_id : chunk.ground_triangle_ids)
-				{
-					if(!data.isGroundTriangleActive(triangle_id)) continue;
-					const GroundTriangle& triangle = data.getGroundTriangle(triangle_id);
-					const vec3 a = chunk_relative_position
-						+ vec3(body.rotation * glm::dvec3(data.getPoint(triangle.points[0]).position));
-					const vec3 b = chunk_relative_position
-						+ vec3(body.rotation * glm::dvec3(data.getPoint(triangle.points[1]).position));
-					const vec3 c = chunk_relative_position
-						+ vec3(body.rotation * glm::dvec3(data.getPoint(triangle.points[2]).position));
-					const RayTriangleIntersection intersection = intersectRayTriangle(ray, a, b, c);
-					if(!intersection.hit || intersection.distance > nearest_distance) continue;
-
-					nearest_distance = intersection.distance;
-					result.hit = true;
-					result.distance = intersection.distance;
-					result.position = origin + glm::dvec3(normalized_direction) * static_cast<double>(intersection.distance);
-					result.normal = intersection.normal;
-					result.body_id = body_id;
-					result.chunk_id = chunk_id;
-					result.face = FacePtr{chunk_id, triangle_id};
-					result.triangle_index = 0;
-					for(uint8 point_index = 0; point_index < 3; point_index++) result.points[point_index] = triangle.points[point_index];
-				}
 
 				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 				{
@@ -165,15 +140,13 @@ namespace danikk_space_engine
 						nearest_distance = intersection.distance;
 						result.hit = true;
 						result.hit_build_part = true;
+						result.hit_terrain = false;
 						result.build_part_slot_id = slot_id;
 						result.distance = intersection.distance;
 						result.position = origin + glm::dvec3(normalized_direction) * static_cast<double>(intersection.distance);
 						result.normal = vec3(body.rotation * glm::dvec3(intersection.normal));
 						result.body_id = body_id;
 						result.chunk_id = chunk_id;
-						result.face = FacePtr{};
-						result.triangle_index = 0;
-						for(uint8 point_index = 0; point_index < 3; point_index++) result.points[point_index] = 0;
 					}
 				}
 			};
@@ -226,11 +199,33 @@ namespace danikk_space_engine
 				while(distance_along_ray <= nearest_distance)
 				{
 					ChunkId chunk_id;
-					if(planet->chunk_lookup.getChunk(cell, chunk_id)) test_chunk(chunk_id);
-
 					uint8 next_axis = 0;
 					if(next_boundary.y < next_boundary.x) next_axis = 1;
 					if(next_boundary.z < next_boundary[next_axis]) next_axis = 2;
+					const double segment_end = std::min(static_cast<double>(nearest_distance), next_boundary[next_axis]);
+					if(planet->chunk_lookup.getChunk(cell, chunk_id) && data.isChunkActive(chunk_id))
+					{
+						double field_distance;
+						glm::dvec3 field_normal;
+						if(segment_end >= distance_along_ray && raycastPlanetScalarField(
+							local_origin + glm::dvec3(local_direction) * distance_along_ray,
+							glm::dvec3(local_direction), segment_end - distance_along_ray,
+							planet->radius, planet->noise_seed, planet->terrain_edits, planet->core_radius,
+							field_distance, field_normal))
+						{
+							const double hit_distance = distance_along_ray + field_distance;
+							nearest_distance = static_cast<float>(hit_distance);
+							result = RaycastHit{};
+							result.hit = true;
+							result.hit_terrain = true;
+							result.distance = nearest_distance;
+							result.position = origin + glm::dvec3(normalized_direction) * hit_distance;
+							result.normal = vec3(body.rotation * field_normal);
+							result.body_id = body_id;
+							result.chunk_id = chunk_id;
+						}
+						test_chunk(chunk_id);
+					}
 					distance_along_ray = next_boundary[next_axis];
 					if(!std::isfinite(distance_along_ray)) break;
 					cell[next_axis] += step[next_axis];

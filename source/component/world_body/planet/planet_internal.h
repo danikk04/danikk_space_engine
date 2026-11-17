@@ -22,12 +22,6 @@ namespace danikk_space_engine
 	void unloadPlanetChunksOutsideDesiredSet(PlanetComponent& planet, World& world);
 
 	/**
-	 * @brief Clears controller face references before terrain chunks are replaced or unloaded.
-	 * @param world World containing the local-player controller component.
-	 */
-	void clearPlanetFaceSelection(World& world);
-
-	/**
 	 * @brief Computes the camera-centered chunk set and schedules generation for missing records.
 	 * @param planet Planet state whose lookup and update position are refreshed.
 	 * @param slot Planet component identity attached to the owning WorldBody.

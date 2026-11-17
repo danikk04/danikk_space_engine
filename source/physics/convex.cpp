@@ -94,14 +94,13 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	/**
-	 * @brief Builds body-relative convex proxies from active chunk surface triangles.
-	 * @param world World supplying active chunks and their point/triangle data.
+	 * @brief Builds body-relative convex proxies from active BuildPart components.
+	 * @param world World supplying active chunks and component data.
 	 * @param id ID of the body to prepare.
 	 * @param dragged_id Body whose proxy must be kinematic during pair resolution.
 	 * @return One proxy for each chunk with at least four unique valid vertices.
-	 * Triangles contribute face normals and edge directions; duplicate axes and
-	 * point IDs are removed. The returned body radius encloses all collected
-	 * vertices around the body's origin.
+	 * BuildPart faces contribute candidate SAT normals and edge directions. The
+	 * returned body radius encloses all collected vertices around the body's origin.
 	 */
 	BodyCollider createCollider(const World& world, WorldBodyId id, WorldBodyId dragged_id)
 	{
@@ -112,43 +111,6 @@ namespace danikk_space_engine::collision_internal
 		{
 			if(!world.data.isChunkActive(chunk_id)) continue;
 			const Chunk& chunk = world.data.getChunk(chunk_id);
-			ConvexChunkCollider shape;
-			DynamicArray<PointId> point_ids;
-			for(GroundTriangleId triangle_id : chunk.ground_triangle_ids)
-			{
-				if(!world.data.isGroundTriangleActive(triangle_id)) continue;
-				const GroundTriangle& triangle = world.data.getGroundTriangle(triangle_id);
-				glm::dvec3 positions[3];
-				bool valid = true;
-				for(uint8 corner = 0; corner < 3; corner++)
-				{
-					if(!world.data.isPointActive(triangle.points[corner])) { valid = false; break; }
-					positions[corner] = body.rotation * (chunk.position
-						+ glm::dvec3(world.data.getPoint(triangle.points[corner]).position));
-				}
-				if(!valid || glm::length(glm::cross(positions[1] - positions[0], positions[2] - positions[0])) < 1e-9)
-					continue;
-				addDirection(shape.normals, glm::cross(positions[1] - positions[0], positions[2] - positions[0]));
-				for(uint8 corner = 0; corner < 3; corner++)
-				{
-					addDirection(shape.edges, positions[(corner + 1) % 3] - positions[corner]);
-					bool found = false;
-					for(PointId point_id : point_ids) if(point_id == triangle.points[corner]) { found = true; break; }
-					if(found) continue;
-					point_ids.push(triangle.points[corner]);
-					shape.vertices.push(positions[corner]);
-					shape.center += positions[corner];
-					collider.radius = glm::max(collider.radius, glm::length(positions[corner]));
-				}
-			}
-			if(shape.vertices.size() >= 4)
-			{
-				shape.center /= static_cast<double>(shape.vertices.size());
-				for(const glm::dvec3& vertex : shape.vertices)
-					shape.radius = glm::max(shape.radius, glm::length(vertex - shape.center));
-				collider.chunks.push(static_cast<ConvexChunkCollider&&>(shape));
-			}
-
 			for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 			{
 				if(!world.data.isPointComponentSlotActive(slot_id)) continue;

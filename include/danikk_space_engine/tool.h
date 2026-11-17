@@ -1,8 +1,9 @@
 #pragma once
 
-#include <danikk_space_engine/world/face_ptr.h>
+#include <danikk_space_engine/default.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_framework/dynamic_array.h>
+#include <danikk_framework/glm.h>
 
 namespace danikk_space_engine
 {
@@ -44,18 +45,10 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Carries the optional face-selection replacement produced by a tool action.
-	 *
-	 * When `replace_selected_faces` is false, the controller keeps its current persistent selection.
-	 * When true, `selected_faces` replaces that selection; it contains persistent handles only and
-	 * does not include the transient hovered face maintained by the controller.
+	 * @brief Result placeholder returned by tool dispatch.
 	 */
 	struct ToolApplyResult
 	{
-		/** @brief Whether the controller should replace its face list with selected_faces. */
-		bool replace_selected_faces = false;
-		/** @brief Replacement face list, meaningful only when replace_selected_faces is true. */
-		DynamicArray<FacePtr> selected_faces;
 	};
 
 	/**

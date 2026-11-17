@@ -63,8 +63,6 @@ namespace danikk_space_engine
 
 	/** @copydoc WorldData::createPoint */
 	PointId WorldData::createPoint() { return points.create(); }
-	/** @copydoc WorldData::createGroundTriangle */
-	GroundTriangleId WorldData::createGroundTriangle() { return ground_triangles.create(); }
 	/** @copydoc WorldData::createWorldBody */
 	WorldBodyId WorldData::createWorldBody() { return world_bodies.create(); }
 

@@ -282,10 +282,6 @@ namespace danikk_space_engine
 			{
 				if(!world.data.isChunkActive(chunk_id)) continue;
 				const Chunk& chunk = world.data.getChunk(chunk_id);
-				if(chunk.ground_triangle_ids.size() > 0)
-				{
-					has_surface_geometry = true;
-				}
 				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 				{
 					if(world.data.isPointComponentSlotActive(slot_id)

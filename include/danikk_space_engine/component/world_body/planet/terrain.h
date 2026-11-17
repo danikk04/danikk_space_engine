@@ -44,6 +44,26 @@ namespace danikk_space_engine
 		double core_radius);
 
 	/**
+	 * @brief Finds the first density sign change on a finite planet-local ray.
+	 * @param origin Ray origin relative to the planet center.
+	 * @param direction Ray direction in planet-local coordinates; normalized internally.
+	 * @param max_distance Maximum search distance in metres.
+	 * @param radius Nominal planet radius.
+	 * @param noise_seed Terrain noise seed.
+	 * @param edits Terrain edits evaluated in their existing order.
+	 * @param core_radius Radius of the solid core.
+	 * @param distance Receives the distance from the origin to the detected surface.
+	 * @param normal Receives the outward unit normal in planet-local coordinates.
+	 * @return True when a transition is found and its normal is valid.
+	 * Uses half-metre samples and refines a detected transition by bisection. Features
+	 * thinner than the sampling step can be missed when both boundaries lie between samples.
+	 */
+	bool raycastPlanetScalarField(const glm::dvec3& origin, const glm::dvec3& direction,
+		double max_distance, double radius, uint64 noise_seed,
+		const DynamicArray<PlanetTerrainEdit>& edits, double core_radius,
+		double& distance, glm::dvec3& normal);
+
+	/**
 	 * @brief Selects a terrain material for a point on or near the procedural surface.
 	 * @param position_relative_to_planet_center Position relative to the planet center.
 	 * @param radius Nominal outer radius used to estimate surface height.

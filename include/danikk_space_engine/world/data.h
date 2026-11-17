@@ -3,7 +3,6 @@
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/component/graph/graph.h>
-#include <danikk_space_engine/world/ground_triangle.h>
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/world/body.h>
 #include <danikk_space_engine/world/resource_pool.h>
@@ -16,7 +15,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Owns indexed pools for points, triangles, chunks, world bodies, and component slots.
+	 * @brief Owns indexed pools for points, chunks, world bodies, and component slots.
 	 *
 	 * Pool IDs are array indices. Owner objects store IDs rather than copies, and their reverse
 	 * links let destruction detach resources without searching every owner. An ID is reusable
@@ -27,8 +26,6 @@ namespace danikk_space_engine
 	{
 		/** @brief Stable-ID pool for world-local point positions. */
 		WorldResourcePool<Point, PointId> points{"Point"};
-		/** @brief Stable-ID pool for triangular terrain faces. */
-		WorldResourcePool<GroundTriangle, GroundTriangleId> ground_triangles{"GroundTriangle"};
 		/** @brief Stable-ID pool for chunk geometry and component lists. */
 		WorldResourcePool<Chunk, ChunkId> chunks{"Chunk"};
 		/** @brief Stable-ID pool for positioned bodies and their owned chunk/component IDs. */
@@ -53,12 +50,6 @@ namespace danikk_space_engine
 		 * @return ID of a default-initialized point; its position is set by the caller.
 		 */
 		PointId createPoint();
-
-		/**
-		 * @brief Allocates or reuses a ground-triangle slot and returns its ID.
-		 * @return ID of a default-initialized triangle; assign its points before attaching it.
-		 */
-		GroundTriangleId createGroundTriangle();
 
 		/**
 		 * @brief Allocates or reuses a WorldBody slot and returns its ID.
@@ -89,24 +80,13 @@ namespace danikk_space_engine
 		 * @brief Adds a point ID to a chunk and increments its chunk-reference count once.
 		 *
 		 * Re-adding a point already listed by the chunk is a no-op. The count tracks
-		 * distinct referencing chunks, not triangles or components. A point cannot be
+		 * distinct referencing chunks, not components. A point cannot be
 		 * referenced by more than 100 chunks. Chunks share points by ID; the point is
 		 * destroyed when its count reaches zero during chunk destruction.
 		 * @param chunk_id Active chunk that will reference the point.
 		 * @param point_id Active point being shared or owned by the chunk.
 		 */
 		void addPointReferenceToChunk(ChunkId chunk_id, PointId point_id);
-
-		/**
-		 * @brief Registers a triangle in the chunk and links its point references to that chunk.
-		 *
-		 * A triangle may have only one owner chunk. The chunk stores its ID, and the
-		 * triangle records the owner chunk ID and its index in that chunk's triangle
-		 * list so removal can locate and repair the list entry directly.
-		 * @param chunk_id Active owning chunk.
-		 * @param triangle_id Active triangle to attach; its reverse owner/index fields are updated.
-		 */
-		void addGroundTriangleToChunk(ChunkId chunk_id, GroundTriangleId triangle_id);
 
 		/**
 		 * @brief Attaches a point-component slot to the chunk that schedules its tick/frame callbacks.
@@ -151,15 +131,10 @@ namespace danikk_space_engine
 			const void* init_data = nullptr);
 
 		/**
-		 * @brief Destroys every component/triangle/edge referencing a point, detaches chunk links, then frees its slot.
+		 * @brief Destroys every component/edge referencing a point, detaches chunk links, then frees its slot.
 		 * @param id Point pool ID; inactive or invalid IDs are ignored.
 		 */
 		void destroyPoint(PointId id);
-		/**
-		 * @brief Detaches a triangle from its chunk, repairs the moved triangle's reverse index, and frees it.
-		 * @param id Ground-triangle pool ID; inactive or invalid IDs are ignored.
-		 */
-		void destroyGroundTriangle(GroundTriangleId id);
 		/**
 		 * @brief Destroys a chunk's components, triangles, mesh, and point references before freeing its slot.
 		 *
@@ -198,13 +173,6 @@ namespace danikk_space_engine
 		 * @return True only when the ID currently identifies an allocated point.
 		 */
 		bool isPointActive(PointId id) const;
-
-		/**
-		 * @brief Checks whether the triangle ID currently refers to an allocated ground triangle.
-		 * @param id Ground-triangle pool ID to check.
-		 * @return True only when the ID currently identifies an allocated triangle.
-		 */
-		bool isGroundTriangleActive(GroundTriangleId id) const;
 
 		/**
 		 * @brief Checks whether the chunk ID currently refers to an allocated chunk.
@@ -247,11 +215,6 @@ namespace danikk_space_engine
 		 */
 		const DynamicArray<PointId>& getUsedPointIds() const;
 
-		/**
-		 * @brief Returns the pool-owned list of active terrain-triangle IDs; do not retain it across pool mutations.
-		 * @return Const reference to the pool's compact active-ID array.
-		 */
-		const DynamicArray<GroundTriangleId>& getUsedGroundTriangleIds() const;
 
 		/**
 		 * @brief Returns the pool-owned list of active chunk IDs; do not retain it across pool mutations.
@@ -297,19 +260,7 @@ namespace danikk_space_engine
 		 */
 		const Point& getPoint(PointId id) const;
 
-		/**
-		 * @brief Returns a checked reference to an active ground triangle; an invalid ID raises a fatal error.
-		 * @param id Active ground-triangle pool ID.
-		 * @return Mutable reference to the triangle stored in the pool.
-		 */
-		GroundTriangle& getGroundTriangle(GroundTriangleId id);
 
-		/**
-		 * @brief Returns a checked reference to an active ground triangle; an invalid ID raises a fatal error.
-		 * @param id Active ground-triangle pool ID.
-		 * @return Read-only reference to the triangle stored in the pool.
-		 */
-		const GroundTriangle& getGroundTriangle(GroundTriangleId id) const;
 
 		/**
 		 * @brief Returns a checked reference to an active chunk; an invalid ID raises a fatal error.
@@ -387,11 +338,6 @@ namespace danikk_space_engine
 		 */
 		size_t getPointSlotCount() const;
 
-		/**
-		 * @brief Returns the total ground-triangle pool slot count, including reusable slots.
-		 * @return Number of allocated pool slots, not the number of active triangles.
-		 */
-		size_t getGroundTriangleSlotCount() const;
 
 		/**
 		 * @brief Returns the total chunk-pool slot count, including reusable slots.

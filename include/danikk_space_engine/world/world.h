@@ -6,7 +6,6 @@
 
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point/camera.h>
-#include <danikk_space_engine/world/face_ptr.h>
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/world/chunk_loader.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
@@ -31,22 +30,18 @@ namespace danikk_space_engine
 		float distance = 0.0f;
 		/** @brief Nearest hit position in world coordinates. */
 		glm::dvec3 position = glm::dvec3(0.0);
-		/** @brief Triangle normal transformed into world orientation. */
+		/** @brief Surface normal transformed into world orientation. */
 		vec3 normal = vec3(0.0f);
-		/** @brief Stable chunk/triangle handle for editing or selection. */
-		FacePtr face;
 		/** @brief True when the nearest hit is a BuildPart point component. */
 		bool hit_build_part = false;
+		/** @brief True when the hit was found in a planet scalar field. */
+		bool hit_terrain = false;
 		/** @brief WorldBody containing the hit geometry. */
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		/** @brief Chunk containing the hit geometry or point component. */
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		/** @brief Point-component slot of the hit BuildPart, valid when hit_build_part is true. */
 		PointComponentSlotId build_part_slot_id = static_cast<PointComponentSlotId>(-1);
-		/** @brief Triangle-within-face index; currently zero because ground faces are triangles. */
-		uint8 triangle_index = 0;
-		/** @brief Point IDs of the intersected triangle, in its stored winding order. */
-		PointId points[3]{};
 	};
 
 	/**
@@ -120,11 +115,11 @@ namespace danikk_space_engine
 		void removeChunkGenerationRequest(WorldBodyComponentSlotId component_slot_id, const glm::ivec3& grid_coordinate);
 
 		/**
-		 * @brief Accepts completed generation work, runs frame callbacks, rebuilds meshes, and draws the world.
+		 * @brief Accepts completed generation work, runs frame callbacks, and draws resident meshes.
 		 *
 		 * Body components update first; changed request snapshots are sent to the
-		 * worker; at most one valid generated chunk is accepted. The method then
-		 * rebuilds dirty chunk meshes, runs chunk frame callbacks, draws chunks,
+		 * worker; at most one valid generated chunk is accepted and its transient CPU
+		 * mesh buffer is uploaded immediately. The method then runs chunk frame callbacks, draws chunks,
 		 * and conditionally draws debug overlays and the placement preview.
 		 */
 		void frame();
@@ -214,11 +209,6 @@ namespace danikk_space_engine
 		/** @brief Returns the local-player controller payload as a read-only reference. */
 		const LocalPlayerControllerComponent& getLocalPlayerControllerComponent() const;
 
-		/**
-		 * @brief Deletes selected mesh triangles or records subtractive edits for planet terrain.
-		 * @param faces Stable face handles to remove or apply as terrain edits.
-		 */
-		void deleteFaces(const DynamicArray<FacePtr>& faces);
 	};
 
 	extern World world;
