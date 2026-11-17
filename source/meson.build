@@ -3,9 +3,6 @@ sources = files(
 	'tool_catalog.cpp',
 	'config.cpp',
 	'factions.cpp',
-	'gui.cpp',
-	'gui_catalog.cpp',
-	'gui_frame.cpp',
 	'item.cpp',
 	'localization.cpp', 
 	'main.cpp', 
@@ -16,6 +13,7 @@ sources = files(
 )
 
 subdir('effects')
+subdir('gui')
 subdir('shape')
 subdir('math')
 subdir('component')
