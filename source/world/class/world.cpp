@@ -168,6 +168,7 @@ namespace danikk_space_engine
 			if(data.isPointActive(point_id)) data.destroyPoint(point_id);
 		}
 		pending_point_destruction_ids.clear();
+		unit_system.tick(*this, glm::max(getTargetFrameDelay(), 0.0f));
 		physics.tick(*this);
 	}
 
@@ -376,6 +377,7 @@ namespace danikk_space_engine
 		chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
 		pending_point_destruction_ids.clear();
 		pending_npc_chunk_updates.clear();
+		unit_system.clear();
 		startBaseScenario(*this);
 	}
 
@@ -393,5 +395,6 @@ namespace danikk_space_engine
 		data.release();
 		pending_point_destruction_ids.clear();
 		pending_npc_chunk_updates.clear();
+		unit_system.clear();
 	}
 }

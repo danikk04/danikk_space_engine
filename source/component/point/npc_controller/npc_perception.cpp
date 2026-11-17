@@ -57,7 +57,7 @@ namespace danikk_space_engine::npc_internal
 					if(!world.data.isPointComponentSlotActive(id)) continue;
 					const PointComponentSlot& slot = world.data.getPointComponentSlot(id);
 					if(slot.type_id != PointComponentTypeId::human || slot.point_id == point_id) continue;
-					const NpcTarget target{id, slot.point_id, slot.generation_id, 0.0f};
+					const NpcTarget target{id, slot.point_id, slot.generation_id};
 					if(validEnemy(world, target, faction)) controller.enemy_candidates.push(target);
 				}
 			};

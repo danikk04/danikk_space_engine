@@ -4,9 +4,6 @@
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/damageable.h>
-#include <danikk_space_engine/component/point/inventory.h>
-#include <danikk_space_engine/item.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/world/world.h>
 
 #include "internal.h"
@@ -14,7 +11,6 @@
 namespace danikk_space_engine
 {
 	using npc_internal::updateNpcChunk;
-	using npc_internal::updateCombat;
 
 	namespace
 	{
@@ -67,10 +63,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Validates the paired human and writes the next movement and head-look command.
+	 * @brief Validates the paired human and executes the latest UnitSystem order.
 	 *
-	 * Explicit movement targets and visible hostile targets drive commands; the HumanComponent
-	 * later applies movement and handles physics.
+	 * This component does not search for targets or make tactical choices. UnitSystem owns those
+	 * decisions and refreshes the order after component traversal; this callback only translates the
+	 * stored order into HumanComponent movement, look, equipment, and firing actions.
 	 * @param slot NPC controller slot, expected to share point and chunk IDs with its human.
 	 * @param world World used for component validation and optional camera tracking.
 	 */
@@ -91,12 +88,11 @@ namespace danikk_space_engine
 		if(!world.data.isPointActive(slot.point_id) || !world.data.isChunkActive(slot.chunk_id)) return;
 		HumanComponent& human = *static_cast<HumanComponent*>(human_slot.getData());
 		human.desired_velocity = vec3(0.0f);
-		const DamageableComponent* damageable = findDamageable(world, slot.chunk_id, slot.point_id);
-		if(!controller.enabled || damageable == nullptr || damageable->getHealth() <= 0.0f) return;
+		const DamageableComponent* health = findDamageable(world, slot.chunk_id, slot.point_id);
+		if(!controller.enabled || health == nullptr || health->getHealth() <= 0.0f) return;
 		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
-		if(updateCombat(world, slot.point_id, slot.chunk_id, controller, human, dt)) return;
-
-		npc_internal::updateNpcMovement(world, slot, controller, human, dt);
+		npc_internal::executeNpcMovementOrder(world, slot, controller, human, dt);
+		npc_internal::executeNpcCombatOrder(world, slot, controller);
 	}
 
 	/** @copydoc updateNpcChunkAfterTick */

@@ -10,6 +10,7 @@
 #include <danikk_space_engine/world/chunk_loader.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/world/data.h>
+#include <danikk_space_engine/unit_system.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
@@ -65,6 +66,8 @@ namespace danikk_space_engine
 		WorldEnvironment environment;
 		/** @brief Integrates body motion and resolves physical contacts after component ticks. */
 		WorldPhysics physics;
+		/** @brief Shares faction intelligence and assigns NPC unit orders. */
+		UnitSystem unit_system;
 		/** @brief Worker that generates planet chunk data off the main thread. */
 		ChunkLoader chunk_loader;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
@@ -83,11 +86,11 @@ namespace danikk_space_engine
 		bool chunk_generation_requests_dirty = false;
 
 		/**
-		 * @brief Ticks body components and chunks, destroys deferred points, then runs world physics.
+		 * @brief Executes current unit orders, updates UnitSystem decisions, then runs world physics.
 		 *
 		 * Component and chunk ID lists are snapshotted where callbacks may mutate ownership lists.
-		 * Deferred point deletion runs only after component traversal so callbacks cannot invalidate
-		 * the slot currently being iterated.
+		 * Deferred point deletion runs after traversal. UnitSystem then performs vision/raycast work
+		 * and writes orders that NPC controllers execute on their next component tick.
 		 */
 		void tick();
 

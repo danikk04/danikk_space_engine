@@ -58,8 +58,6 @@ namespace danikk_space_engine::npc_internal
 				world.data.getPoint(point_id).referencing_chunk_count--;
 				break;
 			}
-			if(controller.has_movement_target)
-				controller.target_position += vec3(old_chunk.position - new_origin);
 			world.data.getPoint(point_id).position = vec3(position - new_origin);
 			for(PointComponentSlotId id : moved) world.data.addPointComponentSlotToChunk(new_chunk_id, id);
 			if constexpr(log_npc_chunk_transitions)

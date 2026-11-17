@@ -11,62 +11,65 @@ namespace danikk_space_engine
 		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1);
 		PointId point_id = static_cast<PointId>(-1);
 		uint64 generation_id = 0; ///< Incarnation of the human component slot.
-		float visibility_age = 0.0f; ///< Seconds since the last successful visibility check.
+	};
+
+	/** @brief Executable commands assigned to an NPC by UnitSystem. */
+	struct UnitOrder
+	{
+		bool has_move_target = false; ///< Whether to move toward move_target_world.
+		glm::dvec3 move_target_world = glm::dvec3(0.0); ///< World position to approach.
+		bool has_look_target = false; ///< Whether to orient toward look_target_world.
+		glm::dvec3 look_target_world = glm::dvec3(0.0); ///< World position to face.
+		bool has_attack_target = false; ///< Whether target identity describes the active combat order.
+		PointComponentSlotId target_slot_id = static_cast<PointComponentSlotId>(-1); ///< Target human slot.
+		PointId target_point_id = static_cast<PointId>(-1); ///< Target point identity.
+		uint64 target_generation_id = 0; ///< Target slot incarnation, preventing stale recycled IDs.
+		bool has_equip_order = false; ///< Whether to equip equip_item_definition_id.
+		ItemDefinitionId equip_item_definition_id = 0; ///< Item selected by UnitSystem for equipment.
+		bool should_fire = false; ///< Whether to invoke the selected weapon this tick.
+		ItemDefinitionId fire_item_definition_id = 0; ///< Equipped weapon selected for firing.
+
+		/** @brief Clears all commands and target identity. */
+		void clear()
+		{
+			has_move_target = false;
+			move_target_world = glm::dvec3(0.0);
+			has_look_target = false;
+			look_target_world = glm::dvec3(0.0);
+			has_attack_target = false;
+			target_slot_id = static_cast<PointComponentSlotId>(-1);
+			target_point_id = static_cast<PointId>(-1);
+			target_generation_id = 0;
+			has_equip_order = false;
+			equip_item_definition_id = 0;
+			should_fire = false;
+			fire_item_definition_id = 0;
+		}
 	};
 
 	/**
-	 * @brief Stores a human's movement target, optional camera tracking, and combat state.
+	 * @brief Stores the unit's assigned order and the human component it controls.
 	 *
-	 * The controller is attached to the same point and chunk as its HumanComponent. Each tick
-	 * writes a one-tick velocity command to that human; the human component handles movement,
-	 * gravity, and ground support separately.
+	 * The controller is attached to the same point and chunk as its HumanComponent. UnitSystem owns
+	 * candidate scanning and tactical decisions; this component stores those results and executes
+	 * movement, look, equipment, and firing commands from its UnitOrder.
 	 */
 	struct NpcControllerComponent
 	{
 		/** @brief Human component slot controlled by this NPC controller. */
 		PointComponentSlotId human_slot_id = static_cast<PointComponentSlotId>(-1);
-		/** @brief Current movement destination in the human's chunk-local coordinate system. */
-		vec3 target_position = vec3(0.0f);
-		/** @brief Whether the controller currently has a destination to pursue; false means idle. */
-		bool has_movement_target = false;
-		/** @brief If enabled, rotate head yaw/pitch toward the active camera instead of random looks. */
-		bool look_at_camera = false;
-		/** @brief Pauses command generation while preserving the component and its state. */
+		/** @brief Pauses order execution while preserving the assigned order. */
 		bool enabled = true;
-		/** @brief Candidate list built from nearby chunks and checked over successive ticks. */
+		/** @brief Candidate cache populated and consumed by UnitSystem, never by the controller tick. */
 		DynamicArray<NpcTarget> enemy_candidates;
-		/** @brief Next candidate awaiting its visibility raycast. */
+		/** @brief Next cached candidate awaiting UnitSystem visibility evaluation. */
 		size_t candidate_index = 0;
-		/** @brief Up to three currently visible enemy identities. */
-		NpcTarget targeted_enemy[3]{};
-		/** @brief Index of the target currently being engaged. */
-		uint8 target_index = 0;
-		/** @brief Seconds accumulated toward switching targets. */
-		float target_switch_timer = 0.0f;
-
-		/**
-		 * @brief Sets an explicit local-space movement destination.
-		 * @param position Destination in the same chunk-local frame as the controlled human.
-		 */
-		void moveTo(const vec3& position)
-		{
-			target_position = position;
-			has_movement_target = true;
-		}
-
-		/**
-		 * @brief Clears the pending movement target.
-		 *
-		 * The controller remains attached and can be re-enabled or given another target later.
-		 */
-		void stop()
-		{
-			has_movement_target = false;
-		}
+		/** @brief Commands selected centrally and executed by this component. */
+		UnitOrder order;
 	};
 
 	/**
-	 * @brief Creates a human and attaches an autonomous controller to the same point.
+	 * @brief Creates a human and attaches an order-driven controller to the same point.
 	 * @param world World receiving the human, chunk, and controller resources.
 	 * @param chunk_id Existing chunk that owns the new character.
 	 * @param position Initial world-body-local position of the character's feet.
@@ -98,7 +101,7 @@ namespace danikk_space_engine
 	void destroyNpcControllerComponent(void* data);
 
 	/**
-	 * @brief Validates the paired human, chooses movement/look targets, and writes the next human command.
+	 * @brief Validates the paired human and executes its current UnitSystem order.
 	 * @param slot Controller slot; its point and chunk must match the referenced human slot.
 	 * @param world World used to resolve component ownership and camera position.
 	 */
