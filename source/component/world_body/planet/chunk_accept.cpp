@@ -57,7 +57,7 @@ namespace danikk_space_engine
 			Chunk& chunk = world.data.getChunk(chunk_id);
 			chunk.grid_coordinate = generated_chunk.grid_coordinate;
 			chunk.position = generated_chunk.chunk_position;
-			chunk.createMesh(
+			world.chunk_render_system.createMesh(chunk,
 				generated_chunk.point_positions.data(), generated_chunk.point_positions.size(),
 				generated_chunk.triangle_point_indices.data(), generated_chunk.triangle_point_indices.size(),
 				generated_chunk.triangle_material_ids.data(), generated_chunk.triangle_material_ids.size());

@@ -2,10 +2,6 @@
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/world/world.h>
 
-#include <cstdlib>
-
-#include <danikk_engine/mesh.h>
-#include <danikk_engine/texture_methods.h>
 #include <danikk_framework/glm.h>
 
 namespace danikk_space_engine
@@ -30,10 +26,8 @@ namespace danikk_space_engine
 	 * @brief Transfers mesh and resource-array ownership from another chunk.
 	 */
 	Chunk::Chunk(Chunk&& other) noexcept
-		: mesh(other.mesh), material_ranges(static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges)),
-		bounds_valid(other.bounds_valid),
+		: bounds_valid(other.bounds_valid),
 		planet_terrain(other.planet_terrain),
-		has_build_part_mesh(other.has_build_part_mesh),
 		human_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids)),
 		has_active_human_collisions(other.has_active_human_collisions),
 		build_part_mesh_dirty(other.build_part_mesh_dirty),
@@ -45,7 +39,6 @@ namespace danikk_space_engine
 		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids)),
 		graph_component_slot_ids(static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids))
 	{
-		other.mesh = nullptr;
 	}
 
 	Chunk& Chunk::operator=(Chunk&& other) noexcept
@@ -55,11 +48,9 @@ namespace danikk_space_engine
 			return *this;
 		}
 
-		destroyMesh();
 		has_active_human_collisions = other.has_active_human_collisions;
 		bounds_valid = other.bounds_valid;
 		planet_terrain = other.planet_terrain;
-		has_build_part_mesh = other.has_build_part_mesh;
 		build_part_mesh_dirty = other.build_part_mesh_dirty;
 		build_part_mesh_revision = other.build_part_mesh_revision;
 		bounds_center = other.bounds_center;
@@ -72,46 +63,12 @@ namespace danikk_space_engine
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
 		human_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids);
 		graph_component_slot_ids = static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids);
-		material_ranges = static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges);
-		mesh = other.mesh;
-		other.mesh = nullptr;
 		return *this;
-	}
-
-	/**
-	 * @brief Releases the mesh owned by the chunk.
-	 */
-	Chunk::~Chunk()
-	{
-		destroyMesh();
-	}
-
-	/**
-	 * @brief Frees the GPU mesh allocation owned by the chunk, if one exists.
-	 */
-	void Chunk::destroyMesh()
-	{
-		/** @brief Measures the mesh destruction duration for the profiler. */
-		DSE_WATCH();
-		if(mesh != nullptr)
-		{
-			mesh->free();
-			mesh->~Mesh();
-			free(mesh);
-			mesh = nullptr;
-		}
-		material_ranges.clear();
-		bounds_valid = false;
-		planet_terrain = false;
-		has_build_part_mesh = false;
-		bounds_center = vec3(0.0f);
-		bounds_radius = 0.0f;
 	}
 
 	/** @copydoc Chunk::invalidateBuildPartMesh */
 	void Chunk::invalidateBuildPartMesh()
 	{
-		if(has_build_part_mesh) destroyMesh();
 		build_part_mesh_dirty = true;
 		build_part_mesh_revision++;
 		if(build_part_mesh_revision == 0) build_part_mesh_revision++;
@@ -160,28 +117,4 @@ namespace danikk_space_engine
 		return glm::translate(mat4(1.0f), vec3(relative_chunk_position)) * body_rotation;
 	}
 
-	/**
-	 * @brief Binds each material's texture/tint and draws that material's contiguous mesh index range.
-	 * @param world World used to calculate the camera-relative chunk matrix.
-	 */
-	void Chunk::draw(World& world)
-	{
-		if(mesh == nullptr || material_ranges.size() == 0) return;
-		setWorldMatrix(createWorldMatrix(world));
-		for(const ChunkMaterialRange& range : material_ranges)
-		{
-			if(range.index_count == 0) continue;
-			MaterialDefinition& material = getMaterial(range.material_id);
-			if(material.texture.isNull())
-			{
-				white_texture.bind();
-			}
-			else
-			{
-				material.texture.bind();
-			}
-			setDrawColor(vec4(material.color, 1.0f));
-			mesh->drawRange(range.first_index, range.index_count);
-		}
-	}
 }

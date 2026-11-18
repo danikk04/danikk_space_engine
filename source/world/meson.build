@@ -1,6 +1,5 @@
 sources += files(
-	'chunk/chunk.cpp',
-	'chunk/create_mesh.cpp',
+	'chunk.cpp',
 	'class/world.cpp',
 	'class/world_tick.cpp',
 	'class/world_frame.cpp',

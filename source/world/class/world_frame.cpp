@@ -54,7 +54,7 @@ namespace danikk_space_engine
 			if(chunk.world_body_id == generated_chunk.world_body_id
 				&& chunk.build_part_mesh_revision == generated_chunk.source_revision)
 			{
-				chunk.createMesh(
+				chunk_render_system.createMesh(chunk,
 					generated_chunk.point_positions.data(), generated_chunk.point_positions.size(),
 					generated_chunk.triangle_point_indices.data(), generated_chunk.triangle_point_indices.size(),
 					generated_chunk.triangle_material_ids.data(), generated_chunk.triangle_material_ids.size(),
@@ -105,7 +105,7 @@ namespace danikk_space_engine
 				for(ChunkId chunk_id : body.chunk_ids)
 				{
 					Chunk& chunk = data.getChunk(chunk_id);
-					chunk.draw(*this);
+					chunk_render_system.draw(chunk, *this);
 				}
 			}
 		}

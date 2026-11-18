@@ -7,6 +7,7 @@
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/chunk.h>
+#include <danikk_space_engine/chunk_render_system.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/world/data.h>
@@ -65,6 +66,8 @@ namespace danikk_space_engine
 		WorldEnvironment environment;
 		/** @brief Integrates body motion and resolves physical contacts after component ticks. */
 		WorldPhysics physics;
+		/** @brief Owns GPU meshes and material draw ranges for active chunks. */
+		ChunkRenderSystem chunk_render_system;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
 		/** @brief NPC slots awaiting a chunk transition after component iteration. */
@@ -98,6 +101,8 @@ namespace danikk_space_engine
 
 		/** @brief Cancels generation work owned by the body's component slots, then destroys the body. */
 		void destroyWorldBody(WorldBodyId body_id);
+		/** @brief Releases a chunk's render resources, then destroys its WorldData resource. */
+		void destroyChunk(ChunkId chunk_id);
 
 		/** @brief Snapshots dirty BuildPart chunks into CPU-only mesh generation jobs. */
 		void queueDirtyBuildPartMeshes();

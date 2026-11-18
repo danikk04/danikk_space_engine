@@ -138,6 +138,7 @@ namespace danikk_space_engine
 		{
 			Chunk& chunk = data.getChunk(chunk_id);
 			if(!chunk.build_part_mesh_dirty) continue;
+			chunk_render_system.destroyChunk(chunk);
 
 			ChunkMeshGenerationRequest request;
 			request.source = ChunkMeshSource::build_parts;
@@ -236,7 +237,17 @@ namespace danikk_space_engine
 				chunk_generation_requests_dirty = true;
 			}
 		}
+		for(ChunkId chunk_id : data.getWorldBody(body_id).chunk_ids)
+			chunk_render_system.destroyChunk(data.getChunk(chunk_id));
 		data.destroyWorldBody(body_id);
+	}
+
+	/** @copydoc World::destroyChunk */
+	void World::destroyChunk(ChunkId chunk_id)
+	{
+		if(!data.isChunkActive(chunk_id)) return;
+		chunk_render_system.destroyChunk(data.getChunk(chunk_id));
+		data.destroyChunk(chunk_id);
 	}
 
 	/**
@@ -291,6 +302,7 @@ namespace danikk_space_engine
 	 */
 	void World::init()
 	{
+		chunk_render_system.clear();
 		startChunkMeshGenerator();
 		chunk_mesh_generator_generation_id++;
 		if(chunk_mesh_generator_generation_id == 0) chunk_mesh_generator_generation_id++;
@@ -314,6 +326,7 @@ namespace danikk_space_engine
 		chunk_generation_requests.clear();
 		chunk_generation_requests_dirty = false;
 		clearBuildPartMeshCache();
+		chunk_render_system.clear();
 		data.release();
 		pending_point_destruction_ids.clear();
 		pending_npc_chunk_updates.clear();

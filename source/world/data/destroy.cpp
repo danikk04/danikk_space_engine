@@ -179,7 +179,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Detaches a chunk from bodies, destroys its components and geometry, then releases unreferenced points.
 	 * Removes body ownership, destroys component slots and triangles, releases the GPU mesh, then
-	 * decrements point reference counts. Any point whose count reaches zero is freed after this
+	 * decrements point reference counts. GPU mesh resources are released by World before this call.
+	 * Any point whose count reaches zero is freed after this
 	 * chunk's dependents have already been detached.
 	 * @param id Chunk ID to destroy; inactive IDs are ignored.
 	 */
@@ -197,7 +198,6 @@ namespace danikk_space_engine
 			[this](PointComponentSlotId slot_id) { destroyPointComponentSlot(slot_id); });
 		destroyLastUntilEmpty(chunk.graph_component_slot_ids,
 			[this](GraphComponentSlotId slot_id) { destroyGraphComponentSlot(slot_id); });
-		chunk.destroyMesh();
 
 		while(chunk.point_ids.size() > 0)
 		{
@@ -220,11 +220,9 @@ namespace danikk_space_engine
 		chunk.grid_coordinate = glm::ivec3(0);
 		chunk.position = glm::dvec3(0.0);
 		chunk.planet_terrain = false;
-		chunk.has_build_part_mesh = false;
 		chunk.build_part_mesh_dirty = false;
 		chunk.build_part_mesh_revision = 0;
 		chunk.bounds_valid = false;
-		chunk.material_ranges.clear();
 		chunks.free(id);
 	}
 

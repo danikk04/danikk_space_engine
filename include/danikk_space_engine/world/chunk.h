@@ -1,7 +1,6 @@
 #pragma once
 
 #include <danikk_framework/dynamic_array.h>
-#include <danikk_engine/mesh.h>
 
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/component/graph/graph.h>
@@ -13,43 +12,22 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Maps a contiguous index range in a chunk mesh to one material.
-	 *
-	 * Ranges are emitted in ascending MaterialId order and cover only materials with at least one
-	 * valid triangle. The index offsets address the shared mesh element buffer.
-	 */
-	struct ChunkMaterialRange
-	{
-		/** @brief Material bound before drawing this contiguous index range. */
-		MaterialId material_id = default_materials::void_material;
-		/** @brief First index in the chunk mesh's element buffer for this material. */
-		uint32 first_index = 0;
-		/** @brief Number of element indices belonging to this material. */
-		uint32 index_count = 0;
-	};
-
-	/**
-	 * @brief Owns local surface geometry, component-slot lists, and one lazily built GPU mesh.
+	 * @brief Stores spatial data and component-slot lists for one chunk.
 	 *
 	 * A Chunk is positioned relative to its WorldBody and references pooled point
-	 * and component lists. Planet meshes are uploaded from temporary generated buffers and retained
-	 * only by the GPU mesh; the chunk does not keep terrain vertices or triangles in WorldData.
+	 * and component lists. Render meshes are owned by ChunkRenderSystem; the chunk keeps only
+	 * spatial bounds used by raycast broadphase.
 	 * Planet streaming metadata uses grid_coordinate.
 	 */
 	class Chunk
 	{
 		friend class WorldData;
+		friend class ChunkRenderSystem;
 
-		/** @brief Manually allocated GPU mesh, created lazily from active ground triangles. */
-		Mesh* mesh = nullptr;
-		/** @brief Draw ranges partitioning the mesh indices by triangle material. */
-		DynamicArray<ChunkMaterialRange> material_ranges;
 		/** @brief True when bounds describe the most recently built, non-dirty mesh. */
 		bool bounds_valid = false;
 		/** @brief True when this chunk represents a streamed planet terrain cell. */
 		bool planet_terrain = false;
-		/** @brief True when the GPU mesh contains the combined geometry of this chunk's BuildParts. */
-		bool has_build_part_mesh = false;
 		/** @brief Subset of the point-component list containing only human slots. */
 		DynamicArray<PointComponentSlotId> human_component_slot_ids;
 
@@ -87,34 +65,16 @@ namespace danikk_space_engine
 
 		/** @brief Creates an empty chunk resource. */
 		Chunk() = default;
-		/** @brief Copying is disabled because the chunk owns a GPU mesh and pooled resource IDs. */
+		/** @brief Copying is disabled because the chunk represents a unique pooled resource. */
 		Chunk(const Chunk&) = delete;
 		/** @brief Copy assignment is disabled for the same ownership reason as copy construction. */
 		Chunk& operator=(const Chunk&) = delete;
-		/** @brief Transfers the mesh handle, material ranges, and resource lists from another chunk. */
+		/** @brief Transfers spatial data and resource lists from another chunk. */
 		Chunk(Chunk&& other) noexcept;
-		/** @brief Releases this chunk's current mesh before taking ownership of another chunk's data. */
+		/** @brief Replaces this chunk's spatial data and resource lists. */
 		Chunk& operator=(Chunk&& other) noexcept;
-		/** @brief Destroys the owned GPU mesh if it has been created. */
-		~Chunk();
-
-		/**
-		 * @brief Uploads transient indexed geometry into this chunk's GPU mesh.
-	 *
-	 * Inputs are consumed synchronously and are not retained. Vertices are duplicated per
-	 * triangle for flat normals and grouped into material ranges. Bounds are computed from the
-	 * emitted vertices for raycast broadphase.
-	 * @param positions Chunk-local source positions.
-	 * @param position_count Number of source positions.
-	 * @param triangle_indices Three source-position indices per triangle.
-	 * @param index_count Number of indices; must be divisible by three.
-	 * @param triangle_material_ids One material ID per triangle.
-	 * @param material_count Number of triangle material IDs.
-		 */
-		void createMesh(const vec3* positions, size_t position_count,
-			const uint32* triangle_indices, size_t index_count,
-			const MaterialId* triangle_material_ids, size_t material_count,
-			bool is_planet_terrain = true, bool is_build_part_mesh = false);
+		/** @brief Destroys CPU-side chunk data. */
+		~Chunk() = default;
 
 		/** @brief Invalidates the combined BuildPart mesh and advances its source revision. */
 		void invalidateBuildPartMesh();
@@ -138,23 +98,9 @@ namespace danikk_space_engine
 		 */
 		mat4 createWorldMatrix(const World& world) const;
 
-		/**
-		 * @brief Draws each non-empty material range of the built chunk mesh.
-		 *
-		 * The camera-relative transform is set once, then each range binds its
-		 * material texture (or the engine's white fallback) and RGB tint before
-		 * issuing an indexed draw. A missing mesh or an empty range list is a no-op.
-		 * @param world World supplying the owning body transform and camera position.
-		 */
-		void draw(World& world);
-
-		/** @brief Deletes the owned GPU mesh and clears its material ranges and bounds. */
-		void destroyMesh();
 		/** @brief Reports whether bounds are valid for the current, non-dirty mesh. */
 		bool hasValidBounds() const { return bounds_valid; }
 		/** @brief Reports whether this chunk stores a streamed planet-terrain mesh. */
 		bool isPlanetTerrain() const { return planet_terrain; }
-		/** @brief Reports whether the GPU mesh replaces individual BuildPart rendering. */
-		bool hasBuildPartMesh() const { return has_build_part_mesh; }
 	};
 }

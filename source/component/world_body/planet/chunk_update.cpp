@@ -55,7 +55,7 @@ namespace danikk_space_engine
 			}
 			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(entry.chunk_id))
 			{
-				world.data.destroyChunk(entry.chunk_id);
+				world.destroyChunk(entry.chunk_id);
 			}
 			planet.chunk_lookup.remove(entry.grid_coordinate);
 		}
