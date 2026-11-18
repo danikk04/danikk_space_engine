@@ -31,6 +31,7 @@ namespace danikk_space_engine
 			controller.tool_catalog_open = !controller.tool_catalog_open;
 			refreshToolCatalog();
 		}
+		setCursorCaptured(!controller.tool_catalog_open);
 		catalog_panel.flags.set(GUIElementFlags::visible, controller.tool_catalog_open);
 		for(uint32 index = 0; index < hotbar_column_count * hotbar_row_count; ++index)
 		{
