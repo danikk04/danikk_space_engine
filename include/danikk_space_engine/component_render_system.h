@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	void renderWorldBodyComponents(World& world);
 
 	/**
-	 * @brief Runs frame callbacks for active point and graph components in loaded chunks.
+	 * @brief Runs frame callbacks for active point components in loaded chunks.
 	 *
 	 * This dispatches component callbacks only; chunk mesh and planet LOD drawing remain separate
 	 * rendering stages owned by World and their respective rendering systems.

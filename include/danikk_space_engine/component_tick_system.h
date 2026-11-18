@@ -15,7 +15,7 @@ namespace danikk_space_engine
 	void tickWorldBodyComponents(World& world);
 
 	/**
-	 * @brief Ticks active point and graph components attached to one loaded chunk.
+	 * @brief Ticks active point components attached to one loaded chunk.
 	 * @param world World providing component pools and callback context.
 	 * @param chunk_id Loaded chunk whose component slots are traversed.
 	 */

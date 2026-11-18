@@ -35,8 +35,6 @@ namespace danikk_space_engine
 
 	/** @brief 32-bit handle for a point-component slot in WorldData. */
 	using PointComponentSlotId = uint32;
-	/** @brief 32-bit handle for a graph-component slot in WorldData. */
-	using GraphComponentSlotId = uint32;
 	/** @brief 32-bit handle for a WorldBody-component slot in WorldData. */
 	using WorldBodyComponentSlotId = uint32;
 }

@@ -33,27 +33,6 @@ namespace danikk_space_engine
 				if(type.tick != nullptr) type.tick(slot, world);
 			}
 		}
-		{
-			DSE_WATCH_SCOPE("Graph components");
-			const size_t component_count = chunk.graph_component_slot_ids.size();
-			for(size_t component_index = 0; component_index < component_count; component_index++)
-			{
-				const GraphComponentSlotId slot_id = chunk.graph_component_slot_ids[component_index];
-				if(slot_id >= world.data.getGraphComponentSlotCount())
-				{
-					danikk_engine::formatFatalError("Chunk references invalid graph component slot %", slot_id);
-				}
-				if(!world.data.isGraphComponentSlotActive(slot_id)) continue;
-
-				GraphComponentSlot& slot = world.data.getGraphComponentSlot(slot_id);
-				const GraphComponentType& type = getGraphComponentType(slot.type_id);
-				if(slot.uses_external_data && slot.external_data == nullptr)
-				{
-					danikk_engine::formatFatalError("Graph component slot % has no external data", slot_id);
-				}
-				if(type.tick != nullptr) type.tick(slot, world);
-			}
-		}
 	}
 
 	/** @copydoc tickWorldBodyComponents */

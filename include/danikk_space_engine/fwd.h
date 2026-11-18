@@ -39,11 +39,6 @@ namespace danikk_space_engine
 	struct GeneratedChunkMesh;
 
 	/**
-	 * @brief Associates component data and callbacks with a pair of world points.
-	 */
-	struct GraphComponentSlot;
-
-	/**
 	 * @brief Associates component data and callbacks with a world point.
 	 */
 	struct PointComponentSlot;

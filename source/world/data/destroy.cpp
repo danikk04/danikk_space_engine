@@ -114,7 +114,7 @@ namespace danikk_space_engine
 
 		/**
 		 * @brief Runs the registered component destructor and frees external payload storage when used.
-		 * @tparam slot_t Point, graph, or world-body component slot type.
+		 * @tparam slot_t Point or world-body component slot type.
 		 * @tparam component_type_t Matching callback descriptor type.
 		 * @tparam id_t Slot ID type used for diagnostic messages.
 		 * @param slot Component slot whose payload is being destroyed.
@@ -147,7 +147,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Destroys all point components, triangles, and graph edges that reference the point.
+	 * @brief Destroys all point components that reference the point.
 	 *
 	 * First detaches the point from every chunk, then destroys dependent resources
 	 * through their regular cleanup paths, and finally recycles the point slot. The
@@ -169,19 +169,13 @@ namespace danikk_space_engine
 		destroyMatchingResources(point_components,
 			[id](const PointComponentSlot& slot) { return slot.point_id == id; },
 			[this](PointComponentSlotId slot_id) { destroyPointComponentSlot(slot_id); });
-		destroyMatchingResources(graph_components,
-			[id](const GraphComponentSlot& graph) { return graph.point_a == id || graph.point_b == id; },
-			[this](GraphComponentSlotId graph_id) { destroyGraphComponentSlot(graph_id); });
-
 		points.free(id);
 	}
 
 	/**
-	 * @brief Detaches a chunk from bodies, destroys its components and geometry, then releases unreferenced points.
-	 * Removes body ownership, destroys component slots and triangles, releases the GPU mesh, then
-	 * decrements point reference counts. GPU mesh resources are released by World before this call.
-	 * Any point whose count reaches zero is freed after this
-	 * chunk's dependents have already been detached.
+	 * @brief Detaches a chunk from its body, destroys its point components, then releases unreferenced points.
+	 * GPU mesh resources are released by World before this call. Point IDs are released only after
+	 * the chunk has detached its component references.
 	 * @param id Chunk ID to destroy; inactive IDs are ignored.
 	 */
 	void WorldData::destroyChunk(ChunkId id)
@@ -196,8 +190,6 @@ namespace danikk_space_engine
 		for(WorldBodyId body_id : world_bodies.usedIds()) world_bodies[body_id].removeChunk(id);
 		destroyLastUntilEmpty(chunk.point_component_slot_ids,
 			[this](PointComponentSlotId slot_id) { destroyPointComponentSlot(slot_id); });
-		destroyLastUntilEmpty(chunk.graph_component_slot_ids,
-			[this](GraphComponentSlotId slot_id) { destroyGraphComponentSlot(slot_id); });
 
 		while(chunk.point_ids.size() > 0)
 		{
@@ -299,22 +291,6 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Detaches an edge component from chunk lists and releases its payload and slot.
-	 * @param id Component slot ID to destroy; inactive IDs are ignored.
-	 */
-	void WorldData::destroyGraphComponentSlot(GraphComponentSlotId id)
-	{
-		if(!isGraphComponentSlotActive(id)) return;
-		eraseIdFromChunks(*this, chunks.usedIds(), id, &Chunk::graph_component_slot_ids);
-
-		GraphComponentSlot& slot = graph_components[id];
-		const GraphComponentType& type = getGraphComponentType(slot.type_id);
-		destroyComponentPayload(slot, type, id, "Graph");
-		slot.dispose();
-		graph_components.free(id);
-	}
-
-	/**
 	 * @brief Destroys active resources while retaining the allocated capacity of each pool.
 	 */
 	void WorldData::clear()
@@ -324,9 +300,7 @@ namespace danikk_space_engine
 			[this](WorldBodyComponentSlotId id) { destroyWorldBodyComponentSlot(id); });
 		destroyLastUntilEmpty(point_components.usedIds(),
 			[this](PointComponentSlotId id) { destroyPointComponentSlot(id); });
-		destroyLastUntilEmpty(graph_components.usedIds(),
-			[this](GraphComponentSlotId id) { destroyGraphComponentSlot(id); });
-		clearPools(point_components, graph_components, world_body_components, chunks, world_bodies, points);
+		clearPools(point_components, world_body_components, chunks, world_bodies, points);
 	}
 
 	/**
@@ -336,6 +310,6 @@ namespace danikk_space_engine
 	{
 		clear();
 		factions.release();
-		releasePools(points, chunks, world_bodies, world_body_components, point_components, graph_components);
+		releasePools(points, chunks, world_bodies, world_body_components, point_components);
 	}
 }

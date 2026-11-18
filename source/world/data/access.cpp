@@ -51,8 +51,6 @@ namespace danikk_space_engine
 	bool WorldData::isWorldBodyComponentSlotActive(WorldBodyComponentSlotId id) const { return world_body_components.isActive(id); }
 	/** @copydoc WorldData::isPointComponentSlotActive */
 	bool WorldData::isPointComponentSlotActive(PointComponentSlotId id) const { return point_components.isActive(id); }
-	/** @copydoc WorldData::isGraphComponentSlotActive */
-	bool WorldData::isGraphComponentSlotActive(GraphComponentSlotId id) const { return graph_components.isActive(id); }
 
 	/** @copydoc WorldData::getUsedPointIds */
 	const DynamicArray<PointId>& WorldData::getUsedPointIds() const { return points.usedIds(); }
@@ -64,8 +62,6 @@ namespace danikk_space_engine
 	const DynamicArray<WorldBodyComponentSlotId>& WorldData::getUsedWorldBodyComponentSlotIds() const { return world_body_components.usedIds(); }
 	/** @copydoc WorldData::getUsedPointComponentSlotIds */
 	const DynamicArray<PointComponentSlotId>& WorldData::getUsedPointComponentSlotIds() const { return point_components.usedIds(); }
-	/** @copydoc WorldData::getUsedGraphComponentSlotIds */
-	const DynamicArray<GraphComponentSlotId>& WorldData::getUsedGraphComponentSlotIds() const { return graph_components.usedIds(); }
 
 	/** @copydoc WorldData::getPoint */
 	Point& WorldData::getPoint(PointId id) { return getCheckedResource(points, id, "point"); }
@@ -87,10 +83,6 @@ namespace danikk_space_engine
 	PointComponentSlot& WorldData::getPointComponentSlot(PointComponentSlotId id) { return getCheckedResource(point_components, id, "point component slot"); }
 	/** @copydoc WorldData::getPointComponentSlot */
 	const PointComponentSlot& WorldData::getPointComponentSlot(PointComponentSlotId id) const { return getCheckedResource(point_components, id, "point component slot"); }
-	/** @copydoc WorldData::getGraphComponentSlot */
-	GraphComponentSlot& WorldData::getGraphComponentSlot(GraphComponentSlotId id) { return getCheckedResource(graph_components, id, "graph component slot"); }
-	/** @copydoc WorldData::getGraphComponentSlot */
-	const GraphComponentSlot& WorldData::getGraphComponentSlot(GraphComponentSlotId id) const { return getCheckedResource(graph_components, id, "graph component slot"); }
 
 	/** @copydoc WorldData::getPointSlotCount */
 	size_t WorldData::getPointSlotCount() const { return points.size(); }
@@ -102,6 +94,4 @@ namespace danikk_space_engine
 	size_t WorldData::getWorldBodyComponentSlotCount() const { return world_body_components.size(); }
 	/** @copydoc WorldData::getPointComponentSlotCount */
 	size_t WorldData::getPointComponentSlotCount() const { return point_components.size(); }
-	/** @copydoc WorldData::getGraphComponentSlotCount */
-	size_t WorldData::getGraphComponentSlotCount() const { return graph_components.size(); }
 }

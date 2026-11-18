@@ -36,8 +36,7 @@ namespace danikk_space_engine
 		chunk_id(other.chunk_id), world_body_id(other.world_body_id),
 		grid_coordinate(other.grid_coordinate), position(other.position),
 		point_ids(static_cast<DynamicArray<PointId>&&>(other.point_ids)),
-		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids)),
-		graph_component_slot_ids(static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids))
+		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids))
 	{
 	}
 
@@ -62,7 +61,6 @@ namespace danikk_space_engine
 		point_ids = static_cast<DynamicArray<PointId>&&>(other.point_ids);
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
 		human_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids);
-		graph_component_slot_ids = static_cast<DynamicArray<GraphComponentSlotId>&&>(other.graph_component_slot_ids);
 		return *this;
 	}
 
@@ -88,15 +86,6 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Point component % is missing from owning chunk %", slot_id, chunk_id);
 		if(type_id == PointComponentTypeId::human && !removePointComponentId(human_component_slot_ids, slot_id))
 			danikk_engine::formatFatalError("Human component % is missing from chunk % cache", slot_id, chunk_id);
-	}
-
-	/**
-	 * @brief Appends a graph-component slot ID to the chunk's callback traversal list.
-	 * @param slot_id Slot ID to append.
-	 */
-	void Chunk::addGraphComponentSlot(GraphComponentSlotId slot_id)
-	{
-		graph_component_slot_ids.push(slot_id);
 	}
 
 	/**

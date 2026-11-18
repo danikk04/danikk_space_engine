@@ -10,9 +10,8 @@ namespace danikk_space_engine
 	 * @brief Stores a chunk-local mesh or placement position and its chunk reference count.
 	 *
 	 * A point is stored once in WorldData and can be shared by multiple chunks.
-	 * Its reference count measures distinct chunk `point_ids` lists, including
-	 * references made by triangles, point components, and graph-component endpoints.
-	 * It does not count how many triangles or components inside one chunk use it.
+	 * Its reference count measures distinct chunk `point_ids` lists. It does not
+	 * count how many point components inside one chunk use it.
 	 */
 	struct Point
 	{

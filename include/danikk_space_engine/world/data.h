@@ -2,7 +2,6 @@
 
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point/point.h>
-#include <danikk_space_engine/component/graph/graph.h>
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/world/body.h>
 #include <danikk_space_engine/world/resource_pool.h>
@@ -34,8 +33,6 @@ namespace danikk_space_engine
 		WorldResourcePool<WorldBodyComponentSlot, WorldBodyComponentSlotId> world_body_components{"WorldBodyComponentSlot"};
 		/** @brief Stable-ID pool for components attached to points. */
 		WorldResourcePool<PointComponentSlot, PointComponentSlotId> point_components{"PointComponentSlot"};
-		/** @brief Stable-ID pool for components attached to edges between points. */
-		WorldResourcePool<GraphComponentSlot, GraphComponentSlotId> graph_components{"GraphComponentSlot"};
 		/** @brief Monotonically advanced token assigned to WorldBody component slot incarnations. */
 		uint64 next_world_body_component_generation_id = 1;
 		/** @brief Monotonic incarnation token for point-component slots. */
@@ -115,22 +112,6 @@ namespace danikk_space_engine
 			const void* init_data = nullptr);
 
 		/**
-		 * @brief Allocates an edge component between two points and registers it with its chunk.
-		 * @param chunk_id Active chunk that owns and schedules this graph component.
-		 * @param point_a First active endpoint.
-		 * @param point_b Second active endpoint.
-		 * @param type_id Registered graph-component type.
-		 * @param init_data Optional type-specific initialization data.
-		 * @return ID of the constructed graph-component slot.
-		 */
-		GraphComponentSlotId createGraphComponentSlot(
-			ChunkId chunk_id,
-			PointId point_a,
-			PointId point_b,
-			GraphComponentTypeId type_id,
-			const void* init_data = nullptr);
-
-		/**
 		 * @brief Destroys every component/edge referencing a point, detaches chunk links, then frees its slot.
 		 * @param id Point pool ID; inactive or invalid IDs are ignored.
 		 */
@@ -160,12 +141,6 @@ namespace danikk_space_engine
 		 * @param id Point component slot ID; inactive or invalid IDs are ignored.
 		 */
 		void destroyPointComponentSlot(PointComponentSlotId id);
-
-		/**
-		 * @brief Detaches the graph component from chunks, destroys its payload, and recycles the slot.
-		 * @param id Graph component slot ID; inactive or invalid IDs are ignored.
-		 */
-		void destroyGraphComponentSlot(GraphComponentSlotId id);
 
 		/**
 		 * @brief Checks whether the point ID currently refers to an allocated point.
@@ -203,13 +178,6 @@ namespace danikk_space_engine
 		bool isPointComponentSlotActive(PointComponentSlotId id) const;
 
 		/**
-		 * @brief Checks whether the ID refers to an allocated graph component slot.
-		 * @param id Graph component slot ID to check.
-		 * @return True only when the slot is currently allocated.
-		 */
-		bool isGraphComponentSlotActive(GraphComponentSlotId id) const;
-
-		/**
 		 * @brief Returns the pool-owned list of active point IDs; do not retain it across pool mutations.
 		 * @return Const reference to the pool's compact active-ID array.
 		 */
@@ -239,12 +207,6 @@ namespace danikk_space_engine
 		 * @return A pool-owned array reference; do not retain it across pool mutations.
 		 */
 		const DynamicArray<PointComponentSlotId>& getUsedPointComponentSlotIds() const;
-
-		/**
-		 * @brief Returns the pool-owned list of active graph component slot IDs.
-		 * @return A pool-owned array reference; do not retain it across pool mutations.
-		 */
-		const DynamicArray<GraphComponentSlotId>& getUsedGraphComponentSlotIds() const;
 
 		/**
 		 * @brief Returns a checked reference to an active point; an invalid ID raises a fatal error.
@@ -319,20 +281,6 @@ namespace danikk_space_engine
 		const PointComponentSlot& getPointComponentSlot(PointComponentSlotId id) const;
 
 		/**
-		 * @brief Returns a checked reference to an active graph component slot.
-		 * @param id Active graph component slot ID.
-		 * @return Mutable reference to the slot stored in the pool.
-		 */
-		GraphComponentSlot& getGraphComponentSlot(GraphComponentSlotId id);
-
-		/**
-		 * @brief Returns a checked reference to an active graph component slot.
-		 * @param id Active graph component slot ID.
-		 * @return Read-only reference to the slot stored in the pool.
-		 */
-		const GraphComponentSlot& getGraphComponentSlot(GraphComponentSlotId id) const;
-
-		/**
 		 * @brief Returns the total point-pool slot count, including slots available for reuse.
 		 * @return Number of allocated pool slots, not the number of active points.
 		 */
@@ -362,12 +310,6 @@ namespace danikk_space_engine
 		 * @return Number of allocated slots, including slots available for reuse.
 		 */
 		size_t getPointComponentSlotCount() const;
-
-		/**
-		 * @brief Returns the total graph-component pool slot count.
-		 * @return Number of allocated slots, including slots available for reuse.
-		 */
-		size_t getGraphComponentSlotCount() const;
 
 		/**
 		 * @brief Destroys all live resources and empties pool bookkeeping while retaining allocated capacity.

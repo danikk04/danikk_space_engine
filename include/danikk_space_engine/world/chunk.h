@@ -3,7 +3,6 @@
 #include <danikk_framework/dynamic_array.h>
 
 #include <danikk_space_engine/component/point/point.h>
-#include <danikk_space_engine/component/graph/graph.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/fwd.h>
@@ -56,12 +55,10 @@ namespace danikk_space_engine
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		/** @brief Chunk origin relative to its WorldBody origin, in double precision. */
 		glm::dvec3 position = glm::dvec3(0.0);
-		/** @brief Point IDs referenced by this chunk's point and graph components. */
+		/** @brief Point IDs referenced by this chunk and its point components. */
 		DynamicArray<PointId> point_ids;
 		/** @brief Point-attached component slots ticked and framed by this chunk. */
 		DynamicArray<PointComponentSlotId> point_component_slot_ids;
-		/** @brief Edge-attached component slots ticked and framed by this chunk. */
-		DynamicArray<GraphComponentSlotId> graph_component_slot_ids;
 
 		/** @brief Creates an empty chunk resource. */
 		Chunk() = default;
@@ -84,12 +81,6 @@ namespace danikk_space_engine
 		{
 			return human_component_slot_ids;
 		}
-
-		/**
-		 * @brief Appends a graph-component slot ID to this chunk's update list.
-		 * @param slot_id Active slot registered by WorldData; duplicates are not checked here.
-		 */
-		void addGraphComponentSlot(GraphComponentSlotId slot_id);
 
 		/**
 		 * @brief Builds the chunk-to-camera-relative render transform from body and chunk transforms.
