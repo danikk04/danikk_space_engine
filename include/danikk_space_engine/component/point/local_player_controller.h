@@ -38,6 +38,10 @@ namespace danikk_space_engine
 		uint8 build_part_size_axis = 2;
 		/** @brief Fractional wheel delta retained until the selected dimension changes by one step. */
 		float build_part_size_scroll_accumulator = 0.0f;
+		/** @brief Quarter-turn angle around the placement normal, in the range [0, 3]. */
+		uint8 build_part_rotation_step = 0;
+		/** @brief Fractional wheel delta retained until placement rotates by one quarter turn. */
+		float build_part_rotation_scroll_accumulator = 0.0f;
 		/** @brief Action dispatched for the command assigned to the selected hotbar slot. */
 		ToolActionId selected_tool_action = ToolActionId::none;
 		/** @brief Camera travel speed in world units per second, adjustable with Ctrl plus wheel. */
@@ -65,7 +69,8 @@ namespace danikk_space_engine
 		 * Number keys select the bottom hotbar row, Shift-number selects the middle row, and
 		 * Ctrl-number selects the top row. A populated hotbar slot activates its tool-menu command;
 		 * an empty slot clears the active tool. The catalog modal suspends controller input. Ctrl-wheel adjusts
-		 * camera speed; Shift-wheel changes the selected BuildPart dimension. During a drag, wheel and
+		 * camera speed; Shift-wheel changes the selected BuildPart dimension; the unmodified wheel rotates a
+		 * placement preview in 90-degree steps. During a drag, wheel and
 		 * mouse input control the captured object, with Alt changing the wheel behavior. A camera raycast is refreshed each tick, and a
 		 * pressed left button dispatches the current tool unless a drag owns the gesture.
 		 * @param world World providing camera state, raycasts, component lookup, and tool targets.

@@ -3,6 +3,7 @@
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/fwd.h>
+#include <danikk_space_engine/geometry/build_part.h>
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_framework/glm.h>
 
@@ -62,6 +63,36 @@ namespace danikk_space_engine
 		vec3 forward = vec3(0.0f, 1.0f, 0.0f); ///< Body-local initial facing direction.
 	};
 
+	/** @brief Shared world/body-local transform used by BuildPart preview and placement. */
+	struct BuildPartPlacement
+	{
+		/** @brief World-space center of the proposed BuildPart. */
+		glm::dvec3 world_position = glm::dvec3(0.0);
+		/** @brief Body-local orientation stored on the BuildPart component. */
+		mat4 body_local_rotation = mat4(1.0f);
+		/** @brief World-space orientation used to render the placement preview. */
+		mat4 world_rotation = mat4(1.0f);
+		/** @brief Existing body to attach to, or invalid when placement creates a new body. */
+		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
+		/** @brief Existing chunk to attach to, or invalid when placement creates a new body. */
+		ChunkId chunk_id = static_cast<ChunkId>(-1);
+		/** @brief Hit BuildPart used as the parent and local grid origin, if present. */
+		PointComponentSlotId parent_slot_id = static_cast<PointComponentSlotId>(-1);
+	};
+
+	/**
+	 * @brief Computes a BuildPart transform snapped to the parent grid and a quarter-turn angle.
+	 * @param world World used to find the hit BuildPart's center and body transform.
+	 * @param hit Current placement raycast; BuildPart hits provide the grid origin.
+	 * @param shape Shape whose support extent determines the face-to-face offset.
+	 * @param size Dimensions of the proposed shape in metres.
+	 * @param rotation_step Number of positive quarter-turns around the placement normal, modulo four.
+	 * @return Shared world/body-local transform for preview and creation.
+	 */
+	BuildPartPlacement getBuildPartPlacement(
+		World& world, const RaycastHit& hit, BuildPartShape shape,
+		const vec3& size, uint8 rotation_step);
+
 	/**
 	 * @brief Dispatches a click/action to the handler for the selected tool category.
 	 * @param tool Active category.
@@ -69,6 +100,7 @@ namespace danikk_space_engine
 	 * @param world World modified or queried by the action.
 	 * @param hit Raycast hit used by placement and terrain actions.
 	 * @param build_part_size Dimensions used when placing a BuildPart shape.
+	 * @param build_part_rotation_step Snapped quarter-turn applied to BuildPart placement.
 	 * @return Optional replacement face selection; unsupported category/action combinations
 	 *         leave the world and selection unchanged.
 	 */
@@ -77,7 +109,8 @@ namespace danikk_space_engine
 		ToolActionId action,
 		World& world,
 		const RaycastHit& hit,
-		const vec3& build_part_size);
+		const vec3& build_part_size,
+		uint8 build_part_rotation_step);
 
 	/**
 	 * @brief Applies terrain deformation or erasure at a planet surface raycast hit.
@@ -94,10 +127,12 @@ namespace danikk_space_engine
 	 * @param hit Hit defining the requested placement location.
 	 * @param action Placement action selected in the Place category.
 	 * @param build_part_size Per-axis size used for cube and slope BuildParts.
+	 * @param build_part_rotation_step Snapped quarter-turn applied to BuildPart placement.
 	 * @return Tool result; placement does not replace face selection.
 	 */
 	ToolApplyResult applyPlaceTool(
-		World& world, const RaycastHit& hit, ToolActionId action, const vec3& build_part_size);
+		World& world, const RaycastHit& hit, ToolActionId action, const vec3& build_part_size,
+		uint8 build_part_rotation_step);
 
 	/**
 	 * @brief Creates a human at a supported surface hit or delegates other human actions.

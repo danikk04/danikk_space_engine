@@ -97,6 +97,8 @@ namespace danikk_space_engine
 			text << " x ";
 			appendGuiNumber(text, controller.build_part_size.z);
 			text << " m\n";
+			formatAppend(text, "BUILD ROTATION:% deg (Wheel)\n",
+				static_cast<uint32>(controller.build_part_rotation_step) * 90);
 			formatAppend(text, "SIZE AXIS:% (X/Y/Z, Shift+Wheel)\n", size_axis_name);
 		}
 		text << "CAMERA SPEED:";

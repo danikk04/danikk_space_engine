@@ -99,7 +99,8 @@ namespace danikk_space_engine
 				const BuildPartShape shape = controller.selected_tool_action == ToolActionId::create_slope
 					? BuildPartShape::slope : BuildPartShape::cube;
 				drawWorldBodyPlacementPreview(
-					*this, hit, shape, controller.build_part_size, controller.build_part_size_axis);
+					*this, hit, shape, controller.build_part_size, controller.build_part_size_axis,
+					controller.build_part_rotation_step);
 			}
 			else drawEventSpawnPreview(*this, hit, controller.selected_tool_action);
 		}

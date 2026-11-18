@@ -213,6 +213,8 @@ namespace danikk_space_engine
 		}
 		const bool adjusting_build_part_size = placing_build_part
 			&& shift_pressed && !control_pressed && !alt_pressed;
+		const bool rotating_build_part = placing_build_part
+			&& !shift_pressed && !control_pressed && !alt_pressed;
 		if(adjusting_build_part_size)
 		{
 			build_part_size_scroll_accumulator += mouse_scroll_delta;
@@ -227,6 +229,20 @@ namespace danikk_space_engine
 				build_part_size[build_part_size_axis] = glm::max(
 					build_part_size[build_part_size_axis] - 0.25f, 0.25f);
 				build_part_size_scroll_accumulator += 1.0f;
+			}
+		}
+		if(rotating_build_part)
+		{
+			build_part_rotation_scroll_accumulator += mouse_scroll_delta;
+			while(build_part_rotation_scroll_accumulator >= 1.0f)
+			{
+				build_part_rotation_step = (build_part_rotation_step + 1) % 4;
+				build_part_rotation_scroll_accumulator -= 1.0f;
+			}
+			while(build_part_rotation_scroll_accumulator <= -1.0f)
+			{
+				build_part_rotation_step = (build_part_rotation_step + 3) % 4;
+				build_part_rotation_scroll_accumulator += 1.0f;
 			}
 		}
 		if(!alt_pressed && !(control_pressed && shift_pressed))
@@ -299,7 +315,8 @@ namespace danikk_space_engine
 					selected_tool_action,
 					world,
 					hit,
-					build_part_size);
+					build_part_size,
+					build_part_rotation_step);
 				hit = world.raycastFromCamera();
 			}
 		}
