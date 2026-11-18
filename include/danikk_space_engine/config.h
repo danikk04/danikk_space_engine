@@ -20,7 +20,9 @@ namespace danikk_space_engine
 	enum class PlanetMeshGenerator : uint8
 	{
 		/** @brief Splits scalar-grid cubes into tetrahedra and polygonizes each tetrahedron. */
-		marching_tetrahedra
+		marching_tetrahedra,
+		/** @brief Places one surface vertex per intersected cell and connects them into quads. */
+		surface_nets
 	};
 
 	/**
@@ -46,7 +48,7 @@ namespace danikk_space_engine
 	 * on the normal first application start those values are the Settings defaults.
 	 * The keys are `show_chunk_bounds`, `show_world_body_preview`,
 	 * `default_camera_position` (`sky` or `ground`), and
-	 * `planet_mesh_generator` (`marching_tetrahedra`). `save()` rewrites the file with all supported keys
+	 * `planet_mesh_generator` (`marching_tetrahedra` or `surface_nets`). `save()` rewrites the file with all supported keys
 	 * and their current values, using lowercase `true`/`false` for booleans.
 	 */
 	class Config

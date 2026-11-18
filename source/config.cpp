@@ -43,11 +43,21 @@ namespace danikk_space_engine
 		 */
 		bool parsePlanetMeshGenerator(void* destination, const char* value, size_t value_size)
 		{
-			constexpr char token[] = "marching_tetrahedra";
-			if(value_size != sizeof(token) - 1 || std::memcmp(value, token, sizeof(token) - 1) != 0)
-				return false;
-			*static_cast<PlanetMeshGenerator*>(destination) = PlanetMeshGenerator::marching_tetrahedra;
-			return true;
+			constexpr char marching_tetrahedra[] = "marching_tetrahedra";
+			constexpr char surface_nets[] = "surface_nets";
+			if(value_size == sizeof(marching_tetrahedra) - 1
+				&& std::memcmp(value, marching_tetrahedra, sizeof(marching_tetrahedra) - 1) == 0)
+			{
+				*static_cast<PlanetMeshGenerator*>(destination) = PlanetMeshGenerator::marching_tetrahedra;
+				return true;
+			}
+			if(value_size == sizeof(surface_nets) - 1
+				&& std::memcmp(value, surface_nets, sizeof(surface_nets) - 1) == 0)
+			{
+				*static_cast<PlanetMeshGenerator*>(destination) = PlanetMeshGenerator::surface_nets;
+				return true;
+			}
+			return false;
 		}
 	}
 
@@ -133,7 +143,9 @@ namespace danikk_space_engine
 		contents << "show_world_body_preview=" << (settings.show_world_body_preview ? "true" : "false") << '\n';
 		contents << "default_camera_position="
 			<< (settings.default_camera_position == DefaultCameraPosition::ground ? "ground" : "sky") << '\n';
-		contents << "planet_mesh_generator=marching_tetrahedra\n";
+		contents << "planet_mesh_generator="
+			<< (settings.planet_mesh_generator == PlanetMeshGenerator::surface_nets
+				? "surface_nets" : "marching_tetrahedra") << '\n';
 
 		std::FILE* file = std::fopen(path.c_string(), "wb");
 		if(file == nullptr)

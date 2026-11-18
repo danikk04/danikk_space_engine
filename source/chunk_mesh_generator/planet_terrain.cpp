@@ -264,6 +264,8 @@ namespace danikk_space_engine
 			{
 				case PlanetMeshGenerator::marching_tetrahedra:
 					return generatePlanetChunkMarchingTetrahedra(request);
+				case PlanetMeshGenerator::surface_nets:
+					return chunk_mesh_generator_internal::generatePlanetTerrainChunkMeshSurfaceNets(request);
 			}
 			danikk_engine::formatFatalError("Unsupported planet mesh generator %",
 				static_cast<uint32>(request.planet_mesh_generator));
