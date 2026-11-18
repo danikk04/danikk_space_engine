@@ -1,4 +1,4 @@
-#include <danikk_space_engine/world/cube_mesh.h>
+#include <danikk_space_engine/geometry/cube.h>
 
 namespace danikk_space_engine
 {

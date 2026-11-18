@@ -1,6 +1,6 @@
 #pragma once
 
-#include <danikk_space_engine/world/cube_mesh.h>
+#include <danikk_space_engine/geometry/cube.h>
 #include <danikk_space_engine/default.h>
 
 namespace danikk_space_engine

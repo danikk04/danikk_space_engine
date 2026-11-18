@@ -1,8 +1,8 @@
 #include <danikk_space_engine/effects/world_body_preview.h>
 
 #include <danikk_space_engine/world/world.h>
-#include <danikk_space_engine/world/cube_mesh.h>
-#include <danikk_space_engine/world/build_part_shape.h>
+#include <danikk_space_engine/geometry/cube.h>
+#include <danikk_space_engine/geometry/build_part.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_engine/texture_methods.h>
 

@@ -12,7 +12,7 @@
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/id.h>
-#include <danikk_space_engine/world/build_part_shape.h>
+#include <danikk_space_engine/geometry/build_part.h>
 #include <danikk_space_engine/component/world_body/planet/terrain.h>
 
 namespace danikk_space_engine

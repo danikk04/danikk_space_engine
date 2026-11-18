@@ -10,6 +10,4 @@ sources += files(
 	'resource_pool.cpp',
 	'body.cpp',
 	'class/raycast.cpp',
-	'cube_mesh.cpp',
-	'build_part_shape.cpp',
 )

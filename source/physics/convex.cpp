@@ -2,7 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/build_part.h>
-#include <danikk_space_engine/world/build_part_shape.h>
+#include <danikk_space_engine/geometry/build_part.h>
 #include "internal.h"
 
 namespace danikk_space_engine::collision_internal

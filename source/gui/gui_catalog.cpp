@@ -3,7 +3,7 @@
 #include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/world.h>
-#include <danikk_space_engine/world/build_part_shape.h>
+#include <danikk_space_engine/geometry/build_part.h>
 
 #include <danikk_framework/glm.h>
 #include <danikk_engine/texture_methods.h>

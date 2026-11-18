@@ -1,4 +1,4 @@
-#include <danikk_space_engine/world/build_part_shape.h>
+#include <danikk_space_engine/geometry/build_part.h>
 
 namespace danikk_space_engine
 {

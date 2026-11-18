@@ -9,7 +9,7 @@
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/planet_terrain_system.h>
 #include <danikk_space_engine/component/point/build_part.h>
-#include <danikk_space_engine/world/build_part_shape.h>
+#include <danikk_space_engine/geometry/build_part.h>
 
 namespace danikk_space_engine
 {
