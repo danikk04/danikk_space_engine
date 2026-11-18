@@ -7,6 +7,8 @@ sources = files(
 	'main.cpp', 
 	'material.cpp',
 	'profiler.cpp',
+	'component_tick_system.cpp',
+	'component_render_system.cpp',
 )
 
 subdir('effects')

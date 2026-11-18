@@ -1,4 +1,5 @@
 #include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/component_render_system.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/effects/world_body_preview.h>
 #include <danikk_space_engine/effects/event_spawn_preview.h>
@@ -29,20 +30,7 @@ namespace danikk_space_engine
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
 			DSE_WATCH_SCOPE("WorldBody components");
-			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
-			{
-				const WorldBody& body = data.getWorldBody(body_id);
-				for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
-				{
-					if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
-					WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
-					const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
-					if(type.frame != nullptr)
-					{
-						type.frame(slot, *this);
-					}
-				}
-			}
+			renderWorldBodyComponents(*this);
 		}
 		queueDirtyBuildPartMeshes();
 		if(chunk_generation_requests_dirty)
@@ -104,15 +92,7 @@ namespace danikk_space_engine
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
 			DSE_WATCH_SCOPE("Chunk mesh and component frame");
-			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
-			{
-				const WorldBody& body = data.getWorldBody(body_id);
-				for(ChunkId chunk_id : body.chunk_ids)
-				{
-					Chunk& chunk = data.getChunk(chunk_id);
-					chunk.frame(*this);
-				}
-			}
+			renderChunkComponents(*this);
 		}
 		{
 			/**

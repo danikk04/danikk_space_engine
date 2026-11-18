@@ -59,12 +59,6 @@ namespace danikk_space_engine
 		/** @brief Removes an owned slot from the update list and, for humans, from the human subset. */
 		void removePointComponentSlot(PointComponentSlotId slot_id, PointComponentTypeId type_id);
 
-		/** @brief Runs tick callbacks for the chunk's active point components. */
-		void tickPointComponents(World& world);
-
-		/** @brief Runs frame callbacks for the chunk's active point components. */
-		void framePointComponents(World& world);
-
 	public:
 		/** @brief Whether at least one human in this chunk needs checks during the current collision tick. */
 		bool has_active_human_collisions = false;
@@ -136,25 +130,6 @@ namespace danikk_space_engine
 		 * @param slot_id Active slot registered by WorldData; duplicates are not checked here.
 		 */
 		void addGraphComponentSlot(GraphComponentSlotId slot_id);
-
-		/**
-		 * @brief Invokes active point-component callbacks, then graph-component callbacks.
-		 *
-		 * Each list's initial length is captured before traversal, so slots appended during a
-		 * callback are not ticked until a later call. Inactive recycled IDs are skipped; an ID
-		 * outside the corresponding pool's slot range or an invalid external payload is fatal.
-		 * @param world World passed to each registered component callback.
-		 */
-		void tick(World& world);
-
-		/**
-		 * @brief Invokes active point-component callbacks, then graph-component callbacks for rendering.
-		 *
-		 * Each list's initial length is captured before traversal, so additions during a callback
-		 * are deferred to the next frame traversal. Inactive recycled IDs are skipped.
-		 * @param world World passed to each registered component callback.
-		 */
-		void frame(World& world);
 
 		/**
 		 * @brief Builds the chunk-to-camera-relative render transform from body and chunk transforms.
