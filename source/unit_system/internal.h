@@ -34,12 +34,26 @@ namespace danikk_space_engine
 		PointComponentSlotId assigned_controller_slot_id = static_cast<PointComponentSlotId>(-1);
 	};
 
+	/** @brief Tick-local candidate data reused while assigning one faction's search orders. */
+	struct UnitSearchCandidate
+	{
+		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1);
+		PointComponentSlot* slot = nullptr;
+		NpcControllerComponent* controller = nullptr;
+		HumanComponent* human = nullptr;
+		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
+		glm::dvec3 position = glm::dvec3(0.0);
+		bool assigned_to_search = false;
+	};
+
 	/** @brief Per-faction tactical memory and processing state. */
 	struct UnitSystem
 	{
 		FactionId faction_id = static_cast<FactionId>(-1);
 		DynamicArray<UnitSighting> known_sightings;
 		DynamicArray<UnitSearchLocation> search_locations;
+		/** @brief Reusable temporary storage; pointers are valid only during assignSearchOrders(). */
+		DynamicArray<UnitSearchCandidate> search_candidates;
 		float time_since_enemy_visible = 0.0f;
 		bool enemy_seen_this_tick = false;
 		bool attack_reported_this_tick = false;
