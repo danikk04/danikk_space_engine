@@ -51,7 +51,7 @@ namespace danikk_space_engine
 	 * @param generated_chunk Completed worker-produced chunk payload.
 	 */
 	using WorldBodyComponentChunkFunction = void (*)(
-		WorldBodyComponentSlot& slot, World& world, const GeneratedChunkData& generated_chunk);
+		WorldBodyComponentSlot& slot, World& world, const GeneratedChunkMesh& generated_chunk);
 
 	/**
 	 * @brief Describes payload layout and callbacks registered for a world-body component type.

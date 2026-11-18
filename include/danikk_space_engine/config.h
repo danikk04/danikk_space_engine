@@ -16,6 +16,13 @@ namespace danikk_space_engine
 		ground
 	};
 
+	/** @brief Selects the algorithm used to extract planet meshes from the scalar field. */
+	enum class PlanetMeshGenerator : uint8
+	{
+		/** @brief Splits scalar-grid cubes into tetrahedra and polygonizes each tetrahedron. */
+		marching_tetrahedra
+	};
+
 	/**
 	 * @brief Stores the process-wide settings and their defaults before configuration is loaded.
 	 */
@@ -27,6 +34,8 @@ namespace danikk_space_engine
 		bool show_world_body_preview = true;
 		/** @brief Initial camera placement mode; defaults to sky for a fresh application start. */
 		DefaultCameraPosition default_camera_position = DefaultCameraPosition::sky;
+		/** @brief Global planet surface meshing algorithm. */
+		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
 	};
 
 	/**
@@ -36,8 +45,8 @@ namespace danikk_space_engine
 	 * values unchanged for absent keys and creates a zero-byte file when none exists;
 	 * on the normal first application start those values are the Settings defaults.
 	 * The keys are `show_chunk_bounds`, `show_world_body_preview`,
-	 * and `default_camera_position`; the latter accepts
-	 * only `sky` or `ground`. `save()` rewrites the file with all supported keys
+	 * `default_camera_position` (`sky` or `ground`), and
+	 * `planet_mesh_generator` (`marching_tetrahedra`). `save()` rewrites the file with all supported keys
 	 * and their current values, using lowercase `true`/`false` for booleans.
 	 */
 	class Config

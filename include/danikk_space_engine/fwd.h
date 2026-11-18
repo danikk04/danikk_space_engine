@@ -34,9 +34,9 @@ namespace danikk_space_engine
 	struct HumanComponent;
 
 	/**
-	 * @brief Holds worker-generated chunk coordinates, vertices, indices, and material data before world resources are created.
+	 * @brief Holds worker-generated chunk vertices, indices, and material data before world resources are created.
 	 */
-	struct GeneratedChunkData;
+	struct GeneratedChunkMesh;
 
 	/**
 	 * @brief Associates component data and callbacks with a pair of world points.

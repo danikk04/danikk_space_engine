@@ -2,7 +2,7 @@
 
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
-#include <danikk_space_engine/component/world_body/planet/chunk_save.h>
+#include <danikk_space_engine/component/world_body/planet/terrain_edit_save.h>
 #include <danikk_space_engine/component/world_body/planet/terrain.h>
 #include <danikk_space_engine/world/world.h>
 

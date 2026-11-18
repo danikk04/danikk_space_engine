@@ -48,6 +48,8 @@ namespace danikk_space_engine
 		bool bounds_valid = false;
 		/** @brief True when this chunk represents a streamed planet terrain cell. */
 		bool planet_terrain = false;
+		/** @brief True when the GPU mesh contains the combined geometry of this chunk's BuildParts. */
+		bool has_build_part_mesh = false;
 		/** @brief Subset of the point-component list containing only human slots. */
 		DynamicArray<PointComponentSlotId> human_component_slot_ids;
 
@@ -66,6 +68,10 @@ namespace danikk_space_engine
 	public:
 		/** @brief Whether at least one human in this chunk needs checks during the current collision tick. */
 		bool has_active_human_collisions = false;
+		/** @brief Whether the combined BuildPart mesh needs regeneration. */
+		bool build_part_mesh_dirty = false;
+		/** @brief Revision advanced whenever a BuildPart in the chunk changes. */
+		uint64 build_part_mesh_revision = 0;
 		/** @brief Center of the local-space bounding sphere used by raycast broadphase. */
 		vec3 bounds_center = vec3(0.0f);
 		/** @brief Radius of the local-space bounding sphere used by raycast broadphase. */
@@ -113,7 +119,11 @@ namespace danikk_space_engine
 		 */
 		void createMesh(const vec3* positions, size_t position_count,
 			const uint32* triangle_indices, size_t index_count,
-			const MaterialId* triangle_material_ids, size_t material_count);
+			const MaterialId* triangle_material_ids, size_t material_count,
+			bool is_planet_terrain = true, bool is_build_part_mesh = false);
+
+		/** @brief Invalidates the combined BuildPart mesh and advances its source revision. */
+		void invalidateBuildPartMesh();
 
 		/** @brief Returns the human component IDs in the chunk's update order. */
 		const DynamicArray<PointComponentSlotId>& getHumanComponentSlotIds() const
@@ -169,5 +179,7 @@ namespace danikk_space_engine
 		bool hasValidBounds() const { return bounds_valid; }
 		/** @brief Reports whether this chunk stores a streamed planet-terrain mesh. */
 		bool isPlanetTerrain() const { return planet_terrain; }
+		/** @brief Reports whether the GPU mesh replaces individual BuildPart rendering. */
+		bool hasBuildPartMesh() const { return has_build_part_mesh; }
 	};
 }

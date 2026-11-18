@@ -1,4 +1,5 @@
 #include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/config.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/world/world.h>
 
@@ -35,13 +36,16 @@ namespace danikk_space_engine
 	void acceptPlanetGeneratedChunk(
 		WorldBodyComponentSlot& slot,
 		World& world,
-		const GeneratedChunkData& generated_chunk)
+		const GeneratedChunkMesh& generated_chunk)
 	{
 		DSE_WATCH();
 		PlanetComponent& planet = *static_cast<PlanetComponent*>(slot.getData());
 		if(generated_chunk.terrain_revision != planet.terrain_revision
+			|| generated_chunk.source != ChunkMeshSource::planet_terrain
+			|| generated_chunk.planet_mesh_generator != settings.planet_mesh_generator
 			|| !planet.chunk_lookup.isDesired(generated_chunk.grid_coordinate)
-			|| planet.chunk_lookup.isGenerated(generated_chunk.grid_coordinate)) return;
+			|| planet.chunk_lookup.isGenerated(
+				generated_chunk.grid_coordinate, generated_chunk.planet_mesh_generator)) return;
 
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		planet.chunk_lookup.getChunk(generated_chunk.grid_coordinate, chunk_id);
@@ -58,8 +62,9 @@ namespace danikk_space_engine
 				generated_chunk.triangle_point_indices.data(), generated_chunk.triangle_point_indices.size(),
 				generated_chunk.triangle_material_ids.data(), generated_chunk.triangle_material_ids.size());
 		}
-		planet.chunk_lookup.setChunk(generated_chunk.grid_coordinate, chunk_id);
-		world.removeChunkGenerationRequest(slot.slot_id, generated_chunk.grid_coordinate);
+		planet.chunk_lookup.setChunk(
+			generated_chunk.grid_coordinate, chunk_id, generated_chunk.planet_mesh_generator);
+		world.removeChunkMeshGenerationRequest(slot.slot_id, generated_chunk.grid_coordinate);
 		for(size_t index = 0; index < planet.pending_requests.size(); index++)
 		{
 			if(!sameChunkKey(planet.pending_requests[index].grid_coordinate, generated_chunk.grid_coordinate)) continue;

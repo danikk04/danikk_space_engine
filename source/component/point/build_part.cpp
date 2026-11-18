@@ -109,6 +109,7 @@ namespace danikk_space_engine
 		}
 		const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
+		if(chunk.hasBuildPartMesh()) return;
 		const mat4 world_matrix = chunk.createWorldMatrix(world)
 			* glm::translate(mat4(1.0f), world.data.getPoint(slot.point_id).position)
 			* part.rotation

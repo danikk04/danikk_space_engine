@@ -43,19 +43,38 @@ namespace danikk_space_engine
 				}
 			}
 		}
+		queueDirtyBuildPartMeshes();
 		if(chunk_generation_requests_dirty)
 		{
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			DSE_WATCH_SCOPE("ChunkLoader::updatePendingRequests");
-			chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
+			DSE_WATCH_SCOPE("updateChunkMeshGenerationRequests");
+			updateChunkMeshGenerationRequests(chunk_mesh_generator_generation_id, chunk_generation_requests);
 			chunk_generation_requests_dirty = false;
 		}
 
-		GeneratedChunkData generated_chunk;
-		if(chunk_loader.tryTakeCompleted(generated_chunk)
-			&& generated_chunk.generation_id == chunk_loader_generation_id
+		GeneratedChunkMesh generated_chunk;
+		if(tryTakeGeneratedChunkMesh(generated_chunk)
+			&& generated_chunk.generation_id == chunk_mesh_generator_generation_id
+			&& generated_chunk.source == ChunkMeshSource::build_parts
+			&& data.isWorldBodyActive(generated_chunk.world_body_id)
+			&& data.isChunkActive(generated_chunk.chunk_id))
+		{
+			Chunk& chunk = data.getChunk(generated_chunk.chunk_id);
+			if(chunk.world_body_id == generated_chunk.world_body_id
+				&& chunk.build_part_mesh_revision == generated_chunk.source_revision)
+			{
+				chunk.createMesh(
+					generated_chunk.point_positions.data(), generated_chunk.point_positions.size(),
+					generated_chunk.triangle_point_indices.data(), generated_chunk.triangle_point_indices.size(),
+					generated_chunk.triangle_material_ids.data(), generated_chunk.triangle_material_ids.size(),
+					false, true);
+				removeBuildPartMeshRequest(generated_chunk.chunk_id);
+			}
+		}
+		else if(generated_chunk.source == ChunkMeshSource::planet_terrain
+			&& generated_chunk.generation_id == chunk_mesh_generator_generation_id
 			&& data.isWorldBodyActive(generated_chunk.world_body_id)
 			&& data.isWorldBodyComponentSlotActive(generated_chunk.component_slot_id))
 		{

@@ -4,7 +4,7 @@
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
-#include <danikk_space_engine/component/world_body/planet/chunk_generator.h>
+#include <danikk_space_engine/chunk_mesh_generator.h>
 
 namespace danikk_space_engine
 {
@@ -24,8 +24,8 @@ namespace danikk_space_engine
 	inline constexpr double planet_chunk_load_radius = 100.0;
 	/** @brief Edge length of a planet chunk's local generation region, in world units. */
 	inline constexpr double planet_chunk_width = 32.0;
-	/** @brief Distance between adjacent scalar-field samples, in world units. */
-	inline constexpr double planet_voxel_size = 4.0;
+	/** @brief Distance between adjacent planet-mesh scalar samples, in world units. */
+	inline constexpr double planet_voxel_size = 2.0;
 
 	/**
 	 * @brief Stores a named planet preset including radii, gravity, and terrain-generation seed.
@@ -66,6 +66,8 @@ namespace danikk_space_engine
 		bool desired = false;
 		/** @brief Whether generation completed; true even when the chunk contains no triangles. */
 		bool has_record = false;
+		/** @brief Mesh generator represented by this completed chunk record. */
+		PlanetMeshGenerator mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
 	};
 
 	/**
@@ -100,8 +102,10 @@ namespace danikk_space_engine
 		 * @brief Records the loaded world chunk associated with a grid coordinate.
 		 * @param grid_coordinate Planet-grid coordinate represented by the chunk.
 		 * @param chunk_id Active WorldData chunk ID to associate with that coordinate.
+		 * @param mesh_generator Algorithm represented by the completed generation record.
 		 */
-		void setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id);
+		void setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id,
+			PlanetMeshGenerator mesh_generator = PlanetMeshGenerator::marching_tetrahedra);
 
 		/**
 		 * @brief Removes a loaded coordinate from the lookup table and clears its chunk record.
@@ -118,9 +122,10 @@ namespace danikk_space_engine
 		/**
 		 * @brief Reports whether generation completed for the coordinate, even if it was empty.
 		 * @param grid_coordinate Planet-grid coordinate to query.
+		 * @param mesh_generator Algorithm whose generation record is requested.
 		 * @return True when a generation record exists; this does not imply a loaded chunk ID.
 		 */
-		bool isGenerated(const glm::ivec3& grid_coordinate) const;
+		bool isGenerated(const glm::ivec3& grid_coordinate, PlanetMeshGenerator mesh_generator) const;
 
 		/**
 		 * @brief Retrieves the active chunk ID stored for a coordinate.
@@ -158,6 +163,8 @@ namespace danikk_space_engine
 		uint64 terrain_revision = 0;
 		/** @brief Terrain revision for which the last desired chunk set was computed. */
 		uint64 last_chunk_update_revision = 0;
+		/** @brief Mesh generator used for the last desired chunk-set update. */
+		PlanetMeshGenerator last_chunk_update_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
 		/** @brief Number of saved terrain edits already applied to the component's loaded state. */
 		size_t processed_edit_count = 0;
 		/** @brief Whether persistent edit stamps have been loaded for this planet. */
@@ -171,7 +178,7 @@ namespace danikk_space_engine
 		/** @brief Hash lookup for desired, pending, generated, and loaded chunk coordinates. */
 		PlanetChunkLookup chunk_lookup;
 		/** @brief Requests currently associated with this planet component. */
-		DynamicArray<ChunkGenerationRequest> pending_requests;
+		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
 	};
 
 	/**
@@ -193,7 +200,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Loads edit stamps and reconciles desired chunks around the current camera position.
 	 * @param slot Planet component slot, including WorldBody ID and generation token.
-	 * @param world World that owns chunk resources and the asynchronous ChunkLoader.
+	 * @param world World that owns chunk resources and submits mesh jobs to the shared generator.
 	 */
 	void updatePlanetComponent(WorldBodyComponentSlot& slot, World& world);
 
@@ -209,7 +216,7 @@ namespace danikk_space_engine
 	void acceptPlanetGeneratedChunk(
 		WorldBodyComponentSlot& slot,
 		World& world,
-		const GeneratedChunkData& generated_chunk);
+		const GeneratedChunkMesh& generated_chunk);
 
 	/**
 	 * @brief Adds or removes a persistent spherical terrain stamp centered on the selected surface face.

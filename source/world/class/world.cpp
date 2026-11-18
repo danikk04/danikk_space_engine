@@ -117,6 +117,62 @@ namespace danikk_space_engine
 		pending_point_destruction_ids.push(point_id);
 	}
 
+	/** @copydoc World::queueDirtyBuildPartMeshes */
+	void World::queueDirtyBuildPartMeshes()
+	{
+		for(size_t index = 0; index < chunk_generation_requests.size();)
+		{
+			const ChunkMeshGenerationRequest& request = chunk_generation_requests[index];
+			if(request.source != ChunkMeshSource::build_parts || data.isChunkActive(request.chunk_id))
+			{
+				index++;
+				continue;
+			}
+			for(size_t shift = index + 1; shift < chunk_generation_requests.size(); shift++)
+				chunk_generation_requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(chunk_generation_requests[shift]);
+			chunk_generation_requests.resize(chunk_generation_requests.size() - 1);
+			chunk_generation_requests_dirty = true;
+		}
+
+		for(ChunkId chunk_id : data.getUsedChunkIds())
+		{
+			Chunk& chunk = data.getChunk(chunk_id);
+			if(!chunk.build_part_mesh_dirty) continue;
+
+			ChunkMeshGenerationRequest request;
+			request.source = ChunkMeshSource::build_parts;
+			request.generation_id = chunk_mesh_generator_generation_id;
+			request.source_revision = chunk.build_part_mesh_revision;
+			request.world_body_id = chunk.world_body_id;
+			request.chunk_id = chunk_id;
+			request.chunk_position = chunk.position;
+			for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
+			{
+				if(!data.isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = data.getPointComponentSlot(slot_id);
+				if(slot.type_id != PointComponentTypeId::build_part || !data.isPointActive(slot.point_id)) continue;
+				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
+				request.build_parts.push({part.shape, data.getPoint(slot.point_id).position, part.rotation, part.size});
+			}
+
+			for(size_t index = 0; index < chunk_generation_requests.size();)
+			{
+				const ChunkMeshGenerationRequest& queued = chunk_generation_requests[index];
+				if(queued.source != ChunkMeshSource::build_parts || queued.chunk_id != chunk_id)
+				{
+					index++;
+					continue;
+				}
+				for(size_t shift = index + 1; shift < chunk_generation_requests.size(); shift++)
+					chunk_generation_requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(chunk_generation_requests[shift]);
+				chunk_generation_requests.resize(chunk_generation_requests.size() - 1);
+			}
+			chunk_generation_requests.pushMove(request);
+			chunk.build_part_mesh_dirty = false;
+			chunk_generation_requests_dirty = true;
+		}
+	}
+
 	/**
 	 * @brief Replaces one component's pending requests and stamps them with the current world generation.
 	 * @param component_slot_id Component whose previous requests should be removed.
@@ -125,9 +181,9 @@ namespace danikk_space_engine
 	 * request order. New requests receive the current world token and mark the
 	 * worker snapshot dirty for submission during World::frame().
 	 */
-	void World::replaceChunkGenerationRequests(
+	void World::replaceChunkMeshGenerationRequests(
 		WorldBodyComponentSlotId component_slot_id,
-		const DynamicArray<ChunkGenerationRequest>& requests)
+		const DynamicArray<ChunkMeshGenerationRequest>& requests)
 	{
 		for(size_t index = 0; index < chunk_generation_requests.size();)
 		{
@@ -138,14 +194,14 @@ namespace danikk_space_engine
 			}
 			for(size_t shift = index + 1; shift < chunk_generation_requests.size(); shift++)
 			{
-				chunk_generation_requests[shift - 1] = static_cast<ChunkGenerationRequest&&>(chunk_generation_requests[shift]);
+				chunk_generation_requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(chunk_generation_requests[shift]);
 			}
 			chunk_generation_requests.resize(chunk_generation_requests.size() - 1);
 		}
-		for(const ChunkGenerationRequest& request : requests)
+		for(const ChunkMeshGenerationRequest& request : requests)
 		{
-			ChunkGenerationRequest queued_request = request;
-			queued_request.generation_id = chunk_loader_generation_id;
+			ChunkMeshGenerationRequest queued_request = request;
+			queued_request.generation_id = chunk_mesh_generator_generation_id;
 			chunk_generation_requests.pushMove(queued_request);
 		}
 		chunk_generation_requests_dirty = true;
@@ -156,21 +212,37 @@ namespace danikk_space_engine
 	 * @param component_slot_id Owner component of the request.
 	 * @param grid_coordinate Planet grid key to remove.
 	 */
-	void World::removeChunkGenerationRequest(
+	void World::removeChunkMeshGenerationRequest(
 		WorldBodyComponentSlotId component_slot_id,
 		const glm::ivec3& grid_coordinate)
 	{
 		for(size_t index = 0; index < chunk_generation_requests.size(); index++)
 		{
-			const ChunkGenerationRequest& request = chunk_generation_requests[index];
-			if(request.component_slot_id != component_slot_id
+			const ChunkMeshGenerationRequest& request = chunk_generation_requests[index];
+			if(request.source != ChunkMeshSource::planet_terrain
+				|| request.component_slot_id != component_slot_id
 				|| request.grid_coordinate.x != grid_coordinate.x
 				|| request.grid_coordinate.y != grid_coordinate.y
 				|| request.grid_coordinate.z != grid_coordinate.z) continue;
 			for(size_t shift = index + 1; shift < chunk_generation_requests.size(); shift++)
 			{
-				chunk_generation_requests[shift - 1] = static_cast<ChunkGenerationRequest&&>(chunk_generation_requests[shift]);
+				chunk_generation_requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(chunk_generation_requests[shift]);
 			}
+			chunk_generation_requests.resize(chunk_generation_requests.size() - 1);
+			chunk_generation_requests_dirty = true;
+			return;
+		}
+	}
+
+	/** @copydoc World::removeBuildPartMeshRequest */
+	void World::removeBuildPartMeshRequest(ChunkId chunk_id)
+	{
+		for(size_t index = 0; index < chunk_generation_requests.size(); index++)
+		{
+			const ChunkMeshGenerationRequest& request = chunk_generation_requests[index];
+			if(request.source != ChunkMeshSource::build_parts || request.chunk_id != chunk_id) continue;
+			for(size_t shift = index + 1; shift < chunk_generation_requests.size(); shift++)
+				chunk_generation_requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(chunk_generation_requests[shift]);
 			chunk_generation_requests.resize(chunk_generation_requests.size() - 1);
 			chunk_generation_requests_dirty = true;
 			return;
@@ -180,19 +252,19 @@ namespace danikk_space_engine
 
 
 	/**
-	 * @brief Starts the loader, invalidates older results, resets queues, and creates the base scenario.
+	 * @brief Starts the shared mesh generator, invalidates older results, resets queues, and creates the base scenario.
 	 * Advances the world token while skipping zero, clears the submitted and local
 	 * request arrays plus deferred point removals, then starts the base scenario.
 	 * That scenario clears and repopulates WorldData.
 	 */
 	void World::init()
 	{
-		chunk_loader.start();
-		chunk_loader_generation_id++;
-		if(chunk_loader_generation_id == 0) chunk_loader_generation_id++;
+		startChunkMeshGenerator();
+		chunk_mesh_generator_generation_id++;
+		if(chunk_mesh_generator_generation_id == 0) chunk_mesh_generator_generation_id++;
 		chunk_generation_requests.clear();
 		chunk_generation_requests_dirty = false;
-		chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
+		updateChunkMeshGenerationRequests(chunk_mesh_generator_generation_id, chunk_generation_requests);
 		pending_point_destruction_ids.clear();
 		pending_npc_chunk_updates.clear();
 		unit_system_internal::resetUnitSystems();
@@ -205,8 +277,8 @@ namespace danikk_space_engine
 	 */
 	void World::shutdown()
 	{
-		chunk_loader.stop();
-		chunk_loader_generation_id++;
+		stopChunkMeshGenerator();
+		chunk_mesh_generator_generation_id++;
 		chunk_generation_requests.clear();
 		chunk_generation_requests_dirty = false;
 		clearBuildPartMeshCache();

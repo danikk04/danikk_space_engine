@@ -37,7 +37,8 @@ namespace danikk_space_engine
 	 */
 	void Chunk::createMesh(const vec3* positions, size_t position_count,
 		const uint32* triangle_indices, size_t index_count,
-		const MaterialId* triangle_material_ids, size_t material_count)
+		const MaterialId* triangle_material_ids, size_t material_count,
+		bool is_planet_terrain, bool is_build_part_mesh)
 	{
 		DSE_WATCH();
 		if(index_count % 3 != 0 || material_count != index_count / 3
@@ -122,6 +123,8 @@ namespace danikk_space_engine
 			indices.data(),
 			indices.size());
 		DefaultVertex::setAttributes();
-		planet_terrain = true;
+		planet_terrain = is_planet_terrain;
+		has_build_part_mesh = is_build_part_mesh;
+		build_part_mesh_dirty = false;
 	}
 }

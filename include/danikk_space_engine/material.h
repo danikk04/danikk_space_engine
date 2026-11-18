@@ -15,6 +15,7 @@ namespace danikk_space_engine
 		constexpr inline MaterialId lava = 3;
 		constexpr inline MaterialId water = 4;
 		constexpr inline MaterialId magma = 5;
+		constexpr inline MaterialId build_part = 6;
 	}
 
 	/**
@@ -36,7 +37,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Loads the built-in void, grass, stone, lava, water, and magma definitions once.
+	 * @brief Loads the built-in terrain and construction material definitions once.
 	 *
 	 * Repeated calls are no-ops after the first population. Insertion order defines
 	 * the MaterialId values and must stay aligned with default_materials. Textures

@@ -2,8 +2,9 @@
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/component/world_body/planet/chunk_generator.h>
-#include <danikk_space_engine/component/world_body/planet/chunk_save.h>
+#include <danikk_space_engine/chunk_mesh_generator.h>
+#include "internal.h"
+#include <danikk_engine/danikk_engine.h>
 
 namespace danikk_space_engine
 {
@@ -34,7 +35,7 @@ namespace danikk_space_engine
 		{
 			uint32 id;
 			glm::dvec3 position;
-			float density;
+			double density;
 		};
 
 		/**
@@ -68,20 +69,24 @@ namespace danikk_space_engine
 		 *                and chunk origin captured when the worker job was submitted.
 		 * @return Request identity plus chunk-local surface vertices and triangle indices.
 		 * The field is sampled at every lattice corner. Each lattice cube is split
-		 * into six tetrahedra; sign-changing tetrahedron edges are linearly
-		 * interpolated and cached by an unordered endpoint key so adjacent
-		 * tetrahedra share vertices. The resulting 3- or 4-vertex polygon is angle
-		 * sorted, fan-triangulated, and wound from solid toward air. This helper
+		 * into six tetrahedra; sign-changing tetrahedron edges are refined against
+		 * the original scalar field by bisection and cached by an unordered endpoint key so adjacent
+		 * tetrahedra share vertices. Tetrahedron cases explicitly connect their
+		 * three- or four-vertex intersections, and triangles are wound from solid
+		 * toward air. This helper
 		 * reads no WorldData and creates no GPU resources.
 		 */
-		GeneratedChunkData generatePlanetChunkGeometry(const ChunkGenerationRequest& request)
+		GeneratedChunkMesh generatePlanetChunkMarchingTetrahedra(const ChunkMeshGenerationRequest& request)
 		{
-			GeneratedChunkData result;
+			GeneratedChunkMesh result;
 			result.generation_id = request.generation_id;
 			result.world_body_id = request.world_body_id;
 			result.component_slot_id = request.component_slot_id;
 			result.component_generation_id = request.component_generation_id;
 			result.terrain_revision = request.terrain_revision;
+			result.source_revision = request.source_revision;
+			result.source = request.source;
+			result.planet_mesh_generator = request.planet_mesh_generator;
 			result.grid_coordinate = request.grid_coordinate;
 			result.chunk_position = request.chunk_position;
 
@@ -138,10 +143,20 @@ namespace danikk_space_engine
 				}
 				if(edge_keys[slot_index] == key) return edge_values[slot_index];
 
-				const double denominator = static_cast<double>(first.density) - second.density;
-				const double interpolation = std::abs(denominator) < 0.000001
-					? 0.5
-					: glm::clamp(static_cast<double>(first.density) / denominator, 0.0, 1.0);
+				double lower = 0.0;
+				double upper = 1.0;
+				const bool first_is_solid = first.density >= 0.0;
+				for(uint8 iteration = 0; iteration < 8; iteration++)
+				{
+					const double middle = (lower + upper) * 0.5;
+					const glm::dvec3 sample_position = glm::mix(first.position, second.position, middle);
+					const double density = samplePlanetScalarField(
+						sample_position, request.planet_radius, request.noise_seed,
+						request.terrain_edits, request.core_radius);
+					if((density >= 0.0) == first_is_solid) lower = middle;
+					else upper = middle;
+				}
+				const double interpolation = (lower + upper) * 0.5;
 				const glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
 				const uint32 vertex_index = static_cast<uint32>(result.point_positions.size());
 				result.point_positions.push(vec3(position - request.chunk_position));
@@ -156,9 +171,18 @@ namespace danikk_space_engine
 			constexpr uint8 tetrahedra[6][4]{
 				{0, 5, 1, 6}, {0, 1, 2, 6}, {0, 2, 3, 6},
 				{0, 3, 7, 6}, {0, 7, 4, 6}, {0, 4, 5, 6}};
-			constexpr uint8 tetra_edges[6][2]{{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
 			result.point_positions.reserve(cell_count * 8);
 			result.triangle_point_indices.reserve(cell_count * 12);
+			const auto appendTriangle = [&result](uint32 a, uint32 b, uint32 c, const glm::dvec3& outward)
+			{
+				const vec3 pa = result.point_positions[a];
+				const vec3 pb = result.point_positions[b];
+				const vec3 pc = result.point_positions[c];
+				if(glm::dot(glm::cross(pb - pa, pc - pa), vec3(outward)) < 0.0f) swapValues(b, c);
+				result.triangle_point_indices.push(a);
+				result.triangle_point_indices.push(b);
+				result.triangle_point_indices.push(c);
+			};
 
 			for(size_t z = 0; z < cells_per_axis; z++)
 			{
@@ -173,12 +197,14 @@ namespace danikk_space_engine
 							const size_t py = y + cube_corner_offsets[corner][1];
 							const size_t pz = z + cube_corner_offsets[corner][2];
 							const uint32 id = pointId(px, py, pz);
-							cube_points[corner] = {id, pointPosition(px, py, pz), static_cast<float>(densities[id])};
+							cube_points[corner] = {id, pointPosition(px, py, pz), densities[id]};
 						}
 
 						for(const auto& tetrahedron : tetrahedra)
 						{
 							GridPoint tetra_points[4];
+							GridPoint inside_points[3];
+							GridPoint outside_points[3];
 							glm::dvec3 inside_center(0.0);
 							glm::dvec3 outside_center(0.0);
 							uint8 inside_count = 0;
@@ -188,11 +214,13 @@ namespace danikk_space_engine
 								tetra_points[index] = cube_points[tetrahedron[index]];
 								if(tetra_points[index].density >= 0.0f)
 								{
+									inside_points[inside_count] = tetra_points[index];
 									inside_center += tetra_points[index].position;
 									inside_count++;
 								}
 								else
 								{
+									outside_points[outside_count] = tetra_points[index];
 									outside_center += tetra_points[index].position;
 									outside_count++;
 								}
@@ -201,62 +229,28 @@ namespace danikk_space_engine
 							inside_center /= static_cast<double>(inside_count);
 							outside_center /= static_cast<double>(outside_count);
 							const glm::dvec3 outward = outside_center - inside_center;
-
-							uint32 polygon[4]{};
-							uint8 polygon_size = 0;
-							for(const auto& edge : tetra_edges)
+							if(inside_count == 1)
 							{
-								const GridPoint& a = tetra_points[edge[0]];
-								const GridPoint& b = tetra_points[edge[1]];
-								if((a.density >= 0.0f) == (b.density >= 0.0f)) continue;
-								polygon[polygon_size++] = getEdgeVertex(a, b);
+								appendTriangle(
+									getEdgeVertex(inside_points[0], outside_points[0]),
+									getEdgeVertex(inside_points[0], outside_points[1]),
+									getEdgeVertex(inside_points[0], outside_points[2]), outward);
 							}
-							if(polygon_size < 3) continue;
-
-							glm::dvec3 center(0.0);
-							for(uint8 index = 0; index < polygon_size; index++)
+							else if(inside_count == 3)
 							{
-								center += glm::dvec3(result.point_positions[polygon[index]]) + request.chunk_position;
+								appendTriangle(
+									getEdgeVertex(outside_points[0], inside_points[0]),
+									getEdgeVertex(outside_points[0], inside_points[1]),
+									getEdgeVertex(outside_points[0], inside_points[2]), outward);
 							}
-							center /= static_cast<double>(polygon_size);
-							const glm::dvec3 normal = glm::normalize(outward);
-							glm::dvec3 axis_u = glm::cross(
-								normal, glm::dvec3(result.point_positions[polygon[0]]) + request.chunk_position - center);
-							if(glm::dot(axis_u, axis_u) < 0.000000000001)
+							else
 							{
-								const glm::dvec3 fallback_axis = std::abs(normal.x) < 0.9
-									? glm::dvec3(1.0, 0.0, 0.0)
-									: glm::dvec3(0.0, 1.0, 0.0);
-								axis_u = glm::cross(normal, fallback_axis);
-							}
-							axis_u = glm::normalize(axis_u);
-							const glm::dvec3 axis_v = glm::cross(normal, axis_u);
-							for(uint8 left = 0; left < polygon_size; left++)
-							{
-								for(uint8 right = left + 1; right < polygon_size; right++)
-								{
-									const glm::dvec3 left_point = glm::dvec3(result.point_positions[polygon[left]])
-										+ request.chunk_position - center;
-									const glm::dvec3 right_point = glm::dvec3(result.point_positions[polygon[right]])
-										+ request.chunk_position - center;
-									const double left_angle = std::atan2(glm::dot(left_point, axis_v), glm::dot(left_point, axis_u));
-									const double right_angle = std::atan2(glm::dot(right_point, axis_v), glm::dot(right_point, axis_u));
-									if(left_angle > right_angle) swapValues(polygon[left], polygon[right]);
-								}
-							}
-
-							for(uint8 triangle = 1; triangle + 1 < polygon_size; triangle++)
-							{
-								uint32 a = polygon[0];
-								uint32 b = polygon[triangle];
-								uint32 c = polygon[triangle + 1];
-								const vec3 pa = result.point_positions[a];
-								const vec3 pb = result.point_positions[b];
-								const vec3 pc = result.point_positions[c];
-								if(glm::dot(glm::cross(pb - pa, pc - pa), vec3(outward)) < 0.0f) swapValues(b, c);
-								result.triangle_point_indices.push(a);
-								result.triangle_point_indices.push(b);
-								result.triangle_point_indices.push(c);
+								const uint32 inside_outside_00 = getEdgeVertex(inside_points[0], outside_points[0]);
+								const uint32 inside_outside_01 = getEdgeVertex(inside_points[0], outside_points[1]);
+								const uint32 inside_outside_10 = getEdgeVertex(inside_points[1], outside_points[0]);
+								const uint32 inside_outside_11 = getEdgeVertex(inside_points[1], outside_points[1]);
+								appendTriangle(inside_outside_00, inside_outside_01, inside_outside_11, outward);
+								appendTriangle(inside_outside_00, inside_outside_11, inside_outside_10, outward);
 							}
 						}
 					}
@@ -264,31 +258,41 @@ namespace danikk_space_engine
 			}
 			return result;
 		}
+
+		/**
+		 * @brief Dispatches scalar-field meshing to the generator selected by the request.
+		 * @param request Immutable chunk-generation settings and generator selection.
+		 * @return Geometry produced by the selected mesh algorithm.
+		 */
+		GeneratedChunkMesh generatePlanetChunkGeometry(const ChunkMeshGenerationRequest& request)
+		{
+			switch(request.planet_mesh_generator)
+			{
+				case PlanetMeshGenerator::marching_tetrahedra:
+					return generatePlanetChunkMarchingTetrahedra(request);
+			}
+			danikk_engine::formatFatalError("Unsupported planet mesh generator %",
+				static_cast<uint32>(request.planet_mesh_generator));
+			return {};
+		}
 	}
 
 	/**
-	 * @brief Loads compatible saved geometry or generates, saves, and materializes a planet chunk result.
+	 * @brief Generates a planet chunk and assigns each surface triangle its material.
 	 * @param request Immutable generation identity, settings, edits, and chunk coordinate.
 	 * @return Worker result containing request identity, local geometry, and a
 	 *         material ID for each triangle; geometry arrays may be empty when the
 	 *         sampled field contains no surface in this chunk.
-	 * Material IDs are recalculated from each triangle centroid after either load
-	 * or generation, so material assignment is not part of the mesh save format.
 	 * This worker-side function does not allocate WorldData resources or upload a mesh.
 	 */
-	GeneratedChunkData generatePlanetChunk(const ChunkGenerationRequest& request)
+	GeneratedChunkMesh chunk_mesh_generator_internal::generatePlanetTerrainChunkMesh(
+		const ChunkMeshGenerationRequest& request)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		GeneratedChunkData result;
-
-		if(!loadPlanetChunk(request, result))
-		{
-			result = generatePlanetChunkGeometry(request);
-			savePlanetChunk(request, result);
-		}
+		GeneratedChunkMesh result = generatePlanetChunkGeometry(request);
 
 		const size_t triangle_count = result.triangle_point_indices.size() / 3;
 		result.triangle_material_ids.reserve(triangle_count);

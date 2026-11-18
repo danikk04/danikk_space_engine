@@ -33,8 +33,11 @@ namespace danikk_space_engine
 		: mesh(other.mesh), material_ranges(static_cast<DynamicArray<ChunkMaterialRange>&&>(other.material_ranges)),
 		bounds_valid(other.bounds_valid),
 		planet_terrain(other.planet_terrain),
+		has_build_part_mesh(other.has_build_part_mesh),
 		human_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids)),
 		has_active_human_collisions(other.has_active_human_collisions),
+		build_part_mesh_dirty(other.build_part_mesh_dirty),
+		build_part_mesh_revision(other.build_part_mesh_revision),
 		bounds_center(other.bounds_center), bounds_radius(other.bounds_radius),
 		chunk_id(other.chunk_id), world_body_id(other.world_body_id),
 		grid_coordinate(other.grid_coordinate), position(other.position),
@@ -56,6 +59,9 @@ namespace danikk_space_engine
 		has_active_human_collisions = other.has_active_human_collisions;
 		bounds_valid = other.bounds_valid;
 		planet_terrain = other.planet_terrain;
+		has_build_part_mesh = other.has_build_part_mesh;
+		build_part_mesh_dirty = other.build_part_mesh_dirty;
+		build_part_mesh_revision = other.build_part_mesh_revision;
 		bounds_center = other.bounds_center;
 		bounds_radius = other.bounds_radius;
 		chunk_id = other.chunk_id;
@@ -96,8 +102,19 @@ namespace danikk_space_engine
 		}
 		material_ranges.clear();
 		bounds_valid = false;
+		planet_terrain = false;
+		has_build_part_mesh = false;
 		bounds_center = vec3(0.0f);
 		bounds_radius = 0.0f;
+	}
+
+	/** @copydoc Chunk::invalidateBuildPartMesh */
+	void Chunk::invalidateBuildPartMesh()
+	{
+		if(has_build_part_mesh) destroyMesh();
+		build_part_mesh_dirty = true;
+		build_part_mesh_revision++;
+		if(build_part_mesh_revision == 0) build_part_mesh_revision++;
 	}
 
 	/** @copydoc Chunk::addPointComponentSlot */

@@ -220,6 +220,9 @@ namespace danikk_space_engine
 		chunk.grid_coordinate = glm::ivec3(0);
 		chunk.position = glm::dvec3(0.0);
 		chunk.planet_terrain = false;
+		chunk.has_build_part_mesh = false;
+		chunk.build_part_mesh_dirty = false;
+		chunk.build_part_mesh_revision = 0;
 		chunk.bounds_valid = false;
 		chunk.material_ranges.clear();
 		chunks.free(id);
@@ -291,7 +294,9 @@ namespace danikk_space_engine
 		PointComponentSlot& slot = getPointComponentSlot(slot_id);
 		if(slot.chunk_id == PointComponentSlot::no_chunk) return;
 
-		getChunk(slot.chunk_id).removePointComponentSlot(slot_id, slot.type_id);
+		Chunk& chunk = getChunk(slot.chunk_id);
+		if(slot.type_id == PointComponentTypeId::build_part) chunk.invalidateBuildPartMesh();
+		chunk.removePointComponentSlot(slot_id, slot.type_id);
 		slot.chunk_id = PointComponentSlot::no_chunk;
 	}
 

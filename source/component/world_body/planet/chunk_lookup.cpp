@@ -150,7 +150,10 @@ namespace danikk_space_engine
 	 * @param grid_coordinate Coordinate represented by the completed result.
 	 * @param chunk_id Loaded chunk ID, or the invalid sentinel when generation produced no geometry.
 	 */
-	void PlanetChunkLookup::setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id)
+	void PlanetChunkLookup::setChunk(
+		const glm::ivec3& grid_coordinate,
+		ChunkId chunk_id,
+		PlanetMeshGenerator mesh_generator)
 	{
 		ensureChunkLookupCapacity(*this);
 		const size_t index = findChunkBucket(entries, grid_coordinate, true);
@@ -165,6 +168,7 @@ namespace danikk_space_engine
 		}
 		entry.chunk_id = chunk_id;
 		entry.has_record = true;
+		entry.mesh_generator = mesh_generator;
 	}
 
 	/**
@@ -199,10 +203,14 @@ namespace danikk_space_engine
 	 * @param grid_coordinate Coordinate to query.
 	 * @return True if a generated record exists, regardless of whether it owns a WorldData chunk.
 	 */
-	bool PlanetChunkLookup::isGenerated(const glm::ivec3& grid_coordinate) const
+	bool PlanetChunkLookup::isGenerated(
+		const glm::ivec3& grid_coordinate,
+		PlanetMeshGenerator mesh_generator) const
 	{
 		const size_t index = findChunkBucket(entries, grid_coordinate, false);
-		return index != static_cast<size_t>(-1) && entries[index].has_record;
+		return index != static_cast<size_t>(-1)
+			&& entries[index].has_record
+			&& entries[index].mesh_generator == mesh_generator;
 	}
 
 	/**

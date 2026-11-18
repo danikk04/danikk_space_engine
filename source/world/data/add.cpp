@@ -47,6 +47,7 @@ namespace danikk_space_engine
 
 		addPointReferenceToChunk(chunk_id, slot.point_id);
 		chunk.addPointComponentSlot(slot_id, slot.type_id);
+		if(slot.type_id == PointComponentTypeId::build_part) chunk.invalidateBuildPartMesh();
 		slot.chunk_id = chunk_id;
 	}
 }

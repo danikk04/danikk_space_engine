@@ -7,7 +7,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Submits the planet's pending immutable generation requests to ChunkLoader.
+	 * @brief Submits the planet's pending immutable mesh requests to the shared generator module.
 	 * @param planet Planet state containing requests produced by updatePlanetChunks().
 	 * @param world World whose worker queue receives those requests.
 	 * @param slot Component identity copied into each request for stale-result checks.

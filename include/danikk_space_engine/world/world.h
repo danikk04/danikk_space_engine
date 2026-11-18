@@ -7,7 +7,7 @@
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/chunk.h>
-#include <danikk_space_engine/world/chunk_loader.h>
+#include <danikk_space_engine/chunk_mesh_generator.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/world/data.h>
 #include <danikk_framework/dynamic_array.h>
@@ -49,7 +49,7 @@ namespace danikk_space_engine
 	 *
 	 * WorldData owns resource lifetimes. World drives body and chunk component callbacks, defers
 	 * destructive point cleanup until callback traversal finishes, then advances WorldPhysics.
-	 * ChunkLoader performs CPU-side planet generation asynchronously; completed data is validated
+	 * ChunkMeshGenerator performs CPU-side mesh generation asynchronously; completed data is validated
 	 * and accepted by the main thread before mesh creation and drawing.
 	 */
 	class World
@@ -65,8 +65,6 @@ namespace danikk_space_engine
 		WorldEnvironment environment;
 		/** @brief Integrates body motion and resolves physical contacts after component ticks. */
 		WorldPhysics physics;
-		/** @brief Worker that generates planet chunk data off the main thread. */
-		ChunkLoader chunk_loader;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
 		/** @brief NPC slots awaiting a chunk transition after component iteration. */
@@ -76,9 +74,9 @@ namespace danikk_space_engine
 		/** @brief Slot ID of the active local player controller component. */
 		PointComponentSlotId local_player_controller_component_slot_id = 0;
 		/** @brief Generation token used to reject worker results from an earlier world lifetime. */
-		uint64 chunk_loader_generation_id = 0;
-		/** @brief Latest desired chunk-generation work, awaiting submission to ChunkLoader. */
-		DynamicArray<ChunkGenerationRequest> chunk_generation_requests;
+		uint64 chunk_mesh_generator_generation_id = 0;
+		/** @brief Latest desired chunk-mesh work, awaiting submission to the generator module. */
+		DynamicArray<ChunkMeshGenerationRequest> chunk_generation_requests;
 		/** @brief Set when the queued request array changed and must be sent to the worker. */
 		bool chunk_generation_requests_dirty = false;
 
@@ -98,21 +96,26 @@ namespace danikk_space_engine
 		 */
 		void deferPointDestruction(PointId point_id);
 
+		/** @brief Snapshots dirty BuildPart chunks into CPU-only mesh generation jobs. */
+		void queueDirtyBuildPartMeshes();
+
 		/**
 		 * @brief Replaces queued requests for one planet component and marks the worker queue dirty.
 		 * @param component_slot_id Planet component whose previous pending requests are replaced.
 		 * @param requests Current immutable request set for that component.
 		 */
-		void replaceChunkGenerationRequests(
+		void replaceChunkMeshGenerationRequests(
 			WorldBodyComponentSlotId component_slot_id,
-			const DynamicArray<ChunkGenerationRequest>& requests);
+			const DynamicArray<ChunkMeshGenerationRequest>& requests);
 
 		/**
 		 * @brief Removes one queued or pending request matching a component and planet-grid coordinate.
 		 * @param component_slot_id Component that owns the request.
 		 * @param grid_coordinate Coordinate to cancel or forget.
 		 */
-		void removeChunkGenerationRequest(WorldBodyComponentSlotId component_slot_id, const glm::ivec3& grid_coordinate);
+		void removeChunkMeshGenerationRequest(WorldBodyComponentSlotId component_slot_id, const glm::ivec3& grid_coordinate);
+		/** @brief Removes the queued BuildPart mesh job for one chunk. */
+		void removeBuildPartMeshRequest(ChunkId chunk_id);
 
 		/**
 		 * @brief Accepts completed generation work, runs frame callbacks, and draws resident meshes.

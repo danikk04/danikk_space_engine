@@ -33,6 +33,22 @@ namespace danikk_space_engine
 			}
 			return false;
 		}
+
+		/**
+		 * @brief Parses a mesh generator token into the global setting.
+		 * @param destination Address of a PlanetMeshGenerator setting.
+		 * @param value Configuration value bytes, without a required null terminator.
+		 * @param value_size Number of bytes in value.
+		 * @return True for a supported generator token; false otherwise.
+		 */
+		bool parsePlanetMeshGenerator(void* destination, const char* value, size_t value_size)
+		{
+			constexpr char token[] = "marching_tetrahedra";
+			if(value_size != sizeof(token) - 1 || std::memcmp(value, token, sizeof(token) - 1) != 0)
+				return false;
+			*static_cast<PlanetMeshGenerator*>(destination) = PlanetMeshGenerator::marching_tetrahedra;
+			return true;
+		}
 	}
 
 	/**
@@ -47,6 +63,7 @@ namespace danikk_space_engine
 		values.bind("show_chunk_bounds", settings.show_chunk_bounds);
 		values.bind("show_world_body_preview", settings.show_world_body_preview);
 		values.bind("default_camera_position", &settings.default_camera_position, &parseDefaultCameraPosition);
+		values.bind("planet_mesh_generator", &settings.planet_mesh_generator, &parsePlanetMeshGenerator);
 	}
 
 	/**
@@ -116,6 +133,7 @@ namespace danikk_space_engine
 		contents << "show_world_body_preview=" << (settings.show_world_body_preview ? "true" : "false") << '\n';
 		contents << "default_camera_position="
 			<< (settings.default_camera_position == DefaultCameraPosition::ground ? "ground" : "sky") << '\n';
+		contents << "planet_mesh_generator=marching_tetrahedra\n";
 
 		std::FILE* file = std::fopen(path.c_string(), "wb");
 		if(file == nullptr)

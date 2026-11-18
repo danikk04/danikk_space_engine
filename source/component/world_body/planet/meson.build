@@ -5,6 +5,5 @@ sources += files(
 	'chunk_accept.cpp',
 	'edit.cpp',
 	'terrain.cpp',
-	'chunk_generator.cpp',
-	'chunk_save.cpp',
+	'terrain_edit_save.cpp',
 )

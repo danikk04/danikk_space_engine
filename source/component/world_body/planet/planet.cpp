@@ -1,5 +1,6 @@
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/component/world_body/planet/chunk_save.h>
+#include <danikk_space_engine/config.h>
+#include <danikk_space_engine/component/world_body/planet/terrain_edit_save.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/world/world.h>
 
@@ -98,7 +99,7 @@ namespace danikk_space_engine
 	 *
 	 * Chunk reconciliation runs only when the camera moves beyond the update threshold, terrain
 	 * revision changes, or the set has not been initialized. Outside the planet's load range it
-	 * clears pending work and unloads chunks; each update submits immutable requests to ChunkLoader.
+	 * clears pending work and unloads chunks; each update submits immutable requests to ChunkMeshGenerator.
 	 * @param slot Planet component slot identifying the body and component generation.
 	 * @param world World containing camera state, chunk resources, and the generation worker.
 	 */
@@ -155,7 +156,8 @@ namespace danikk_space_engine
 		const double moved_distance = glm::length(camera_position - planet.last_chunk_update_position);
 		const bool update_chunks = !planet.chunk_set_initialized
 			|| moved_distance > chunk_update_distance
-			|| planet.last_chunk_update_revision != planet.terrain_revision;
+			|| planet.last_chunk_update_revision != planet.terrain_revision
+			|| planet.last_chunk_update_mesh_generator != settings.planet_mesh_generator;
 		if(update_chunks)
 		{
 			updatePlanetChunks(planet, slot, world, camera_position);

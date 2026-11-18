@@ -32,8 +32,8 @@ namespace danikk_space_engine
 	 * lava, water, and magma must stay aligned with the constants in `default_materials`. Repeated
 	 * calls do nothing after the first population. Grass, stone, lava, water, and magma load the
 	 * texture assets `grass_32x32`, `stone_32x32`, `lava_32x32`, `water_32x32`, and `magma_32x32`
-	 * respectively; the void entry has no texture. Grass and water carry explicit tint colors,
-	 * while the remaining textured materials use white tint.
+		 * respectively; the void entry has no texture. Grass and water carry explicit tint colors,
+		 * while the remaining textured materials use white tint. Build parts use a plain gray tint.
 	 */
 	void loadMaterials()
 	{
@@ -49,6 +49,7 @@ namespace danikk_space_engine
 		material_list.pushCtor("lava", 0xFFFFFF, "lava_32x32");
 		material_list.pushCtor("water", 0x3F76E4, "water_32x32");
 		material_list.pushCtor("magma", 0xFFFFFF, "magma_32x32");
+		material_list.pushCtor("build_part", 0xA6ADB8, nullptr);
 	}
 
 	/**
