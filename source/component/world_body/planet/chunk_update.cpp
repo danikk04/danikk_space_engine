@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
@@ -152,6 +153,15 @@ namespace danikk_space_engine
 				}
 			}
 		}
+
+		std::sort(requests.begin(), requests.end(), [&camera_position, chunk_width](
+			const ChunkMeshGenerationRequest& left, const ChunkMeshGenerationRequest& right)
+		{
+			const glm::dvec3 left_center = left.chunk_position + glm::dvec3(chunk_width * 0.5);
+			const glm::dvec3 right_center = right.chunk_position + glm::dvec3(chunk_width * 0.5);
+			return glm::dot(left_center - camera_position, left_center - camera_position)
+				< glm::dot(right_center - camera_position, right_center - camera_position);
+		});
 
 		planet.pending_requests = static_cast<DynamicArray<ChunkMeshGenerationRequest>&&>(requests);
 		unloadPlanetChunksOutsideDesiredSet(planet, world);

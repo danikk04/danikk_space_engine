@@ -30,7 +30,9 @@ namespace danikk_space_engine
 		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed)
 		{
 			double surface_radius = radius;
-			for(uint8 iteration = 0; iteration < 5; iteration++)
+			// Two fixed-point steps are sufficient for the low-amplitude radial noise and
+			// avoid repeating five multi-octave samples for every rendered triangle.
+			for(uint8 iteration = 0; iteration < 2; iteration++)
 				surface_radius = radius + samplePlanetTerrainHeight(direction * surface_radius, noise_seed);
 			return surface_radius;
 		}

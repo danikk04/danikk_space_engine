@@ -121,7 +121,9 @@ namespace danikk_space_engine
 			}
 
 			const size_t cell_count = cells_per_axis * cells_per_axis * cells_per_axis;
-			const size_t edge_cache_size = nextPowerOfTwo(std::max<size_t>(64, cell_count * 64));
+		// The tetrahedral split introduces fewer than 20 distinct edges per cell.
+		// Keep the open-addressed table below a roughly 60% load instead of reserving 64 slots per cell.
+		const size_t edge_cache_size = nextPowerOfTwo(std::max<size_t>(64, cell_count * 32));
 			DynamicArray<uint64> edge_keys;
 			edge_keys.resize(edge_cache_size, empty_edge_key);
 			DynamicArray<uint32> edge_values;
@@ -143,18 +145,12 @@ namespace danikk_space_engine
 				}
 				if(edge_keys[slot_index] == key) return edge_values[slot_index];
 
-				double lower = 0.0;
-				double upper = 1.0;
-				const bool first_is_solid = first.density >= 0.0;
-				for(uint8 iteration = 0; iteration < 8; iteration++)
-				{
-					const double middle = (lower + upper) * 0.5;
-					const glm::dvec3 sample_position = glm::mix(first.position, second.position, middle);
-					const double density = getPlanetDensity(*request.planet_terrain, sample_position);
-					if((density >= 0.0) == first_is_solid) lower = middle;
-					else upper = middle;
-				}
-				const double interpolation = (lower + upper) * 0.5;
+				// The endpoint samples are already available; linear iso-value interpolation avoids
+				// repeatedly evaluating the expensive procedural field along this edge.
+				const double density_delta = first.density - second.density;
+				const double interpolation = std::clamp(
+					std::abs(density_delta) > 1e-12 ? first.density / density_delta : 0.5,
+					0.0, 1.0);
 				const glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
 				const uint32 vertex_index = static_cast<uint32>(result.point_positions.size());
 				result.point_positions.push(vec3(position - request.chunk_position));

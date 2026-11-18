@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -11,6 +12,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr size_t max_completed_meshes = 2;
+		constexpr size_t max_worker_count = 4;
 
 		bool sameRequestKey(const ChunkMeshGenerationRequest& a, const ChunkMeshGenerationRequest& b)
 		{
@@ -82,17 +84,40 @@ namespace danikk_space_engine
 
 		class ChunkMeshGeneratorService
 		{
+			struct ActiveRequest
+			{
+				ChunkMeshGenerationRequest request;
+				bool cancelled = false;
+			};
+
 			std::mutex mutex;
 			std::condition_variable request_available;
 			std::condition_variable result_space_available;
 			DynamicArray<ChunkMeshGenerationRequest> requests;
 			DynamicArray<GeneratedChunkMesh> completed;
-			std::thread worker;
+			DynamicArray<std::thread> workers;
+			DynamicArray<ActiveRequest> active_requests;
 			bool stopping = false;
-			bool has_active_request = false;
-			bool active_request_cancelled = false;
-			ChunkMeshGenerationRequest active_request;
 			uint64 current_generation_id = 0;
+
+			size_t findActiveRequest(const ChunkMeshGenerationRequest& request) const
+			{
+				for(size_t index = 0; index < active_requests.size(); ++index)
+					if(sameRequestKey(active_requests[index].request, request)) return index;
+				return active_requests.size();
+			}
+
+			bool isActive(const ChunkMeshGenerationRequest& request) const
+			{
+				return findActiveRequest(request) < active_requests.size();
+			}
+
+			void removeActiveRequest(size_t index)
+			{
+				for(size_t shift = index + 1; shift < active_requests.size(); ++shift)
+					active_requests[shift - 1] = static_cast<ActiveRequest&&>(active_requests[shift]);
+				active_requests.resize(active_requests.size() - 1);
+			}
 
 			void run()
 			{
@@ -107,21 +132,22 @@ namespace danikk_space_engine
 						for(size_t i = 1; i < requests.size(); ++i)
 							requests[i - 1] = static_cast<ChunkMeshGenerationRequest&&>(requests[i]);
 						requests.resize(requests.size() - 1);
-						active_request = request;
-						has_active_request = true;
-						active_request_cancelled = false;
+						active_requests.push(ActiveRequest{request, false});
 					}
 
 					GeneratedChunkMesh result = generateChunkMesh(request);
 					{
 						std::unique_lock<std::mutex> lock(mutex);
-						result_space_available.wait(lock, [this]
+						result_space_available.wait(lock, [this, &request]
 						{
-							return stopping || completed.size() < max_completed_meshes;
+							const size_t active_index = findActiveRequest(request);
+							return stopping || completed.size() < max_completed_meshes
+								|| active_index >= active_requests.size() || active_requests[active_index].cancelled;
 						});
-						const bool cancelled = active_request_cancelled;
-						has_active_request = false;
-						active_request_cancelled = false;
+						const size_t active_index = findActiveRequest(request);
+						const bool cancelled = active_index >= active_requests.size()
+							|| active_requests[active_index].cancelled;
+						if(active_index < active_requests.size()) removeActiveRequest(active_index);
 						if(!stopping && !cancelled && request.generation_id == current_generation_id)
 							completed.pushMove(result);
 					}
@@ -133,28 +159,33 @@ namespace danikk_space_engine
 			void start()
 			{
 				std::lock_guard<std::mutex> guard(mutex);
-				if(worker.joinable()) return;
+				if(!workers.empty()) return;
 				for(uint8 index = 0; index < static_cast<uint8>(BuildPartShape::count); ++index)
 					getBuildPartGeometry(static_cast<BuildPartShape>(index));
 				stopping = false;
-				worker = std::thread(&ChunkMeshGeneratorService::run, this);
+				const size_t available_threads = std::thread::hardware_concurrency();
+				const size_t worker_count = available_threads <= 1
+					? 1 : std::min(available_threads - 1, max_worker_count);
+				for(size_t index = 0; index < worker_count; ++index)
+					workers.pushMove(std::thread(&ChunkMeshGeneratorService::run, this));
 			}
 
 			void stop()
 			{
 				{
 					std::lock_guard<std::mutex> guard(mutex);
-					if(!worker.joinable()) return;
+					if(workers.empty()) return;
 					stopping = true;
 				}
 				request_available.notify_all();
 				result_space_available.notify_all();
-				worker.join();
+				for(std::thread& worker : workers)
+					if(worker.joinable()) worker.join();
 				std::lock_guard<std::mutex> guard(mutex);
 				requests.clear();
 				completed.clear();
-				has_active_request = false;
-				active_request_cancelled = false;
+				active_requests.clear();
+				workers.clear();
 				stopping = false;
 			}
 
@@ -180,26 +211,27 @@ namespace danikk_space_engine
 							completed[shift - 1] = static_cast<GeneratedChunkMesh&&>(completed[shift]);
 						completed.resize(completed.size() - 1);
 					}
-					if(has_active_request)
+					for(ActiveRequest& active : active_requests)
 					{
 						bool still_requested = false;
 						for(const ChunkMeshGenerationRequest& request : new_requests)
 						{
-							if(sameRequestKey(active_request, request))
+							if(sameRequestKey(active.request, request))
 							{
 								still_requested = true;
 								break;
 							}
 						}
-						if(!still_requested) active_request_cancelled = true;
+						if(!still_requested) active.cancelled = true;
 					}
+					result_space_available.notify_all();
 
 				size_t queue_index = 0;
 				bool same_queue = true;
 				for(const ChunkMeshGenerationRequest& request : new_requests)
 				{
 					if(request.generation_id != current_generation_id
-						|| (has_active_request && sameRequestKey(active_request, request))
+						|| isActive(request)
 						|| requestHasCompletedResult(request, completed)) continue;
 					if(queue_index >= requests.size() || !sameRequestKey(requests[queue_index], request))
 					{
@@ -214,12 +246,12 @@ namespace danikk_space_engine
 				for(const ChunkMeshGenerationRequest& request : new_requests)
 				{
 					if(request.generation_id != current_generation_id
-						|| (has_active_request && sameRequestKey(active_request, request))
+						|| isActive(request)
 						|| requestHasCompletedResult(request, completed)) continue;
 					requests.push(request);
 				}
 				}
-				request_available.notify_one();
+				request_available.notify_all();
 			}
 
 			bool tryTake(GeneratedChunkMesh& result)
@@ -270,13 +302,12 @@ namespace danikk_space_engine
 						completed[shift - 1] = static_cast<GeneratedChunkMesh&&>(completed[shift]);
 					completed.resize(completed.size() - 1);
 				}
-				if(has_active_request
-					&& active_request.source == ChunkMeshSource::planet_terrain
-					&& active_request.component_slot_id == component_slot_id
-					&& active_request.component_generation_id == component_generation_id)
-				{
-					active_request_cancelled = true;
-				}
+				for(ActiveRequest& active : active_requests)
+					if(active.request.source == ChunkMeshSource::planet_terrain
+						&& active.request.component_slot_id == component_slot_id
+						&& active.request.component_generation_id == component_generation_id)
+						active.cancelled = true;
+				request_available.notify_all();
 				result_space_available.notify_all();
 			}
 		};
