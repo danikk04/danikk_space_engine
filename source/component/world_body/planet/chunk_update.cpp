@@ -89,6 +89,24 @@ namespace danikk_space_engine
 		planet.last_chunk_update_mesh_generator = settings.planet_mesh_generator;
 		planet.chunk_set_initialized = true;
 		planet.chunk_updates_active = true;
+		if(planet.terrain_snapshot == nullptr
+			|| planet.terrain_snapshot->component_slot_id != slot.slot_id
+			|| planet.terrain_snapshot->component_generation_id != slot.generation_id
+			|| planet.terrain_snapshot->terrain_revision != planet.terrain_revision
+			|| planet.terrain_snapshot->planet_radius != planet.radius
+			|| planet.terrain_snapshot->core_radius != planet.core_radius
+			|| planet.terrain_snapshot->noise_seed != planet.noise_seed)
+		{
+			std::shared_ptr<PlanetTerrainSnapshot> snapshot = std::make_shared<PlanetTerrainSnapshot>();
+			snapshot->component_slot_id = slot.slot_id;
+			snapshot->component_generation_id = slot.generation_id;
+			snapshot->terrain_revision = planet.terrain_revision;
+			snapshot->planet_radius = planet.radius;
+			snapshot->core_radius = planet.core_radius;
+			snapshot->noise_seed = planet.noise_seed;
+			snapshot->terrain_edits = planet.terrain_edits;
+			planet.terrain_snapshot = static_cast<std::shared_ptr<const PlanetTerrainSnapshot>&&>(snapshot);
+		}
 		const double chunk_width = planet_chunk_width;
 		const glm::dvec3 range(planet.chunk_load_radius);
 		const glm::ivec3 minimum_key(
@@ -124,15 +142,12 @@ namespace danikk_space_engine
 					request.component_slot_id = slot.slot_id;
 					request.component_generation_id = slot.generation_id;
 					request.terrain_revision = planet.terrain_revision;
-					request.planet_radius = planet.radius;
-					request.core_radius = planet.core_radius;
 					request.chunk_width = chunk_width;
 					request.voxel_size = planet_voxel_size;
-					request.noise_seed = planet.noise_seed;
 					request.planet_mesh_generator = settings.planet_mesh_generator;
 					request.grid_coordinate = key;
 					request.chunk_position = chunk_minimum;
-					request.terrain_edits = planet.terrain_edits;
+					request.planet_terrain = planet.terrain_snapshot;
 					requests.push(request);
 				}
 			}

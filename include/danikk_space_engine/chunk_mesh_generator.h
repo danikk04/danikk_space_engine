@@ -1,5 +1,14 @@
 #pragma once
 
+#ifdef swap
+#pragma push_macro("swap")
+#undef swap
+#include <memory>
+#pragma pop_macro("swap")
+#else
+#include <memory>
+#endif
+
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/id.h>
@@ -26,6 +35,18 @@ namespace danikk_space_engine
 		glm::vec3 size = glm::vec3(1.0f);
 	};
 
+	/** @brief Immutable planet-field data shared by all chunk jobs for one field revision. */
+	struct PlanetTerrainSnapshot
+	{
+		WorldBodyComponentSlotId component_slot_id = static_cast<WorldBodyComponentSlotId>(-1);
+		uint64 component_generation_id = 0;
+		uint64 terrain_revision = 0;
+		double planet_radius = 0.0;
+		double core_radius = 0.0;
+		uint64 noise_seed = 0;
+		DynamicArray<PlanetTerrainEdit> terrain_edits;
+	};
+
 	/** @brief Immutable CPU-only input copied into the mesh generator's worker queue. */
 	struct ChunkMeshGenerationRequest
 	{
@@ -38,14 +59,11 @@ namespace danikk_space_engine
 		uint64 terrain_revision = 0;
 		ChunkMeshSource source = ChunkMeshSource::planet_terrain;
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
-		double planet_radius = 0.0;
-		double core_radius = 0.0;
 		double chunk_width = 32.0;
 		double voxel_size = 4.0;
-		uint64 noise_seed = 0;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 chunk_position = glm::dvec3(0.0);
-		DynamicArray<PlanetTerrainEdit> terrain_edits;
+		std::shared_ptr<const PlanetTerrainSnapshot> planet_terrain;
 		DynamicArray<BuildPartMeshInstance> build_parts;
 	};
 
@@ -75,6 +93,9 @@ namespace danikk_space_engine
 	/** @brief Replaces pending work with the latest immutable world request snapshot. */
 	void updateChunkMeshGenerationRequests(uint64 generation_id,
 		const DynamicArray<ChunkMeshGenerationRequest>& requests);
+	/** @brief Removes queued/completed work for one component incarnation and suppresses its active result. */
+	void cancelChunkMeshGenerationRequests(
+		WorldBodyComponentSlotId component_slot_id, uint64 component_generation_id);
 	/** @brief Takes the oldest completed CPU mesh, if one is available. */
 	bool tryTakeGeneratedChunkMesh(GeneratedChunkMesh& result);
 }

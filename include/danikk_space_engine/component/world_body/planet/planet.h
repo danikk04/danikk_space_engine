@@ -175,6 +175,8 @@ namespace danikk_space_engine
 		bool chunk_updates_active = false;
 		/** @brief Persistent add/remove stamps sampled by the planet scalar field. */
 		DynamicArray<PlanetTerrainEdit> terrain_edits;
+		/** @brief Cached immutable field snapshot shared by chunk jobs for the current terrain revision. */
+		std::shared_ptr<const PlanetTerrainSnapshot> terrain_snapshot;
 		/** @brief Hash lookup for desired, pending, generated, and loaded chunk coordinates. */
 		PlanetChunkLookup chunk_lookup;
 		/** @brief Requests currently associated with this planet component. */

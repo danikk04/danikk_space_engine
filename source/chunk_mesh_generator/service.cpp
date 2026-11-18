@@ -23,7 +23,8 @@ namespace danikk_space_engine
 				&& a.world_body_id == b.world_body_id
 				&& a.chunk_id == b.chunk_id
 				&& a.grid_coordinate == b.grid_coordinate
-				&& a.planet_mesh_generator == b.planet_mesh_generator;
+				&& a.planet_mesh_generator == b.planet_mesh_generator
+				&& a.planet_terrain == b.planet_terrain;
 		}
 
 		bool requestHasCompletedResult(
@@ -31,6 +32,26 @@ namespace danikk_space_engine
 			const DynamicArray<GeneratedChunkMesh>& completed)
 		{
 			for(const GeneratedChunkMesh& result : completed)
+			{
+				if(result.generation_id == request.generation_id
+					&& result.source == request.source
+					&& result.source_revision == request.source_revision
+					&& result.component_slot_id == request.component_slot_id
+					&& result.component_generation_id == request.component_generation_id
+					&& result.terrain_revision == request.terrain_revision
+					&& result.world_body_id == request.world_body_id
+					&& result.chunk_id == request.chunk_id
+					&& result.grid_coordinate == request.grid_coordinate
+					&& result.planet_mesh_generator == request.planet_mesh_generator) return true;
+			}
+			return false;
+		}
+
+		bool resultHasRequest(
+			const GeneratedChunkMesh& result,
+			const DynamicArray<ChunkMeshGenerationRequest>& requests)
+		{
+			for(const ChunkMeshGenerationRequest& request : requests)
 			{
 				if(result.generation_id == request.generation_id
 					&& result.source == request.source
@@ -69,6 +90,7 @@ namespace danikk_space_engine
 			std::thread worker;
 			bool stopping = false;
 			bool has_active_request = false;
+			bool active_request_cancelled = false;
 			ChunkMeshGenerationRequest active_request;
 			uint64 current_generation_id = 0;
 
@@ -87,6 +109,7 @@ namespace danikk_space_engine
 						requests.resize(requests.size() - 1);
 						active_request = request;
 						has_active_request = true;
+						active_request_cancelled = false;
 					}
 
 					GeneratedChunkMesh result = generateChunkMesh(request);
@@ -96,8 +119,10 @@ namespace danikk_space_engine
 						{
 							return stopping || completed.size() < max_completed_meshes;
 						});
+						const bool cancelled = active_request_cancelled;
 						has_active_request = false;
-						if(!stopping && request.generation_id == current_generation_id)
+						active_request_cancelled = false;
+						if(!stopping && !cancelled && request.generation_id == current_generation_id)
 							completed.pushMove(result);
 					}
 				}
@@ -129,6 +154,7 @@ namespace danikk_space_engine
 				requests.clear();
 				completed.clear();
 				has_active_request = false;
+				active_request_cancelled = false;
 				stopping = false;
 			}
 
@@ -141,6 +167,31 @@ namespace danikk_space_engine
 						current_generation_id = generation_id;
 						completed.clear();
 						result_space_available.notify_all();
+					}
+
+					for(size_t index = 0; index < completed.size();)
+					{
+						if(resultHasRequest(completed[index], new_requests))
+						{
+							++index;
+							continue;
+						}
+						for(size_t shift = index + 1; shift < completed.size(); ++shift)
+							completed[shift - 1] = static_cast<GeneratedChunkMesh&&>(completed[shift]);
+						completed.resize(completed.size() - 1);
+					}
+					if(has_active_request)
+					{
+						bool still_requested = false;
+						for(const ChunkMeshGenerationRequest& request : new_requests)
+						{
+							if(sameRequestKey(active_request, request))
+							{
+								still_requested = true;
+								break;
+							}
+						}
+						if(!still_requested) active_request_cancelled = true;
 					}
 
 				size_t queue_index = 0;
@@ -187,6 +238,47 @@ namespace danikk_space_engine
 				}
 				return false;
 			}
+
+			void cancel(WorldBodyComponentSlotId component_slot_id, uint64 component_generation_id)
+			{
+				std::lock_guard<std::mutex> guard(mutex);
+				for(size_t index = 0; index < requests.size();)
+				{
+					const ChunkMeshGenerationRequest& request = requests[index];
+					if(request.source != ChunkMeshSource::planet_terrain
+						|| request.component_slot_id != component_slot_id
+						|| request.component_generation_id != component_generation_id)
+					{
+						++index;
+						continue;
+					}
+					for(size_t shift = index + 1; shift < requests.size(); ++shift)
+						requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(requests[shift]);
+					requests.resize(requests.size() - 1);
+				}
+				for(size_t index = 0; index < completed.size();)
+				{
+					const GeneratedChunkMesh& result = completed[index];
+					if(result.source != ChunkMeshSource::planet_terrain
+						|| result.component_slot_id != component_slot_id
+						|| result.component_generation_id != component_generation_id)
+					{
+						++index;
+						continue;
+					}
+					for(size_t shift = index + 1; shift < completed.size(); ++shift)
+						completed[shift - 1] = static_cast<GeneratedChunkMesh&&>(completed[shift]);
+					completed.resize(completed.size() - 1);
+				}
+				if(has_active_request
+					&& active_request.source == ChunkMeshSource::planet_terrain
+					&& active_request.component_slot_id == component_slot_id
+					&& active_request.component_generation_id == component_generation_id)
+				{
+					active_request_cancelled = true;
+				}
+				result_space_available.notify_all();
+			}
 		};
 
 		ChunkMeshGeneratorService generator_service;
@@ -198,6 +290,11 @@ namespace danikk_space_engine
 		const DynamicArray<ChunkMeshGenerationRequest>& requests)
 	{
 		generator_service.update(generation_id, requests);
+	}
+	void cancelChunkMeshGenerationRequests(
+		WorldBodyComponentSlotId component_slot_id, uint64 component_generation_id)
+	{
+		generator_service.cancel(component_slot_id, component_generation_id);
 	}
 	bool tryTakeGeneratedChunkMesh(GeneratedChunkMesh& result)
 	{

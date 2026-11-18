@@ -4,6 +4,7 @@
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/component/world_body/planet/terrain_edit_save.h>
 #include <danikk_space_engine/component/world_body/planet/terrain.h>
+#include <danikk_space_engine/planet_terrain_system.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <cmath>
@@ -43,6 +44,11 @@ namespace danikk_space_engine
 				if(!edit.adds_solid_terrain) continue;
 				outer_radius = glm::max(outer_radius, glm::length(edit.center) + edit.radius + surface_margin);
 			}
+			PlanetTerrainSnapshot terrain_snapshot;
+			terrain_snapshot.planet_radius = planet_settings.radius;
+			terrain_snapshot.core_radius = planet_settings.core_radius;
+			terrain_snapshot.noise_seed = planet_settings.noise_seed;
+			terrain_snapshot.terrain_edits = static_cast<DynamicArray<PlanetTerrainEdit>&&>(terrain_edits);
 
 			const glm::dvec3 directions[] = {
 				glm::dvec3(0.0, 0.0, 1.0), glm::dvec3(0.0, 0.0, -1.0),
@@ -58,8 +64,7 @@ namespace danikk_space_engine
 				glm::max(step, (planet_settings.radius - core_clearance) * 0.25));
 			const auto density_at = [&](const glm::dvec3& position)
 			{
-				return samplePlanetScalarField(position, planet_settings.radius,
-					planet_settings.noise_seed, terrain_edits, planet_settings.core_radius);
+				return getPlanetDensity(terrain_snapshot, position);
 			};
 
 			for(const glm::dvec3& direction : directions)

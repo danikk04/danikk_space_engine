@@ -3,6 +3,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
+#include <danikk_space_engine/planet_terrain_system.h>
 #include "internal.h"
 #include <danikk_engine/danikk_engine.h>
 
@@ -113,9 +114,8 @@ namespace danikk_space_engine
 					for(size_t x = 0; x < points_per_axis; x++)
 					{
 						const size_t point_index = pointId(x, y, z);
-						densities[point_index] = samplePlanetScalarField(
-							pointPosition(x, y, z), request.planet_radius, request.noise_seed,
-							request.terrain_edits, request.core_radius);
+						densities[point_index] = getPlanetDensity(
+							*request.planet_terrain, pointPosition(x, y, z));
 					}
 				}
 			}
@@ -150,9 +150,7 @@ namespace danikk_space_engine
 				{
 					const double middle = (lower + upper) * 0.5;
 					const glm::dvec3 sample_position = glm::mix(first.position, second.position, middle);
-					const double density = samplePlanetScalarField(
-						sample_position, request.planet_radius, request.noise_seed,
-						request.terrain_edits, request.core_radius);
+					const double density = getPlanetDensity(*request.planet_terrain, sample_position);
 					if((density >= 0.0) == first_is_solid) lower = middle;
 					else upper = middle;
 				}
@@ -292,6 +290,13 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
+		if(request.planet_terrain == nullptr
+			|| request.planet_terrain->component_slot_id != request.component_slot_id
+			|| request.planet_terrain->component_generation_id != request.component_generation_id
+			|| request.planet_terrain->terrain_revision != request.terrain_revision)
+		{
+			danikk_engine::formatFatalError("Planet chunk request has an invalid terrain snapshot");
+		}
 		GeneratedChunkMesh result = generatePlanetChunkGeometry(request);
 
 		const size_t triangle_count = result.triangle_point_indices.size() / 3;
@@ -304,8 +309,7 @@ namespace danikk_space_engine
 			const vec3 c = result.point_positions[result.triangle_point_indices[first_index + 2]];
 			const glm::dvec3 center = request.chunk_position
 				+ (glm::dvec3(a) + glm::dvec3(b) + glm::dvec3(c)) / 3.0;
-			result.triangle_material_ids.push(getPlanetSurfaceMaterial(
-				center, request.planet_radius, request.noise_seed));
+			result.triangle_material_ids.push(getPlanetMaterial(*request.planet_terrain, center));
 		}
 		return result;
 	}

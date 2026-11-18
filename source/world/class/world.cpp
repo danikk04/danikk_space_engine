@@ -207,6 +207,38 @@ namespace danikk_space_engine
 		chunk_generation_requests_dirty = true;
 	}
 
+	/** @copydoc World::destroyWorldBody */
+	void World::destroyWorldBody(WorldBodyId body_id)
+	{
+		if(!data.isWorldBodyActive(body_id)) return;
+		DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
+		for(WorldBodyComponentSlotId slot_id : data.getWorldBody(body_id).component_slot_ids)
+			component_slot_ids.push(slot_id);
+
+		for(WorldBodyComponentSlotId slot_id : component_slot_ids)
+		{
+			if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
+			const uint64 component_generation_id = data.getWorldBodyComponentSlot(slot_id).generation_id;
+			cancelChunkMeshGenerationRequests(slot_id, component_generation_id);
+			for(size_t index = 0; index < chunk_generation_requests.size();)
+			{
+				const ChunkMeshGenerationRequest& request = chunk_generation_requests[index];
+				if(request.source != ChunkMeshSource::planet_terrain
+					|| request.component_slot_id != slot_id
+					|| request.component_generation_id != component_generation_id)
+				{
+					++index;
+					continue;
+				}
+				for(size_t shift = index + 1; shift < chunk_generation_requests.size(); ++shift)
+					chunk_generation_requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(chunk_generation_requests[shift]);
+				chunk_generation_requests.resize(chunk_generation_requests.size() - 1);
+				chunk_generation_requests_dirty = true;
+			}
+		}
+		data.destroyWorldBody(body_id);
+	}
+
 	/**
 	 * @brief Removes the queued request for one component/grid coordinate and marks the worker queue dirty.
 	 * @param component_slot_id Owner component of the request.

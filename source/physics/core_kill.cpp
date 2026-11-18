@@ -92,7 +92,7 @@ namespace danikk_space_engine
 		}
 		for(WorldBodyId body_id : bodies_to_destroy)
 		{
-			world.data.destroyWorldBody(body_id);
+			world.destroyWorldBody(body_id);
 		}
 
 		PointId camera_point_id = static_cast<PointId>(-1);

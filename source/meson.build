@@ -9,6 +9,7 @@ sources = files(
 	'profiler.cpp',
 	'component_tick_system.cpp',
 	'component_render_system.cpp',
+	'planet_terrain_system.cpp',
 )
 
 subdir('effects')

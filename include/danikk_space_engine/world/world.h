@@ -96,6 +96,9 @@ namespace danikk_space_engine
 		 */
 		void deferPointDestruction(PointId point_id);
 
+		/** @brief Cancels generation work owned by the body's component slots, then destroys the body. */
+		void destroyWorldBody(WorldBodyId body_id);
+
 		/** @brief Snapshots dirty BuildPart chunks into CPU-only mesh generation jobs. */
 		void queueDirtyBuildPartMeshes();
 
