@@ -5,6 +5,7 @@
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/asset.h>
 
 #include <danikk_engine/danikk_engine.h>
@@ -114,8 +115,11 @@ namespace danikk_space_engine
 			const RaycastHit hit = world.raycast(start_world_position, vec3(direction), step_distance);
 			double nearest = hit.hit ? hit.distance : step_distance;
 			PointComponentSlotId victim_id = static_cast<PointComponentSlotId>(-1);
+			PointComponentSlotId suppression_target_id = static_cast<PointComponentSlotId>(-1);
+			double nearest_suppression_distance = nearest;
 			for(PointComponentSlotId id : world.data.getUsedPointComponentSlotIds())
 			{
+				if(!world.data.isPointComponentSlotActive(id)) continue;
 				const PointComponentSlot& candidate = world.data.getPointComponentSlot(id);
 				if(candidate.type_id != PointComponentTypeId::human || candidate.point_id == bullet.owner_point_id
 					|| !world.data.isPointActive(candidate.point_id) || !world.data.isChunkActive(candidate.chunk_id)) continue;
@@ -131,6 +135,13 @@ namespace danikk_space_engine
 					const glm::dvec3 offset = center + up * (i * human.getHeight() * 0.18) - start_world_position;
 					const double along = glm::dot(offset, direction);
 					const double perpendicular = glm::dot(offset, offset) - along * along;
+					const double suppression_radius = radius + 0.75;
+					if(along >= 0.0 && along <= nearest && perpendicular <= suppression_radius * suppression_radius
+						&& along < nearest_suppression_distance)
+					{
+						nearest_suppression_distance = along;
+						suppression_target_id = id;
+					}
 					if(perpendicular > radius * radius) continue;
 					const double half_chord = std::sqrt(glm::max(0.0, radius * radius - perpendicular));
 					if(along + half_chord < 0.0) continue;
@@ -142,10 +153,19 @@ namespace danikk_space_engine
 			{
 				const PointComponentSlot& victim = world.data.getPointComponentSlot(victim_id);
 				DamageableComponent* health = findDamageable(world, victim.chunk_id, victim.point_id);
-				if(health != nullptr) applyBallisticDamage(*health, bullet.damage, victim.point_id);
+				if(health != nullptr)
+				{
+					reportUnitAttack(world, bullet.owner_point_id, victim.point_id);
+					applyBallisticDamage(*health, bullet.damage, victim.point_id);
+				}
 				bullet.destruction_queued = true;
 				world.deferPointDestruction(slot.point_id);
 				return;
+			}
+			if(suppression_target_id != static_cast<PointComponentSlotId>(-1))
+			{
+				const PointComponentSlot& target = world.data.getPointComponentSlot(suppression_target_id);
+				reportUnitAttack(world, bullet.owner_point_id, target.point_id);
 			}
 			if(hit.hit)
 			{

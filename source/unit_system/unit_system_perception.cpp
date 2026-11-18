@@ -274,8 +274,9 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Converts visible-to-lost transitions into search locations and advances the combat timer. */
 	void finishPerception(World& world, UnitSystem& system, float dt)
 	{
-		if(system.enemy_seen_this_tick) system.time_since_enemy_visible = 0.0f;
+		if(system.enemy_seen_this_tick || system.attack_reported_this_tick) system.time_since_enemy_visible = 0.0f;
 		else system.time_since_enemy_visible += glm::max(dt, 0.0f);
+		system.attack_reported_this_tick = false;
 
 		for(size_t index = 0; index < system.known_sightings.size();)
 		{

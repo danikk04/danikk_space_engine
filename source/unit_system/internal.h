@@ -17,6 +17,8 @@ namespace danikk_space_engine
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 body_local_position = glm::dvec3(0.0);
 		uint32 last_seen_timestamp_ms = 0;
+		uint32 last_attack_timestamp_ms = 0;
+		PointId last_attacked_point_id = static_cast<PointId>(-1);
 		bool visible_last_tick = false;
 		bool visible_this_tick = false;
 		bool visibility_checked_this_tick = false;
@@ -40,6 +42,7 @@ namespace danikk_space_engine
 		DynamicArray<UnitSearchLocation> search_locations;
 		float time_since_enemy_visible = 0.0f;
 		bool enemy_seen_this_tick = false;
+		bool attack_reported_this_tick = false;
 	};
 
 	namespace unit_system_internal
