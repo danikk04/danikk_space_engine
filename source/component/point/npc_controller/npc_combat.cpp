@@ -1,7 +1,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/point/inventory.h>
-#include <danikk_space_engine/item.h>
+#include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine::npc_internal

@@ -3,7 +3,6 @@ sources = files(
 	'tool_catalog.cpp',
 	'config.cpp',
 	'factions.cpp',
-	'item.cpp',
 	'localization.cpp', 
 	'main.cpp', 
 	'material.cpp',
@@ -11,6 +10,7 @@ sources = files(
 )
 
 subdir('effects')
+subdir('item')
 subdir('gui')
 subdir('math')
 subdir('component')

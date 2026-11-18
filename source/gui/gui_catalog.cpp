@@ -1,6 +1,6 @@
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/asset.h>
-#include <danikk_space_engine/item.h>
+#include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/world/build_part_shape.h>

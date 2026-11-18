@@ -16,8 +16,8 @@ namespace danikk_space_engine
 	using PlanetSettingsId = uint32;
 	/** @brief 32-bit index into the shared Minecraft skin texture catalog. */
 	using HumanSkinId = uint32;
-	/** @brief 32-bit index into the item-category behavior table. */
-	using ItemTypeId = uint32;
+	/** @brief 32-bit index into the item-category definition table. */
+	using ItemCategoryId = uint32;
 	/** @brief 32-bit index into the concrete item-definition catalog. */
 	using ItemDefinitionId = uint32;
 	/** @brief Index of a projectile definition. */

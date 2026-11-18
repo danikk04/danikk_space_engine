@@ -4,7 +4,7 @@
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>
-#include <danikk_space_engine/item.h>
+#include <danikk_space_engine/item/item.h>
 
 #include "internal.h"
 
@@ -68,7 +68,7 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			for(InventorySlot& item : inventory->slots)
 			{
-				if(item.isEmpty() || getItemDefinition(item.item_definition_id).type_id != item_type_ids::weapon) continue;
+				if(item.isEmpty() || getItemDefinition(item.item_definition_id).category_id != item_category_ids::weapon) continue;
 				weapon = &item;
 				break;
 			}

@@ -6,7 +6,7 @@
 #include <danikk_space_engine/component/point/human/skin.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>
-#include <danikk_space_engine/item.h>
+#include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
