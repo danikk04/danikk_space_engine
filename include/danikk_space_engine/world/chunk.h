@@ -29,6 +29,8 @@ namespace danikk_space_engine
 		bool planet_terrain = false;
 		/** @brief Subset of the point-component list containing only human slots. */
 		DynamicArray<PointComponentSlotId> human_component_slot_ids;
+		/** @brief Living humans eligible for capsule collision checks. */
+		DynamicArray<PointComponentSlotId> collision_human_component_slot_ids;
 
 		/** @brief Registers a unique slot and updates the human subset when applicable. */
 		void addPointComponentSlot(PointComponentSlotId slot_id, PointComponentTypeId type_id);
@@ -80,6 +82,16 @@ namespace danikk_space_engine
 		const DynamicArray<PointComponentSlotId>& getHumanComponentSlotIds() const
 		{
 			return human_component_slot_ids;
+		}
+
+		/** @brief Adds a human slot to the collision set if it is not already present. */
+		void addCollisionHumanComponentSlot(PointComponentSlotId slot_id);
+		/** @brief Removes a human slot from collision checks; other chunk memberships are retained. */
+		void removeCollisionHumanComponentSlot(PointComponentSlotId slot_id);
+		/** @brief Returns living human slots eligible for capsule collision checks. */
+		const DynamicArray<PointComponentSlotId>& getCollisionHumanComponentSlotIds() const
+		{
+			return collision_human_component_slot_ids;
 		}
 
 		/**

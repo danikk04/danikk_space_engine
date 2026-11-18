@@ -14,6 +14,22 @@
 
 namespace danikk_space_engine
 {
+	namespace
+	{
+		/** @brief Changes collision participation without removing the human from its chunk. */
+		void setHumanCollisionMembership(World& world, Chunk& chunk, PointComponentSlot& human_slot, bool enabled)
+		{
+			for(PointComponentSlotId slot_id : chunk.getHumanComponentSlotIds())
+			{
+				if(&world.data.getPointComponentSlot(slot_id) != &human_slot) continue;
+				if(enabled) chunk.addCollisionHumanComponentSlot(slot_id);
+				else chunk.removeCollisionHumanComponentSlot(slot_id);
+				return;
+			}
+			formatFatalError("Human component is missing from its chunk cache");
+		}
+	}
+
 	/** @brief Stores the death timestamp only once, preserving the original death moment. */
 	void HumanComponent::startDeathTimestamp(uint32 timestamp_ms)
 	{
@@ -89,7 +105,7 @@ namespace danikk_space_engine
 			formatFatalError("Human references an invalid point or chunk");
 		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
 		Point& point = world.data.getPoint(slot.point_id);
-		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
+		Chunk& chunk = world.data.getChunk(slot.chunk_id);
 		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 world_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 		const glm::dvec3 gravity_world = world.environment.sampleGravityAt(world, world_position);
@@ -103,6 +119,7 @@ namespace danikk_space_engine
 		human.up = glm::normalize(human.up);
 		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
 		const DamageableComponent* damageable = findDamageable(world, slot.chunk_id, slot.point_id);
+		const bool was_dead = human.hasDeathTimestamp();
 		if(damageable != nullptr && damageable->getHealth() <= 0.0f)
 		{
 			if(human.body_pose == HumanBodyPose::standing)
@@ -130,12 +147,14 @@ namespace danikk_space_engine
 				human.arm_pose = HumanArmPose::corpse_spread;
 			}
 			human.startDeathTimestamp(danikk_engine::getMsTimestamp());
+			if(!was_dead) setHumanCollisionMembership(world, chunk, slot, false);
 			human.desired_velocity = vec3(0.0f);
 			human.walk_amplitude = 0.0f;
 			moveWithGround(world, chunk, body, human, point, vec3(0.0f), gravity, dt);
 			return;
 		}
 		human.clearDeathTimestamp();
+		if(was_dead) setHumanCollisionMembership(world, chunk, slot, true);
 		if(human.body_pose != HumanBodyPose::standing)
 		{
 			human.arm_pose = HumanArmPose::relaxed;

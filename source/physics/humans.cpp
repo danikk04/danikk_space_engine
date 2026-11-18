@@ -47,7 +47,7 @@ namespace danikk_space_engine
 		void updateHumanCollisionActivity(WorldData& data, Chunk& chunk, const WorldBody& body)
 		{
 			chunk.has_active_human_collisions = false;
-			for(PointComponentSlotId slot_id : chunk.getHumanComponentSlotIds())
+			for(PointComponentSlotId slot_id : chunk.getCollisionHumanComponentSlotIds())
 			{
 				PointComponentSlot& slot = data.getPointComponentSlot(slot_id);
 				auto& human = *static_cast<HumanComponent*>(slot.getData());
@@ -102,8 +102,9 @@ namespace danikk_space_engine
 			if(slot.type_id != PointComponentTypeId::human || !world.data.isChunkActive(slot.chunk_id)
 				|| !world.data.isPointActive(slot.point_id)) return false;
 			HumanComponent& component = *static_cast<HumanComponent*>(slot.getData());
+			if(component.hasDeathTimestamp()) return false;
 			const DamageableComponent* health = findDamageable(world, slot.chunk_id, slot.point_id);
-			if(component.hasDeathTimestamp() || (health != nullptr && health->getHealth() <= 0.0f)) return false;
+			if(health != nullptr && health->getHealth() <= 0.0f) return false;
 			const double height = component.getHeight();
 			if(height <= 0.0) return false;
 
@@ -309,8 +310,8 @@ namespace danikk_space_engine
 		bool resolveHumanChunkPair(World& world, const Chunk& first, const Chunk& second)
 		{
 			if(!first.has_active_human_collisions && !second.has_active_human_collisions) return false;
-			const auto& first_ids = first.getHumanComponentSlotIds();
-			const auto& second_ids = second.getHumanComponentSlotIds();
+			const auto& first_ids = first.getCollisionHumanComponentSlotIds();
+			const auto& second_ids = second.getCollisionHumanComponentSlotIds();
 			const bool same_chunk = first.chunk_id == second.chunk_id;
 			if(first_ids.size() == 0 || second_ids.size() <= (same_chunk ? 1u : 0u)) return false;
 
@@ -381,7 +382,7 @@ namespace danikk_space_engine
 			{
 				entry.minimum = infinity;
 				entry.maximum = -infinity;
-				for(PointComponentSlotId slot_id : entry.chunk->getHumanComponentSlotIds())
+				for(PointComponentSlotId slot_id : entry.chunk->getCollisionHumanComponentSlotIds())
 				{
 					const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
 					const auto& human = *static_cast<const HumanComponent*>(slot.getData());
@@ -445,7 +446,7 @@ namespace danikk_space_engine
 		for(ChunkId chunk_id : world.data.getUsedChunkIds())
 		{
 			Chunk& chunk = world.data.getChunk(chunk_id);
-			if(chunk.getHumanComponentSlotIds().size() == 0) continue;
+			if(chunk.getCollisionHumanComponentSlotIds().size() == 0) continue;
 
 			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 			updateHumanCollisionActivity(world.data, chunk, body);
@@ -479,7 +480,7 @@ namespace danikk_space_engine
 
 		for(const OccupiedHumanChunk& entry : occupied_chunks)
 		{
-			for(PointComponentSlotId slot_id : entry.chunk->getHumanComponentSlotIds())
+			for(PointComponentSlotId slot_id : entry.chunk->getCollisionHumanComponentSlotIds())
 			{
 				auto& human = getChunkHuman(world.data, slot_id);
 				if(!human.displaced_by_human_collision) continue;

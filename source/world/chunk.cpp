@@ -29,6 +29,7 @@ namespace danikk_space_engine
 		: bounds_valid(other.bounds_valid),
 		planet_terrain(other.planet_terrain),
 		human_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids)),
+		collision_human_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.collision_human_component_slot_ids)),
 		has_active_human_collisions(other.has_active_human_collisions),
 		build_part_mesh_dirty(other.build_part_mesh_dirty),
 		build_part_mesh_revision(other.build_part_mesh_revision),
@@ -61,6 +62,7 @@ namespace danikk_space_engine
 		point_ids = static_cast<DynamicArray<PointId>&&>(other.point_ids);
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
 		human_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids);
+		collision_human_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.collision_human_component_slot_ids);
 		return *this;
 	}
 
@@ -86,6 +88,22 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Point component % is missing from owning chunk %", slot_id, chunk_id);
 		if(type_id == PointComponentTypeId::human && !removePointComponentId(human_component_slot_ids, slot_id))
 			danikk_engine::formatFatalError("Human component % is missing from chunk % cache", slot_id, chunk_id);
+		if(type_id == PointComponentTypeId::human)
+			removePointComponentId(collision_human_component_slot_ids, slot_id);
+	}
+
+	/** @copydoc Chunk::addCollisionHumanComponentSlot */
+	void Chunk::addCollisionHumanComponentSlot(PointComponentSlotId slot_id)
+	{
+		for(PointComponentSlotId existing_id : collision_human_component_slot_ids)
+			if(existing_id == slot_id) return;
+		collision_human_component_slot_ids.push(slot_id);
+	}
+
+	/** @copydoc Chunk::removeCollisionHumanComponentSlot */
+	void Chunk::removeCollisionHumanComponentSlot(PointComponentSlotId slot_id)
+	{
+		removePointComponentId(collision_human_component_slot_ids, slot_id);
 	}
 
 	/**

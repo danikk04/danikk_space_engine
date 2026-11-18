@@ -1,4 +1,5 @@
 #include <danikk_space_engine/world/data.h>
+#include <danikk_space_engine/component/point/human/human.h>
 
 namespace danikk_space_engine
 {
@@ -47,6 +48,9 @@ namespace danikk_space_engine
 
 		addPointReferenceToChunk(chunk_id, slot.point_id);
 		chunk.addPointComponentSlot(slot_id, slot.type_id);
+		if(slot.type_id == PointComponentTypeId::human
+			&& !static_cast<HumanComponent*>(slot.getData())->hasDeathTimestamp())
+			chunk.addCollisionHumanComponentSlot(slot_id);
 		if(slot.type_id == PointComponentTypeId::build_part) chunk.invalidateBuildPartMesh();
 		slot.chunk_id = chunk_id;
 	}
