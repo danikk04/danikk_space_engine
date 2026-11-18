@@ -1,7 +1,10 @@
 #include <algorithm>
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+
+#include <danikk_framework/log.h>
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
@@ -98,6 +101,14 @@ namespace danikk_space_engine
 			DynamicArray<GeneratedChunkMesh> completed;
 			DynamicArray<std::thread> workers;
 			DynamicArray<ActiveRequest> active_requests;
+			/** @brief Number of worker-side mesh generations in the current 50-result sample. */
+			uint32 generation_sample_count = 0;
+			/** @brief Sum of generation durations in the current sample, in nanoseconds. */
+			uint64 generation_sample_total_nanoseconds = 0;
+			/** @brief Shortest generation duration in the current sample, in nanoseconds. */
+			uint64 generation_sample_minimum_nanoseconds = 0;
+			/** @brief Longest generation duration in the current sample, in nanoseconds. */
+			uint64 generation_sample_maximum_nanoseconds = 0;
 			bool stopping = false;
 			uint64 current_generation_id = 0;
 
@@ -136,9 +147,37 @@ namespace danikk_space_engine
 						active_requests.push(ActiveRequest{request, false});
 					}
 
+					const auto generation_start_time = std::chrono::steady_clock::now();
 					GeneratedChunkMesh result = generateChunkMesh(request);
+					const uint64 generation_nanoseconds = static_cast<uint64>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+						std::chrono::steady_clock::now() - generation_start_time).count());
+					bool report_generation_sample = false;
+					float average_generation_milliseconds = 0.0f;
+					float minimum_generation_milliseconds = 0.0f;
+					float maximum_generation_milliseconds = 0.0f;
 					{
 						std::unique_lock<std::mutex> lock(mutex);
+						if(generation_sample_count == 0 || generation_nanoseconds < generation_sample_minimum_nanoseconds)
+							generation_sample_minimum_nanoseconds = generation_nanoseconds;
+						if(generation_sample_count == 0 || generation_nanoseconds > generation_sample_maximum_nanoseconds)
+							generation_sample_maximum_nanoseconds = generation_nanoseconds;
+						generation_sample_total_nanoseconds += generation_nanoseconds;
+						generation_sample_count++;
+						if(generation_sample_count == 50)
+						{
+							constexpr float nanoseconds_per_millisecond = 1000000.0f;
+						average_generation_milliseconds = static_cast<float>(generation_sample_total_nanoseconds)
+							/ 50.0f / nanoseconds_per_millisecond;
+						minimum_generation_milliseconds = static_cast<float>(generation_sample_minimum_nanoseconds)
+							/ nanoseconds_per_millisecond;
+						maximum_generation_milliseconds = static_cast<float>(generation_sample_maximum_nanoseconds)
+							/ nanoseconds_per_millisecond;
+						generation_sample_count = 0;
+						generation_sample_total_nanoseconds = 0;
+						generation_sample_minimum_nanoseconds = 0;
+						generation_sample_maximum_nanoseconds = 0;
+							report_generation_sample = true;
+						}
 						result_space_available.wait(lock, [this, &request]
 						{
 							const size_t active_index = findActiveRequest(request);
@@ -152,6 +191,12 @@ namespace danikk_space_engine
 						if(!stopping && !cancelled && request.generation_id == current_generation_id)
 							completed.pushMove(result);
 					}
+					if(report_generation_sample)
+						danikk_framework::formatLogInfo(
+							"Chunk mesh generation (last 50): avg % ms, min % ms, max % ms",
+							average_generation_milliseconds,
+							minimum_generation_milliseconds,
+							maximum_generation_milliseconds);
 				}
 			}
 		public:
