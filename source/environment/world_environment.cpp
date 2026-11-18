@@ -1,4 +1,4 @@
-#include <danikk_space_engine/world_environment.h>
+#include <danikk_space_engine/environment.h>
 
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/world/world.h>

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/world_environment.h>
-#include <danikk_space_engine/world_physics.h>
+#include <danikk_space_engine/environment.h>
+#include <danikk_space_engine/physics.h>
 
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point/camera.h>

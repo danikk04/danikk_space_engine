@@ -4,6 +4,7 @@
 #include <danikk_engine/texture_methods.h>
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/human/skin.h>
 #include <danikk_space_engine/asset.h>
 
 namespace danikk_space_engine
@@ -24,7 +25,7 @@ namespace danikk_space_engine
 		{
 			DSE_WATCH();
 			HumanDefinition& definition = static_asset_collection.human_definition;
-			Texture& skin = static_asset_collection.getMinecraftSkin(skin_id);
+			Texture& skin = getHumanSkin(skin_id).texture;
 			const bool has_skin = !skin.isNull();
 			if(has_skin) skin.bind();
 			else white_texture.bind();
@@ -100,7 +101,7 @@ namespace danikk_space_engine
 					formatLogWarning("3D human rendering is not implemented; using default Minecraft appearance");
 					reported_unimplemented = true;
 				}
-				drawMinecraftHuman(human, world_matrix, 0);
+				drawMinecraftHuman(human, world_matrix, human_skin_ids::none);
 				return;
 			}
 		}

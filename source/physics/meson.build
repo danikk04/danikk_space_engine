@@ -1,4 +1,5 @@
 sources += files(
+	'phycics.cpp',
 	'motion.cpp',
 	'core_kill.cpp',
 	'planet.cpp',

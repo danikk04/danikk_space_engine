@@ -8,13 +8,10 @@ sources = files(
 	'main.cpp', 
 	'material.cpp',
 	'profiler.cpp',
-	'world_environment.cpp',
-	'world_physics.cpp',
 )
 
 subdir('effects')
 subdir('gui')
-subdir('shape')
 subdir('math')
 subdir('component')
 subdir('scenario')
@@ -23,3 +20,4 @@ subdir('chunk_mesh_generator')
 subdir('physics')
 subdir('tool')
 subdir('unit_system')
+subdir('environment')

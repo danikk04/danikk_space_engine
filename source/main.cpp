@@ -3,6 +3,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/component/point/human/skin.h>
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/world/world.h>
@@ -42,8 +43,8 @@ namespace danikk_engine_game
     /**
 	 * @brief Attempts to load settings, initializes shared assets and UI, then creates the world.
 	 * @details Graphics context creation is managed by the framework before this callback. The
-	 * callback sets the window title, attempts to load `settings.cfg`, loads shared assets and
-	 * item/human catalogs, then loads built-in materials. It next defines and composes the debug
+	 * callback sets the window title, attempts to load `settings.cfg`, loads shared assets,
+	 * item/human catalogs and human skins, then loads built-in materials. It next defines and composes the debug
 	 * label, registers localization strings, initializes World and its base scenario, and finally
 	 * selects the base 2D shader for GUI rendering. A missing settings file leaves the defaults in
 	 * use. The return value of `config.load()` is not checked here, so startup continues after a
@@ -54,6 +55,7 @@ namespace danikk_engine_game
 		setWindowTitle("Danikk Space Engine");
 		config.load();
 		launchCheckRSSDiff(static_asset_collection.load());
+		loadHumanSkins();
 		loadMaterials();
 		gui.define();
 		gui.compose();

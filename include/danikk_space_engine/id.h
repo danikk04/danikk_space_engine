@@ -12,8 +12,6 @@ namespace danikk_space_engine
 	using WorldBodyId = uint32;
 	/** @brief 32-bit index identifying a material definition. */
 	using MaterialId = uint32;
-	/** @brief 32-bit index identifying a registered shape definition. */
-	using ShapeId = uint32;
 	/** @brief 32-bit index identifying a planet settings preset. */
 	using PlanetSettingsId = uint32;
 	/** @brief 32-bit index into the shared Minecraft skin texture catalog. */

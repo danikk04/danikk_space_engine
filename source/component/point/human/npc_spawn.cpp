@@ -3,10 +3,10 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/human/skin.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/item.h>
-#include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
@@ -34,7 +34,7 @@ namespace danikk_space_engine
 		Point& point = world.data.getPoint(point_id);
 		HumanComponent human;
 		human.faction_id = base_faction_ids::player;
-		human.appearance.skin_id = static_asset_collection.usmc_marpat_woodland_skin_id;
+		human.appearance.skin_id = human_skin_ids::usmc_marpat_woodland;
 		human.up = glm::length(up) > 1e-6f ? glm::normalize(up) : vec3(0, 0, 1);
 		human.setInitialForward(forward);
 		point.position = vec3(position - chunk_position) + human.up * (human.getHeight() * 0.5f);

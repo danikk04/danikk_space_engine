@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/world_physics.h>
+#include <danikk_space_engine/physics.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include "internal.h"

@@ -3,7 +3,7 @@
 #include <limits>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/world_physics.h>
+#include <danikk_space_engine/physics.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>

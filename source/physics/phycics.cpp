@@ -1,5 +1,5 @@
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/world_physics.h>
+#include <danikk_space_engine/physics.h>
 
 namespace danikk_space_engine
 {

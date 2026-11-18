@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	 * @brief Selects the geometry and texture path used to render a human.
 	 *
 	 * The Minecraft path uses the shared six-part cuboid rig and interprets `skin_id` as an
-	 * index in the loaded skin texture array. The model path is reserved; rendering currently
+	 * index in the loaded human-skin catalog. The model path is reserved; rendering currently
 	 * warns once and falls back to the default Minecraft-style appearance.
 	 */
 	enum class HumanRenderType : uint8
