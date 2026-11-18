@@ -233,7 +233,3 @@ namespace danikk_space_engine
 		DSE_WATCH_SIGNATURE, __func__); \
 	[[maybe_unused]] const auto dse_watcher = ::danikk_space_engine::Watcher::create(dse_watcher_name.text)
 
-/** @brief Profiles a custom scope with a string literal label. Declare once per scope. */
-#define DSE_WATCH_SCOPE(name) \
-	static constexpr char dse_watcher_name[] = name; \
-	[[maybe_unused]] const auto dse_watcher = ::danikk_space_engine::Watcher::create(dse_watcher_name)

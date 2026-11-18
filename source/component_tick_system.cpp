@@ -12,7 +12,7 @@ namespace danikk_space_engine
 
 		Chunk& chunk = world.data.getChunk(chunk_id);
 		{
-			DSE_WATCH_SCOPE("Point components");
+			DSE_WATCH();
 			const size_t component_count = chunk.point_component_slot_ids.size();
 			for(size_t component_index = 0; component_index < component_count; component_index++)
 			{

@@ -29,7 +29,7 @@ namespace danikk_space_engine
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			DSE_WATCH_SCOPE("WorldBody components");
+			DSE_WATCH();
 			renderWorldBodyComponents(*this);
 		}
 		queueDirtyBuildPartMeshes();
@@ -38,7 +38,7 @@ namespace danikk_space_engine
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			DSE_WATCH_SCOPE("updateChunkMeshGenerationRequests");
+			DSE_WATCH();
 			updateChunkMeshGenerationRequests(chunk_mesh_generator_generation_id, chunk_generation_requests);
 			chunk_generation_requests_dirty = false;
 		}
@@ -77,7 +77,7 @@ namespace danikk_space_engine
 					/**
 					 * @brief Measures the duration of the enclosing profiler scope.
 					 */
-					DSE_WATCH_SCOPE("Accept generated chunk");
+					DSE_WATCH();
 					type.accept_generated_chunk(slot, *this, generated_chunk);
 				}
 			}
@@ -91,14 +91,14 @@ namespace danikk_space_engine
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			DSE_WATCH_SCOPE("Chunk mesh and component frame");
+			DSE_WATCH();
 			renderChunkComponents(*this);
 		}
 		{
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			DSE_WATCH_SCOPE("Chunk draw");
+			DSE_WATCH();
 			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 			{
 				const WorldBody& body = data.getWorldBody(body_id);

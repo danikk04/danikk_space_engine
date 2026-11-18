@@ -24,7 +24,7 @@ namespace danikk_space_engine
 			/**
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
-			DSE_WATCH_SCOPE("WorldBody components");
+			DSE_WATCH();
 			tickWorldBodyComponents(*this);
 		}
 		for(PointComponentSlotId slot_id : pending_npc_chunk_updates) updateNpcChunkAfterTick(*this, slot_id);

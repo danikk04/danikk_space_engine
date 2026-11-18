@@ -82,7 +82,7 @@ namespace danikk_engine_game
 				/**
 				 * @brief Measures the duration of the enclosing profiler scope.
 				 */
-				DSE_WATCH_SCOPE("GUI::frame");
+				DSE_WATCH();
 				gui.frame();
 			}
 			if(getKeyboardState(keyboard_buttons::escape) == button_states::press)
