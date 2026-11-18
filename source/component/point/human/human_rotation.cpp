@@ -17,17 +17,20 @@ namespace danikk_space_engine
 		forward = glm::normalize(horizontal);
 	}
 
-	void HumanComponent::lookAtDirection(const vec3& direction)
+	void HumanComponent::lookAtDirection(const vec3& direction, float target_distance)
 	{
 		DSE_WATCH();
-		if(glm::length(direction) > 1e-6f) target_look_direction = glm::normalize(direction);
+		if(glm::length(direction) > 1e-6f)
+		{
+			target_look_direction = glm::normalize(direction);
+			target_look_distance = glm::max(target_distance, 0.0f);
+		}
 	}
 
 	vec3 HumanComponent::getWeaponDirection() const
 	{
 		DSE_WATCH();
-		const vec3 facing = glm::angleAxis(head_rotation.x, up) * forward;
-		return glm::normalize(facing * std::cos(head_rotation.y) + up * std::sin(head_rotation.y));
+		return glm::normalize(forward * std::cos(weapon_aim_pitch) + up * std::sin(weapon_aim_pitch));
 	}
 
 	void HumanComponent::updateOrientation(const vec3& displacement, float dt)
@@ -42,20 +45,30 @@ namespace danikk_space_engine
 			const vec3 heading = glm::normalize(horizontal);
 			const float angle = std::atan2(glm::dot(up, glm::cross(forward, heading)),
 				glm::clamp(glm::dot(forward, heading), -1.0f, 1.0f));
-			const float body_angle = looking ? angle - glm::clamp(angle, -1.2f, 1.2f) : angle;
-			forward = glm::angleAxis(glm::clamp(body_angle, -dt * 4.0f, dt * 4.0f), up) * forward;
+			forward = glm::angleAxis(glm::clamp(angle, -dt * 4.0f, dt * 4.0f), up) * forward;
 		}
-		const float pitch = looking ? glm::clamp(std::atan2(glm::dot(requested, up), glm::length(horizontal)), -0.8f, 0.8f) : 0.0f;
-		head_rotation.y += glm::clamp(pitch - head_rotation.y, -dt * 4.0f, dt * 4.0f);
-		float yaw = 0.0f;
-		if(looking && glm::length(horizontal) > 1e-6f)
+		const float target_head_pitch = looking
+			? glm::clamp(std::atan2(glm::dot(requested, up), glm::length(horizontal)), -0.65f, 0.65f)
+			: 0.0f;
+		float target_weapon_pitch = target_head_pitch;
+		if(looking && target_look_distance > 1e-3f)
 		{
-			const vec3 heading = glm::normalize(horizontal);
-			yaw = glm::clamp(std::atan2(glm::dot(up, glm::cross(forward, heading)),
-				glm::dot(forward, heading)), -1.2f, 1.2f);
+			const vec3 target_from_point = up * (getHeight() * 0.375f) + requested * target_look_distance;
+			const vec3 muzzle_from_point = up * (getHeight() * 0.2f) + forward * (getHeight() * 0.6f);
+			const vec3 muzzle_to_target = target_from_point - muzzle_from_point;
+			const float weapon_horizontal_distance = glm::length(
+				muzzle_to_target - up * glm::dot(muzzle_to_target, up));
+			target_weapon_pitch = glm::clamp(
+				std::atan2(glm::dot(muzzle_to_target, up), weapon_horizontal_distance), -0.8f, 0.8f);
 		}
-		head_rotation.x += glm::clamp(yaw - head_rotation.x, -dt * 4.0f, dt * 4.0f);
+		else if(!looking)
+		{
+			target_weapon_pitch = 0.0f;
+		}
+		head_pitch += glm::clamp(target_head_pitch - head_pitch, -dt * 4.0f, dt * 4.0f);
+		weapon_aim_pitch += glm::clamp(target_weapon_pitch - weapon_aim_pitch, -dt * 4.0f, dt * 4.0f);
 		target_look_direction = vec3(0.0f);
+		target_look_distance = 0.0f;
 	}
 
 }

@@ -26,6 +26,8 @@ namespace danikk_space_engine
 		Shader base2d_shader;
 		/** @brief Shared 3D scene shader loaded during collection initialization. */
 		Shader base3d_shader;
+		/** @brief Unlit 3D shader used for bright projectile tracer quads. */
+		Shader bullet_tracer_shader;
 		/** @brief Shared bitmap font used by the default GUI style. */
 		Font base_font;
 		/** @brief Low-poly sphere mesh reused by bullet tracers and primitive previews. */

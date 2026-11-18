@@ -32,9 +32,9 @@ namespace danikk_space_engine::npc_internal
 		{
 			const glm::dvec3 head_position = own_position
 				+ body.rotation * glm::dvec3(human.up * (human.getHeight() * 0.375f));
-			const vec3 direction = vec3(glm::conjugate(body.rotation)
-				* (controller.order.look_target_world - head_position));
-			human.lookAtDirection(direction);
+			const glm::dvec3 target_offset = controller.order.look_target_world - head_position;
+			const vec3 direction = vec3(glm::conjugate(body.rotation) * target_offset);
+			human.lookAtDirection(direction, static_cast<float>(glm::length(target_offset)));
 		}
 	}
 }

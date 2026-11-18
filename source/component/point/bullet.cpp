@@ -19,7 +19,9 @@ namespace danikk_space_engine
 	{
 		const PointId point_id = world.data.createPoint();
 		world.data.getPoint(point_id).position = position;
-		const PointComponentSlotId slot_id = world.data.createPointComponentSlot(point_id, PointComponentTypeId::bullet, &bullet);
+		BulletComponent initial_bullet = bullet;
+		initial_bullet.previous_position = position;
+		const PointComponentSlotId slot_id = world.data.createPointComponentSlot(point_id, PointComponentTypeId::bullet, &initial_bullet);
 		world.data.addPointComponentSlotToChunk(chunk_id, slot_id);
 	}
 
@@ -100,6 +102,7 @@ namespace danikk_space_engine
 		if(delta_time <= 0.0f) return;
 		Point& point = world.data.getPoint(slot.point_id);
 		const vec3 start_position = point.position;
+		bullet.previous_position = start_position;
 		const vec3 displacement = bullet.velocity * delta_time;
 		const float step_distance = glm::length(displacement);
 		if(step_distance > 0.000001f)
@@ -173,12 +176,12 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Renders an orange tracer aligned to projectile velocity using the shared sphere mesh.
+	 * @brief Renders the travelled projectile segment as a narrow quad facing the camera.
 	 * @param slot Slot containing projectile state and render transform IDs.
-	 * @param world World used to construct the camera-relative chunk transform.
-	 * The tracer is assembled from a scaled low-poly sphere mesh, oriented along
-	 * velocity and drawn with a bright solid tint. Projectiles already queued for
-	 * destruction are skipped; missing shared mesh state is fatal.
+	 * @param world World used to convert the camera position into chunk-local space.
+	 * The quad spans the previous and current projectile positions. Its lateral axis is
+	 * perpendicular to both the segment and the view direction, with a fallback axis
+	 * for near-parallel vectors. A shared dynamic mesh is updated and drawn immediately.
 	 */
 	void frameBulletComponent(PointComponentSlot& slot, World& world)
 	{
@@ -189,36 +192,65 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Bullet component frame received null data");
 		}
 
-		if(static_asset_collection.low_poly_sphere_mesh.isNull())
-		{
-			danikk_engine::formatFatalError("Bullet component has no loaded sphere mesh");
-		}
-
 		const BulletComponent& bullet = *static_cast<const BulletComponent*>(slot.getData());
 		if(bullet.destruction_queued) return;
-		const vec3 position = world.data.getPoint(slot.point_id).position;
+		const vec3 current_position = world.data.getPoint(slot.point_id).position;
 		const float velocity_length = glm::length(bullet.velocity);
-		const vec3 forward = velocity_length > 0.000001f
-			? bullet.velocity / velocity_length
-			: vec3(1.0f, 0.0f, 0.0f);
-		const vec3 reference_axis = glm::abs(forward.y) < 0.95f
-			? vec3(0.0f, 1.0f, 0.0f)
-			: vec3(0.0f, 0.0f, 1.0f);
-		const vec3 side = glm::normalize(glm::cross(reference_axis, forward));
-		const vec3 up = glm::cross(forward, side);
-		mat4 orientation(1.0f);
-		orientation[0] = vec4(forward, 0.0f);
-		orientation[1] = vec4(side, 0.0f);
-		orientation[2] = vec4(up, 0.0f);
-
-		white_texture.bind();
-		setDrawColor(vec4(1.0f, 0.78f, 0.28f, 1.0f));
+		if(velocity_length <= 0.000001f) return;
+		const vec3 forward = bullet.velocity / velocity_length;
+		const float actual_segment_length = glm::length(current_position - bullet.previous_position);
+		const float visible_trail_length = glm::min(velocity_length * bullet.age,
+			glm::max(actual_segment_length, glm::min(velocity_length * 0.12f, 12.0f)));
+		const vec3 start_position = bullet.previous_position
+			- forward * glm::max(0.0f, visible_trail_length - actual_segment_length);
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
-		setWorldMatrix(
-			chunk.createWorldMatrix(world)
-			* glm::translate(mat4(1.0f), position)
-			* orientation
-			* glm::scale(mat4(1.0f), vec3(0.18f, 0.025f, 0.025f)));
-		static_asset_collection.low_poly_sphere_mesh.draw();
+		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+		const glm::dvec3 camera_local_position = glm::inverse(body.rotation)
+			* (world.getCameraWorldPosition() - body.position) - chunk.position;
+		const vec3 midpoint = (start_position + current_position) * 0.5f;
+		const vec3 to_camera = vec3(camera_local_position - glm::dvec3(midpoint));
+		vec3 side = glm::cross(forward, to_camera);
+		if(glm::dot(side, side) <= 1e-10f)
+		{
+			const vec3 fallback_axis = glm::abs(forward.z) < 0.9f
+				? vec3(0.0f, 0.0f, 1.0f)
+				: vec3(0.0f, 1.0f, 0.0f);
+			side = glm::cross(forward, fallback_axis);
+		}
+		side = glm::normalize(side) * 0.025f;
+		vec3 normal = glm::normalize(glm::cross(forward, side));
+		if(glm::dot(normal, to_camera) < 0.0f)
+		{
+			side = -side;
+			normal = -normal;
+		}
+		const vec3 start_left = start_position - side;
+		const vec3 end_left = current_position - side;
+		const vec3 end_right = current_position + side;
+		const vec3 start_right = start_position + side;
+		const DefaultVertex vertices[4] =
+		{
+			{start_left, normal, vec2(0.0f, 0.0f)},
+			{end_left, normal, vec2(1.0f, 0.0f)},
+			{end_right, normal, vec2(1.0f, 1.0f)},
+			{start_right, normal, vec2(0.0f, 1.0f)}
+		};
+		const gl_point_index_t indices[6] = {0, 1, 2, 0, 2, 3};
+		static Mesh tracer_mesh;
+		tracer_mesh.setData(reinterpret_cast<const float*>(vertices),
+			4 * (sizeof(DefaultVertex) / sizeof(float)), indices, 6);
+		DefaultVertex::setAttributes();
+		static_asset_collection.bullet_tracer_shader.use();
+		const CameraComponent& camera = world.getCameraComponent();
+		const mat4 view = glm::lookAt(vec3(0.0f), camera.getFront(), camera.getUp());
+		const mat4 projection = glm::perspective(glm::radians(camera.vertical_fov_degrees),
+			screen_ratio_gz, camera.near_clip_distance, camera.far_clip_distance);
+		setViewMatrix(view);
+		setProjectionMatrix(projection);
+		white_texture.bind();
+		setDrawColor(vec4(1.0f, 1.0f, 0.0f, 1.0f));
+		setWorldMatrix(chunk.createWorldMatrix(world));
+		tracer_mesh.draw();
+		static_asset_collection.base3d_shader.use(true);
 	}
 }

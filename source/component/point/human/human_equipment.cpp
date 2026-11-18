@@ -15,7 +15,7 @@ namespace danikk_space_engine::human_internal
 		/**
 		 * @brief Draws equipped MG-42 items at the shoulder using the current weapon-ready pose.
 		 * @param human_slot Human slot used to find inventory components on the same point.
-		 * @param human Character pose, height, and head pitch.
+		 * @param human Character pose and height.
 		 * @param body_matrix Transform from character-local coordinates to render coordinates.
 		 * @param world World used to inspect the owning chunk's component slots.
 		 */
@@ -45,11 +45,9 @@ namespace danikk_space_engine::human_internal
 					const vec3 attachment_offset = (vec3(0.11f, 0.37f, 0.22f)
 						- vec3(0.1875f, 0.0f, 0.25f)) * human.getHeight();
 					const mat4 weapon_pitch = glm::rotate(mat4(1.0f),
-						glm::clamp(human.getHeadRotation().y, -0.8f, 0.8f), vec3(1, 0, 0));
-					const mat4 weapon_yaw = glm::rotate(mat4(1.0f), human.getHeadRotation().x, vec3(0, 0, 1));
+						human.getWeaponAimPitch(), vec3(1, 0, 0));
 					const mat4 weapon_matrix = body_matrix
 						* glm::translate(mat4(1.0f), shoulder_position)
-						* weapon_yaw
 						* weapon_pitch
 						* glm::translate(mat4(1.0f), attachment_offset)
 						* weapon_orientation

@@ -138,10 +138,15 @@ namespace danikk_space_engine
 		 */
 		vec3 desired_velocity = vec3(0.0f);
 	private:
-		/** @brief Current body and head orientation in chunk-local coordinates. */
+		/** @brief Current body orientation in chunk-local coordinates. */
 		vec3 forward = vec3(0.0f, 1.0f, 0.0f);
-		vec2 head_rotation = vec2(0.0f);
+		/** @brief Vertical head look angle, independent from weapon elevation. */
+		float head_pitch = 0.0f;
+		/** @brief Vertical weapon aim relative to the body's forward direction, in radians. */
+		float weapon_aim_pitch = 0.0f;
 		vec3 target_look_direction = vec3(0.0f);
+		/** @brief Distance from the head look origin to its target, when known. */
+		float target_look_distance = 0.0f;
 		/** @brief First death timestamp in engine milliseconds; zero means no death recorded. */
 		uint32 death_timestamp_ms = 0;
 		/** @brief Default height in metres before modifiers. */
@@ -153,12 +158,14 @@ namespace danikk_space_engine
 	public:
 		/** @brief Returns the current body-facing direction. */
 		vec3 getForward() const { return forward; }
-		/** @brief Returns the current head yaw and pitch. */
-		vec2 getHeadRotation() const { return head_rotation; }
+		/** @brief Returns the head's independent vertical look angle. */
+		float getHeadPitch() const { return head_pitch; }
+		/** @brief Returns the weapon's vertical aim relative to the body. */
+		float getWeaponAimPitch() const { return weapon_aim_pitch; }
 		/** @brief Sets the initial body-facing direction before the human is spawned. */
 		void setInitialForward(const vec3& direction);
-		/** @brief Requests a chunk-local look direction for the next human update. */
-		void lookAtDirection(const vec3& direction);
+		/** @brief Requests a chunk-local look direction and optional target distance for the next update. */
+		void lookAtDirection(const vec3& direction, float target_distance = 0.0f);
 		/** @brief Returns the direction in which the currently held weapon points. */
 		vec3 getWeaponDirection() const;
 		/** @brief Advances body and head orientation toward the latest request or movement direction. */

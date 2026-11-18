@@ -17,7 +17,7 @@ namespace danikk_space_engine
 		 * Base meshes use per-part atlas UVs and either the skin texture or fallback part colors.
 		 * Overlay meshes use the second atlas layer, are scaled by 1.04, and render with depth writes
 		 * disabled so transparent texels reveal the base layer.
-		 * @param human Current walk cycle, head rotation, and arm pose.
+		 * @param human Current walk cycle and arm pose.
 		 * @param base Character transform shared by all six parts.
 		 * @param skin_id Index into the loaded Minecraft skin texture array; index zero is fallback.
 		 */
@@ -30,7 +30,7 @@ namespace danikk_space_engine
 			if(has_skin) skin.bind();
 			else white_texture.bind();
 			const float swing = std::sin(human.walk_phase) * human.walk_amplitude;
-			const float weapon_arm_pitch = 1.570796327f + glm::clamp(human.getHeadRotation().y, -0.8f, 0.8f);
+		const float weapon_arm_pitch = 1.570796327f + glm::clamp(human.getWeaponAimPitch(), -0.8f, 0.8f);
 			mat4 joint_matrices[static_cast<size_t>(HumanPart::count)];
 			for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
 			{
@@ -38,8 +38,7 @@ namespace danikk_space_engine
 				mat4 joint(1.0f);
 				if(index == static_cast<size_t>(HumanPart::head))
 				{
-					joint = glm::rotate(joint, human.getHeadRotation().x, vec3(0, 0, 1));
-					joint = glm::rotate(joint, human.getHeadRotation().y, vec3(1, 0, 0));
+					joint = glm::rotate(joint, human.getHeadPitch(), vec3(1.0f, 0.0f, 0.0f));
 				}
 				else if(index >= 2)
 				{

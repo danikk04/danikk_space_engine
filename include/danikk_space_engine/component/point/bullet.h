@@ -12,6 +12,8 @@ namespace danikk_space_engine
 	{
 		/** @brief Projectile velocity in the owning chunk's local frame, measured in units per second. */
 		vec3 velocity = vec3(0.0f);
+		/** @brief Previous local position used to draw the current camera-facing tracer segment. */
+		vec3 previous_position = vec3(0.0f);
 		/** @brief Shooter point; excluded from projectile collision. */
 		PointId owner_point_id = static_cast<PointId>(-1);
 		/** @brief Damage dealt to a human on impact. */
@@ -59,7 +61,7 @@ namespace danikk_space_engine
 	void tickBulletComponent(PointComponentSlot& slot, World& world);
 
 	/**
-	 * @brief Draws the projectile as an elongated bright marker aligned with its velocity.
+	 * @brief Draws the travelled projectile segment as a narrow camera-facing tracer quad.
 	 * @param slot Slot containing the projectile payload and attached point/chunk IDs.
 	 * @param world World used to transform the local point into render coordinates.
 	 */
