@@ -17,6 +17,7 @@ namespace danikk_space_engine::npc_internal
 		/** @brief Moves an NPC and its point components to the loaded planet chunk containing its position. */
 		void updateNpcChunk(World& world, PointId point_id, ChunkId old_chunk_id, NpcControllerComponent& controller)
 		{
+			DSE_WATCH();
 			Chunk& old_chunk = world.data.getChunk(old_chunk_id);
 			WorldBody& body = world.data.getWorldBody(old_chunk.world_body_id);
 			const glm::dvec3 position = old_chunk.position + glm::dvec3(world.data.getPoint(point_id).position);

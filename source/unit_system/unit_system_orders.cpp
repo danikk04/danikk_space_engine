@@ -1,6 +1,7 @@
 #include <cmath>
 #include <limits>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/damageable.h>
@@ -294,6 +295,7 @@ namespace danikk_space_engine::unit_system_internal
 	void assignOrders(World& world, UnitSystem& system,
 		const DynamicArray<PointComponentSlotId>& slot_ids)
 	{
+		DSE_WATCH();
 		DynamicArray<TargetAllocation> allocations;
 		for(PointComponentSlotId id : slot_ids)
 		{
@@ -357,6 +359,7 @@ namespace danikk_space_engine::unit_system_internal
 	void assignSearchOrders(World& world, UnitSystem& system,
 		const DynamicArray<PointComponentSlotId>& slot_ids)
 	{
+		DSE_WATCH();
 		if(system.time_since_enemy_visible < 10.0f) return;
 		for(size_t index = 0; index < system.search_locations.size();)
 		{

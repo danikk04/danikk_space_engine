@@ -97,6 +97,7 @@ namespace danikk_space_engine
 	/** @copydoc updateNpcChunkAfterTick */
 	void updateNpcChunkAfterTick(World& world, PointComponentSlotId slot_id)
 	{
+		DSE_WATCH();
 		if(!world.data.isPointComponentSlotActive(slot_id)) return;
 		PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
 		if(slot.type_id != PointComponentTypeId::npc_controller || !world.data.isPointActive(slot.point_id)

@@ -1,3 +1,4 @@
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_engine/danikk_engine.h>
@@ -98,6 +99,7 @@ namespace danikk_space_engine
 	/** @brief Updates each faction's perception and orders for the current world tick. */
 	void unitSystemTick(World& world, float dt)
 	{
+		DSE_WATCH();
 		ensureUnitSystemCount(world.data.factions.size());
 
 		const DynamicArray<PointComponentSlotId>& slot_ids = world.data.getUsedPointComponentSlotIds();
