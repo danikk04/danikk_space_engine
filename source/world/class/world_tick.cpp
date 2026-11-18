@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 
 namespace danikk_space_engine
@@ -67,7 +68,7 @@ namespace danikk_space_engine
 			if(data.isPointActive(point_id)) data.destroyPoint(point_id);
 		}
 		pending_point_destruction_ids.clear();
-		unit_system.tick(*this, glm::max(getTargetFrameDelay(), 0.0f));
+		unitSystemTick(*this, glm::max(getTargetFrameDelay(), 0.0f));
 		physics.tick(*this);
 	}
 }

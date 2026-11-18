@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/component/point/point.h>
+#include <danikk_space_engine/fwd.h>
 
 namespace danikk_space_engine
 {
@@ -66,6 +67,7 @@ namespace danikk_space_engine
 		size_t candidate_index = 0;
 		/** @brief Commands selected centrally and executed by this component. */
 		UnitOrder order;
+
 	};
 
 	/**

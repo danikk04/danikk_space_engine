@@ -8,9 +8,10 @@ namespace danikk_space_engine::npc_internal
 {
 	/** @brief Executes the movement and look targets selected centrally by UnitSystem. */
 	void executeNpcMovementOrder(World& world, PointComponentSlot& slot,
-		NpcControllerComponent& controller, HumanComponent& human, float dt)
+		NpcControllerComponent& controller, HumanComponent& human)
 	{
 		DSE_WATCH();
+		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 own_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);

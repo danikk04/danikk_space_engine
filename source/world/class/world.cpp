@@ -6,6 +6,8 @@
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/scenario/base.h>
 
+#include "../../unit_system/internal.h"
+
 namespace danikk_space_engine
 {
 	World world;
@@ -193,7 +195,7 @@ namespace danikk_space_engine
 		chunk_loader.updatePendingRequests(chunk_loader_generation_id, chunk_generation_requests);
 		pending_point_destruction_ids.clear();
 		pending_npc_chunk_updates.clear();
-		unit_system.clear();
+		unit_system_internal::resetUnitSystems();
 		startBaseScenario(*this);
 	}
 
@@ -211,6 +213,6 @@ namespace danikk_space_engine
 		data.release();
 		pending_point_destruction_ids.clear();
 		pending_npc_chunk_updates.clear();
-		unit_system.clear();
+		unit_system_internal::resetUnitSystems();
 	}
 }

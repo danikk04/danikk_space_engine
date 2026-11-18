@@ -10,7 +10,6 @@
 #include <danikk_space_engine/world/chunk_loader.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/world/data.h>
-#include <danikk_space_engine/unit_system.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
@@ -66,8 +65,6 @@ namespace danikk_space_engine
 		WorldEnvironment environment;
 		/** @brief Integrates body motion and resolves physical contacts after component ticks. */
 		WorldPhysics physics;
-		/** @brief Shares faction intelligence and assigns NPC unit orders. */
-		UnitSystem unit_system;
 		/** @brief Worker that generates planet chunk data off the main thread. */
 		ChunkLoader chunk_loader;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */

@@ -90,8 +90,7 @@ namespace danikk_space_engine
 		human.desired_velocity = vec3(0.0f);
 		const DamageableComponent* health = findDamageable(world, slot.chunk_id, slot.point_id);
 		if(!controller.enabled || health == nullptr || health->getHealth() <= 0.0f) return;
-		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
-		npc_internal::executeNpcMovementOrder(world, slot, controller, human, dt);
+		npc_internal::executeNpcMovementOrder(world, slot, controller, human);
 		npc_internal::executeNpcCombatOrder(world, slot, controller);
 	}
 
