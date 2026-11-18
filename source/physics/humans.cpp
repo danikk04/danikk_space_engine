@@ -4,6 +4,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world_physics.h>
+#include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/world/world.h>
@@ -101,6 +102,8 @@ namespace danikk_space_engine
 			if(slot.type_id != PointComponentTypeId::human || !world.data.isChunkActive(slot.chunk_id)
 				|| !world.data.isPointActive(slot.point_id)) return false;
 			HumanComponent& component = *static_cast<HumanComponent*>(slot.getData());
+			const DamageableComponent* health = findDamageable(world, slot.chunk_id, slot.point_id);
+			if(component.hasDeathTimestamp() || (health != nullptr && health->getHealth() <= 0.0f)) return false;
 			const double height = component.getHeight();
 			if(height <= 0.0) return false;
 

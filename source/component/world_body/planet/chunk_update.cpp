@@ -33,12 +33,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Destroys loaded chunks whose grid coordinates are no longer marked desired.
-	 *
-	 * The lookup entry is removed after resource destruction so later camera movement can request
-	 * that coordinate again instead of treating its old geometry as resident.
+	 * @brief Destroys loaded chunks outside the current desired set and removes their lookup records.
 	 * @param planet Lookup containing the current desired set and loaded chunk IDs.
-	 * @param world WorldData that owns the chunk, point, triangle, and mesh resources.
+	 * @param world WorldData that owns the chunk, point, and mesh resources.
 	 */
 	void unloadPlanetChunksOutsideDesiredSet(PlanetComponent& planet, World& world)
 	{
@@ -46,9 +43,15 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
+		for(size_t index = 0; index < planet.chunk_lookup.entries.size();)
 		{
-			if((!entry.has_record && entry.chunk_id == static_cast<ChunkId>(-1)) || planet.chunk_lookup.isDesired(entry.grid_coordinate)) continue;
+			const PlanetChunkLookupEntry& entry = planet.chunk_lookup.entries[index];
+			if((!entry.has_record && entry.chunk_id == static_cast<ChunkId>(-1))
+				|| planet.chunk_lookup.isDesired(entry.grid_coordinate))
+			{
+				++index;
+				continue;
+			}
 			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(entry.chunk_id))
 			{
 				world.data.destroyChunk(entry.chunk_id);

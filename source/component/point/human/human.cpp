@@ -1,5 +1,6 @@
 #include <cmath>
 
+#include <danikk_engine/danikk_engine.h>
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/damageable.h>
@@ -12,6 +13,25 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Stores the death timestamp only once, preserving the original death moment. */
+	void HumanComponent::startDeathTimestamp(uint32 timestamp_ms)
+	{
+		if(death_timestamp_ms != 0) return;
+		death_timestamp_ms = timestamp_ms;
+	}
+
+	/** @brief Resets death state when health is restored. */
+	void HumanComponent::clearDeathTimestamp()
+	{
+		death_timestamp_ms = 0;
+	}
+
+	/** @brief Computes elapsed death time with modulo-safe subtraction across uint32 wraparound. */
+	uint32 HumanComponent::getDeathElapsedMilliseconds() const
+	{
+		return death_timestamp_ms != 0 ? danikk_engine::getMsTimestamp() - death_timestamp_ms : 0;
+	}
+
 	using human_internal::moveWithGround;
 	using human_internal::drawEquippedWeapons;
 
@@ -84,13 +104,13 @@ namespace danikk_space_engine
 		const DamageableComponent* damageable = findDamageable(world, slot.chunk_id, slot.point_id);
 		if(damageable != nullptr && damageable->getHealth() <= 0.0f)
 		{
-			human.death_time += dt;
+			human.startDeathTimestamp(danikk_engine::getMsTimestamp());
 			human.desired_velocity = vec3(0.0f);
 			human.walk_amplitude = 0.0f;
-			if(human.death_time >= 1.0f) world.deferPointDestruction(slot.point_id);
+			moveWithGround(world, chunk, body, human, point, vec3(0.0f), gravity, dt);
 			return;
 		}
-		human.death_time = 0.0f;
+		human.clearDeathTimestamp();
 		vec3 velocity = damageable == nullptr || damageable->getHealth() > 0.0f ? human.desired_velocity : vec3(0.0f);
 		human.desired_velocity = vec3(0.0f);
 		velocity -= human.up * glm::dot(velocity, human.up);
@@ -134,12 +154,13 @@ namespace danikk_space_engine
 		const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 		mat4 body_matrix = glm::translate(mat4(1.0f), vec3(position - world.getCameraWorldPosition()))
 			* orientation;
-		if(human.death_time > 0.0f)
+		if(human.hasDeathTimestamp())
 		{
-			const float fall_angle = glm::radians(90.0f) * glm::clamp(human.death_time / 0.6f, 0.0f, 1.0f);
+			const float elapsed_seconds = static_cast<float>(human.getDeathElapsedMilliseconds()) * 0.001f;
+			const float fall_angle = glm::radians(90.0f) * glm::clamp(elapsed_seconds / 0.6f, 0.0f, 1.0f);
 			const vec3 pivot(0.0f, 0.0f, -human.getHeight() * 0.5f);
 			body_matrix = body_matrix * glm::translate(mat4(1.0f), pivot)
-				* glm::rotate(mat4(1.0f), fall_angle, vec3(0.0f, 1.0f, 0.0f))
+				* glm::rotate(mat4(1.0f), fall_angle, vec3(1.0f, 0.0f, 0.0f))
 				* glm::translate(mat4(1.0f), -pivot);
 		}
 		const mat4 feet_matrix = body_matrix

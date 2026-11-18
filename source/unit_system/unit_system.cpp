@@ -27,8 +27,10 @@ namespace danikk_space_engine
 		const DynamicArray<PointComponentSlotId>& slot_ids = world.data.getUsedPointComponentSlotIds();
 		for(UnitSystem& system : unit_systems)
 		{
-			unit_system_internal::updatePerception(world, system, slot_ids, dt);
+			unit_system_internal::updatePerception(world, system, slot_ids);
 			unit_system_internal::assignOrders(world, system, slot_ids);
+			unit_system_internal::finishPerception(world, system, dt);
+			unit_system_internal::assignSearchOrders(world, system, slot_ids);
 		}
 	}
 

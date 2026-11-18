@@ -15,9 +15,9 @@ namespace danikk_space_engine
 	void queuePlanetRequests(PlanetComponent& planet, World& world, const WorldBodyComponentSlot& slot);
 
 	/**
-	 * @brief Destroys loaded planet chunks no longer present in the current desired coordinate set.
+	 * @brief Unloads chunks outside the desired set while retaining chunks containing unexpired corpses.
 	 * @param planet Lookup describing desired coordinates and currently loaded chunks.
-	 * @param world WorldData that owns their resources.
+	 * @param world WorldData that owns their resources and human component state.
 	 */
 	void unloadPlanetChunksOutsideDesiredSet(PlanetComponent& planet, World& world);
 

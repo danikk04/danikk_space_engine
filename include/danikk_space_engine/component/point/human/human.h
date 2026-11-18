@@ -142,6 +142,8 @@ namespace danikk_space_engine
 		vec3 forward = vec3(0.0f, 1.0f, 0.0f);
 		vec2 head_rotation = vec2(0.0f);
 		vec3 target_look_direction = vec3(0.0f);
+		/** @brief First death timestamp in engine milliseconds; zero means no death recorded. */
+		uint32 death_timestamp_ms = 0;
 		/** @brief Default height in metres before modifiers. */
 		static constexpr float base_height = 1.8f;
 		/** @brief Default walking speed in metres per second before modifiers. */
@@ -167,12 +169,18 @@ namespace danikk_space_engine
 		float getMovementSpeed() const { return base_movement_speed; }
 		/** @brief Returns firing spread before skill modifiers are applied. */
 		float getSpreadDegrees() const { return base_spread_degrees; }
+		/** @brief Records the first death timestamp without replacing it on later ticks. */
+		void startDeathTimestamp(uint32 timestamp_ms);
+		/** @brief Clears the stored death time if the human becomes alive again. */
+		void clearDeathTimestamp();
+		/** @brief Reports whether this human has a recorded nonzero death timestamp. */
+		bool hasDeathTimestamp() const { return death_timestamp_ms != 0; }
+		/** @brief Returns elapsed milliseconds since death using wrap-safe uint32 subtraction. */
+		uint32 getDeathElapsedMilliseconds() const;
 		/** @brief Accumulated walking animation phase, advanced by actual ground travel. */
 		float walk_phase = 0.0f;
 		/** @brief Current leg-swing magnitude derived from movement speed. */
 		float walk_amplitude = 0.0f;
-		/** @brief Elapsed time since health reached zero, used for the death animation. */
-		float death_time = 0.0f;
 		/** @brief Velocity along `up`; negative values indicate falling. */
 		float vertical_speed = 0.0f;
 		/** @brief True when the current tick confirmed or reused a supporting surface. */
