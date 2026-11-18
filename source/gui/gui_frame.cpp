@@ -19,7 +19,9 @@ namespace danikk_space_engine
 	void GUI::frame()
 	{
 		DSE_WATCH();
-		memory_sample_timer += getTargetFrameDelay();
+		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
+		updateMessages(dt);
+		memory_sample_timer += dt;
 		if(memory_sample_timer >= 1.0f)
 		{
 			memory_sample_bytes = getProcessMemoryUsageBytes();

@@ -20,6 +20,20 @@ namespace danikk_space_engine
 	/** @copydoc GUI::define */
 	void GUI::define()
 	{
+		messages_text_style.shader = static_asset_collection.base2d_shader;
+		messages_text_style.font = static_asset_collection.base_font;
+		messages_text_style.anchor = TextAnchor::multiline;
+		messages_text_style.absolute_char_height = 0.014f;
+		messages_text_style.absolute_char_width = 0.009f;
+		messages_text_style.color = vec4(0.92f, 0.93f, 0.94f, 1.0f);
+		messages_text_style.max_char_count = 512;
+		messages_label.anchor = GUIAnchor::top_right;
+		messages_label.pos = vec2(0.025f, 0.025f);
+		messages_label.relative_size = vec2(0.36f, 0.60f);
+		messages_label.text_style = &messages_text_style;
+		messages_label.name = "player_messages";
+		messages_label.flags.set(GUIElementFlags::visible, false);
+
 		debug_info_label_style.anchor = TextAnchor::multiline;
 		debug_info_label_style.absolute_char_height = 0.014f;
 		debug_info_label_style.absolute_char_width = 0.014f;
@@ -242,5 +256,6 @@ namespace danikk_space_engine
 			catalog_panel.addChild(catalog_item_buttons[index]);
 			catalog_item_buttons[index].addChild(catalog_item_labels[index]);
 		}
+		gui_root.addChild(messages_label);
 	}
 }

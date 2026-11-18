@@ -10,7 +10,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Owns the debug overlay, 3x12 hotbar, and modal tool catalog.
+	 * @brief Owns the debug overlay, message list, 3x12 hotbar, and modal tool catalog.
 	 *
 	 * The GUI text reports FPS, process memory, BuildPart size when applicable, camera speed,
 	 * and camera position. Process memory is sampled at roughly one-second
@@ -18,6 +18,19 @@ namespace danikk_space_engine
 	 */
 	class GUI
 	{
+		/** @brief One player-facing message and its remaining display lifetime. */
+		struct Message
+		{
+			String text;
+			float remaining_seconds = 10.0f;
+		};
+
+		/** @brief Messages shown newest-first in the screen's top-right corner. */
+		DynamicArray<Message> messages;
+		/** @brief Multiline widget displaying the active message list. */
+		GUIElement messages_label;
+		/** @brief Shared bitmap text style for player-facing messages. */
+		TextStyle messages_text_style;
 		/** @brief Number of columns in the visual build hotbar. */
 		static constexpr uint32 hotbar_column_count = 12;
 		/** @brief Number of rows in the visual build hotbar. */
@@ -74,6 +87,8 @@ namespace danikk_space_engine
 
 		/** @brief Refreshes visible commands and category highlighting in the tool menu. */
 		void refreshToolCatalog();
+		/** @brief Ages messages, removes expired entries, and refreshes the visible list. */
+		void updateMessages(float dt);
 	public:
 
 		/**
@@ -102,6 +117,12 @@ namespace danikk_space_engine
 		 * updated from controller state. Rendering is driven by the surrounding engine frame loop.
 		 */
 		void frame();
+
+		/**
+		 * @brief Adds a player-facing message at the top of the on-screen list.
+		 * @param text Message text; the message remains visible for ten seconds.
+		 */
+		void addMessage(const String& text);
 	};
 
 	extern GUI gui;

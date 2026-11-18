@@ -59,6 +59,7 @@ namespace danikk_engine_game
 		loadMaterials();
 		gui.define();
 		gui.compose();
+		gui.addMessage("Привет, мир!");
 		danikk_space_engine::initLocaliztion();
 		world.init();
     	static_asset_collection.base2d_shader.use();
