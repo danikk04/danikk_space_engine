@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include <danikk_engine/danikk_engine.h>
+#include <danikk_framework/random.h>
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/damageable.h>
@@ -104,6 +105,30 @@ namespace danikk_space_engine
 		const DamageableComponent* damageable = findDamageable(world, slot.chunk_id, slot.point_id);
 		if(damageable != nullptr && damageable->getHealth() <= 0.0f)
 		{
+			if(human.body_pose == HumanBodyPose::standing)
+			{
+				human.body_pose = danikk_framework::default_random.number<uint32>(0, 2) == 0
+					? HumanBodyPose::lying_on_back : HumanBodyPose::lying_on_stomach;
+				for(PointComponentSlotId id : chunk.point_component_slot_ids)
+				{
+					if(!world.data.isPointComponentSlotActive(id)) continue;
+					PointComponentSlot& component_slot = world.data.getPointComponentSlot(id);
+					if(component_slot.point_id != slot.point_id
+						|| component_slot.type_id != PointComponentTypeId::inventory) continue;
+					InventoryComponent& inventory = *static_cast<InventoryComponent*>(component_slot.getData());
+					for(InventorySlot& item : inventory.slots)
+					{
+						if(item.isEmpty() || !item.is_equipped) continue;
+						unequipItem(world, slot.point_id, item.item_definition_id);
+						item.is_equipped = false;
+					}
+				}
+				const float random_offset = 0.5f;
+				human.corpse_arm_spread_angles = vec2(
+					glm::radians(60.0f + (danikk_framework::default_random.nextFloat() * random_offset + random_offset) * 30.0f),
+					glm::radians(60.0f + (danikk_framework::default_random.nextFloat() * random_offset + random_offset) * 30.0f));
+				human.arm_pose = HumanArmPose::corpse_spread;
+			}
 			human.startDeathTimestamp(danikk_engine::getMsTimestamp());
 			human.desired_velocity = vec3(0.0f);
 			human.walk_amplitude = 0.0f;
@@ -111,6 +136,12 @@ namespace danikk_space_engine
 			return;
 		}
 		human.clearDeathTimestamp();
+		if(human.body_pose != HumanBodyPose::standing)
+		{
+			human.arm_pose = HumanArmPose::relaxed;
+			human.corpse_arm_spread_angles = vec2(0.0f);
+		}
+		human.body_pose = HumanBodyPose::standing;
 		vec3 velocity = damageable == nullptr || damageable->getHealth() > 0.0f ? human.desired_velocity : vec3(0.0f);
 		human.desired_velocity = vec3(0.0f);
 		velocity -= human.up * glm::dot(velocity, human.up);
@@ -154,13 +185,13 @@ namespace danikk_space_engine
 		const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 		mat4 body_matrix = glm::translate(mat4(1.0f), vec3(position - world.getCameraWorldPosition()))
 			* orientation;
-		if(human.hasDeathTimestamp())
+		if(human.body_pose != HumanBodyPose::standing)
 		{
-			const float elapsed_seconds = static_cast<float>(human.getDeathElapsedMilliseconds()) * 0.001f;
-			const float fall_angle = glm::radians(90.0f) * glm::clamp(elapsed_seconds / 0.6f, 0.0f, 1.0f);
 			const vec3 pivot(0.0f, 0.0f, -human.getHeight() * 0.5f);
+			const float angle = human.body_pose == HumanBodyPose::lying_on_back
+				? glm::radians(90.0f) : glm::radians(-90.0f);
 			body_matrix = body_matrix * glm::translate(mat4(1.0f), pivot)
-				* glm::rotate(mat4(1.0f), fall_angle, vec3(1.0f, 0.0f, 0.0f))
+				* glm::rotate(mat4(1.0f), angle, vec3(1.0f, 0.0f, 0.0f))
 				* glm::translate(mat4(1.0f), -pivot);
 		}
 		const mat4 feet_matrix = body_matrix

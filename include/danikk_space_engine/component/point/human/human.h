@@ -46,7 +46,16 @@ namespace danikk_space_engine
 	enum class HumanArmPose : uint8
 	{
 		relaxed, ///< Arms swing with the walking cycle.
-		weapon_ready ///< Right arm points forward and left arm is rotated inward to support a weapon.
+		weapon_ready, ///< Right arm points forward and left arm is rotated inward to support a weapon.
+		corpse_spread ///< Arms are rotated outward after death.
+	};
+
+	/** @brief Selects the human's overall body pose, including the settled pose of a corpse. */
+	enum class HumanBodyPose : uint8
+	{
+		standing, ///< Upright pose used while alive.
+		lying_on_back, ///< Horizontal pose with the face turned upward.
+		lying_on_stomach ///< Horizontal pose with the face turned downward.
 	};
 
 	/**
@@ -130,6 +139,10 @@ namespace danikk_space_engine
 		HumanAppearance appearance;
 		/** @brief Current arm animation mode, also used to attach equipped weapons. */
 		HumanArmPose arm_pose = HumanArmPose::relaxed;
+		/** @brief Per-arm corpse spread angles in radians, sampled once when the human dies. */
+		vec2 corpse_arm_spread_angles = vec2(0.0f);
+		/** @brief Overall body pose; death selects and retains one of the two lying poses. */
+		HumanBodyPose body_pose = HumanBodyPose::standing;
 		/** @brief Local direction opposite gravity; defines feet and the walking plane. */
 		vec3 up = vec3(0.0f, 0.0f, 1.0f);
 		/**

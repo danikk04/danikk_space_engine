@@ -43,7 +43,20 @@ namespace danikk_space_engine
 				else if(index >= 2)
 				{
 					float angle = index == 2 || index == 5 ? swing : -swing;
-					if(human.arm_pose == HumanArmPose::weapon_ready)
+					if(human.arm_pose == HumanArmPose::corpse_spread)
+					{
+						if(index == static_cast<size_t>(HumanPart::right_arm))
+						{
+							joint = glm::rotate(joint, -human.corpse_arm_spread_angles.x, vec3(0, 1, 0));
+							angle = 0.0f;
+						}
+						else if(index == static_cast<size_t>(HumanPart::left_arm))
+						{
+							joint = glm::rotate(joint, human.corpse_arm_spread_angles.y, vec3(0, 1, 0));
+							angle = 0.0f;
+						}
+					}
+					else if(human.arm_pose == HumanArmPose::weapon_ready)
 					{
 						if(index == static_cast<size_t>(HumanPart::right_arm))
 							angle = weapon_arm_pitch;
