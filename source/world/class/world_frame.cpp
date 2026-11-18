@@ -25,20 +25,10 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		{
-			/**
-			 * @brief Measures the duration of the enclosing profiler scope.
-			 */
-			DSE_WATCH();
-			renderWorldBodyComponents(*this);
-		}
+		renderWorldBodyComponents(*this);
 		queueDirtyBuildPartMeshes();
 		if(chunk_generation_requests_dirty)
 		{
-			/**
-			 * @brief Measures the duration of the enclosing profiler scope.
-			 */
-			DSE_WATCH();
 			updateChunkMeshGenerationRequests(chunk_mesh_generator_generation_id, chunk_generation_requests);
 			chunk_generation_requests_dirty = false;
 		}
@@ -74,10 +64,6 @@ namespace danikk_space_engine
 				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
 				if(type.accept_generated_chunk != nullptr)
 				{
-					/**
-					 * @brief Measures the duration of the enclosing profiler scope.
-					 */
-					DSE_WATCH();
 					type.accept_generated_chunk(slot, *this, generated_chunk);
 				}
 			}
@@ -87,26 +73,14 @@ namespace danikk_space_engine
 		const vec3 camera_front = camera.getFront();
 		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera.getUp());
 		setViewMatrix(view);
+		renderChunkComponents(*this);
+		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
-			/**
-			 * @brief Measures the duration of the enclosing profiler scope.
-			 */
-			DSE_WATCH();
-			renderChunkComponents(*this);
-		}
-		{
-			/**
-			 * @brief Measures the duration of the enclosing profiler scope.
-			 */
-			DSE_WATCH();
-			for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+			const WorldBody& body = data.getWorldBody(body_id);
+			for(ChunkId chunk_id : body.chunk_ids)
 			{
-				const WorldBody& body = data.getWorldBody(body_id);
-				for(ChunkId chunk_id : body.chunk_ids)
-				{
-					Chunk& chunk = data.getChunk(chunk_id);
-					chunk_render_system.draw(chunk, *this);
-				}
+				Chunk& chunk = data.getChunk(chunk_id);
+				chunk_render_system.draw(chunk, *this);
 			}
 		}
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);

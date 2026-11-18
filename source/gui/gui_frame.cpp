@@ -1,3 +1,4 @@
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/world/world.h>
 
@@ -17,6 +18,7 @@ namespace danikk_space_engine
 	 */
 	void GUI::frame()
 	{
+		DSE_WATCH();
 		memory_sample_timer += getTargetFrameDelay();
 		if(memory_sample_timer >= 1.0f)
 		{

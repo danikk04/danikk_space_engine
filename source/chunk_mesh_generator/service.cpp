@@ -3,6 +3,7 @@
 #include <mutex>
 #include <thread>
 
+#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
 
 #include "internal.h"
@@ -320,6 +321,7 @@ namespace danikk_space_engine
 	void updateChunkMeshGenerationRequests(uint64 generation_id,
 		const DynamicArray<ChunkMeshGenerationRequest>& requests)
 	{
+		DSE_WATCH();
 		generator_service.update(generation_id, requests);
 	}
 	void cancelChunkMeshGenerationRequests(

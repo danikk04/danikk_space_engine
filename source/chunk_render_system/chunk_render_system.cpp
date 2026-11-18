@@ -17,6 +17,7 @@ namespace danikk_space_engine
 		/** @brief Projects a chunk-local vertex onto a planar UV basis chosen by its face normal. */
 		vec2 projectToUV(const vec3& position, const vec3& normal)
 		{
+			DSE_WATCH();
 			const vec3 absolute_normal = glm::abs(normal);
 			if(absolute_normal.x >= absolute_normal.y && absolute_normal.x >= absolute_normal.z)
 				return vec2(position.z, position.y);
@@ -27,12 +28,14 @@ namespace danikk_space_engine
 
 	ChunkRenderRecord& ChunkRenderSystem::getRecord(ChunkId chunk_id)
 	{
+		DSE_WATCH();
 		if(records.size() <= chunk_id) records.resize(static_cast<size_t>(chunk_id) + 1);
 		return records[chunk_id];
 	}
 
 	const ChunkRenderRecord* ChunkRenderSystem::findRecord(ChunkId chunk_id) const
 	{
+		DSE_WATCH();
 		return chunk_id < records.size() ? &records[chunk_id] : nullptr;
 	}
 
@@ -132,6 +135,7 @@ namespace danikk_space_engine
 	/** @brief Draws each non-empty material range using the owning chunk's transform. */
 	void ChunkRenderSystem::draw(const Chunk& chunk, World& world)
 	{
+		DSE_WATCH();
 		const ChunkRenderRecord* record = findRecord(chunk.chunk_id);
 		if(record == nullptr || record->mesh == nullptr || record->material_ranges.size() == 0) return;
 		setWorldMatrix(chunk.createWorldMatrix(world));
@@ -171,6 +175,7 @@ namespace danikk_space_engine
 
 	void ChunkRenderSystem::clear()
 	{
+		DSE_WATCH();
 		for(ChunkRenderRecord& record : records)
 		{
 			if(record.mesh == nullptr) continue;
@@ -186,6 +191,7 @@ namespace danikk_space_engine
 
 	bool ChunkRenderSystem::hasBuildPartMesh(ChunkId chunk_id) const
 	{
+		DSE_WATCH();
 		const ChunkRenderRecord* record = findRecord(chunk_id);
 		return record != nullptr && record->has_build_part_mesh;
 	}
