@@ -6,8 +6,32 @@
 #include <danikk_framework/memory.h>
 #include <danikk_engine/input.h>
 
+#include <cstdio>
+#include <cstring>
+
 namespace danikk_space_engine
 {
+	/** @brief Appends a fixed two-decimal value using a dot regardless of the active locale. */
+	static void appendGuiNumber(String& text, double value)
+	{
+		char buffer[64];
+		const int length = std::snprintf(buffer, sizeof(buffer), "%.2f", value);
+		if(length <= 0) return;
+		for(int index = 0; index < length; ++index)
+			if(buffer[index] == ',') buffer[index] = '.';
+		text.append(buffer, static_cast<size_t>(length));
+	}
+
+	/** @brief Appends three coordinates with slash separators and fixed dot-decimal formatting. */
+	static void appendGuiPosition(String& text, const glm::dvec3& position)
+	{
+		appendGuiNumber(text, position.x);
+		text << '/';
+		appendGuiNumber(text, position.y);
+		text << '/';
+		appendGuiNumber(text, position.z);
+	}
+
 	/**
 	 * @brief Refreshes the one-second memory sample and appends each debug value on its own line.
 	 *
@@ -50,10 +74,15 @@ namespace danikk_space_engine
 		formatAppend(text, "FPS:%\n", fps_counter.getValue());
 		formatAppend(text, "MODE:%\n", controller.mode == PlayerMode::god ? "GOD" : "COMMANDER");
 		const size_t whole_mebibytes = memory_sample_bytes / mib(1);
-		const size_t tenths_of_mebibyte = (memory_sample_bytes % mib(1)) * 10 / mib(1);
-		formatAppend(text,
-			memory_sample_bytes == 0 ? "RAM: unavailable\n" : "RAM:%.% MiB\n",
-			whole_mebibytes, tenths_of_mebibyte);
+		const size_t hundredths_of_mebibyte = (memory_sample_bytes % mib(1)) * 100 / mib(1);
+		if(memory_sample_bytes == 0)
+			text << "RAM: unavailable\n";
+		else
+		{
+			formatAppend(text, "RAM:%.", whole_mebibytes);
+			if(hundredths_of_mebibyte < 10) text << '0';
+			formatAppend(text, "% MiB\n", hundredths_of_mebibyte);
+		}
 
 		if(controller.active_tool == ToolId::place
 			&& (controller.selected_tool_action == ToolActionId::create_body
@@ -61,14 +90,20 @@ namespace danikk_space_engine
 		{
 			const char* size_axis_name = controller.build_part_size_axis == 0 ? "X"
 				: controller.build_part_size_axis == 1 ? "Y" : "Z";
-			formatAppend(text, "BUILD SIZE:% x % x % m\n",
-				controller.build_part_size.x,
-				controller.build_part_size.y,
-				controller.build_part_size.z);
+			text << "BUILD SIZE:";
+			appendGuiNumber(text, controller.build_part_size.x);
+			text << " x ";
+			appendGuiNumber(text, controller.build_part_size.y);
+			text << " x ";
+			appendGuiNumber(text, controller.build_part_size.z);
+			text << " m\n";
 			formatAppend(text, "SIZE AXIS:% (X/Y/Z, Shift+Wheel)\n", size_axis_name);
 		}
-		formatAppend(text, "CAMERA SPEED:% m/s\n", controller.camera_movement_speed);
-		formatAppend(text, "camera_pos:%", camera_position);
+		text << "CAMERA SPEED:";
+		appendGuiNumber(text, controller.camera_movement_speed);
+		text << " m/s\n";
+		text << "camera pos:";
+		appendGuiPosition(text, camera_position);
 		debug_info_label.text = static_cast<String&&>(text);
 	}
 }
