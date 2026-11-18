@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/id.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_framework/glm.h>
@@ -40,7 +41,8 @@ namespace danikk_space_engine
 		create_body, ///< Creates a WorldBody with a cube BuildPart.
 		create_slope, ///< Creates a WorldBody with a slope BuildPart.
 		create_human, ///< Creates a human at a supported surface hit.
-		raid, ///< Spawns a group of pirate soldiers near a surface hit.
+		spawn_5_allies, ///< Spawns five player-faction soldiers in a column.
+		spawn_5_pirates, ///< Spawns five pirate soldiers in a column.
 		count ///< Number of action identifiers; not a selectable action.
 	};
 
@@ -49,6 +51,15 @@ namespace danikk_space_engine
 	 */
 	struct ToolApplyResult
 	{
+	};
+
+	/** @brief Body-local placement data shared by event execution and its visual preview. */
+	struct EventSpawnPlacement
+	{
+		ChunkId chunk_id = static_cast<ChunkId>(-1); ///< Loaded chunk receiving this human.
+		glm::dvec3 feet_position = glm::dvec3(0.0); ///< Feet position relative to the owning WorldBody.
+		vec3 up = vec3(0.0f, 0.0f, 1.0f); ///< Body-local surface normal.
+		vec3 forward = vec3(0.0f, 1.0f, 0.0f); ///< Body-local initial facing direction.
 	};
 
 	/**
@@ -97,8 +108,11 @@ namespace danikk_space_engine
 	 */
 	ToolApplyResult applyHumanTool(World& world, const RaycastHit& hit, ToolActionId action);
 
-	/** @brief Creates pirate soldiers near the targeted surface for the selected event. */
+	/** @brief Spawns a five-person allied or pirate column near the targeted surface. */
 	ToolApplyResult applyEventTool(World& world, const RaycastHit& hit, ToolActionId action);
+	/** @brief Finds supported positions for the selected five-person event column. */
+	uint8 collectEventSpawnPlacements(
+		World& world, const RaycastHit& hit, ToolActionId action, EventSpawnPlacement (&placements)[5]);
 
 	/**
 	 * @brief Updates capture, distance, and rotation controls for a dragged WorldBody.

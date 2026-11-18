@@ -145,6 +145,8 @@ namespace danikk_space_engine
 		HumanBodyPose body_pose = HumanBodyPose::standing;
 		/** @brief Local direction opposite gravity; defines feet and the walking plane. */
 		vec3 up = vec3(0.0f, 0.0f, 1.0f);
+		/** @brief Last confirmed ground normal in owning-body coordinates, used to orient corpses to slopes. */
+		vec3 ground_normal = vec3(0.0f, 0.0f, 1.0f);
 		/**
 		 * @brief One-tick movement command in owning-chunk coordinates, in metres per second.
 		 * The human tick consumes and resets this command after applying movement.
@@ -274,6 +276,8 @@ namespace danikk_space_engine
 	 * @brief Dispatches the selected renderer and draws the shared body parts with the chosen skin.
 	 * @param human Character pose and appearance selection.
 	 * @param world_matrix Transform from character-local coordinates to render coordinates.
+	 * @param color_tint Multiplied with skin/part colors; alpha controls preview translucency.
 	 */
-	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix);
+	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix,
+		const vec4& color_tint = vec4(1.0f));
 }

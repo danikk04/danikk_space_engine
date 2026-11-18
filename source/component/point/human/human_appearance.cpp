@@ -21,7 +21,8 @@ namespace danikk_space_engine
 		 * @param base Character transform shared by all six parts.
 		 * @param skin_id Index into the loaded Minecraft skin texture array; index zero is fallback.
 		 */
-		void drawMinecraftHuman(const HumanComponent& human, const mat4& base, HumanSkinId skin_id)
+		void drawMinecraftHuman(const HumanComponent& human, const mat4& base, HumanSkinId skin_id,
+			const vec4& color_tint)
 		{
 			DSE_WATCH();
 			HumanDefinition& definition = static_asset_collection.human_definition;
@@ -70,7 +71,7 @@ namespace danikk_space_engine
 					joint = glm::rotate(joint, angle, vec3(1, 0, 0));
 				}
 				joint_matrices[index] = joint;
-				setDrawColor(vec4(has_skin ? vec3(1.0f) : part.color, 1.0f));
+				setDrawColor(vec4((has_skin ? vec3(1.0f) : part.color) * vec3(color_tint), color_tint.a));
 				setWorldMatrix(base * glm::translate(mat4(1.0f), part.pivot) * joint
 					* glm::translate(mat4(1.0f), part.center_offset) * glm::scale(mat4(1.0f), part.size));
 				part.mesh.draw();
@@ -81,7 +82,7 @@ namespace danikk_space_engine
 			for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
 			{
 				HumanPartDefinition& part = definition.parts[index];
-				setDrawColor(vec4(1.0f));
+				setDrawColor(color_tint);
 				setWorldMatrix(base * glm::translate(mat4(1.0f), part.pivot) * joint_matrices[index]
 					* glm::translate(mat4(1.0f), part.center_offset)
 					* glm::scale(mat4(1.0f), part.size * 1.04f));
@@ -96,13 +97,13 @@ namespace danikk_space_engine
 	 * @param human Appearance selection and animated pose to render.
 	 * @param world_matrix Character-local to render-space transform.
 	 */
-	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix)
+	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix, const vec4& color_tint)
 	{
 		DSE_WATCH();
 		switch(human.appearance.render_type)
 		{
 			case HumanRenderType::minecraft_style:
-				drawMinecraftHuman(human, world_matrix, human.appearance.skin_id);
+				drawMinecraftHuman(human, world_matrix, human.appearance.skin_id, color_tint);
 				return;
 			case HumanRenderType::model_3d:
 			{
@@ -113,7 +114,7 @@ namespace danikk_space_engine
 					formatLogWarning("3D human rendering is not implemented; using default Minecraft appearance");
 					reported_unimplemented = true;
 				}
-				drawMinecraftHuman(human, world_matrix, human_skin_ids::none);
+				drawMinecraftHuman(human, world_matrix, human_skin_ids::none, color_tint);
 				return;
 			}
 		}

@@ -175,9 +175,24 @@ namespace danikk_space_engine
 		const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
 		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
-		const vec3 up = vec3(body.rotation * glm::dvec3(human.up));
-		const vec3 forward = vec3(body.rotation * glm::dvec3(human.getForward()));
-		const vec3 right = glm::normalize(glm::cross(forward, up));
+		vec3 local_up = human.body_pose == HumanBodyPose::standing ? human.up : human.ground_normal;
+		if(glm::length(local_up) <= 1e-6f) local_up = human.up;
+		local_up = glm::normalize(local_up);
+		vec3 local_forward = human.getForward() - local_up * glm::dot(human.getForward(), local_up);
+		if(glm::length(local_forward) <= 1e-6f)
+		{
+			local_forward = vec3(0.0f, 1.0f, 0.0f)
+				- local_up * glm::dot(vec3(0.0f, 1.0f, 0.0f), local_up);
+			if(glm::length(local_forward) <= 1e-6f)
+				local_forward = vec3(1.0f, 0.0f, 0.0f)
+					- local_up * glm::dot(vec3(1.0f, 0.0f, 0.0f), local_up);
+		}
+		local_forward = glm::normalize(local_forward);
+		const vec3 local_right = glm::normalize(glm::cross(local_forward, local_up));
+		local_forward = glm::normalize(glm::cross(local_up, local_right));
+		const vec3 up = vec3(body.rotation * glm::dvec3(local_up));
+		const vec3 forward = vec3(body.rotation * glm::dvec3(local_forward));
+		const vec3 right = vec3(body.rotation * glm::dvec3(local_right));
 		mat4 orientation(1.0f);
 		orientation[0] = vec4(right, 0);
 		orientation[1] = vec4(forward, 0);
@@ -187,12 +202,10 @@ namespace danikk_space_engine
 			* orientation;
 		if(human.body_pose != HumanBodyPose::standing)
 		{
-			const vec3 pivot(0.0f, 0.0f, -human.getHeight() * 0.5f);
 			const float angle = human.body_pose == HumanBodyPose::lying_on_back
 				? glm::radians(90.0f) : glm::radians(-90.0f);
-			body_matrix = body_matrix * glm::translate(mat4(1.0f), pivot)
-				* glm::rotate(mat4(1.0f), angle, vec3(1.0f, 0.0f, 0.0f))
-				* glm::translate(mat4(1.0f), -pivot);
+			body_matrix = body_matrix
+				* glm::rotate(mat4(1.0f), angle, vec3(1.0f, 0.0f, 0.0f));
 		}
 		const mat4 feet_matrix = body_matrix
 			* glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, -0.5f))

@@ -29,7 +29,8 @@ namespace danikk_space_engine
 			{parts_category_id, "Slope", "SLOPE", ToolId::place, ToolActionId::create_slope},
 			{parts_category_id, "MG-42", "MG42", ToolId::place, ToolActionId::machinegun},
 			{human_category_id, "Create human", "HUMAN", ToolId::human, ToolActionId::create_human},
-			{event_category_id, "Raid", "RAID", ToolId::event, ToolActionId::raid}
+			{event_category_id, "Spawn 5 allies", "5ALL", ToolId::event, ToolActionId::spawn_5_allies},
+			{event_category_id, "Spawn 5 pirates", "5PIR", ToolId::event, ToolActionId::spawn_5_pirates}
 		};
 	}
 

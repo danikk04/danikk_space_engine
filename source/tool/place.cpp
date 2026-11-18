@@ -153,7 +153,8 @@ namespace danikk_space_engine
 			case ToolActionId::erase:
 			case ToolActionId::drag:
 			case ToolActionId::create_human:
-			case ToolActionId::raid:
+			case ToolActionId::spawn_5_allies:
+			case ToolActionId::spawn_5_pirates:
 			case ToolActionId::count:
 				break;
 		}

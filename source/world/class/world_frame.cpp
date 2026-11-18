@@ -1,6 +1,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/effects/world_body_preview.h>
+#include <danikk_space_engine/effects/event_spawn_preview.h>
 #include <danikk_space_engine/effects/chunk_boundaries.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
@@ -130,15 +131,23 @@ namespace danikk_space_engine
 		}
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
 		const LocalPlayerControllerComponent& controller = getLocalPlayerControllerComponent();
-		if(settings.show_world_body_preview
-			&& controller.active_tool == ToolId::place
+		const bool show_build_part_preview = controller.active_tool == ToolId::place
 			&& (controller.selected_tool_action == ToolActionId::create_body
-				|| controller.selected_tool_action == ToolActionId::create_slope))
+				|| controller.selected_tool_action == ToolActionId::create_slope);
+		const bool show_event_spawn_preview = controller.active_tool == ToolId::event
+			&& (controller.selected_tool_action == ToolActionId::spawn_5_allies
+				|| controller.selected_tool_action == ToolActionId::spawn_5_pirates);
+		if(settings.show_world_body_preview && (show_build_part_preview || show_event_spawn_preview))
 		{
 			const RaycastHit hit = raycastFromCamera();
-			const BuildPartShape shape = controller.selected_tool_action == ToolActionId::create_slope
-				? BuildPartShape::slope : BuildPartShape::cube;
-			drawWorldBodyPlacementPreview(*this, hit, shape, controller.build_part_size, controller.build_part_size_axis);
+			if(show_build_part_preview)
+			{
+				const BuildPartShape shape = controller.selected_tool_action == ToolActionId::create_slope
+					? BuildPartShape::slope : BuildPartShape::cube;
+				drawWorldBodyPlacementPreview(
+					*this, hit, shape, controller.build_part_size, controller.build_part_size_axis);
+			}
+			else drawEventSpawnPreview(*this, hit, controller.selected_tool_action);
 		}
 	}
 }

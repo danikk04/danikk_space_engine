@@ -50,7 +50,8 @@ namespace danikk_space_engine::human_internal
 		 */
 		bool findPlanetGroundPosition(const Chunk& chunk, const PlanetComponent& planet,
 			const vec3& up, float human_height,
-			const vec3& proposed, vec3& supported, float step_height, float maximum_drop)
+			const vec3& proposed, vec3& supported, vec3& surface_normal,
+			float step_height, float maximum_drop)
 		{
 			DSE_WATCH();
 			const double capsule_radius = human_height * 0.14;
@@ -96,6 +97,7 @@ namespace danikk_space_engine::human_internal
 			const double gradient_length = glm::length(gradient);
 			if(gradient_length <= 1e-8 || glm::dot(-gradient / gradient_length, glm::dvec3(up))
 				< minimum_ground_normal_dot) return false;
+			surface_normal = vec3(-gradient / gradient_length);
 			const glm::dvec3 supported_bottom = contact_position + glm::dvec3(up) * 0.02;
 			supported = vec3(supported_bottom - chunk.position) + up * static_cast<float>(half_axis);
 			return true;
@@ -117,12 +119,12 @@ namespace danikk_space_engine::human_internal
 		 */
 		bool findGroundPosition(World& world, const Chunk& chunk, const WorldBody& body, const PlanetComponent* planet,
 			const vec3& up, float human_height, const vec3& proposed, vec3& supported,
-			float step_height = 0.5f, float maximum_drop = 0.75f)
+			vec3& surface_normal, float step_height = 0.5f, float maximum_drop = 0.75f)
 		{
 			DSE_WATCH();
 			if(planet != nullptr)
 				return findPlanetGroundPosition(chunk, *planet, up, human_height,
-					proposed, supported, step_height, maximum_drop);
+					proposed, supported, surface_normal, step_height, maximum_drop);
 
 			const vec3 proposed_foot = proposed - up * (human_height * 0.5f);
 			const glm::dvec3 foot = body.position
@@ -132,6 +134,7 @@ namespace danikk_space_engine::human_internal
 				foot + glm::dvec3(world_up) * static_cast<double>(step_height),
 				-world_up, step_height + maximum_drop);
 			if(!hit.hit || glm::dot(hit.normal, world_up) < minimum_ground_normal_dot) return false;
+			surface_normal = vec3(glm::normalize(glm::conjugate(body.rotation) * glm::dvec3(hit.normal)));
 			const vec3 supported_foot = vec3(glm::conjugate(body.rotation)
 				* (hit.position - body.position) - chunk.position) + up * 0.02f;
 			supported = supported_foot + up * (human_height * 0.5f);
@@ -180,9 +183,11 @@ namespace danikk_space_engine::human_internal
 
 			if(cached_support && point.position + step == point.position) return;
 
-			const auto setGrounded = [&](const vec3& supported_position)
+			const auto setGrounded = [&](const vec3& supported_position, const vec3& surface_normal)
 			{
 				point.position = supported_position;
+				human.ground_normal = glm::length(surface_normal) > 1e-6f
+					? glm::normalize(surface_normal) : human.up;
 				human.vertical_speed = 0.0f;
 				human.grounded = true;
 				if(planet == nullptr) cache.chunk_id = PointComponentSlot::no_chunk;
@@ -191,10 +196,12 @@ namespace danikk_space_engine::human_internal
 			};
 
 			vec3 support;
+			vec3 support_normal = human.ground_normal;
 			vec3 supported_position = point.position;
 			bool has_support = cached_support;
 			if(!has_support && human.vertical_speed <= 0.0f
-				&& findGroundPosition(world, chunk, body, planet, human.up, height, point.position, support))
+				&& findGroundPosition(world, chunk, body, planet, human.up, height,
+					point.position, support, support_normal))
 			{
 				const float lift = glm::dot(support - point.position, human.up);
 				has_support = lift >= -0.08f && lift <= 2.0f;
@@ -205,9 +212,10 @@ namespace danikk_space_engine::human_internal
 			{
 				const vec3 proposed = supported_position + step;
 				if(proposed != supported_position
-					&& findGroundPosition(world, chunk, body, planet, human.up, height, proposed, support))
+					&& findGroundPosition(world, chunk, body, planet, human.up, height,
+						proposed, support, support_normal))
 					supported_position = support;
-				setGrounded(supported_position);
+				setGrounded(supported_position, support_normal);
 				return;
 			}
 
@@ -216,10 +224,10 @@ namespace danikk_space_engine::human_internal
 			const float vertical_displacement = human.vertical_speed * dt - 0.5f * gravity * dt * dt;
 			human.vertical_speed -= gravity * dt;
 			if(vertical_displacement <= 0.0f
-				&& findGroundPosition(world, chunk, body, planet, human.up, height, point.position, support,
-					0.0f, -vertical_displacement + 0.02f))
+				&& findGroundPosition(world, chunk, body, planet, human.up, height, point.position,
+					support, support_normal, 0.0f, -vertical_displacement + 0.02f))
 			{
-				setGrounded(support);
+				setGrounded(support, support_normal);
 			}
 			else
 			{
