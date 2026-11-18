@@ -145,13 +145,26 @@ namespace danikk_space_engine
 				}
 				if(edge_keys[slot_index] == key) return edge_values[slot_index];
 
-				// The endpoint samples are already available; linear iso-value interpolation avoids
-				// repeatedly evaluating the expensive procedural field along this edge.
+				// Start with linear interpolation between the cached lattice samples.
 				const double density_delta = first.density - second.density;
 				const double interpolation = std::clamp(
 					std::abs(density_delta) > 1e-12 ? first.density / density_delta : 0.5,
 					0.0, 1.0);
-				const glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
+				glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
+				if(getPlanetDensity(*request.planet_terrain, position) < 0.0)
+				{
+					glm::dvec3 inside = first.density >= 0.0 ? first.position : second.position;
+					glm::dvec3 outside = position;
+					for(uint8 iteration = 0; iteration < 6; ++iteration)
+					{
+						const glm::dvec3 midpoint = (inside + outside) * 0.5;
+						if(getPlanetDensity(*request.planet_terrain, midpoint) >= 0.0)
+							inside = midpoint;
+						else
+							outside = midpoint;
+					}
+					position = inside;
+				}
 				const uint32 vertex_index = static_cast<uint32>(result.point_positions.size());
 				result.point_positions.push(vec3(position - request.chunk_position));
 				edge_keys[slot_index] = key;
