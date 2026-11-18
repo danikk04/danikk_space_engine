@@ -160,6 +160,51 @@ namespace danikk_space_engine::collision_internal
 		return collider;
 	}
 
+	bool hasOverlappingBuildPart(
+		const World& world, WorldBodyId body_id, BuildPartShape shape,
+		const glm::dvec3& world_position, const mat4& body_local_rotation,
+		const vec3& size, double penetration_tolerance)
+	{
+		const WorldBody& body = world.data.getWorldBody(body_id);
+		const BodyCollider existing = createCollider(world, body_id, static_cast<WorldBodyId>(-1));
+		const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
+		ConvexChunkCollider candidate;
+		candidate.vertices.reserve(geometry.positions.size());
+		const glm::dvec3 anchor_body_position = glm::conjugate(body.rotation)
+			* (world_position - body.position);
+		for(const vec3& local_position : geometry.positions)
+		{
+			const vec3 part_position = body_local_rotation * vec4(local_position * size, 0.0f);
+			const glm::dvec3 body_position = body.rotation
+				* (anchor_body_position + glm::dvec3(part_position));
+			candidate.vertices.push(body_position);
+			candidate.center += body_position;
+		}
+		if(candidate.vertices.size() < 4) return true;
+		candidate.center /= static_cast<double>(candidate.vertices.size());
+		for(const CubeTriangle& triangle : geometry.triangles)
+		{
+			const glm::dvec3& a = candidate.vertices[triangle.points[0]];
+			const glm::dvec3& b = candidate.vertices[triangle.points[1]];
+			const glm::dvec3& c = candidate.vertices[triangle.points[2]];
+			addDirection(candidate.normals, glm::cross(b - a, c - a));
+			addDirection(candidate.edges, b - a);
+			addDirection(candidate.edges, c - b);
+			addDirection(candidate.edges, a - c);
+		}
+		for(const glm::dvec3& vertex : candidate.vertices)
+			candidate.radius = glm::max(candidate.radius, glm::length(vertex - candidate.center));
+
+		for(const ConvexChunkCollider& other : existing.chunks)
+		{
+			BodyContact contact;
+			if(findContact(other, candidate, glm::dvec3(0.0), contact)
+				&& contact.penetration > penetration_tolerance)
+				return true;
+		}
+		return false;
+	}
+
 	/**
 	 * @brief Rejects separated convex chunks or returns their minimum-penetration SAT contact.
 	 * @param a First chunk proxy.
@@ -188,5 +233,20 @@ namespace danikk_space_engine::collision_internal
 		contact.offset_a = point;
 		contact.offset_b = point - translation;
 		return true;
+	}
+}
+
+namespace danikk_space_engine
+{
+	/** @copydoc WorldPhysics::isBuildPartPlacementClear */
+	bool WorldPhysics::isBuildPartPlacementClear(
+		const World& world, WorldBodyId body_id, BuildPartShape shape,
+		const glm::dvec3& world_position, const mat4& body_local_rotation,
+		const vec3& size, double penetration_tolerance) const
+	{
+		DSE_WATCH();
+		if(!world.data.isWorldBodyActive(body_id)) return true;
+		return !collision_internal::hasOverlappingBuildPart(
+			world, body_id, shape, world_position, body_local_rotation, size, penetration_tolerance);
 	}
 }

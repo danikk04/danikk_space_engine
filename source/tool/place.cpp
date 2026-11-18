@@ -1,4 +1,5 @@
 #include <danikk_space_engine/tool.h>
+#include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/geometry/cube.h>
 #include <danikk_space_engine/component/point/machinegun.h>
@@ -14,17 +15,24 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Creates one BuildPart anchor and attaches it to the hit part's WorldBody.
+		 * @brief Attempts to create one BuildPart anchor and attach it to the hit part's WorldBody.
 		 * @param world World receiving the point and component resources.
 		 * @param hit Raycast result supplying placement position, normal, and optional parent part.
 		 * A hit on terrain creates a new WorldBody with one chunk and anchor point. A hit
 		 * on a BuildPart adds a child part to that part's body and stores its slot as parent.
+		 * Intersections with existing parts on that body are rejected before resources are allocated.
+		 * @return True when the part was created; false when it would overlap another part.
 		 */
-		void createBuildPartAtHit(
+		bool createBuildPartAtHit(
 			World& world, const RaycastHit& hit, BuildPartShape shape, const vec3& size,
 			uint8 rotation_step)
 		{
 			const BuildPartPlacement placement = getBuildPartPlacement(world, hit, shape, size, rotation_step);
+			if(placement.body_id != static_cast<WorldBodyId>(-1)
+				&& !world.physics.isBuildPartPlacementClear(world, placement.body_id, shape,
+					placement.world_position, placement.body_local_rotation, size))
+				return false;
+
 			WorldBodyId body_id = placement.body_id;
 			ChunkId chunk_id = placement.chunk_id;
 			const PointComponentSlotId parent_slot_id = placement.parent_slot_id;
@@ -77,6 +85,7 @@ namespace danikk_space_engine
 			body.collision_radius = glm::max(body.collision_radius,
 				glm::length(anchor_body_position) + shape_radius);
 			if(parent_slot_id != no_build_part_parent) body.mass += 1.0;
+			return true;
 		}
 
 		/**
@@ -127,12 +136,14 @@ namespace danikk_space_engine
 				createMachinegunAtHit(world, hit);
 				break;
 			case ToolActionId::create_body:
-				createBuildPartAtHit(world, hit, BuildPartShape::cube,
-					build_part_size, build_part_rotation_step);
+				if(!createBuildPartAtHit(world, hit, BuildPartShape::cube,
+					build_part_size, build_part_rotation_step))
+					gui.addMessage("Место занято");
 				break;
 			case ToolActionId::create_slope:
-				createBuildPartAtHit(world, hit, BuildPartShape::slope,
-					build_part_size, build_part_rotation_step);
+				if(!createBuildPartAtHit(world, hit, BuildPartShape::slope,
+					build_part_size, build_part_rotation_step))
+					gui.addMessage("Место занято");
 				break;
 			case ToolActionId::none:
 			case ToolActionId::extrude:

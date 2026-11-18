@@ -1,6 +1,8 @@
 #pragma once
 
 #include <danikk_space_engine/fwd.h>
+#include <danikk_space_engine/id.h>
+#include <danikk_space_engine/geometry/build_part.h>
 
 namespace danikk_space_engine
 {
@@ -79,5 +81,21 @@ namespace danikk_space_engine
 		 * @param world World to simulate.
 		 */
 		void tick(World& world);
+
+		/**
+		 * @brief Checks whether a proposed BuildPart penetrates another part on the same body.
+		 * @param world World providing the body and its active BuildPart components.
+		 * @param body_id Existing body receiving the part.
+		 * @param shape Primitive geometry of the proposed part.
+		 * @param world_position Proposed part center in world coordinates.
+		 * @param body_local_rotation Proposed orientation in the body's local frame.
+		 * @param size Per-axis dimensions of the proposed part.
+		 * @param penetration_tolerance Overlap no greater than this is treated as face contact.
+		 * @return False when the candidate intersects any existing BuildPart beyond the tolerance.
+		 */
+		bool isBuildPartPlacementClear(
+			const World& world, WorldBodyId body_id, BuildPartShape shape,
+			const glm::dvec3& world_position, const mat4& body_local_rotation,
+			const vec3& size, double penetration_tolerance = 0.001) const;
 	};
 }
