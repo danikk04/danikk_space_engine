@@ -1,4 +1,6 @@
 #include <cstdlib>
+#include <cmath>
+#include <limits>
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/gui.h>
@@ -30,6 +32,27 @@ namespace danikk_engine_game
 	{
 		GUIFrameData data;
 		data.camera_position = world.getCameraWorldPosition();
+		double nearest_surface_distance = std::numeric_limits<double>::max();
+		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
+		{
+			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
+			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
+			for(WorldBodyComponentSlotId component_id : body.component_slot_ids)
+			{
+				if(!world.world_body_data.isWorldBodyComponentSlotActive(component_id)) continue;
+				const WorldBodyComponentSlot& component = world.world_body_data.getWorldBodyComponentSlot(component_id);
+				if(component.type_id != WorldBodyComponentTypeId::planet) continue;
+				const glm::dvec3 planet_local_camera_position = glm::conjugate(body.rotation)
+					* (data.camera_position - body.position);
+				const double height = world.planet_terrain.getPlanetHeightAboveSurface(
+					component_id, planet_local_camera_position);
+				const double surface_distance = std::abs(height);
+				if(surface_distance >= nearest_surface_distance) continue;
+				nearest_surface_distance = surface_distance;
+				data.nearest_planet_height = height;
+				data.nearest_planet_height_available = true;
+			}
+		}
 		const CameraComponent& camera = world.getCameraComponent();
 		data.preview_camera_front = camera.getFront();
 		data.preview_camera_up = camera.getUp();

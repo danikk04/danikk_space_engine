@@ -15,6 +15,10 @@ namespace danikk_space_engine
 		glm::dvec3 camera_position = glm::dvec3(0.0);
 		/** @brief Camera speed in metres per second. */
 		float camera_speed = 0.0f;
+		/** @brief Signed height above the nearest planet surface, in metres. */
+		double nearest_planet_height = 0.0;
+		/** @brief Whether a planet was available for the nearest-surface height sample. */
+		bool nearest_planet_height_available = false;
 		/** @brief Camera forward axis used to orient catalog previews. */
 		vec3 preview_camera_front = vec3(0.0f, 0.0f, -1.0f);
 		/** @brief Camera up axis used to orient catalog previews. */
@@ -68,7 +72,7 @@ namespace danikk_space_engine
 	 * @brief Owns the debug overlay, selected-unit summary, message list, hotbar, and tool catalog.
 	 *
 	 * The GUI text reports FPS, process memory, BuildPart size when applicable, camera speed,
-	 * and camera position. Process memory is sampled at roughly one-second
+	 * signed height above the nearest planet, and camera position. Process memory is sampled at roughly one-second
 	 * intervals; a zero reading is displayed as unavailable.
 	 */
 	class GUI
@@ -180,7 +184,7 @@ namespace danikk_space_engine
 		 *
 		 * Samples process memory when the accumulated target-frame delay reaches one second, then
 		 * builds one multiline string containing FPS, RAM in MiB, relevant BuildPart controls,
-		 * camera speed in m/s, and camera position truncated to hundredths. A zero memory sample is
+		 * camera speed in m/s, signed nearest-planet height, and camera position truncated to hundredths. A zero memory sample is
 		 * shown as unavailable. The supplied frame snapshot controls the hotbar, catalog visibility,
 		 * player mode, placement readout, and selected-unit summary. GUI input is queued as actions for
 		 * the application to apply to the controller.

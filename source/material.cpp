@@ -29,11 +29,11 @@ namespace danikk_space_engine
 	 * @brief Populates the process-wide material catalog once in the ID order declared by default_materials.
 	 *
 	 * The insertion sequence is part of the serialized/runtime ID contract: void, grass, stone,
-	 * lava, water, and magma must stay aligned with the constants in `default_materials`. Repeated
-	 * calls do nothing after the first population. Grass, stone, lava, water, and magma load the
-	 * texture assets `grass_32x32`, `stone_32x32`, `lava_32x32`, `water_32x32`, and `magma_32x32`
-		 * respectively; the void entry has no texture. Grass and water carry explicit tint colors,
-		 * while the remaining textured materials use white tint. Build parts use a plain gray tint.
+	 * lava, water, magma, build_part, and dirt must stay aligned with the constants in `default_materials`.
+	 * Repeated calls do nothing after the first population. Textured materials load their matching
+	 * 32x32 assets; lava, water, and magma use the first frame of their source sprite sheets. The
+	 * void and build-part entries have no texture. Grass and water carry explicit tint colors,
+	 * while the remaining textured materials use white tint. Build parts use a plain gray tint.
 	 */
 	void loadMaterials()
 	{
@@ -50,6 +50,7 @@ namespace danikk_space_engine
 		material_list.pushCtor("water", 0x3F76E4, "water_32x32");
 		material_list.pushCtor("magma", 0xFFFFFF, "magma_32x32");
 		material_list.pushCtor("build_part", 0xA6ADB8, nullptr);
+		material_list.pushCtor("dirt", 0xFFFFFF, "dirt_32x32");
 	}
 
 	/**

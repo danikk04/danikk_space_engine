@@ -47,6 +47,38 @@ namespace danikk_space_engine
 			return core_radius + core_surface_roughness * (surface_noise + 1.0) - distance_from_center;
 		}
 
+		/** @brief Samples a low-frequency pair of noise sheets whose intersection forms rounded tunnels. */
+		double sampleTunnelCaveDensity(const glm::dvec3& position, uint64 noise_seed, double width_bonus)
+		{
+			const glm::dvec3 noise_position = position * 0.012;
+			const double first_sheet = math::fractalNoise3D(
+				noise_position + planetNoiseSeedOffset(noise_seed ^ 0x2D358DCCAA6C78A5ull), 2, 0.5);
+			const double second_sheet = math::fractalNoise3D(
+				noise_position + planetNoiseSeedOffset(noise_seed ^ 0x8BB84B93962EACC9ull), 2, 0.5);
+			const double distance_from_tunnel_axis = std::sqrt(
+				first_sheet * first_sheet + second_sheet * second_sheet);
+			constexpr double tunnel_radius = 0.06;
+			constexpr double maximum_tunnel_radius_bonus = 0.06;
+			return (distance_from_tunnel_axis - (tunnel_radius + maximum_tunnel_radius_bonus * width_bonus)) * 100.0;
+		}
+
+		/** @brief Samples frequent, smaller noise caves intended for progressively deeper terrain. */
+		double sampleDeepCaveDensity(const glm::dvec3& position, uint64 noise_seed, double width_bonus)
+		{
+			const double cavern_noise = std::abs(math::fractalNoise3D(
+				position * 0.009 + planetNoiseSeedOffset(noise_seed ^ 0xA511E9B3u), 4, 0.5));
+			constexpr double cavern_threshold = 0.04;
+			constexpr double maximum_cavern_threshold_bonus = 0.04;
+			return (cavern_noise - (cavern_threshold + maximum_cavern_threshold_bonus * width_bonus)) * 100.0;
+		}
+
+		/** @brief Returns a smooth cave-width bonus that peaks at 200 m depth. */
+		double sampleCaveWidthBonus(double depth)
+		{
+			return glm::smoothstep(100.0, 200.0, depth)
+				* (1.0 - glm::smoothstep(200.0, 300.0, depth));
+		}
+
 		/** @brief Returns the planet component referenced by an active component slot. */
 		const PlanetComponent& getPlanetComponent(const World& world, WorldBodyComponentSlotId component_id)
 		{
@@ -64,10 +96,16 @@ namespace danikk_space_engine
 		{
 			const double distance_from_center = glm::length(position);
 			double density = radius + samplePlanetTerrainHeight(position, noise_seed) - distance_from_center;
-			const double cave_noise = std::abs(math::fractalNoise3D(
-				position * 0.009 + planetNoiseSeedOffset(noise_seed ^ 0xA511E9B3u), 4, 0.5));
-			constexpr double cave_threshold = 0.04;
-			density = std::min(density, (cave_noise - cave_threshold) * 100.0);
+			const double depth = density;
+			const double width_bonus = sampleCaveWidthBonus(depth);
+			const double tunnel_density = sampleTunnelCaveDensity(position, noise_seed, width_bonus);
+			const double deep_cave_density = sampleDeepCaveDensity(position, noise_seed, width_bonus);
+			const double deep_cave_weight = glm::smoothstep(100.0, 300.0, depth);
+			const double raw_cave_density = tunnel_density * (1.0 - deep_cave_weight)
+				+ deep_cave_density * deep_cave_weight;
+			const double cave_fade = 1.0 - glm::smoothstep(1000.0, 2500.0, depth);
+			const double cave_density = glm::mix(1.0, raw_cave_density, cave_fade);
+			density = std::min(density, cave_density);
 
 			for(const PlanetTerrainEdit& edit : edits)
 			{
@@ -80,12 +118,15 @@ namespace danikk_space_engine
 
 		MaterialId samplePlanetMaterial(const glm::dvec3& position, double radius, uint64 noise_seed)
 		{
-			constexpr double grass_layer_depth = 3.0;
+			constexpr double grass_layer_depth = 1.0;
+			constexpr double dirt_layer_depth = 5.0;
 			const double distance_from_center = glm::length(position);
 			if(distance_from_center < 0.000001) return default_materials::stone;
 			const glm::dvec3 direction = position / distance_from_center;
 			const double surface_depth = samplePlanetSurfaceRadius(direction, radius, noise_seed) - distance_from_center;
-			return surface_depth <= grass_layer_depth ? default_materials::grass : default_materials::stone;
+			if(surface_depth <= grass_layer_depth) return default_materials::grass;
+			if(surface_depth <= dirt_layer_depth) return default_materials::dirt;
+			return default_materials::stone;
 		}
 	}
 
@@ -115,6 +156,17 @@ namespace danikk_space_engine
 	{
 		const PlanetComponent& planet = getPlanetComponent(this->world, planet_component_id);
 		return samplePlanetMaterial(position, planet.radius, planet.noise_seed);
+	}
+
+	/** @copydoc PlanetTerrainSystem::getPlanetHeightAboveSurface */
+	double PlanetTerrainSystem::getPlanetHeightAboveSurface(
+		WorldBodyComponentSlotId planet_component_id, const glm::dvec3& position) const
+	{
+		const PlanetComponent& planet = getPlanetComponent(this->world, planet_component_id);
+		const double distance_from_center = glm::length(position);
+		if(distance_from_center <= 1e-9) return -planet.radius;
+		const glm::dvec3 direction = position / distance_from_center;
+		return distance_from_center - samplePlanetSurfaceRadius(direction, planet.radius, planet.noise_seed);
 	}
 
 }

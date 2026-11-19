@@ -1,7 +1,7 @@
 Texture assets
 
 grass_32x32.png (grass_block_top.png), stone_32x32.png (stone.png),
-lava_32x32.png (first frame of lava_still.png),
+dirt_32x32.png (dirt.png), lava_32x32.png (first frame of lava_still.png),
 water_32x32.png (first frame of water_still.png),
 magma_32x32.png (first frame of magma.png)
 From Faithful 32x Java by the Faithful Resource Pack team.

@@ -37,6 +37,14 @@ namespace danikk_space_engine
 		/** @brief Selects the material at a point relative to the identified planet center. */
 		MaterialId getPlanetMaterial(WorldBodyComponentSlotId planet_component_id,
 			const glm::dvec3& position) const;
+		/**
+		 * @brief Returns signed radial height above the planet's procedurally generated surface.
+		 * @param planet_component_id Component slot identifying the planet.
+		 * @param position Position relative to the planet center, in planet-local coordinates.
+		 * @return Positive height above terrain and negative height below its surface.
+		 */
+		double getPlanetHeightAboveSurface(WorldBodyComponentSlotId planet_component_id,
+			const glm::dvec3& position) const;
 		/** @brief Selects material from an immutable worker-safe planet-field snapshot. */
 		static MaterialId getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
 	};

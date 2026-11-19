@@ -16,6 +16,7 @@ namespace danikk_space_engine
 		constexpr inline MaterialId water = 4;
 		constexpr inline MaterialId magma = 5;
 		constexpr inline MaterialId build_part = 6;
+		constexpr inline MaterialId dirt = 7;
 	}
 
 	/**
