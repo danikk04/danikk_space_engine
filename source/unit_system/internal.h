@@ -46,6 +46,17 @@ namespace danikk_space_engine
 		bool assigned_to_search = false;
 	};
 
+	/** @brief Persistent post-combat position and scan phase assigned to one unit. */
+	struct UnitPostCombatAssignment
+	{
+		PointComponentSlotId controller_slot_id = static_cast<PointComponentSlotId>(-1);
+		uint64 controller_generation_id = 0;
+		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
+		glm::dvec3 body_local_position = glm::dvec3(0.0);
+		float scan_angle = 0.0f;
+		uint32 next_scan_timestamp_ms = 0;
+	};
+
 	/** @brief Per-faction tactical memory and processing state. */
 	struct UnitSystem
 	{
@@ -54,9 +65,13 @@ namespace danikk_space_engine
 		DynamicArray<UnitSearchLocation> search_locations;
 		/** @brief Reusable temporary storage; pointers are valid only during assignSearchOrders(). */
 		DynamicArray<UnitSearchCandidate> search_candidates;
+		/** @brief Stable dispersal destinations and scan phases while the faction is out of combat. */
+		DynamicArray<UnitPostCombatAssignment> post_combat_assignments;
 		float time_since_enemy_visible = 0.0f;
 		bool enemy_seen_this_tick = false;
 		bool attack_reported_this_tick = false;
+		bool has_had_enemy_contact = false;
+		bool enemy_contact_this_tick = false;
 	};
 
 	namespace unit_system_internal
@@ -83,5 +98,7 @@ namespace danikk_space_engine
 		void assignOrders(World&, UnitSystem&, const DynamicArray<PointComponentSlotId>&);
 		/** @brief Assigns idle units to inspect lost-contact locations after combat ends. */
 		void assignSearchOrders(World&, UnitSystem&, const DynamicArray<PointComponentSlotId>&);
+		/** @brief Disperses idle units and periodically changes their look direction after combat. */
+		void assignPostCombatOrders(World&, UnitSystem&, const DynamicArray<PointComponentSlotId>&);
 	}
 }

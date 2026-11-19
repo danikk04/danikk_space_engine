@@ -276,7 +276,12 @@ namespace danikk_space_engine::unit_system_internal
 	void finishPerception(World& world, UnitSystem& system, float dt)
 	{
 		DSE_WATCH();
-		if(system.enemy_seen_this_tick || system.attack_reported_this_tick) system.time_since_enemy_visible = 0.0f;
+		system.enemy_contact_this_tick = system.enemy_seen_this_tick || system.attack_reported_this_tick;
+		if(system.enemy_contact_this_tick)
+		{
+			system.has_had_enemy_contact = true;
+			system.time_since_enemy_visible = 0.0f;
+		}
 		else system.time_since_enemy_visible += glm::max(dt, 0.0f);
 		system.attack_reported_this_tick = false;
 

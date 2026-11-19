@@ -109,6 +109,7 @@ namespace danikk_space_engine
 			unit_system_internal::assignOrders(world, system, slot_ids);
 			unit_system_internal::finishPerception(world, system, dt);
 			unit_system_internal::assignSearchOrders(world, system, slot_ids);
+			unit_system_internal::assignPostCombatOrders(world, system, slot_ids);
 		}
 	}
 
