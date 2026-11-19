@@ -14,6 +14,8 @@
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_engine/texture_methods.h>
 
+#include <limits>
+
 namespace danikk_space_engine
 {
 	/**
@@ -34,20 +36,85 @@ namespace danikk_space_engine
 			? planets.getAtmosphereBackgroundColor(camera.getWorldPosition()) : glm::vec3(0.0f));
 		components.renderWorldBodyComponents();
 		planets.frame();
+		planet_lod.update();
 		chunk_mesh_generation.frame();
 		static_asset_collection.base3d_shader.use();
 		camera.frame();
 		const vec3 camera_front = camera.getFront();
 		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera.getUp());
 		setViewMatrix(view);
+
+		const glm::dvec3 camera_position = camera.getWorldPosition();
+		double far_render_distance = camera.far_clip_distance;
+		double closest_planet_surface_height = std::numeric_limits<double>::max();
+		for(const PlanetData& planet : planets.getPlanets())
+		{
+			if(!world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
+			const WorldBody& body = world_body_data.getWorldBody(planet.world_body_id);
+			const glm::dvec3 local_camera_position = glm::conjugate(body.rotation)
+				* (camera_position - body.position);
+			const double surface_height = planets.getPlanetHeightAboveSurface(
+				planet.world_body_id, local_camera_position);
+			if(surface_height >= 0.0)
+				closest_planet_surface_height = glm::min(closest_planet_surface_height, surface_height);
+			far_render_distance = glm::max(far_render_distance,
+				glm::length(body.position - camera_position) + planet.radius);
+		}
 		for(WorldBodyId body_id : world_body_data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = world_body_data.getWorldBody(body_id);
 			for(ChunkId chunk_id : body.chunk_ids)
 			{
-				Chunk& chunk = chunks.getChunk(chunk_id);
-				chunks.draw(chunk);
+				if(!chunks.isChunkActive(chunk_id)) continue;
+				const Chunk& chunk = chunks.getChunk(chunk_id);
+				if(!chunk.hasValidBounds()) continue;
+				const glm::dvec3 chunk_center = body.position
+					+ body.rotation * (chunk.position + glm::dvec3(chunk.bounds_center));
+				far_render_distance = glm::max(far_render_distance,
+					glm::length(chunk_center - camera_position) + chunk.bounds_radius);
 			}
+		}
+
+		const auto drawChunkMeshes = [this]()
+		{
+			for(WorldBodyId body_id : world_body_data.getUsedWorldBodyIds())
+			{
+				const WorldBody& body = world_body_data.getWorldBody(body_id);
+				for(ChunkId chunk_id : body.chunk_ids)
+				{
+					if(!chunks.isChunkActive(chunk_id)) continue;
+					Chunk& chunk = chunks.getChunk(chunk_id);
+					chunks.draw(chunk);
+				}
+			}
+		};
+
+		const double near_far_distance = camera.far_clip_distance;
+		if(far_render_distance > near_far_distance * 1.05)
+		{
+			float far_near_clip = camera.far_clip_distance * 0.95f;
+			if(closest_planet_surface_height < std::numeric_limits<double>::max())
+				far_near_clip = glm::min(far_near_clip, static_cast<float>(glm::max(
+					static_cast<double>(camera.near_clip_distance), closest_planet_surface_height * 0.5)));
+			const float far_clip = static_cast<float>(glm::min(
+				far_render_distance * 1.02, static_cast<double>(std::numeric_limits<float>::max() / 2.0f)));
+			setProjectionMatrix(glm::perspective(glm::radians(camera.vertical_fov_degrees),
+				screen_ratio_gz, far_near_clip, far_clip));
+			setDepthRange(0.5f, 1.0f);
+			planet_lod.drawFar();
+			drawChunkMeshes();
+
+			camera.frame();
+			setDepthRange(0.0f, 0.5f);
+			planet_lod.drawNear();
+			drawChunkMeshes();
+		}
+		else
+		{
+			setDepthRange(0.0f, 1.0f);
+			planet_lod.drawFar();
+			planet_lod.drawNear();
+			drawChunkMeshes();
 		}
 		// Draw dynamic chunk components after the world meshes so transparent overlays
 		// do not allow later terrain draws to pass through the base mesh depth.
@@ -76,5 +143,6 @@ namespace danikk_space_engine
 			else drawEventSpawnPreview(*this, hit, player_controller.selected_tool_action);
 		}
 		drawUnitActivityLabels(*this);
+		setDepthRange(0.0f, 1.0f);
 	}
 }

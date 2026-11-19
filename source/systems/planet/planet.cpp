@@ -205,6 +205,30 @@ namespace danikk_space_engine
 			snapshot.terrain_edits, snapshot.core_radius);
 	}
 
+	double PlanetSystem::getPlanetSurfaceRadius(
+		const PlanetTerrainSnapshot& snapshot, const glm::dvec3& direction)
+	{
+		const double direction_length = glm::length(direction);
+		if(direction_length <= 1e-12) return 0.0;
+		const glm::dvec3 radial_direction = direction / direction_length;
+		double surface_radius = samplePlanetSurfaceRadius(
+			radial_direction, snapshot.planet_radius, snapshot.noise_seed);
+		for(const PlanetTerrainEdit& edit : snapshot.terrain_edits)
+		{
+			const double along_ray = glm::dot(edit.center, radial_direction);
+			const double perpendicular_squared = glm::max(
+				0.0, glm::dot(edit.center, edit.center) - along_ray * along_ray);
+			if(perpendicular_squared >= edit.radius * edit.radius) continue;
+			const double half_chord = std::sqrt(edit.radius * edit.radius - perpendicular_squared);
+			const double outer_radius = along_ray + half_chord;
+			const double inner_radius = glm::max(0.0, along_ray - half_chord);
+			if(edit.adds_solid_terrain) surface_radius = glm::max(surface_radius, outer_radius);
+			else if(surface_radius >= inner_radius && surface_radius <= outer_radius)
+				surface_radius = inner_radius;
+		}
+		return surface_radius;
+	}
+
 	MaterialId PlanetSystem::getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position)
 	{
 		return samplePlanetMaterial(position, snapshot.planet_radius, snapshot.noise_seed);

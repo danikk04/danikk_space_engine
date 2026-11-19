@@ -4,6 +4,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
 #include <danikk_space_engine/systems/planet/planet.h>
+#include "internal.h"
 #include "mesh_algorithms.h"
 #include <danikk_engine/danikk_engine.h>
 
@@ -320,6 +321,132 @@ namespace danikk_space_engine
 			const glm::dvec3 center = request.chunk_position
 				+ (glm::dvec3(a) + glm::dvec3(b) + glm::dvec3(c)) / 3.0;
 			result.triangle_material_ids.push(PlanetSystem::getPlanetMaterial(*request.planet_terrain, center));
+		}
+		return result;
+	}
+
+	/**
+	 * @brief Generates one cave-free cube-sphere face for an orbital planet LOD.
+	 * @param request Face index, level resolution, and immutable planet surface data.
+	 * @return Planet-local indexed geometry with material IDs sampled from the surface.
+	 * The generator samples only the radial terrain surface and terrain stamps; it does
+	 * not evaluate the cave field or create chunks and point resources.
+	 */
+	GeneratedChunkMesh chunk_mesh_generation_internal::generatePlanetSurfaceLodMesh(
+		const ChunkMeshGenerationRequest& request)
+	{
+		DSE_WATCH();
+		if(request.source != ChunkMeshSource::planet_surface_lod
+			|| request.planet_terrain == nullptr
+			|| request.planet_terrain->world_body_id != request.world_body_id
+			|| request.planet_terrain->planet_generation_id != request.planet_generation_id
+			|| request.planet_terrain->terrain_revision != request.terrain_revision
+			|| request.lod_face >= 6 || request.lod_resolution == 0)
+			danikk_engine::formatFatalError("Planet surface LOD request has invalid data");
+
+		GeneratedChunkMesh result;
+		result.generation_id = request.generation_id;
+		result.source_revision = request.source_revision;
+		result.world_body_id = request.world_body_id;
+		result.planet_generation_id = request.planet_generation_id;
+		result.terrain_revision = request.terrain_revision;
+		result.source = request.source;
+		result.lod_resolution = request.lod_resolution;
+		result.lod_face = request.lod_face;
+		result.lod_level = request.lod_level;
+		result.grid_coordinate = request.grid_coordinate;
+		result.chunk_position = request.chunk_position;
+
+		const size_t resolution = request.lod_resolution;
+		const size_t points_per_axis = resolution + 1;
+		const auto point_id = [points_per_axis](size_t x, size_t y)
+		{
+			return static_cast<uint32>(y * points_per_axis + x);
+		};
+		result.point_positions.reserve(points_per_axis * points_per_axis);
+		if(request.lod_level == 0)
+		{
+			const glm::dvec3 up = glm::normalize(request.chunk_position);
+			const glm::dvec3 reference = glm::abs(up.z) < 0.9
+				? glm::dvec3(0.0, 0.0, 1.0) : glm::dvec3(1.0, 0.0, 0.0);
+			const glm::dvec3 right = glm::normalize(glm::cross(reference, up));
+			const glm::dvec3 forward = glm::normalize(glm::cross(up, right));
+			for(size_t y = 0; y <= resolution; y++)
+			{
+				for(size_t x = 0; x <= resolution; x++)
+				{
+					const double u = (static_cast<double>(x) / resolution - 0.5) * request.chunk_width;
+					const double v = (static_cast<double>(y) / resolution - 0.5) * request.chunk_width;
+					const glm::dvec3 tangent_position = request.chunk_position + right * u + forward * v;
+					const glm::dvec3 direction = glm::normalize(tangent_position);
+					const double radius = PlanetSystem::getPlanetSurfaceRadius(*request.planet_terrain, direction);
+					result.point_positions.push(vec3(direction * radius - request.chunk_position));
+				}
+			}
+		}
+		else
+		{
+			for(size_t y = 0; y <= resolution; y++)
+			{
+				for(size_t x = 0; x <= resolution; x++)
+				{
+					const double u = -1.0 + 2.0 * static_cast<double>(x) / resolution;
+					const double v = -1.0 + 2.0 * static_cast<double>(y) / resolution;
+					glm::dvec3 cube_direction;
+					switch(request.lod_face)
+					{
+						case 0: cube_direction = glm::dvec3(1.0, u, v); break;
+						case 1: cube_direction = glm::dvec3(-1.0, -u, v); break;
+						case 2: cube_direction = glm::dvec3(u, 1.0, v); break;
+						case 3: cube_direction = glm::dvec3(u, -1.0, -v); break;
+						case 4: cube_direction = glm::dvec3(u, v, 1.0); break;
+						default: cube_direction = glm::dvec3(-u, v, -1.0); break;
+					}
+					const glm::dvec3 direction = glm::normalize(cube_direction);
+					const double radius = PlanetSystem::getPlanetSurfaceRadius(*request.planet_terrain, direction);
+					result.point_positions.push(vec3(direction * radius));
+				}
+			}
+		}
+
+		const auto append_triangle = [&result, &request](uint32 a, uint32 b, uint32 c)
+		{
+			const vec3& pa = result.point_positions[a];
+			const vec3& pb = result.point_positions[b];
+			const vec3& pc = result.point_positions[c];
+			const glm::dvec3 absolute_a = request.chunk_position + glm::dvec3(pa);
+			const glm::dvec3 absolute_b = request.chunk_position + glm::dvec3(pb);
+			const glm::dvec3 absolute_c = request.chunk_position + glm::dvec3(pc);
+			if(glm::dot(glm::dvec3(glm::cross(pb - pa, pc - pa)), absolute_a + absolute_b + absolute_c) < 0.0)
+			{
+				const uint32 temporary = b;
+				b = c;
+				c = temporary;
+			}
+			result.triangle_point_indices.push(a);
+			result.triangle_point_indices.push(b);
+			result.triangle_point_indices.push(c);
+			const glm::dvec3 center = request.chunk_position + (glm::dvec3(result.point_positions[a])
+				+ glm::dvec3(result.point_positions[b]) + glm::dvec3(result.point_positions[c])) / 3.0;
+			const glm::dvec3 direction = glm::normalize(center);
+			const glm::dvec3 surface_position = direction
+				* PlanetSystem::getPlanetSurfaceRadius(*request.planet_terrain, direction);
+			result.triangle_material_ids.push(
+				PlanetSystem::getPlanetMaterial(*request.planet_terrain, surface_position));
+		};
+		result.triangle_point_indices.reserve(resolution * resolution * 6);
+		result.triangle_material_ids.reserve(resolution * resolution * 2);
+		for(size_t y = 0; y < resolution; y++)
+		{
+			for(size_t x = 0; x < resolution; x++)
+			{
+				const uint32 lower_left = point_id(x, y);
+				const uint32 lower_right = point_id(x + 1, y);
+				const uint32 upper_right = point_id(x + 1, y + 1);
+				const uint32 upper_left = point_id(x, y + 1);
+				append_triangle(lower_left, lower_right, upper_right);
+				append_triangle(lower_left, upper_right, upper_left);
+			}
 		}
 		return result;
 	}

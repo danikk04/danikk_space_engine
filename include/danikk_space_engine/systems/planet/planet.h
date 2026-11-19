@@ -126,6 +126,8 @@ namespace danikk_space_engine
 		glm::vec3 getAtmosphereBackgroundColor(const glm::dvec3& world_position) const;
 		static double getPlanetDensity(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
 		static MaterialId getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
+		/** @brief Samples the cave-free radial surface used by distant planet meshes. */
+		static double getPlanetSurfaceRadius(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& direction);
 	};
 
 	/** @brief Applies a terrain edit to a planet registered in `world.planets`. */

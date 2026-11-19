@@ -63,6 +63,34 @@ namespace danikk_space_engine
 		requests_dirty = true;
 	}
 
+	/** @copydoc ChunkMeshGenerationSystem::replacePlanetLodRequests */
+	void ChunkMeshGenerationSystem::replacePlanetLodRequests(WorldBodyId world_body_id,
+		uint64 planet_generation_id, const DynamicArray<ChunkMeshGenerationRequest>& lod_requests)
+	{
+		DSE_WATCH();
+		for(size_t index = 0; index < requests.size();)
+		{
+			const ChunkMeshGenerationRequest& queued = requests[index];
+			if(queued.source != ChunkMeshSource::planet_surface_lod
+				|| queued.world_body_id != world_body_id
+				|| queued.planet_generation_id != planet_generation_id)
+			{
+				index++;
+				continue;
+			}
+			for(size_t shift = index + 1; shift < requests.size(); shift++)
+				requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(requests[shift]);
+			requests.resize(requests.size() - 1);
+		}
+		for(const ChunkMeshGenerationRequest& request : lod_requests)
+		{
+			ChunkMeshGenerationRequest queued = request;
+			queued.generation_id = generation_id;
+			requests.pushMove(queued);
+		}
+		requests_dirty = true;
+	}
+
 	/** @copydoc ChunkMeshGenerationSystem::removePlanetRequest */
 	void ChunkMeshGenerationSystem::removePlanetRequest(WorldBodyId world_body_id,
 		uint64 planet_generation_id, const glm::ivec3& grid_coordinate)
@@ -71,7 +99,8 @@ namespace danikk_space_engine
 		for(size_t index = 0; index < requests.size(); index++)
 		{
 			const ChunkMeshGenerationRequest& request = requests[index];
-			if(request.source != ChunkMeshSource::planet_terrain
+			if((request.source != ChunkMeshSource::planet_terrain
+				&& request.source != ChunkMeshSource::planet_surface_lod)
 				|| request.world_body_id != world_body_id
 				|| request.planet_generation_id != planet_generation_id
 				|| request.grid_coordinate.x != grid_coordinate.x
@@ -214,6 +243,11 @@ namespace danikk_space_engine
 			&& world.world_body_data.isWorldBodyActive(generated.world_body_id))
 		{
 			world.planets.acceptGeneratedChunk(generated);
+		}
+		else if(generated.source == ChunkMeshSource::planet_surface_lod
+			&& world.world_body_data.isWorldBodyActive(generated.world_body_id))
+		{
+			world.planet_lod.acceptGeneratedMesh(generated);
 		}
 	}
 }

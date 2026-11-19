@@ -24,8 +24,14 @@ namespace danikk_space_engine
 	/** @brief Immutable planet-field data captured for background chunk generation. */
 	struct PlanetTerrainSnapshot;
 
+	/** @brief Runtime configuration and streaming state for one planet. */
+	struct PlanetData;
+
 	/** @brief Owns planet state and provides terrain queries and streaming. */
 	class PlanetSystem;
+
+	/** @brief Selects and renders cave-free planetary surface meshes at orbital distances. */
+	class PlanetLodSystem;
 
 	/** @brief Concrete item metadata referenced by item-category callbacks. */
 	struct ItemDefinition;
