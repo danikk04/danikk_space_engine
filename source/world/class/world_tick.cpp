@@ -1,7 +1,7 @@
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/component_tick_system.h>
+#include <danikk_space_engine/component_system.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/controller_system.h>

@@ -1,5 +1,5 @@
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/component_render_system.h>
+#include <danikk_space_engine/component_system.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/effects/world_body_preview.h>
 #include <danikk_space_engine/effects/event_spawn_preview.h>

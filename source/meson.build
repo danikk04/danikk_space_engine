@@ -7,8 +7,7 @@ sources = files(
 	'main.cpp', 
 	'material.cpp',
 	'profiler.cpp',
-	'component_tick_system.cpp',
-	'component_render_system.cpp',
+	'component_system/component_system.cpp',
 	'planet_terrain_system.cpp',
 )
 

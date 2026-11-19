@@ -9,7 +9,7 @@
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
 #include <danikk_space_engine/controller_system.h>
-#include <danikk_space_engine/component_tick_system.h>
+#include <danikk_space_engine/component_system.h>
 #include <danikk_space_engine/world/data.h>
 #include <danikk_space_engine/chunk_system.h>
 #include <danikk_framework/dynamic_array.h>
