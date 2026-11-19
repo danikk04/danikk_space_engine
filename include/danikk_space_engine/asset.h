@@ -30,8 +30,6 @@ namespace danikk_space_engine
 		Shader bullet_tracer_shader;
 		/** @brief Shared bitmap font used by the default GUI style. */
 		Font base_font;
-		/** @brief Low-poly sphere mesh reused by bullet tracers and primitive previews. */
-		Mesh low_poly_sphere_mesh;
 		/** @brief Cube mesh resource slot; current tool previews use the world cube-mesh helper. */
 		Mesh cube_mesh;
 		/** @brief Shared human part geometry; character instances store only pose and appearance IDs. */

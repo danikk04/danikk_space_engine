@@ -22,7 +22,6 @@ namespace danikk_space_engine
     	setDefaultGUIShader(base2d_shader);
     	setDefaultFont(base_font);
 
-    	low_poly_sphere_mesh = Mesh(NULL, "sphere");
 		loadItemCatalog();
 		loadHumanDefinition(human_definition);
     	container_texture = Texture("container");
