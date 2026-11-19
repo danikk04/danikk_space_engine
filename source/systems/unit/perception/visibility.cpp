@@ -4,7 +4,7 @@
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/planet/planet.h>
 
-#include "internal.h"
+#include "../internal.h"
 
 namespace danikk_space_engine::unit_system_internal
 {

@@ -4,7 +4,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world.h>
 
-#include "internal.h"
+#include "../internal.h"
 
 namespace danikk_space_engine::unit_system_internal
 {
@@ -16,8 +16,8 @@ namespace danikk_space_engine::unit_system_internal
 		assignments.resize(assignments.size() - 1);
 	}
 
-	/** @brief Spreads out the group and scans its surroundings during the reconnaissance phase. */
-	void assignPostCombatOrders(World& world, UnitGroup& system)
+	/** @brief Spreads units and scans surroundings while the group searches for hostiles. */
+	void assignBattleReconnaissanceOrders(World& world, UnitGroup& system)
 	{
 		DSE_WATCH();
 		DynamicArray<UnitPostCombatAssignment>& assignments = system.post_combat_assignments;
@@ -68,7 +68,6 @@ namespace danikk_space_engine::unit_system_internal
 			HumanComponent& human = *candidate.human;
 			// Last-known enemy locations have priority over general area scanning.
 			if(agent.order.has_attack_target || agent.order.has_move_target) continue;
-			agent.global_state = UnitGlobalState::war;
 			agent.substate = UnitSubstate::reconnaissance;
 
 			UnitPostCombatAssignment* assignment = nullptr;

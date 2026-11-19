@@ -50,7 +50,7 @@ namespace danikk_space_engine
 		UnitSystem(const UnitSystem&) = delete;
 		UnitSystem& operator=(const UnitSystem&) = delete;
 
-		/** @brief Updates each faction's perception, tactical state, and unit orders. */
+		/** @brief Runs perception, chooses each faction group's mode, then dispatches its behavior. */
 		void tick(float dt);
 		/** @brief Records hostile fire as fresh tactical information for the victim's faction. */
 		void reportAttack(PointId attacker_point_id, PointId victim_point_id);

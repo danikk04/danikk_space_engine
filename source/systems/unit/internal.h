@@ -87,6 +87,13 @@ namespace danikk_space_engine
 		bool is_corpse = false;
 	};
 
+	/** @brief Kind of remembered location assigned by battle or work behavior. */
+	enum class UnitSearchTaskType : uint8
+	{
+		lost_contact,
+		corpse_recovery
+	};
+
 	/** @brief Tick-local candidate data reused while assigning one faction's search orders. */
 	struct UnitSearchCandidate
 	{
@@ -117,7 +124,7 @@ namespace danikk_space_engine
 		DynamicArray<UnitSighting> known_sightings;
 		DynamicArray<UnitAgentState> agents;
 		DynamicArray<UnitSearchLocation> search_locations;
-		/** @brief Reusable temporary storage; pointers are valid only during assignSearchOrders(). */
+		/** @brief Reusable temporary storage; pointers are valid only during search-task assignment. */
 		DynamicArray<UnitSearchCandidate> search_candidates;
 		/** @brief Stable dispersal destinations and scan phases while the faction is reconnoitring. */
 		DynamicArray<UnitPostCombatAssignment> post_combat_assignments;
@@ -147,18 +154,28 @@ namespace danikk_space_engine
 		bool isRecentSighting(const UnitSighting&);
 		/** @brief Refreshes a faction contact or appends a newly observed target. */
 		void rememberSighting(World&, UnitGroup&, FactionId, const UnitTarget&, const glm::dvec3&);
-		/** @brief Records contacts that transitioned from visible to lost and updates combat inactivity. */
-		void finishPerception(World&, UnitGroup&, float);
+		/** @brief Updates remembered contacts, lost sightings, and visible corpse locations. */
+		void updateTacticalMemory(World&, UnitGroup&);
+		/** @brief Applies group-wide battle entry and exit rules from this tick's observations. */
+		void updateGroupMode(UnitGroup&, float);
 		/** @brief Resolves a registered live human and its point slot. */
 		bool getActiveUnit(World&, UnitAgentState&, PointComponentSlot*&, HumanComponent*&);
 		/** @brief Updates faction contacts by scanning candidates and raycasting visible targets. */
 		void updatePerception(World&, UnitGroup&);
 		/** @brief Assigns orders to all active agents in a faction. */
 		void assignOrders(World&, UnitGroup&);
-		/** @brief Assigns idle units to inspect lost-contact locations after combat ends. */
-		void assignSearchOrders(World&, UnitGroup&);
-		/** @brief Disperses idle units and periodically changes their look direction after combat. */
-		void assignPostCombatOrders(World&, UnitGroup&);
+		/** @brief Assigns agents to matching remembered locations for the selected mode. */
+		void assignSearchTasks(World&, UnitGroup&, UnitSearchTaskType);
+		void assignBattleSearchOrders(World&, UnitGroup&);
+		void assignCorpseRecoveryOrders(World&, UnitGroup&);
+		/** @brief Chooses battle behavior for one faction group. */
+		void tickBattle(World&, UnitGroup&);
+		/** @brief Assigns postwar corpse-recovery work. */
+		void tickWork(World&, UnitGroup&);
+		/** @brief Leaves agents without an assigned job in the idle rest state. */
+		void tickRest(UnitGroup&);
+		/** @brief Disperses units and scans their surroundings during battle reconnaissance. */
+		void assignBattleReconnaissanceOrders(World&, UnitGroup&);
 		/** @brief Executes stored orders and migrates units after component traversal. */
 		void executeUnitOrders(World&, UnitGroup&);
 		/** @brief Moves a unit point and all attached slots into its newly occupied loaded chunk. */

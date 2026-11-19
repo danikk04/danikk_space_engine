@@ -131,10 +131,15 @@ namespace danikk_space_engine
 			pruneUnitAgents(world, group);
 			unit_system_internal::executeUnitOrders(world, group);
 			unit_system_internal::updatePerception(world, group);
-			unit_system_internal::assignOrders(world, group);
-			unit_system_internal::finishPerception(world, group, dt);
-			unit_system_internal::assignSearchOrders(world, group);
-			unit_system_internal::assignPostCombatOrders(world, group);
+			unit_system_internal::updateTacticalMemory(world, group);
+			unit_system_internal::updateGroupMode(group, dt);
+			if(group.war_active)
+				unit_system_internal::tickBattle(world, group);
+			else
+			{
+				unit_system_internal::tickWork(world, group);
+				unit_system_internal::tickRest(group);
+			}
 		}
 	}
 

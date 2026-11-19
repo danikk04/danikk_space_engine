@@ -10,7 +10,7 @@
 #include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/item/definition.h>
 
-#include "internal.h"
+#include "../internal.h"
 
 namespace danikk_space_engine::unit_system_internal
 {
@@ -176,8 +176,6 @@ namespace danikk_space_engine::unit_system_internal
 		DynamicArray<TargetAllocation>& allocations)
 	{
 		DynamicArray<UnitSighting>& known_sightings = system.known_sightings;
-		agent.global_state = system.war_active ? UnitGlobalState::war : UnitGlobalState::rest;
-		agent.substate = system.war_active ? UnitSubstate::reconnaissance : UnitSubstate::idle;
 		const UnitTarget previous_target{agent.order.target_slot_id,
 			agent.order.target_point_id, agent.order.target_generation_id};
 		agent.order.clear();
@@ -203,7 +201,6 @@ namespace danikk_space_engine::unit_system_internal
 		}
 		if(best == nullptr) return;
 
-		agent.global_state = UnitGlobalState::war;
 		agent.order.has_attack_target = true;
 		agent.order.target_slot_id = best->target_slot_id;
 		agent.order.target_point_id = best->target_point_id;

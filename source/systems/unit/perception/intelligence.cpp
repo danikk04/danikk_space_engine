@@ -3,7 +3,7 @@
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/damageable.h>
 
-#include "internal.h"
+#include "../internal.h"
 
 namespace danikk_space_engine::unit_system_internal
 {
@@ -140,54 +140,10 @@ namespace danikk_space_engine::unit_system_internal
 			sightings[i - 1] = static_cast<UnitSighting&&>(sightings[i]);
 		sightings.resize(sightings.size() - 1);
 	}
-	/** @brief Updates the group-wide combat timer and records lost contacts for reconnaissance. */
-	void finishPerception(World& world, UnitGroup& system, float dt)
+	/** @brief Records contacts that were lost, expires stale intelligence, and tracks visible corpses. */
+	void updateTacticalMemory(World& world, UnitGroup& system)
 	{
 		DSE_WATCH();
-		const bool war_was_active = system.war_active;
-		if(system.enemy_seen_this_tick || system.attack_reported_this_tick)
-		{
-			system.has_had_enemy_contact = true;
-			system.war_active = true;
-			if(!war_was_active) system.time_since_enemy_visible = 0.0f;
-		}
-		if(system.enemy_seen_this_tick)
-		{
-			system.time_since_enemy_visible = 0.0f;
-		}
-		else if(system.war_active)
-		{
-			system.time_since_enemy_visible += glm::max(dt, 0.0f);
-			if(system.time_since_enemy_visible >= 10.0f)
-			{
-				system.war_active = false;
-				system.known_sightings.clear();
-				for(UnitSearchLocation& location : system.search_locations)
-					if(!location.is_corpse)
-					{
-						// Last-known hostile positions become post-war corpse inspection tasks.
-						location.is_corpse = true;
-						location.assigned_unit_slot_id = static_cast<PointComponentSlotId>(-1);
-					}
-				for(UnitAgentState& agent : system.agents)
-				{
-					agent.order.clear();
-					agent.global_state = system.search_locations.size() > 0
-						? UnitGlobalState::work : UnitGlobalState::rest;
-					agent.substate = UnitSubstate::idle;
-				}
-			}
-		}
-		if(system.war_active)
-			for(UnitAgentState& agent : system.agents)
-			{
-				agent.global_state = UnitGlobalState::war;
-				agent.substate = system.enemy_seen_this_tick && agent.order.has_attack_target
-					? (agent.order.has_move_target ? UnitSubstate::pursuit : UnitSubstate::attack)
-					: UnitSubstate::reconnaissance;
-			}
-		system.attack_reported_this_tick = false;
-
 		for(size_t index = 0; index < system.known_sightings.size();)
 		{
 			UnitSighting& sighting = system.known_sightings[index];

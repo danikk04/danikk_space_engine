@@ -1,9 +1,10 @@
 sources += files(
 	'unit.cpp',
-	'perception.cpp',
-	'sightings.cpp',
-	'combat.cpp',
-	'search.cpp',
-	'post_combat.cpp',
+	'mode.cpp',
 	'execution.cpp',
 )
+subdir('battle')
+subdir('work')
+subdir('rest')
+subdir('perception')
+subdir('orders')
