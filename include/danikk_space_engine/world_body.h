@@ -14,8 +14,8 @@ namespace danikk_space_engine
 	 * @brief Represents a positioned world body and indexes its chunks and components.
 	 *
 	 * `chunk_ids` and `component_slot_ids` contain pooled resource IDs managed by
-	 * WorldBodyData; destroying the body releases its component slots. Chunk
-	 * destruction is coordinated by World and ChunkSystem. The lists avoid
+	 * WorldBodyData; destroying the body releases its component slots. Body
+	 * destruction is coordinated by WorldBodyData with ChunkSystem and PlanetSystem. The lists avoid
 	 * duplicate IDs and preserve insertion order. Position, orientation, and
 	 * velocity are expressed in world coordinates, while the body's chunks use
 	 * body-local coordinates.
@@ -93,8 +93,8 @@ namespace danikk_space_engine
 		/** @brief Creates a component slot attached to an active WorldBody. */
 		WorldBodyComponentSlotId createWorldBodyComponentSlot(WorldBodyId world_body_id,
 			WorldBodyComponentTypeId type_id, const void* init_data = nullptr);
-		/** @brief Destroys a body after World and ChunkSystem have detached its chunks. */
-		void destroyWorldBody(WorldBodyId id);
+		/** @brief Destroys a body's planet record, chunks, component slots, and body resource. */
+		void destroyWorldBody(WorldBodyId id, ChunkSystem& chunks, PlanetSystem& planets);
 		/** @brief Destroys a body-component slot and its payload. */
 		void destroyWorldBodyComponentSlot(WorldBodyComponentSlotId id);
 		/** @brief Checks whether a WorldBody ID is active. */

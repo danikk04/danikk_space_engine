@@ -8,7 +8,7 @@
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/unit_system.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {
@@ -190,6 +190,12 @@ namespace danikk_space_engine
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
 		scene.chunks.clear();
 		scene.point_data.release();
+		while(scene.world_body_data.getUsedWorldBodyIds().size() > 0)
+		{
+			const DynamicArray<WorldBodyId>& body_ids = scene.world_body_data.getUsedWorldBodyIds();
+			scene.world_body_data.destroyWorldBody(
+				body_ids[body_ids.size() - 1], scene.chunks, scene.planets);
+		}
 		scene.world_body_data.release();
 		scene.factions.release();
 		return passed ? EXIT_SUCCESS : EXIT_FAILURE;

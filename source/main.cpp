@@ -8,7 +8,7 @@
 #include <danikk_space_engine/assets/human_skin.h>
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/config.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/localization.h>

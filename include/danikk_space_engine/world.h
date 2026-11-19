@@ -114,13 +114,6 @@ namespace danikk_space_engine
 		 */
 		void deferPointDestruction(PointId point_id);
 
-		/** @brief Cancels generation work owned by the body's component slots, then destroys the body. */
-		void destroyWorldBody(WorldBodyId body_id);
-		/** @brief Releases a chunk's render resources, then destroys the chunk resource. */
-		void destroyChunk(ChunkId chunk_id);
-		/** @brief Detaches and destroys a point together with its component payloads. */
-		void destroyPoint(PointId point_id);
-
 		/** @brief Snapshots dirty BuildPart chunks into CPU-only mesh generation jobs. */
 		void queueDirtyBuildPartMeshes();
 

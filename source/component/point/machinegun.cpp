@@ -4,7 +4,7 @@
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
 #include <danikk_space_engine/item/item.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_framework/glm.h>

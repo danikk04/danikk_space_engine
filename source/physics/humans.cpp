@@ -7,7 +7,7 @@
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/planet_system.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {

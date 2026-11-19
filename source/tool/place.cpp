@@ -1,6 +1,6 @@
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/gui.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/geometry/cube.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/build_part.h>

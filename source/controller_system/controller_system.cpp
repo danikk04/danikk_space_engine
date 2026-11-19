@@ -1,5 +1,5 @@
 #include <danikk_space_engine/controller_system.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {

@@ -2,7 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component_system.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/controller_system.h>
 
@@ -24,7 +24,7 @@ namespace danikk_space_engine
 		controller.tick();
 		for(PointId point_id : pending_point_destruction_ids)
 		{
-			if(point_data.isPointActive(point_id)) destroyPoint(point_id);
+			if(point_data.isPointActive(point_id)) chunks.destroyPoint(point_id);
 		}
 		pending_point_destruction_ids.clear();
 		unitSystemTick(*this, glm::max(getTargetFrameDelay(), 0.0f));

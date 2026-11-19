@@ -5,7 +5,7 @@
 #include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/effects/unit_order_indicators.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 #include <danikk_engine/mesh.h>
 #include <danikk_engine/texture_methods.h>

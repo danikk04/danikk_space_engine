@@ -1,7 +1,7 @@
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/scenario/base.h>
@@ -202,28 +202,6 @@ namespace danikk_space_engine
 		chunk_generation_requests_dirty = true;
 	}
 
-	/** @copydoc World::destroyWorldBody */
-	void World::destroyWorldBody(WorldBodyId body_id)
-	{
-		if(!world_body_data.isWorldBodyActive(body_id)) return;
-		planets.destroyPlanet(body_id);
-		WorldBody& body = world_body_data.getWorldBody(body_id);
-		while(body.chunk_ids.size() > 0) destroyChunk(body.chunk_ids[body.chunk_ids.size() - 1]);
-		world_body_data.destroyWorldBody(body_id);
-	}
-
-	/** @copydoc World::destroyChunk */
-	void World::destroyChunk(ChunkId chunk_id)
-	{
-		chunks.destroyChunk(chunk_id);
-	}
-
-	/** @copydoc World::destroyPoint */
-	void World::destroyPoint(PointId point_id)
-	{
-		chunks.destroyPoint(point_id);
-	}
-
 	/**
 	 * @brief Removes the queued request for one planet/grid coordinate and marks the worker queue dirty.
 	 * @param world_body_id Planet body owning the request.
@@ -280,6 +258,11 @@ namespace danikk_space_engine
 	void World::init()
 	{
 		chunks.clear();
+		while(world_body_data.getUsedWorldBodyIds().size() > 0)
+		{
+			const DynamicArray<WorldBodyId>& body_ids = world_body_data.getUsedWorldBodyIds();
+			world_body_data.destroyWorldBody(body_ids[body_ids.size() - 1], chunks, planets);
+		}
 		startChunkMeshGenerator();
 		chunk_mesh_generator_generation_id++;
 		if(chunk_mesh_generator_generation_id == 0) chunk_mesh_generator_generation_id++;
@@ -305,6 +288,11 @@ namespace danikk_space_engine
 		chunk_generation_requests_dirty = false;
 		clearBuildPartMeshCache();
 		chunks.clear();
+		while(world_body_data.getUsedWorldBodyIds().size() > 0)
+		{
+			const DynamicArray<WorldBodyId>& body_ids = world_body_data.getUsedWorldBodyIds();
+			world_body_data.destroyWorldBody(body_ids[body_ids.size() - 1], chunks, planets);
+		}
 		point_data.release();
 		world_body_data.release();
 		factions.release();

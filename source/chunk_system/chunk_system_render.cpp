@@ -5,7 +5,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/chunk_system.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 #include <danikk_engine/texture_methods.h>
 #include <danikk_framework/glm.h>

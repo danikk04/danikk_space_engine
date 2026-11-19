@@ -1,5 +1,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/chunk_system.h>
+#include <danikk_space_engine/planet_system.h>
 
 #include <cstdlib>
 
@@ -39,13 +41,14 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @copydoc WorldBodyData::destroyWorldBody */
-	void WorldBodyData::destroyWorldBody(WorldBodyId id)
+	/** @copydoc WorldBodyData::destroyWorldBody(WorldBodyId, ChunkSystem&, PlanetSystem&) */
+	void WorldBodyData::destroyWorldBody(WorldBodyId id, ChunkSystem& chunks, PlanetSystem& planets)
 	{
 		if(!isWorldBodyActive(id)) return;
+		planets.destroyPlanet(id);
 		WorldBody& body = world_bodies[id];
-		if(body.chunk_ids.size() > 0)
-			danikk_engine::formatFatalError("World body % still owns chunks during WorldBodyData destruction", id);
+		while(body.chunk_ids.size() > 0)
+			chunks.destroyChunk(body.chunk_ids[body.chunk_ids.size() - 1]);
 		while(body.component_slot_ids.size() > 0)
 			destroyWorldBodyComponentSlot(body.component_slot_ids[body.component_slot_ids.size() - 1]);
 		world_bodies.free(id);

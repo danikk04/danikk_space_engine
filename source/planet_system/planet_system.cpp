@@ -7,7 +7,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/math/noise.h>
 #include <danikk_space_engine/planet_system.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/world_body/planet/terrain_edit_save.h>
 
 namespace danikk_space_engine

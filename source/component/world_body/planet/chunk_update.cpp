@@ -4,7 +4,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/planet_system.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {
@@ -56,7 +56,7 @@ namespace danikk_space_engine
 			}
 			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.chunks.isChunkActive(entry.chunk_id))
 			{
-				world.destroyChunk(entry.chunk_id);
+				world.chunks.destroyChunk(entry.chunk_id);
 			}
 			planet.chunk_lookup.remove(entry.grid_coordinate);
 		}

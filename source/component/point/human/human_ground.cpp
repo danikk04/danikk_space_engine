@@ -6,7 +6,7 @@
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/item/item.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 #include "internal.h"
 

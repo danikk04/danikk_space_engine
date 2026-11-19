@@ -1,6 +1,6 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/chunk.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 #include <danikk_framework/glm.h>
 

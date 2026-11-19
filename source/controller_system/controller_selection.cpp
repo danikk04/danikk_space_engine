@@ -2,7 +2,7 @@
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/factions.h>
 #include <danikk_space_engine/math/ray.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {

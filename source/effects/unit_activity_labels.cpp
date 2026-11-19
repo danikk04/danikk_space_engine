@@ -4,7 +4,7 @@
 #include <danikk_space_engine/effects/unit_activity_labels.h>
 #include <danikk_space_engine/factions.h>
 #include <danikk_space_engine/unit_system.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 #include <danikk_engine/mesh.h>
 #include <danikk_engine/texture_methods.h>

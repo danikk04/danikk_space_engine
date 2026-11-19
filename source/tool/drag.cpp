@@ -1,7 +1,7 @@
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/planet_system.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_engine/input.h>
 
 #include <cmath>

@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include <danikk_space_engine/tool.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>
 

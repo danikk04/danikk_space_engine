@@ -1,7 +1,7 @@
 #include <danikk_space_engine/effects/event_spawn_preview.h>
 
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {

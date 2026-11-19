@@ -3,7 +3,7 @@
 #include <danikk_space_engine/chunk_system.h>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/human/human.h>
 
 namespace danikk_space_engine

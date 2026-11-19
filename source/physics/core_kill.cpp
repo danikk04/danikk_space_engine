@@ -1,6 +1,6 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/physics.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/planet_system.h>
 #include "internal.h"
@@ -74,7 +74,7 @@ namespace danikk_space_engine
 		}
 		for(WorldBodyId body_id : bodies_to_destroy)
 		{
-			world.destroyWorldBody(body_id);
+			world.world_body_data.destroyWorldBody(body_id, world.chunks, world.planets);
 		}
 
 		PointId camera_point_id = static_cast<PointId>(-1);
@@ -108,7 +108,7 @@ namespace danikk_space_engine
 		}
 		for(PointId point_id : points_to_destroy)
 		{
-			world.destroyPoint(point_id);
+			world.chunks.destroyPoint(point_id);
 		}
 	}
 }

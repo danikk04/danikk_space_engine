@@ -3,7 +3,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/component/point/machinegun.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 
 #include <danikk_engine/input.h>
 

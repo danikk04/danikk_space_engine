@@ -4,7 +4,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_framework/glm.h>
 
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/component/point/build_part.h>

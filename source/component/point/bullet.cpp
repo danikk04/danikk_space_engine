@@ -4,7 +4,7 @@
 #include <danikk_space_engine/component/point/bullet.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/damageable.h>
-#include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/assets/collection.h>
 
