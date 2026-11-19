@@ -80,9 +80,9 @@ namespace danikk_space_engine::unit_system_internal
 				}
 
 			const Chunk& chunk = world.chunk_system.getChunk(candidate.slot->chunk_id);
-			const WorldBody& body = world.data.getWorldBody(candidate.body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(candidate.body_id);
 			const glm::dvec3 body_local_position = chunk.position
-				+ glm::dvec3(world.data.getPoint(candidate.slot->point_id).position);
+				+ glm::dvec3(world.point_data.getPoint(candidate.slot->point_id).position);
 			if(assignment == nullptr)
 			{
 				vec3 up = human.up;

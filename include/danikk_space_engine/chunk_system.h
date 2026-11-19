@@ -27,8 +27,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Owns chunk data, chunk-to-world membership, and chunk GPU meshes.
 	 *
-	 * WorldData remains the owner of points, bodies, and component slots. ChunkSystem coordinates
-	 * operations that update both chunk records and those WorldData pools, and releases GPU meshes
+	 * PointData owns points and point components; WorldBodyData owns bodies and their components.
+	 * ChunkSystem coordinates operations that update those records and the chunk membership lists, and releases GPU meshes
 	 * before recycling chunk IDs.
 	 */
 	class ChunkSystem

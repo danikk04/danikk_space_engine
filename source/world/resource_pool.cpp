@@ -15,7 +15,7 @@ namespace danikk_space_engine
 		size_t old_capacity, size_t new_capacity)
 	{
 		if(old_capacity == new_capacity) return;
-		formatLogInfo("WorldData pool % (%): capacity % -> %",
+		formatLogInfo("Resource pool % (%): capacity % -> %",
 			resource_name, array_name, old_capacity, new_capacity);
 	}
 

@@ -33,9 +33,9 @@ namespace danikk_space_engine
 			for(size_t i = 0; i < system.agents.size();)
 			{
 				const UnitAgentState& agent = system.agents[i];
-				if(world.data.isPointComponentSlotActive(agent.human_slot_id))
+				if(world.point_data.isPointComponentSlotActive(agent.human_slot_id))
 				{
-					const PointComponentSlot& slot = world.data.getPointComponentSlot(agent.human_slot_id);
+					const PointComponentSlot& slot = world.point_data.getPointComponentSlot(agent.human_slot_id);
 					if(slot.type_id == PointComponentTypeId::human
 						&& slot.generation_id == agent.human_generation_id)
 					{
@@ -52,12 +52,12 @@ namespace danikk_space_engine
 		/** @brief Finds a living human component attached to a point. */
 		PointComponentSlot* findHumanSlot(World& world, PointId point_id, PointComponentSlotId* found_id)
 		{
-			for(PointComponentSlotId id : world.data.getUsedPointComponentSlotIds())
+			for(PointComponentSlotId id : world.point_data.getUsedPointComponentSlotIds())
 			{
-				if(!world.data.isPointComponentSlotActive(id)) continue;
-				PointComponentSlot& slot = world.data.getPointComponentSlot(id);
+				if(!world.point_data.isPointComponentSlotActive(id)) continue;
+				PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
 				if(slot.type_id == PointComponentTypeId::human && slot.point_id == point_id
-					&& world.data.isPointActive(point_id) && world.chunk_system.isChunkActive(slot.chunk_id))
+					&& world.point_data.isPointActive(point_id) && world.chunk_system.isChunkActive(slot.chunk_id))
 				{
 					if(found_id != nullptr) *found_id = id;
 					return &slot;
@@ -86,7 +86,7 @@ namespace danikk_space_engine
 		const Chunk& attacker_chunk = world.chunk_system.getChunk(attacker_slot->chunk_id);
 		const glm::dvec3 attacker_position = world.getPointWorldPosition(attacker_slot->chunk_id, attacker_point_id);
 		const glm::dvec3 local_position = attacker_chunk.position
-			+ glm::dvec3(world.data.getPoint(attacker_point_id).position);
+			+ glm::dvec3(world.point_data.getPoint(attacker_point_id).position);
 		UnitSighting* contact = nullptr;
 		for(UnitSighting& sighting : system.known_sightings)
 			if(sighting.target_slot_id == attacker_slot_id
@@ -139,8 +139,8 @@ namespace danikk_space_engine
 	void registerUnitAgent(World& world, PointComponentSlotId human_slot_id, bool enabled)
 	{
 		DSE_WATCH();
-		if(!world.data.isPointComponentSlotActive(human_slot_id)) return;
-		PointComponentSlot& slot = world.data.getPointComponentSlot(human_slot_id);
+		if(!world.point_data.isPointComponentSlotActive(human_slot_id)) return;
+		PointComponentSlot& slot = world.point_data.getPointComponentSlot(human_slot_id);
 		if(slot.type_id != PointComponentTypeId::human) return;
 		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
 		if(human.faction_id >= world.factions.size()) return;

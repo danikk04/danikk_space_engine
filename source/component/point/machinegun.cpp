@@ -39,16 +39,16 @@ namespace danikk_space_engine
 		 */
 		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
-			for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
+			for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
 			{
-				const WorldBody& body = world.data.getWorldBody(body_id);
+				const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 				for(ChunkId chunk_id : body.chunk_ids)
 				{
 					const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 					for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 					{
-						if(world.data.isPointComponentSlotActive(slot_id)
-							&& &world.data.getPointComponentSlot(slot_id) == &slot) return chunk_id;
+						if(world.point_data.isPointComponentSlotActive(slot_id)
+							&& &world.point_data.getPointComponentSlot(slot_id) == &slot) return chunk_id;
 					}
 				}
 			}
@@ -60,7 +60,7 @@ namespace danikk_space_engine
 		 * @param chunk_id Chunk that will own the new projectile component.
 		 * @param position Muzzle position in chunk-local coordinates.
 		 * @param direction Unit travel direction inherited from the weapon barrel.
-		 * @param world WorldData used to allocate and register the projectile resources.
+		 * @param world World used to allocate and register the projectile resources.
 		 */
 		void spawnMachinegunBullet(ChunkId chunk_id, const vec3& position, const vec3& direction, World& world)
 		{
@@ -112,7 +112,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Ends the machine-gun payload lifetime; slot storage is reclaimed by WorldData.
+	 * @brief Ends the machine-gun payload lifetime; slot storage is reclaimed by PointData.
 	 * @param data Existing live machine-gun payload.
 	 */
 	void destroyMachinegunComponent(void* data)
@@ -144,7 +144,7 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Machinegun component tick received null data");
 		}
 
-		if(!world.data.isPointActive(slot.point_id))
+		if(!world.point_data.isPointActive(slot.point_id))
 		{
 			danikk_engine::formatFatalError("Machinegun component references invalid point %", slot.point_id);
 		}
@@ -172,7 +172,7 @@ namespace danikk_space_engine
 		const MachinegunComponent machinegun_snapshot = machinegun;
 		const mat4 rotation_matrix = getOrientationMatrix(machinegun_snapshot);
 		const vec3 direction = machinegun_snapshot.forward;
-		const mat4 weapon_matrix = glm::translate(mat4(1.0f), world.data.getPoint(slot.point_id).position)
+		const mat4 weapon_matrix = glm::translate(mat4(1.0f), world.point_data.getPoint(slot.point_id).position)
 			* rotation_matrix
 			* glm::scale(mat4(1.0f), vec3(machinegun_snapshot.scale));
 		const vec3 muzzle_position = vec3(weapon_matrix * vec4(
@@ -201,7 +201,7 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Machinegun component frame received null data");
 		}
 
-		if(!world.data.isPointActive(slot.point_id))
+		if(!world.point_data.isPointActive(slot.point_id))
 		{
 			danikk_engine::formatFatalError("Machinegun component references invalid point %", slot.point_id);
 		}
@@ -210,7 +210,7 @@ namespace danikk_space_engine
 		const mat4 world_matrix = chunk.createWorldMatrix(world)
 			* glm::translate(
 				mat4(1.0f),
-				world.data.getPoint(slot.point_id).position)
+				world.point_data.getPoint(slot.point_id).position)
 			* getOrientationMatrix(machinegun)
 			* glm::scale(mat4(1.0f), vec3(machinegun.scale));
 		drawItem(item_definition_ids::mg42, world_matrix);

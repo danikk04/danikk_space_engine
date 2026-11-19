@@ -44,15 +44,15 @@ namespace danikk_space_engine
 
 		const WorldBodyId dragged_body_id = getDraggedWorldBodyId(world);
 
-		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
+		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
 		{
 			if(body_id == dragged_body_id) continue;
 			bool is_planet = false;
-			WorldBody& body = world.data.getWorldBody(body_id);
+			WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
-				if(!world.data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				if(world.data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
+				if(!world.world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
+				if(world.world_body_data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
 					is_planet = true;
 			}
 			if(is_planet) continue;

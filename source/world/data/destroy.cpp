@@ -1,5 +1,6 @@
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/world/data.h>
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
 #include <danikk_space_engine/component/point/build_part.h>
 
 #include <cstdlib>
@@ -108,7 +109,7 @@ namespace danikk_space_engine
 	 * active ID into that position.
 	 * @param id Point ID to destroy; inactive IDs are ignored.
 	 */
-	void WorldData::destroyPoint(PointId id)
+	void PointData::destroyPoint(PointId id)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
@@ -128,12 +129,12 @@ namespace danikk_space_engine
 	 * @brief Destroys all components owned by the body before returning its slot to the pool.
 	 * @param id WorldBody ID to destroy; inactive IDs are ignored.
 	 */
-	void WorldData::destroyWorldBody(WorldBodyId id)
+	void WorldBodyData::destroyWorldBody(WorldBodyId id)
 	{
 		if(!isWorldBodyActive(id)) return;
 		WorldBody& body = world_bodies[id];
 		if(body.chunk_ids.size() > 0)
-			danikk_engine::formatFatalError("World body % still owns chunks during WorldData destruction", id);
+			danikk_engine::formatFatalError("World body % still owns chunks during WorldBodyData destruction", id);
 
 		while(body.component_slot_ids.size() > 0)
 		{
@@ -146,7 +147,7 @@ namespace danikk_space_engine
 	 * @brief Detaches a body component, destroys its payload, resets the slot, and recycles its ID.
 	 * @param id Component slot ID to destroy; inactive IDs are ignored.
 	 */
-	void WorldData::destroyWorldBodyComponentSlot(WorldBodyComponentSlotId id)
+	void WorldBodyData::destroyWorldBodyComponentSlot(WorldBodyComponentSlotId id)
 	{
 		if(!isWorldBodyComponentSlotActive(id)) return;
 		WorldBodyComponentSlot& slot = world_body_components[id];
@@ -161,7 +162,7 @@ namespace danikk_space_engine
 	 * @brief Releases a point component payload and slot after ChunkSystem detaches its membership.
 	 * @param id Component slot ID to destroy; inactive IDs are ignored.
 	 */
-	void WorldData::destroyPointComponentSlot(PointComponentSlotId id)
+	void PointData::destroyPointComponentSlot(PointComponentSlotId id)
 	{
 		if(!isPointComponentSlotActive(id)) return;
 		const PointComponentSlot& destroyed_slot = point_components[id];
@@ -184,24 +185,37 @@ namespace danikk_space_engine
 	}
 
 
-	/**
-	 * @brief Destroys active resources while retaining the allocated capacity of each pool.
-	 */
-	void WorldData::clear()
+	/** @copydoc PointData::clear */
+	void PointData::clear()
+	{
+		destroyLastUntilEmpty(point_components.usedIds(),
+			[this](PointComponentSlotId id) { destroyPointComponentSlot(id); });
+		clearPools(point_components, points);
+	}
+
+	/** @copydoc PointData::release */
+	void PointData::release()
+	{
+		clear();
+		releasePools(points, point_components);
+	}
+
+	/** @copydoc WorldBodyData::clear */
+	void WorldBodyData::clear()
 	{
 		destroyLastUntilEmpty(world_body_components.usedIds(),
 			[this](WorldBodyComponentSlotId id) { destroyWorldBodyComponentSlot(id); });
-		destroyLastUntilEmpty(point_components.usedIds(),
-			[this](PointComponentSlotId id) { destroyPointComponentSlot(id); });
-		clearPools(point_components, world_body_components, world_bodies, points);
+		for(WorldBodyId id : world_bodies.usedIds())
+			if(world_bodies[id].chunk_ids.size() > 0)
+				danikk_engine::formatFatalError("World body % still owns chunks during WorldBodyData clear", id);
+		clearPools(world_body_components, world_bodies);
 	}
 
-	/**
-	 * @brief Destroys active resources and releases the backing memory of every pool.
-	 */
-	void WorldData::release()
+	/** @copydoc WorldBodyData::release */
+	void WorldBodyData::release()
 	{
 		clear();
-		releasePools(points, world_bodies, world_body_components, point_components);
+		releasePools(world_bodies, world_body_components);
 	}
+
 }

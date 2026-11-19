@@ -17,12 +17,12 @@ namespace danikk_space_engine
 		{
 			if(!world.chunk_system.isChunkActive(chunk_id)) return false;
 			const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
-			if(!world.data.isWorldBodyActive(chunk.world_body_id)) return false;
-			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+			if(!world.world_body_data.isWorldBodyActive(chunk.world_body_id)) return false;
+			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
-				if(world.data.isWorldBodyComponentSlotActive(slot_id)
-					&& world.data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
+				if(world.world_body_data.isWorldBodyComponentSlotActive(slot_id)
+					&& world.world_body_data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
 				{
 					return true;
 				}

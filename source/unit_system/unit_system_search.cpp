@@ -12,8 +12,8 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Resolves a body's current world-space position for a stored local search point. */
 	glm::dvec3 getSearchWorldPosition(const World& world, const UnitSearchLocation& location)
 	{
-		if(!world.data.isWorldBodyActive(location.body_id)) return glm::dvec3(std::numeric_limits<double>::max());
-		const WorldBody& body = world.data.getWorldBody(location.body_id);
+		if(!world.world_body_data.isWorldBodyActive(location.body_id)) return glm::dvec3(std::numeric_limits<double>::max());
+		const WorldBody& body = world.world_body_data.getWorldBody(location.body_id);
 		return body.position + body.rotation * location.body_local_position;
 	}
 
@@ -26,9 +26,9 @@ namespace danikk_space_engine::unit_system_internal
 			const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 			for(PointComponentSlotId id : chunk.getHumanComponentSlotIds())
 		{
-			if(!world.data.isPointComponentSlotActive(id)) continue;
-			const PointComponentSlot& corpse_slot = world.data.getPointComponentSlot(id);
-				if(!world.data.isPointActive(corpse_slot.point_id)) continue;
+			if(!world.point_data.isPointComponentSlotActive(id)) continue;
+			const PointComponentSlot& corpse_slot = world.point_data.getPointComponentSlot(id);
+				if(!world.point_data.isPointActive(corpse_slot.point_id)) continue;
 			const HumanComponent& corpse = *static_cast<const HumanComponent*>(corpse_slot.getData());
 				if(!corpse.hasDeathTimestamp()) continue;
 			if(corpse.faction_id >= world.factions.size()
@@ -63,12 +63,12 @@ namespace danikk_space_engine::unit_system_internal
 				+ glm::dvec3(inspector.up * (inspector.getHeight() * 0.25f));
 			constexpr double search_radius = 2.5;
 			constexpr double search_radius_squared = search_radius * search_radius;
-			const WorldBody& body = world.data.getWorldBody(location.body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(location.body_id);
 			const PlanetComponent* planet = nullptr;
 			for(WorldBodyComponentSlotId id : body.component_slot_ids)
 			{
-				if(!world.data.isWorldBodyComponentSlotActive(id)) continue;
-				const WorldBodyComponentSlot& component = world.data.getWorldBodyComponentSlot(id);
+				if(!world.world_body_data.isWorldBodyComponentSlotActive(id)) continue;
+				const WorldBodyComponentSlot& component = world.world_body_data.getWorldBodyComponentSlot(id);
 				if(component.type_id != WorldBodyComponentTypeId::planet) continue;
 				planet = static_cast<const PlanetComponent*>(component.getData());
 				break;
@@ -155,7 +155,7 @@ namespace danikk_space_engine::unit_system_internal
 					location.assigned_unit_slot_id = static_cast<PointComponentSlotId>(-1);
 				}
 				else if(!assigned_unit->agent->order.has_attack_target
-					&& world.data.isWorldBodyActive(location.body_id))
+					&& world.world_body_data.isWorldBodyActive(location.body_id))
 				{
 					const glm::dvec3 target_position = getSearchWorldPosition(world, location);
 					const glm::dvec3 offset = target_position - assigned_unit->position;

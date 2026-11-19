@@ -40,7 +40,7 @@ namespace danikk_space_engine
 		if(tryTakeGeneratedChunkMesh(generated_chunk)
 			&& generated_chunk.generation_id == chunk_mesh_generator_generation_id
 			&& generated_chunk.source == ChunkMeshSource::build_parts
-			&& data.isWorldBodyActive(generated_chunk.world_body_id)
+			&& world_body_data.isWorldBodyActive(generated_chunk.world_body_id)
 			&& chunk_system.isChunkActive(generated_chunk.chunk_id))
 		{
 			Chunk& chunk = chunk_system.getChunk(generated_chunk.chunk_id);
@@ -57,10 +57,10 @@ namespace danikk_space_engine
 		}
 		else if(generated_chunk.source == ChunkMeshSource::planet_terrain
 			&& generated_chunk.generation_id == chunk_mesh_generator_generation_id
-			&& data.isWorldBodyActive(generated_chunk.world_body_id)
-			&& data.isWorldBodyComponentSlotActive(generated_chunk.component_slot_id))
+			&& world_body_data.isWorldBodyActive(generated_chunk.world_body_id)
+			&& world_body_data.isWorldBodyComponentSlotActive(generated_chunk.component_slot_id))
 		{
-			WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(generated_chunk.component_slot_id);
+			WorldBodyComponentSlot& slot = world_body_data.getWorldBodyComponentSlot(generated_chunk.component_slot_id);
 			if(slot.world_body_id == generated_chunk.world_body_id
 				&& slot.generation_id == generated_chunk.component_generation_id)
 			{
@@ -76,9 +76,9 @@ namespace danikk_space_engine
 		const vec3 camera_front = camera.getFront();
 		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera.getUp());
 		setViewMatrix(view);
-		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
+		for(WorldBodyId body_id : world_body_data.getUsedWorldBodyIds())
 		{
-			const WorldBody& body = data.getWorldBody(body_id);
+			const WorldBody& body = world_body_data.getWorldBody(body_id);
 			for(ChunkId chunk_id : body.chunk_ids)
 			{
 				Chunk& chunk = chunk_system.getChunk(chunk_id);

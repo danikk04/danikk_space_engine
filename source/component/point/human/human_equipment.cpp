@@ -28,8 +28,8 @@ namespace danikk_space_engine::human_internal
 			const Chunk& chunk = world.chunk_system.getChunk(human_slot.chunk_id);
 			for(PointComponentSlotId component_slot_id : chunk.point_component_slot_ids)
 			{
-				if(!world.data.isPointComponentSlotActive(component_slot_id)) continue;
-				const PointComponentSlot& component_slot = world.data.getPointComponentSlot(component_slot_id);
+				if(!world.point_data.isPointComponentSlotActive(component_slot_id)) continue;
+				const PointComponentSlot& component_slot = world.point_data.getPointComponentSlot(component_slot_id);
 				if(component_slot.point_id != human_slot.point_id
 					|| component_slot.type_id != PointComponentTypeId::inventory) continue;
 				const InventoryComponent& inventory = *static_cast<const InventoryComponent*>(component_slot.getData());

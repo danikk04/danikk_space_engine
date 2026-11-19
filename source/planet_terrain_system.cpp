@@ -50,10 +50,10 @@ namespace danikk_space_engine
 		/** @brief Returns the planet component referenced by an active component slot. */
 		const PlanetComponent& getPlanetComponent(const World& world, WorldBodyComponentSlotId component_id)
 		{
-			if(!world.data.isWorldBodyComponentSlotActive(component_id))
+			if(!world.world_body_data.isWorldBodyComponentSlotActive(component_id))
 				danikk_engine::formatFatalError("Planet terrain query references inactive component slot %", component_id);
 
-			const WorldBodyComponentSlot& slot = world.data.getWorldBodyComponentSlot(component_id);
+			const WorldBodyComponentSlot& slot = world.world_body_data.getWorldBodyComponentSlot(component_id);
 			if(slot.type_id != WorldBodyComponentTypeId::planet)
 				danikk_engine::formatFatalError("Planet terrain query references non-planet component slot %", component_id);
 			return *static_cast<const PlanetComponent*>(slot.getData());

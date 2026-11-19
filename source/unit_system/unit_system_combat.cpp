@@ -86,7 +86,7 @@ namespace danikk_space_engine::unit_system_internal
 			const glm::dvec3& target_position, const WorldBody& body,
 			const DynamicArray<TargetAllocation>& allocations)
 		{
-			const PointComponentSlot& target_slot = world.data.getPointComponentSlot(sighting.target_slot_id);
+			const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(sighting.target_slot_id);
 			const HumanComponent& target = *static_cast<const HumanComponent*>(target_slot.getData());
 			const glm::dvec3 offset = target_position - own_position;
 			const double distance = glm::length(offset);
@@ -162,8 +162,8 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		for(PointComponentSlotId id : world.chunk_system.getChunk(chunk_id).point_component_slot_ids)
 		{
-			if(!world.data.isPointComponentSlotActive(id)) continue;
-			PointComponentSlot& slot = world.data.getPointComponentSlot(id);
+			if(!world.point_data.isPointComponentSlotActive(id)) continue;
+			PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
 			if(slot.point_id == point_id && slot.type_id == PointComponentTypeId::inventory)
 				return static_cast<InventoryComponent*>(slot.getData());
 		}
@@ -181,14 +181,14 @@ namespace danikk_space_engine::unit_system_internal
 		agent.order.clear();
 		const glm::dvec3 own_position = world.getPointWorldPosition(human_slot.chunk_id, human_slot.point_id);
 		const WorldBodyId own_body_id = world.chunk_system.getChunk(human_slot.chunk_id).world_body_id;
-		const WorldBody& body = world.data.getWorldBody(own_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(own_body_id);
 		const UnitSighting* best = nullptr;
 		float best_score = -1.0f;
 		for(const UnitSighting& sighting : known_sightings)
 		{
 			if(sighting.faction_id != human.faction_id || !isRecentSighting(sighting)
 				|| !isValidSighting(world, sighting)) continue;
-			const PointComponentSlot& sighted_slot = world.data.getPointComponentSlot(sighting.target_slot_id);
+			const PointComponentSlot& sighted_slot = world.point_data.getPointComponentSlot(sighting.target_slot_id);
 			if(world.chunk_system.getChunk(sighted_slot.chunk_id).world_body_id != own_body_id) continue;
 			const glm::dvec3 target_position = world.getPointWorldPosition(sighted_slot.chunk_id, sighted_slot.point_id);
 			const float score = scoreTarget(world, sighting, human_slot, human, previous_target,
@@ -205,7 +205,7 @@ namespace danikk_space_engine::unit_system_internal
 		agent.order.target_slot_id = best->target_slot_id;
 		agent.order.target_point_id = best->target_point_id;
 		agent.order.target_generation_id = best->target_generation_id;
-		const PointComponentSlot& target_slot = world.data.getPointComponentSlot(best->target_slot_id);
+		const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(best->target_slot_id);
 		const glm::dvec3 target_position = world.getPointWorldPosition(target_slot.chunk_id, target_slot.point_id);
 		const glm::dvec3 shot_origin = own_position
 			+ body.rotation * glm::dvec3(human.up * (human.getHeight() * 0.2f));
@@ -258,11 +258,11 @@ namespace danikk_space_engine::unit_system_internal
 	bool getActiveUnit(World& world, UnitAgentState& agent,
 		PointComponentSlot*& human_slot, HumanComponent*& human)
 	{
-		if(!agent.enabled || !world.data.isPointComponentSlotActive(agent.human_slot_id)) return false;
-		human_slot = &world.data.getPointComponentSlot(agent.human_slot_id);
+		if(!agent.enabled || !world.point_data.isPointComponentSlotActive(agent.human_slot_id)) return false;
+		human_slot = &world.point_data.getPointComponentSlot(agent.human_slot_id);
 		if(human_slot->type_id != PointComponentTypeId::human
 			|| human_slot->generation_id != agent.human_generation_id
-			|| !world.data.isPointActive(human_slot->point_id)
+			|| !world.point_data.isPointActive(human_slot->point_id)
 			|| !world.chunk_system.isChunkActive(human_slot->chunk_id)) return false;
 		human = static_cast<HumanComponent*>(human_slot->getData());
 		const DamageableComponent* health = findDamageable(world, human_slot->chunk_id, human_slot->point_id);

@@ -47,13 +47,13 @@ namespace danikk_space_engine
 	{
 		glm::dvec3 gravity(0.0);
 
-		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
+		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
 		{
-			const WorldBody& body = world.data.getWorldBody(body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
-				if(!world.data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				const WorldBodyComponentSlot& slot = world.data.getWorldBodyComponentSlot(slot_id);
+				if(!world.world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
+				const WorldBodyComponentSlot& slot = world.world_body_data.getWorldBodyComponentSlot(slot_id);
 				if(slot.type_id != WorldBodyComponentTypeId::planet) continue;
 				const PlanetComponent& planet = *static_cast<const PlanetComponent*>(slot.getData());
 				if(planet.surface_gravity <= 0.0 || planet.radius <= 0.0) continue;

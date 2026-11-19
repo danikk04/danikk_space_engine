@@ -21,7 +21,7 @@ namespace danikk_space_engine
 		{
 			for(PointComponentSlotId slot_id : chunk.getHumanComponentSlotIds())
 			{
-				if(&world.data.getPointComponentSlot(slot_id) != &human_slot) continue;
+				if(&world.point_data.getPointComponentSlot(slot_id) != &human_slot) continue;
 				if(enabled) chunk.addCollisionHumanComponentSlot(slot_id);
 				else chunk.removeCollisionHumanComponentSlot(slot_id);
 				return;
@@ -55,7 +55,7 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Creates default human state or copies the provided initial state into slot storage.
-	 * @param destination Destination storage owned by WorldData.
+	 * @param destination Destination storage owned by PointData.
 	 * @param init_data Optional source `HumanComponent`; null initializes member defaults.
 	 */
 	void constructHumanComponent(void* destination, const void* init_data)
@@ -81,7 +81,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Ends the human payload lifetime; WorldData owns release of the backing storage.
+	 * @brief Ends the human payload lifetime; PointData owns release of the backing storage.
 	 * @param data Existing live human payload.
 	 */
 	void destroyHumanComponent(void* data)
@@ -101,12 +101,12 @@ namespace danikk_space_engine
 	void tickHumanComponent(PointComponentSlot& slot, World& world)
 	{
 		DSE_WATCH();
-		if(!world.data.isPointActive(slot.point_id) || !world.chunk_system.isChunkActive(slot.chunk_id))
+		if(!world.point_data.isPointActive(slot.point_id) || !world.chunk_system.isChunkActive(slot.chunk_id))
 			formatFatalError("Human references an invalid point or chunk");
 		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
-		Point& point = world.data.getPoint(slot.point_id);
+		Point& point = world.point_data.getPoint(slot.point_id);
 		Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
-		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 world_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 		const glm::dvec3 gravity_world = world.environment.sampleGravityAt(world_position);
 		const double gravity_magnitude = glm::length(gravity_world);
@@ -128,8 +128,8 @@ namespace danikk_space_engine
 					? HumanBodyPose::lying_on_back : HumanBodyPose::lying_on_stomach;
 				for(PointComponentSlotId id : chunk.point_component_slot_ids)
 				{
-					if(!world.data.isPointComponentSlotActive(id)) continue;
-					PointComponentSlot& component_slot = world.data.getPointComponentSlot(id);
+					if(!world.point_data.isPointComponentSlotActive(id)) continue;
+					PointComponentSlot& component_slot = world.point_data.getPointComponentSlot(id);
 					if(component_slot.point_id != slot.point_id
 						|| component_slot.type_id != PointComponentTypeId::inventory) continue;
 					InventoryComponent& inventory = *static_cast<InventoryComponent*>(component_slot.getData());
@@ -190,10 +190,10 @@ namespace danikk_space_engine
 	void frameHumanComponent(PointComponentSlot& slot, World& world)
 	{
 		DSE_WATCH();
-		if(!world.data.isPointActive(slot.point_id) || !world.chunk_system.isChunkActive(slot.chunk_id)) return;
+		if(!world.point_data.isPointActive(slot.point_id) || !world.chunk_system.isChunkActive(slot.chunk_id)) return;
 		const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 		const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
-		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 		vec3 local_up = human.body_pose == HumanBodyPose::standing ? human.up : human.ground_normal;
 		if(glm::length(local_up) <= 1e-6f) local_up = human.up;
 		local_up = glm::normalize(local_up);

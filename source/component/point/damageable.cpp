@@ -19,8 +19,8 @@ namespace danikk_space_engine
 		if(!world.chunk_system.isChunkActive(chunk_id)) return nullptr;
 		for(PointComponentSlotId id : world.chunk_system.getChunk(chunk_id).point_component_slot_ids)
 		{
-			if(!world.data.isPointComponentSlotActive(id)) continue;
-			PointComponentSlot& slot = world.data.getPointComponentSlot(id);
+			if(!world.point_data.isPointComponentSlotActive(id)) continue;
+			PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
 			if(slot.point_id == point_id && slot.type_id == PointComponentTypeId::damageable)
 				return static_cast<DamageableComponent*>(slot.getData());
 		}

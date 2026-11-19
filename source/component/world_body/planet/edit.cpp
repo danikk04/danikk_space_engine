@@ -11,13 +11,13 @@ namespace danikk_space_engine
 		double radius, bool adds_solid_terrain)
 	{
 		DSE_WATCH();
-		if(!world.data.isWorldBodyActive(body_id) || radius <= 0.0) return false;
-		WorldBody& body = world.data.getWorldBody(body_id);
+		if(!world.world_body_data.isWorldBodyActive(body_id) || radius <= 0.0) return false;
+		WorldBody& body = world.world_body_data.getWorldBody(body_id);
 		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
 		for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 		{
-			if(!world.data.isWorldBodyComponentSlotActive(slot_id)) continue;
-			WorldBodyComponentSlot& slot = world.data.getWorldBodyComponentSlot(slot_id);
+			if(!world.world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
+			WorldBodyComponentSlot& slot = world.world_body_data.getWorldBodyComponentSlot(slot_id);
 			if(slot.type_id != WorldBodyComponentTypeId::planet) continue;
 			PlanetComponent& planet = *static_cast<PlanetComponent*>(slot.getData());
 			planet.terrain_edits.pushMove(PlanetTerrainEdit{center, radius, adds_solid_terrain});

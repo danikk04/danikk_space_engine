@@ -75,7 +75,7 @@ namespace danikk_space_engine
 		 * tetrahedra share vertices. Tetrahedron cases explicitly connect their
 		 * three- or four-vertex intersections, and triangles are wound from solid
 		 * toward air. This helper
-		 * reads no WorldData and creates no GPU resources.
+		 * reads no mutable World data and creates no GPU resources.
 		 */
 		GeneratedChunkMesh generatePlanetChunkMarchingTetrahedra(const ChunkMeshGenerationRequest& request)
 		{
@@ -292,7 +292,7 @@ namespace danikk_space_engine
 	 * @return Worker result containing request identity, local geometry, and a
 	 *         material ID for each triangle; geometry arrays may be empty when the
 	 *         sampled field contains no surface in this chunk.
-	 * This worker-side function does not allocate WorldData resources or upload a mesh.
+	 * This worker-side function does not allocate World resources or upload a mesh.
 	 */
 	GeneratedChunkMesh chunk_mesh_generator_internal::generatePlanetTerrainChunkMesh(
 		const ChunkMeshGenerationRequest& request)

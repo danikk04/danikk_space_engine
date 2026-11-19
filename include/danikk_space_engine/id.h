@@ -4,7 +4,7 @@
 
 namespace danikk_space_engine
 {
-	/** @brief 32-bit handle for an entry in WorldData's global point pool. */
+	/** @brief 32-bit handle for an entry in PointData's point pool. */
 	using PointId = uint32;
 	/** @brief 32-bit handle for a spatial chunk owned by a WorldBody. */
 	using ChunkId = uint32;
@@ -33,8 +33,8 @@ namespace danikk_space_engine
 	/** @brief Index into the damageable-object definition table. */
 	using DamageableDefinitionId = uint32;
 
-	/** @brief 32-bit handle for a point-component slot in WorldData. */
+	/** @brief 32-bit handle for a point-component slot in PointData. */
 	using PointComponentSlotId = uint32;
-	/** @brief 32-bit handle for a WorldBody-component slot in WorldData. */
+	/** @brief 32-bit handle for a WorldBody-component slot in WorldBodyData. */
 	using WorldBodyComponentSlotId = uint32;
 }

@@ -26,9 +26,9 @@ namespace danikk_space_engine
 		 */
 		void clearHumanDrag(World& world, ControllerSystem& controller)
 		{
-			if(world.data.isPointComponentSlotActive(controller.dragged_human_slot_id))
+			if(world.point_data.isPointComponentSlotActive(controller.dragged_human_slot_id))
 			{
-				PointComponentSlot& slot = world.data.getPointComponentSlot(controller.dragged_human_slot_id);
+				PointComponentSlot& slot = world.point_data.getPointComponentSlot(controller.dragged_human_slot_id);
 				if(slot.type_id == PointComponentTypeId::human)
 				{
 					static_cast<HumanComponent*>(slot.getData())->follow_ground =
@@ -55,16 +55,16 @@ namespace danikk_space_engine
 		void createHumanAtHit(World& world, const RaycastHit& hit,
 			HumanSkinId skin_id, FactionId faction_id)
 		{
-			if(!world.data.isWorldBodyActive(hit.body_id)) return;
+			if(!world.world_body_data.isWorldBodyActive(hit.body_id)) return;
 			const WorldBodyId body_id = hit.body_id;
-			const WorldBody& body = world.data.getWorldBody(body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_position = inverse_rotation * (hit.position - body.position);
 			vec3 up = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
-				if(!world.data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				if(world.data.getWorldBodyComponentSlot(slot_id).type_id != WorldBodyComponentTypeId::planet) continue;
+				if(!world.world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
+				if(world.world_body_data.getWorldBodyComponentSlot(slot_id).type_id != WorldBodyComponentTypeId::planet) continue;
 				if(glm::length(local_position) < 1e-6) return;
 				up = vec3(glm::normalize(local_position));
 				break;
@@ -76,7 +76,7 @@ namespace danikk_space_engine
 			const vec3 forward = vec3(inverse_rotation * (world.getCameraWorldPosition() - hit.position));
 			const PointComponentSlotId human_id = createNpc(world, hit.chunk_id,
 				local_position + glm::dvec3(up * 0.02f), up, forward, faction_id);
-			HumanComponent& human = *static_cast<HumanComponent*>(world.data.getPointComponentSlot(human_id).getData());
+			HumanComponent& human = *static_cast<HumanComponent*>(world.point_data.getPointComponentSlot(human_id).getData());
 			human.appearance.skin_id = skin_id;
 		}
 	}
@@ -139,15 +139,15 @@ namespace danikk_space_engine
 			const glm::dvec3 ray_origin = world.getCameraWorldPosition();
 			const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.getCameraComponent().getFront()));
 			double closest_distance = hit.hit ? hit.distance : 10000.0;
-			for(PointComponentSlotId slot_id : world.data.getUsedPointComponentSlotIds())
+			for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
 			{
-				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
-				if(slot.type_id != PointComponentTypeId::human || !world.data.isPointActive(slot.point_id)
+				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
+				if(slot.type_id != PointComponentTypeId::human || !world.point_data.isPointActive(slot.point_id)
 					|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
 				const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 				const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
-				const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+				const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 				const glm::dvec3 center = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 				const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(human.up));
 				double distance = 0.0;
@@ -165,17 +165,17 @@ namespace danikk_space_engine
 			}
 			if(controller.dragged_human_slot_id != no_human_slot)
 			{
-				static_cast<HumanComponent*>(world.data.getPointComponentSlot(
+				static_cast<HumanComponent*>(world.point_data.getPointComponentSlot(
 					controller.dragged_human_slot_id).getData())->follow_ground = false;
 			}
 		}
 
 		if(controller.dragged_human_slot_id == no_human_slot) return;
-		if(world.data.isPointComponentSlotActive(controller.dragged_human_slot_id))
-			controller.dragged_human_chunk_id = world.data.getPointComponentSlot(controller.dragged_human_slot_id).chunk_id;
+		if(world.point_data.isPointComponentSlotActive(controller.dragged_human_slot_id))
+			controller.dragged_human_chunk_id = world.point_data.getPointComponentSlot(controller.dragged_human_slot_id).chunk_id;
 
-		if(!world.data.isPointComponentSlotActive(controller.dragged_human_slot_id)
-			|| !world.data.isPointActive(controller.dragged_human_point_id)
+		if(!world.point_data.isPointComponentSlotActive(controller.dragged_human_slot_id)
+			|| !world.point_data.isPointActive(controller.dragged_human_point_id)
 			|| !world.chunk_system.isChunkActive(controller.dragged_human_chunk_id))
 		{
 			clearHumanDrag(world, controller);
@@ -188,10 +188,10 @@ namespace danikk_space_engine
 			controller.dragged_human_distance = glm::clamp(controller.dragged_human_distance, 0.5, 10000.0);
 		}
 		const Chunk& chunk = world.chunk_system.getChunk(controller.dragged_human_chunk_id);
-		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 target = world.getCameraWorldPosition()
 			+ glm::dvec3(world.getCameraComponent().getFront()) * controller.dragged_human_distance;
 		const glm::dvec3 body_local_target = glm::conjugate(body.rotation) * (target - body.position);
-		world.data.getPoint(controller.dragged_human_point_id).position = vec3(body_local_target - chunk.position);
+		world.point_data.getPoint(controller.dragged_human_point_id).position = vec3(body_local_target - chunk.position);
 	}
 }

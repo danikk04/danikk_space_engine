@@ -22,8 +22,8 @@ namespace danikk_space_engine
 		{
 			for(WorldBodyComponentSlotId id : body.component_slot_ids)
 			{
-				if(world.data.isWorldBodyComponentSlotActive(id)
-					&& world.data.getWorldBodyComponentSlot(id).type_id == WorldBodyComponentTypeId::planet)
+				if(world.world_body_data.isWorldBodyComponentSlotActive(id)
+					&& world.world_body_data.getWorldBodyComponentSlot(id).type_id == WorldBodyComponentTypeId::planet)
 					return true;
 			}
 			return false;
@@ -48,9 +48,9 @@ namespace danikk_space_engine
 		if(world.controller_system.controls()) dragged_id = world.controller_system.dragged_world_body_id;
 		DynamicArray<BodyCollider> colliders;
 
-		for(WorldBodyId id : world.data.getUsedWorldBodyIds())
+		for(WorldBodyId id : world.world_body_data.getUsedWorldBodyIds())
 		{
-			const WorldBody& body = world.data.getWorldBody(id);
+			const WorldBody& body = world.world_body_data.getWorldBody(id);
 			if(isPlanetBody(world, body) || !hasLoadedChunk(world, body)) continue;
 			BodyCollider collider = createCollider(world, id, dragged_id);
 			if(collider.chunks.size() > 0) colliders.push(static_cast<BodyCollider&&>(collider));
@@ -60,12 +60,12 @@ namespace danikk_space_engine
 			for(size_t i = 0; i < colliders.size(); i++)
 			{
 				const BodyCollider& a = colliders[i];
-				WorldBody& body_a = world.data.getWorldBody(a.id);
+				WorldBody& body_a = world.world_body_data.getWorldBody(a.id);
 				for(size_t j = i + 1; j < colliders.size(); j++)
 				{
 					const BodyCollider& b = colliders[j];
 					if(a.inverse_mass + b.inverse_mass <= 0.0) continue;
-					WorldBody& body_b = world.data.getWorldBody(b.id);
+					WorldBody& body_b = world.world_body_data.getWorldBody(b.id);
 					const glm::dvec3 delta = body_b.position - body_a.position;
 					const double radius = a.radius + b.radius;
 					if(glm::dot(delta, delta) > radius * radius) continue;

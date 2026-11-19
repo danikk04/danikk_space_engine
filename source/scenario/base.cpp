@@ -102,20 +102,21 @@ namespace danikk_space_engine
 	 */
 	void startBaseScenario(World& world)
 	{
-		world.data.clear();
+		world.point_data.clear();
+		world.world_body_data.clear();
 		world.factions.create(faction_definition_ids::celestial_body);
 		world.factions.create(faction_definition_ids::player);
 		world.factions.create(faction_definition_ids::pirates);
 		world.factions.setRelation(base_faction_ids::player, base_faction_ids::pirates,
 			{FactionRelationType::hostile, 0.0f});
 
-		const WorldBodyId planet_body_id = world.data.createWorldBody();
-		world.data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
+		const WorldBodyId planet_body_id = world.world_body_data.createWorldBody();
+		world.world_body_data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
 		const PlanetComponentSettings& planet_settings = getPlanetSettings(planet_settings_ids::earth);
-		world.data.createWorldBodyComponentSlot(
+		world.world_body_data.createWorldBodyComponentSlot(
 			planet_body_id, WorldBodyComponentTypeId::planet, &planet_settings);
-		const PointId camera_point_id = world.data.createPoint();
-		Point& camera_point = world.data.getPoint(camera_point_id);
+		const PointId camera_point_id = world.point_data.createPoint();
+		Point& camera_point = world.point_data.getPoint(camera_point_id);
 		constexpr float camera_altitude = 30.0f;
 		camera_point.position = vec3(0.0f);
 		glm::dvec3 camera_chunk_position(0.0, 0.0, planet_settings.radius + camera_altitude);
@@ -126,12 +127,12 @@ namespace danikk_space_engine
 				"Unable to find solid underground camera position; spawning above the planet");
 		}
 		Chunk& chunk = world.chunk_system.createChunk(planet_body_id);
-		const ChunkId camera_chunk_id = world.data.getWorldBody(planet_body_id).chunk_ids[
-			world.data.getWorldBody(planet_body_id).chunk_ids.size() - 1];
+		const ChunkId camera_chunk_id = world.world_body_data.getWorldBody(planet_body_id).chunk_ids[
+			world.world_body_data.getWorldBody(planet_body_id).chunk_ids.size() - 1];
 		chunk.position = camera_chunk_position;
 		CameraComponent camera;
 		camera.rotation.y = -pi_half;
-		world.camera_component_slot_id = world.data.createPointComponentSlot(
+		world.camera_component_slot_id = world.point_data.createPointComponentSlot(
 			camera_point_id,
 			PointComponentTypeId::camera,
 			&camera);

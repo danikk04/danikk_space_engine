@@ -4,13 +4,13 @@
 #include <danikk_space_engine/environment.h>
 #include <danikk_space_engine/physics.h>
 
-#include <danikk_space_engine/world/point.h>
+#include <danikk_space_engine/point.h>
 #include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/chunk.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
 #include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/component_system.h>
-#include <danikk_space_engine/world/data.h>
+#include <danikk_space_engine/world_body.h>
 #include <danikk_space_engine/chunk_system.h>
 #include <danikk_space_engine/planet_terrain_system.h>
 #include <danikk_space_engine/factions.h>
@@ -51,7 +51,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Coordinates world state, simulation updates, physics, and geometry queries.
 	 *
-	 * WorldData owns resource lifetimes. World drives body and chunk component callbacks, defers
+	 * PointData and WorldBodyData own resource lifetimes. World coordinates chunk membership,
+	 * component callbacks, deferred
 	 * destructive point cleanup until callback traversal finishes, then advances WorldPhysics.
 	 * ChunkMeshGenerator performs CPU-side mesh generation asynchronously; completed data is validated
 	 * and accepted by the main thread before mesh creation and drawing.
@@ -63,8 +64,10 @@ namespace danikk_space_engine
 			const glm::dvec3& origin, const vec3& direction, float max_distance) const;
 
 	public:
-		/** @brief Owns points, bodies, and component-slot pools. */
-		WorldData data;
+		/** @brief Owns point resources and their component slots. */
+		PointData point_data;
+		/** @brief Owns WorldBody resources and their component slots. */
+		WorldBodyData world_body_data;
 		/** @brief Owns chunk data, chunk memberships, and chunk meshes. */
 		ChunkSystem chunk_system;
 		/** @brief Samples global gravity and other spatial environment fields. */
@@ -113,7 +116,7 @@ namespace danikk_space_engine
 
 		/** @brief Cancels generation work owned by the body's component slots, then destroys the body. */
 		void destroyWorldBody(WorldBodyId body_id);
-		/** @brief Releases a chunk's render resources, then destroys its WorldData resource. */
+		/** @brief Releases a chunk's render resources, then destroys the chunk resource. */
 		void destroyChunk(ChunkId chunk_id);
 		/** @brief Detaches and destroys a point together with its component payloads. */
 		void destroyPoint(PointId point_id);
@@ -153,13 +156,13 @@ namespace danikk_space_engine
 		 * @brief Starts the loader, invalidates older results, resets queues, and creates the base scenario.
 		 * Advances the world token while skipping zero, clears queued generation and
 		 * deferred-destruction IDs, then calls `startBaseScenario()`, which clears
-		 * and repopulates WorldData. Results from an earlier initialization are stale.
+		 * and repopulates the point and body data pools. Results from an earlier initialization are stale.
 		 */
 		void init();
 
 		/**
-		 * @brief Stops and joins chunk generation, invalidates outstanding results, and releases WorldData.
-		 * Advances the world token, clears pending requests, and releases WorldData.
+		 * @brief Stops and joins chunk generation, invalidates outstanding results, and releases world data.
+		 * Advances the world token, clears pending requests, and releases the point and body pools.
 		 * Call before destroying the graphics context so owned chunk meshes can
 		 * release their GPU resources safely.
 		 */

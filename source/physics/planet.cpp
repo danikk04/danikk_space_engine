@@ -61,7 +61,7 @@ namespace danikk_space_engine
 			const Chunk& moving_chunk, const BodyMassProperties& mass_properties,
 			const PlanetCollisionTarget& target)
 		{
-			const WorldBody& planet_body = world.data.getWorldBody(target.body_id);
+			const WorldBody& planet_body = world.world_body_data.getWorldBody(target.body_id);
 			const glm::dquat inverse_planet_rotation = glm::conjugate(planet_body.rotation);
 			DynamicArray<SurfaceContact> point_contacts;
 			point_contacts.reserve(moving_chunk.point_ids.size() + moving_chunk.point_component_slot_ids.size() * 8);
@@ -74,19 +74,19 @@ namespace danikk_space_engine
 			local_points.reserve(moving_chunk.point_ids.size() + moving_chunk.point_component_slot_ids.size() * 8);
 			for(PointId point_id : moving_chunk.point_ids)
 			{
-				if(!world.data.isPointActive(point_id)) continue;
-				local_points.push(moving_chunk.position + glm::dvec3(world.data.getPoint(point_id).position));
+				if(!world.point_data.isPointActive(point_id)) continue;
+				local_points.push(moving_chunk.position + glm::dvec3(world.point_data.getPoint(point_id).position));
 			}
 			for(PointComponentSlotId slot_id : moving_chunk.point_component_slot_ids)
 			{
-				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 				if(slot.type_id != PointComponentTypeId::build_part
-					|| !world.data.isPointActive(slot.point_id)) continue;
+					|| !world.point_data.isPointActive(slot.point_id)) continue;
 				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
 				const glm::dvec3 anchor = moving_chunk.position
-					+ glm::dvec3(world.data.getPoint(slot.point_id).position);
+					+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
 				for(const vec3& vertex : geometry.positions)
 				{
 					local_points.push(anchor
@@ -245,13 +245,13 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		DynamicArray<PlanetCollisionTarget> planets;
 
-		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
+		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
 		{
-			const WorldBody& body = world.data.getWorldBody(body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
-				if(!world.data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				const WorldBodyComponentSlot& slot = world.data.getWorldBodyComponentSlot(slot_id);
+				if(!world.world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
+				const WorldBodyComponentSlot& slot = world.world_body_data.getWorldBodyComponentSlot(slot_id);
 				if(slot.type_id != WorldBodyComponentTypeId::planet) continue;
 				planets.push(PlanetCollisionTarget{
 					body_id,
@@ -260,10 +260,10 @@ namespace danikk_space_engine
 		}
 		if(planets.size() == 0) return;
 
-		for(WorldBodyId moving_body_id : world.data.getUsedWorldBodyIds())
+		for(WorldBodyId moving_body_id : world.world_body_data.getUsedWorldBodyIds())
 		{
-			if(!world.data.isWorldBodyActive(moving_body_id)) continue;
-			WorldBody& moving_body = world.data.getWorldBody(moving_body_id);
+			if(!world.world_body_data.isWorldBodyActive(moving_body_id)) continue;
+			WorldBody& moving_body = world.world_body_data.getWorldBody(moving_body_id);
 			bool is_planet_body = false;
 			for(const PlanetCollisionTarget& target : planets)
 			{
@@ -284,8 +284,8 @@ namespace danikk_space_engine
 				const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 				{
-					if(world.data.isPointComponentSlotActive(slot_id)
-						&& world.data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
+					if(world.point_data.isPointComponentSlotActive(slot_id)
+						&& world.point_data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
 					{
 						has_surface_geometry = true;
 						break;
@@ -297,8 +297,8 @@ namespace danikk_space_engine
 			{
 				for(const PlanetCollisionTarget& target : planets)
 				{
-					if(target.body_id == moving_body_id || !world.data.isWorldBodyActive(target.body_id)) continue;
-					const WorldBody& planet_body = world.data.getWorldBody(target.body_id);
+					if(target.body_id == moving_body_id || !world.world_body_data.isWorldBodyActive(target.body_id)) continue;
+					const WorldBody& planet_body = world.world_body_data.getWorldBody(target.body_id);
 					const glm::dvec3 field_position = glm::conjugate(planet_body.rotation)
 						* (moving_body.position - planet_body.position);
 					glm::dvec3 local_outward(0.0);

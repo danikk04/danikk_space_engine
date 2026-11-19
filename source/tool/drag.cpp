@@ -17,7 +17,7 @@ namespace danikk_space_engine
 		 */
 		bool canDragWorldBody(const World& world, WorldBodyId body_id)
 		{
-			if(!world.data.isWorldBodyActive(body_id)) return false;
+			if(!world.world_body_data.isWorldBodyActive(body_id)) return false;
 
 			const PointComponentSlot& camera_slot = world.getCameraSlot();
 			if(world.chunk_system.isChunkActive(camera_slot.chunk_id)
@@ -26,11 +26,11 @@ namespace danikk_space_engine
 				return false;
 			}
 
-			const WorldBody& body = world.data.getWorldBody(body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
-				if(!world.data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				if(world.data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
+				if(!world.world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
+				if(world.world_body_data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
 				{
 					return false;
 				}
@@ -87,11 +87,11 @@ namespace danikk_space_engine
 		if(mouse_state == button_states::press)
 		{
 			clearDrag(controller);
-			if(hit.hit && world.data.isWorldBodyActive(hit.body_id))
+			if(hit.hit && world.world_body_data.isWorldBodyActive(hit.body_id))
 			{
 				if(canDragWorldBody(world, hit.body_id))
 				{
-					const WorldBody& body = world.data.getWorldBody(hit.body_id);
+					const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
 					controller.dragged_world_body_id = hit.body_id;
 					controller.dragged_body_distance = hit.distance;
 					controller.dragged_hit_offset = glm::conjugate(body.rotation)
@@ -109,7 +109,7 @@ namespace danikk_space_engine
 			return;
 		}
 
-		WorldBody& body = world.data.getWorldBody(body_id);
+		WorldBody& body = world.world_body_data.getWorldBody(body_id);
 		if(alt_pressed && scroll_delta != 0.0f)
 		{
 			controller.dragged_body_distance *= std::pow(1.2, static_cast<double>(scroll_delta));

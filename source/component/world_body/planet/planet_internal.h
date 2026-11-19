@@ -17,7 +17,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Unloads chunks outside the desired set while retaining chunks containing unexpired corpses.
 	 * @param planet Lookup describing desired coordinates and currently loaded chunks.
-	 * @param world WorldData that owns their resources and human component state.
+	 * @param world World that owns their resources and human component state.
 	 */
 	void unloadPlanetChunksOutsideDesiredSet(PlanetComponent& planet, World& world);
 
@@ -37,7 +37,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Invalidates generated chunks intersecting an edited spherical region.
 	 * @param planet Planet lookup containing loaded chunk records.
-	 * @param world WorldData owning the chunk resources.
+	 * @param world World owning the chunk resources.
 	 * @param center Edit center relative to the planet origin.
 	 * @param radius Edit stamp radius in world units.
 	 */

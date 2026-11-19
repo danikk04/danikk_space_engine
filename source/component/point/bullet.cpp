@@ -18,11 +18,11 @@ namespace danikk_space_engine
 	/** @copydoc spawnBullet */
 	void spawnBullet(World& world, ChunkId chunk_id, const vec3& position, const BulletComponent& bullet)
 	{
-		const PointId point_id = world.data.createPoint();
-		world.data.getPoint(point_id).position = position;
+		const PointId point_id = world.point_data.createPoint();
+		world.point_data.getPoint(point_id).position = position;
 		BulletComponent initial_bullet = bullet;
 		initial_bullet.previous_position = position;
-		const PointComponentSlotId slot_id = world.data.createPointComponentSlot(point_id, PointComponentTypeId::bullet, &initial_bullet);
+		const PointComponentSlotId slot_id = world.point_data.createPointComponentSlot(point_id, PointComponentTypeId::bullet, &initial_bullet);
 		world.chunk_system.addPointComponentSlotToChunk(chunk_id, slot_id);
 	}
 
@@ -101,7 +101,7 @@ namespace danikk_space_engine
 
 		const float delta_time = getTargetFrameDelay();
 		if(delta_time <= 0.0f) return;
-		Point& point = world.data.getPoint(slot.point_id);
+		Point& point = world.point_data.getPoint(slot.point_id);
 		const vec3 start_position = point.position;
 		bullet.previous_position = start_position;
 		const vec3 displacement = bullet.velocity * delta_time;
@@ -110,24 +110,24 @@ namespace danikk_space_engine
 		{
 			const glm::dvec3 start_world_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 			const Chunk& owner_chunk = world.chunk_system.getChunk(slot.chunk_id);
-			const glm::dquat body_rotation = world.data.getWorldBody(owner_chunk.world_body_id).rotation;
+			const glm::dquat body_rotation = world.world_body_data.getWorldBody(owner_chunk.world_body_id).rotation;
 			const glm::dvec3 direction = glm::normalize(body_rotation * glm::dvec3(bullet.velocity));
 			const RaycastHit hit = world.raycast(start_world_position, vec3(direction), step_distance);
 			double nearest = hit.hit ? hit.distance : step_distance;
 			PointComponentSlotId victim_id = static_cast<PointComponentSlotId>(-1);
 			PointComponentSlotId suppression_target_id = static_cast<PointComponentSlotId>(-1);
 			double nearest_suppression_distance = nearest;
-			for(PointComponentSlotId id : world.data.getUsedPointComponentSlotIds())
+			for(PointComponentSlotId id : world.point_data.getUsedPointComponentSlotIds())
 			{
-				if(!world.data.isPointComponentSlotActive(id)) continue;
-				const PointComponentSlot& candidate = world.data.getPointComponentSlot(id);
+				if(!world.point_data.isPointComponentSlotActive(id)) continue;
+				const PointComponentSlot& candidate = world.point_data.getPointComponentSlot(id);
 				if(candidate.type_id != PointComponentTypeId::human || candidate.point_id == bullet.owner_point_id
-					|| !world.data.isPointActive(candidate.point_id) || !world.chunk_system.isChunkActive(candidate.chunk_id)) continue;
+					|| !world.point_data.isPointActive(candidate.point_id) || !world.chunk_system.isChunkActive(candidate.chunk_id)) continue;
 				const HumanComponent& human = *static_cast<const HumanComponent*>(candidate.getData());
 				const DamageableComponent* health = findDamageable(world, candidate.chunk_id, candidate.point_id);
 				if(health == nullptr || health->getHealth() <= 0.0f) continue;
 				const Chunk& human_chunk = world.chunk_system.getChunk(candidate.chunk_id);
-				const glm::dvec3 up = glm::normalize(world.data.getWorldBody(human_chunk.world_body_id).rotation * glm::dvec3(human.up));
+				const glm::dvec3 up = glm::normalize(world.world_body_data.getWorldBody(human_chunk.world_body_id).rotation * glm::dvec3(human.up));
 				const glm::dvec3 center = world.getPointWorldPosition(candidate.chunk_id, candidate.point_id);
 				const double radius = human.getHeight() * 0.14;
 				for(int i = -2; i <= 2; ++i)
@@ -151,7 +151,7 @@ namespace danikk_space_engine
 			}
 			if(victim_id != static_cast<PointComponentSlotId>(-1))
 			{
-				const PointComponentSlot& victim = world.data.getPointComponentSlot(victim_id);
+				const PointComponentSlot& victim = world.point_data.getPointComponentSlot(victim_id);
 				DamageableComponent* health = findDamageable(world, victim.chunk_id, victim.point_id);
 				if(health != nullptr)
 				{
@@ -164,14 +164,14 @@ namespace danikk_space_engine
 			}
 			if(suppression_target_id != static_cast<PointComponentSlotId>(-1))
 			{
-				const PointComponentSlot& target = world.data.getPointComponentSlot(suppression_target_id);
+				const PointComponentSlot& target = world.point_data.getPointComponentSlot(suppression_target_id);
 				reportUnitAttack(world, bullet.owner_point_id, target.point_id);
 			}
 			if(hit.hit)
 			{
-				if(hit.hit_build_part && world.data.isPointComponentSlotActive(hit.build_part_slot_id))
+				if(hit.hit_build_part && world.point_data.isPointComponentSlotActive(hit.build_part_slot_id))
 				{
-					const PointComponentSlot& part = world.data.getPointComponentSlot(hit.build_part_slot_id);
+					const PointComponentSlot& part = world.point_data.getPointComponentSlot(hit.build_part_slot_id);
 					DamageableComponent* health = findDamageable(world, part.chunk_id, part.point_id);
 					if(health != nullptr)
 					{
@@ -214,7 +214,7 @@ namespace danikk_space_engine
 
 		const BulletComponent& bullet = *static_cast<const BulletComponent*>(slot.getData());
 		if(bullet.destruction_queued) return;
-		const vec3 current_position = world.data.getPoint(slot.point_id).position;
+		const vec3 current_position = world.point_data.getPoint(slot.point_id).position;
 		const float velocity_length = glm::length(bullet.velocity);
 		if(velocity_length <= 0.000001f) return;
 		const vec3 forward = bullet.velocity / velocity_length;
@@ -224,7 +224,7 @@ namespace danikk_space_engine
 		const vec3 start_position = bullet.previous_position
 			- forward * glm::max(0.0f, visible_trail_length - actual_segment_length);
 		const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
-		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 camera_local_position = glm::inverse(body.rotation)
 			* (world.getCameraWorldPosition() - body.position) - chunk.position;
 		const vec3 midpoint = (start_position + current_position) * 0.5f;

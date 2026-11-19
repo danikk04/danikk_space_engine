@@ -38,9 +38,9 @@ namespace danikk_space_engine
 			{2, 3, 7, 2, 7, 6}, {3, 0, 4, 3, 4, 7}
 		};
 
-		for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
+		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
 		{
-			const WorldBody& body = world.data.getWorldBody(body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			for(ChunkId chunk_id : body.chunk_ids)
 			{
 				const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
@@ -57,8 +57,8 @@ namespace danikk_space_engine
 				{
 					for(PointId point_id : chunk.point_ids)
 					{
-						if(!world.data.isPointActive(point_id)) continue;
-						const vec3 position = world.data.getPoint(point_id).position;
+						if(!world.point_data.isPointActive(point_id)) continue;
+						const vec3 position = world.point_data.getPoint(point_id).position;
 						if(!bounds_found)
 						{
 							minimum = position;

@@ -29,7 +29,7 @@ namespace danikk_space_engine
 	 * @param world World whose main-thread context accepts the generated data.
 	 * @param generated_chunk CPU-generated positions, triangle indices, and per-triangle materials.
 	 * Stale or no-longer-desired results are discarded. Valid non-empty chunks are
-	 * uploaded synchronously, then the temporary arrays can be released. WorldData
+	 * uploaded synchronously, then the temporary arrays can be released. The data pools
 	 * retains the chunk and its GPU mesh, but no copy of terrain triangles or vertices.
 	 * Empty results are recorded in the lookup without allocating a chunk.
 	 */

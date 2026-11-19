@@ -13,11 +13,11 @@ namespace danikk_space_engine
 		for(size_t read_index = 0; read_index < selected_unit_refs.size(); ++read_index)
 		{
 			const SelectedUnitRef reference = selected_unit_refs[read_index];
-			if(!world.data.isPointComponentSlotActive(reference.slot_id)) continue;
-			const PointComponentSlot& slot = world.data.getPointComponentSlot(reference.slot_id);
+			if(!world.point_data.isPointComponentSlotActive(reference.slot_id)) continue;
+			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(reference.slot_id);
 			if(slot.generation_id != reference.generation_id
 				|| slot.type_id != PointComponentTypeId::human
-				|| !world.data.isPointActive(slot.point_id)
+				|| !world.point_data.isPointActive(slot.point_id)
 				|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
@@ -40,18 +40,18 @@ namespace danikk_space_engine
 		double closest_distance = surface_hit.hit ? surface_hit.distance : 10000.0;
 		PointComponentSlotId closest_slot_id = static_cast<PointComponentSlotId>(-1);
 
-		for(PointComponentSlotId slot_id : world.data.getUsedPointComponentSlotIds())
+		for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
 		{
-			if(!world.data.isPointComponentSlotActive(slot_id)) continue;
-			const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
+			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 			if(slot.type_id != PointComponentTypeId::human
-				|| !world.data.isPointActive(slot.point_id)
+				|| !world.point_data.isPointActive(slot.point_id)
 				|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 
 			const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
-			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 			const glm::dvec3 center = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 			glm::dvec3 up = body.rotation * glm::dvec3(human.up);
 			const double up_length = glm::length(up);
@@ -69,7 +69,7 @@ namespace danikk_space_engine
 
 		if(!shift_pressed) selected_unit_refs.clear();
 		if(closest_slot_id == static_cast<PointComponentSlotId>(-1)) return false;
-		const PointComponentSlot& slot = world.data.getPointComponentSlot(closest_slot_id);
+		const PointComponentSlot& slot = world.point_data.getPointComponentSlot(closest_slot_id);
 		for(size_t index = 0; index < selected_unit_refs.size(); ++index)
 		{
 			if(selected_unit_refs[index].slot_id != closest_slot_id

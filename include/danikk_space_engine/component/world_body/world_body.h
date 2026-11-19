@@ -95,7 +95,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Stores one component instance attached to a WorldBody.
 	 *
-	 * The slot lives in the WorldData component pool. The owning body's
+	 * The slot lives in the WorldBodyData component pool. The owning body's
 	 * `component_slot_ids` list supplies membership and iteration, but does not own
 	 * the slot allocation. `generation_id` identifies this incarnation so that
 	 * asynchronous results for a destroyed or replaced component can be rejected.

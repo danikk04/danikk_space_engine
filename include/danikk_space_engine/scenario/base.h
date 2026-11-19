@@ -6,7 +6,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Resets WorldData and creates the default Earth planet, camera, and local controller.
+	 * @brief Resets world data pools and creates the default Earth planet, camera, and local controller.
 	 *
 	 * The scenario only assembles initial resources; planet chunk generation remains asynchronous
 	 * and is requested later by the PlanetComponent during its frame callback. The camera is stored

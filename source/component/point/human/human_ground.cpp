@@ -21,7 +21,7 @@ namespace danikk_space_engine::human_internal
 		 * @param body World body whose component slots are inspected.
 		 * @return The first planet slot, or null for non-planet bodies.
 		 */
-		const WorldBodyComponentSlot* findPlanetSlot(const WorldData& data, const WorldBody& body)
+		const WorldBodyComponentSlot* findPlanetSlot(const WorldBodyData& data, const WorldBody& body)
 		{
 			DSE_WATCH();
 			for(WorldBodyComponentSlotId component_id : body.component_slot_ids)
@@ -173,7 +173,7 @@ namespace danikk_space_engine::human_internal
 				return;
 			}
 
-			const WorldBodyComponentSlot* planet_slot = findPlanetSlot(world.data, body);
+			const WorldBodyComponentSlot* planet_slot = findPlanetSlot(world.world_body_data, body);
 			const PlanetComponent* planet = planet_slot == nullptr
 				? nullptr : static_cast<const PlanetComponent*>(planet_slot->getData());
 			const float height = human.getHeight();

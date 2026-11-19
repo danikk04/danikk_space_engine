@@ -38,11 +38,11 @@ namespace danikk_space_engine
 
 		/**
 		 * @brief Finds the body's active PlanetComponent, if present.
-		 * @param data WorldData used to validate component slot IDs.
+		 * @param data WorldBodyData used to validate component slot IDs.
 		 * @param body Body whose component list is inspected.
 		 * @return Planet payload or null when this body has no planet component.
 		 */
-		const PlanetComponent* getPlanetComponent(const WorldData& data, const WorldBody& body,
+		const PlanetComponent* getPlanetComponent(const WorldBodyData& data, const WorldBody& body,
 			WorldBodyComponentSlotId& component_slot_id)
 		{
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
@@ -63,7 +63,7 @@ namespace danikk_space_engine
 	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
 		DSE_WATCH();
-		const auto& body_ids = data.getUsedWorldBodyIds();
+		const auto& body_ids = world_body_data.getUsedWorldBodyIds();
 		return raycastBodies(body_ids.begin(), body_ids.size(), origin, direction, max_distance);
 	}
 
@@ -72,7 +72,7 @@ namespace danikk_space_engine
 		const vec3& direction, float max_distance) const
 	{
 		DSE_WATCH();
-		if(!data.isWorldBodyActive(body_id)) return RaycastHit{};
+		if(!world_body_data.isWorldBodyActive(body_id)) return RaycastHit{};
 		return raycastBodies(&body_id, 1, origin, direction, max_distance);
 	}
 
@@ -102,9 +102,9 @@ namespace danikk_space_engine
 		for(size_t body_index = 0; body_index < body_count; ++body_index)
 		{
 			const WorldBodyId body_id = body_ids[body_index];
-			const WorldBody& body = data.getWorldBody(body_id);
+			const WorldBody& body = world_body_data.getWorldBody(body_id);
 			WorldBodyComponentSlotId planet_component_slot_id = static_cast<WorldBodyComponentSlotId>(-1);
-			const PlanetComponent* planet = getPlanetComponent(data, body, planet_component_slot_id);
+			const PlanetComponent* planet = getPlanetComponent(world_body_data, body, planet_component_slot_id);
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_origin = inverse_rotation * (origin - body.position);
 			const vec3 local_direction = vec3(inverse_rotation * glm::dvec3(normalized_direction));
@@ -123,13 +123,13 @@ namespace danikk_space_engine
 
 				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 				{
-					if(!data.isPointComponentSlotActive(slot_id)) continue;
-					const PointComponentSlot& slot = data.getPointComponentSlot(slot_id);
+					if(!point_data.isPointComponentSlotActive(slot_id)) continue;
+					const PointComponentSlot& slot = point_data.getPointComponentSlot(slot_id);
 					if(slot.type_id != PointComponentTypeId::build_part
-						|| !data.isPointActive(slot.point_id)) continue;
+						|| !point_data.isPointActive(slot.point_id)) continue;
 					const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 					const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
-					const glm::dvec3 anchor = chunk.position + glm::dvec3(data.getPoint(slot.point_id).position);
+					const glm::dvec3 anchor = chunk.position + glm::dvec3(point_data.getPoint(slot.point_id).position);
 					for(const CubeTriangle& triangle : geometry.triangles)
 					{
 					const vec3 a = vec3(anchor + glm::dvec3(part.rotation
@@ -251,10 +251,10 @@ namespace danikk_space_engine
 	 */
 	RaycastHit World::raycastFromCamera(float max_distance) const
 	{
-		if(camera_component_slot_id >= data.getPointComponentSlotCount()) return RaycastHit{};
-		if(!data.isPointComponentSlotActive(camera_component_slot_id)) return RaycastHit{};
-		const PointComponentSlot& camera_slot = data.getPointComponentSlot(camera_component_slot_id);
-		if(!data.isPointActive(camera_slot.point_id)) return RaycastHit{};
+		if(camera_component_slot_id >= point_data.getPointComponentSlotCount()) return RaycastHit{};
+		if(!point_data.isPointComponentSlotActive(camera_component_slot_id)) return RaycastHit{};
+		const PointComponentSlot& camera_slot = point_data.getPointComponentSlot(camera_component_slot_id);
+		if(!point_data.isPointActive(camera_slot.point_id)) return RaycastHit{};
 		return raycast(getCameraWorldPosition(), getCameraComponent().getFront(), max_distance);
 	}
 }

@@ -9,7 +9,7 @@ namespace danikk_space_engine
 	 * @brief Dispatches tick and frame callbacks for components in a World.
 	 *
 	 * The system owns no simulation data. It keeps update and render entry points separate and
-	 * snapshots mutable membership lists before callbacks that can change WorldData.
+	 * snapshots mutable membership lists before callbacks that can change the owning data pools.
 	 */
 	class ComponentSystem
 	{

@@ -24,7 +24,7 @@ namespace danikk_space_engine
 		controller_system.tick();
 		for(PointId point_id : pending_point_destruction_ids)
 		{
-			if(data.isPointActive(point_id)) destroyPoint(point_id);
+			if(point_data.isPointActive(point_id)) destroyPoint(point_id);
 		}
 		pending_point_destruction_ids.clear();
 		unitSystemTick(*this, glm::max(getTargetFrameDelay(), 0.0f));

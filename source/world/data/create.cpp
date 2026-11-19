@@ -1,4 +1,5 @@
-#include <danikk_space_engine/world/data.h>
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -61,13 +62,13 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @copydoc WorldData::createPoint */
-	PointId WorldData::createPoint() { return points.create(); }
-	/** @copydoc WorldData::createWorldBody */
-	WorldBodyId WorldData::createWorldBody() { return world_bodies.create(); }
+	/** @copydoc PointData::createPoint */
+	PointId PointData::createPoint() { return points.create(); }
+	/** @copydoc WorldBodyData::createWorldBody */
+	WorldBodyId WorldBodyData::createWorldBody() { return world_bodies.create(); }
 
-	/** @copydoc WorldData::createWorldBodyComponentSlot */
-	WorldBodyComponentSlotId WorldData::createWorldBodyComponentSlot(
+	/** @copydoc WorldBodyData::createWorldBodyComponentSlot */
+	WorldBodyComponentSlotId WorldBodyData::createWorldBodyComponentSlot(
 		WorldBodyId world_body_id,
 		WorldBodyComponentTypeId type_id,
 		const void* init_data)
@@ -91,8 +92,8 @@ namespace danikk_space_engine
 		return id;
 	}
 
-	/** @copydoc WorldData::createPointComponentSlot */
-	PointComponentSlotId WorldData::createPointComponentSlot(
+	/** @copydoc PointData::createPointComponentSlot */
+	PointComponentSlotId PointData::createPointComponentSlot(
 		PointId point_id,
 		PointComponentTypeId type_id,
 		const void* init_data)

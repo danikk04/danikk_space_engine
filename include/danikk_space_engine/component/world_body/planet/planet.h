@@ -58,7 +58,7 @@ namespace danikk_space_engine
 	{
 		/** @brief Integer coordinate of this chunk in the planet's cube-face grid. */
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
-		/** @brief Loaded WorldData chunk ID, or invalid ID when this coordinate is known-empty/pending. */
+		/** @brief Loaded chunk ID, or invalid ID when this coordinate is known-empty/pending. */
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		/** @brief Hash-table bucket marker: 0 empty, 1 occupied, 2 deleted/tombstone. */
 		uint8 state = 0;
@@ -101,7 +101,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Records the loaded world chunk associated with a grid coordinate.
 		 * @param grid_coordinate Planet-grid coordinate represented by the chunk.
-		 * @param chunk_id Active WorldData chunk ID to associate with that coordinate.
+		 * @param chunk_id Active ChunkSystem chunk ID to associate with that coordinate.
 		 * @param mesh_generator Algorithm represented by the completed generation record.
 		 */
 		void setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id,
@@ -140,7 +140,7 @@ namespace danikk_space_engine
 	 * @brief Holds a planet preset, persistent terrain edits, and the active chunk update state.
 	 *
 	 * The component coordinates asynchronous generation but does not own generated geometry;
-	 * accepted chunks and their points/triangles are allocated through WorldData. The lookup
+	 * accepted chunks and their points are allocated through ChunkSystem and the data pools. The lookup
 	 * tracks wanted, pending, generated-empty, and loaded coordinates without scanning all chunks.
 	 */
 	struct PlanetComponent
@@ -210,7 +210,7 @@ namespace danikk_space_engine
 	 * @brief Validates and installs one completed chunk-generation result for this planet.
 	 *
 	 * Results from an obsolete terrain revision or component generation are discarded. Valid
-	 * geometry is copied into WorldData resources and its grid-coordinate record is updated.
+	 * geometry is copied into the world data pools and its grid-coordinate record is updated.
 	 * @param slot Planet component slot that submitted the request.
 	 * @param world World receiving generated chunk resources.
 	 * @param generated_chunk Worker-produced geometry and request identity.

@@ -36,7 +36,7 @@ namespace danikk_space_engine
 	 *
 	 * The preset supplies name, radii, load distance, surface gravity, and noise seed. Runtime
 	 * arrays and chunk-tracking state remain default-initialized for this new component instance.
-	 * @param destination Component payload storage provided by WorldData.
+	 * @param destination Component payload storage provided by WorldBodyData.
 	 * @param init_data Optional PlanetComponentSettings preset; null selects Earth defaults.
 	 */
 	void constructPlanetComponent(void* destination, const void* init_data)
@@ -113,8 +113,8 @@ namespace danikk_space_engine
 		 * @brief Keeps a camera-centered set of 3D chunks loaded and refreshes it after movement or edits.
 		 * The scalar field remains defined throughout the planet volume; this set controls loaded surface work.
 		 */
-		if(!world.data.isWorldBodyActive(slot.world_body_id)
-			|| !world.data.isPointComponentSlotActive(world.camera_component_slot_id)) return;
+		if(!world.world_body_data.isWorldBodyActive(slot.world_body_id)
+			|| !world.point_data.isPointComponentSlotActive(world.camera_component_slot_id)) return;
 
 		PlanetComponent& planet = *static_cast<PlanetComponent*>(slot.getData());
 		if(!planet.terrain_edits_loaded)
@@ -128,7 +128,7 @@ namespace danikk_space_engine
 			planet.terrain_edits_loaded = true;
 			planet.processed_edit_count = planet.terrain_edits.size();
 		}
-		const glm::dvec3 body_position = world.data.getWorldBody(slot.world_body_id).position;
+		const glm::dvec3 body_position = world.world_body_data.getWorldBody(slot.world_body_id).position;
 		const glm::dvec3 camera_position = world.getCameraWorldPosition() - body_position;
 		const double distance_from_center = glm::length(camera_position);
 		const bool in_chunk_range = distance_from_center

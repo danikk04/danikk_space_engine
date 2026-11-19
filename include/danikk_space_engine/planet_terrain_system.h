@@ -14,7 +14,7 @@ namespace danikk_space_engine
 	 *
 	 * Live-world queries resolve component IDs through the World reference stored at construction.
 	 * Snapshot overloads are static so worker threads can sample immutable terrain data without
-	 * accessing WorldData concurrently.
+	 * accessing mutable World-owned data concurrently.
 	 */
 	class PlanetTerrainSystem
 	{

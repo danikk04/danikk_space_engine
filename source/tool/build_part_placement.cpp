@@ -37,19 +37,19 @@ namespace danikk_space_engine
 			* (getSupportExtent(terrain_local_normal) + surface_offset);
 		placement.world_rotation = placement.body_local_rotation;
 
-		if(!hit.hit_build_part || !world.data.isPointComponentSlotActive(hit.build_part_slot_id))
+		if(!hit.hit_build_part || !world.point_data.isPointComponentSlotActive(hit.build_part_slot_id))
 			return placement;
 
-		const PointComponentSlot& parent_slot = world.data.getPointComponentSlot(hit.build_part_slot_id);
+		const PointComponentSlot& parent_slot = world.point_data.getPointComponentSlot(hit.build_part_slot_id);
 		if(parent_slot.type_id != PointComponentTypeId::build_part
 			|| !world.chunk_system.isChunkActive(parent_slot.chunk_id)) return placement;
 
 		const Chunk& chunk = world.chunk_system.getChunk(parent_slot.chunk_id);
-		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 		const BuildPartComponent& parent_part = *static_cast<const BuildPartComponent*>(parent_slot.getData());
 		const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
 		const glm::dvec3 parent_center = chunk.position
-			+ glm::dvec3(world.data.getPoint(parent_slot.point_id).position);
+			+ glm::dvec3(world.point_data.getPoint(parent_slot.point_id).position);
 		const glm::dvec3 hit_in_body = inverse_body_rotation * (hit.position - body.position);
 		const vec3 body_normal = glm::normalize(vec3(inverse_body_rotation * glm::dvec3(hit_normal)));
 

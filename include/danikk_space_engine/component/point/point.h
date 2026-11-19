@@ -4,7 +4,6 @@
 
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
-#include <danikk_space_engine/world/point.h>
 
 namespace danikk_space_engine
 {
@@ -35,7 +34,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Describes payload layout and callbacks registered for one point-component type.
 		 *
-		 * The table entry controls how WorldData allocates and relocates the payload, and which
+		 * The table entry controls how PointData allocates and relocates the payload, and which
 		 * callbacks Chunk invokes during simulation ticks and rendered frames. A null callback
 		 * means that the type has no behavior for that lifecycle stage.
 		 */
@@ -71,7 +70,7 @@ namespace danikk_space_engine
 	 *
 	 * Payloads up to `inline_data_capacity` bytes use the inline buffer. Larger or
 	 * non-relocatable payloads use `external_data`, whose lifetime is managed through
-	 * the registered type callbacks and WorldData's component-slot pool.
+	 * the registered type callbacks and PointData's component-slot pool.
 	 */
 	struct PointComponentSlot
 	{

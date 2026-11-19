@@ -29,14 +29,14 @@ namespace danikk_space_engine::unit_system_internal
 		agent.enemy_candidates.clear();
 		agent.candidate_index = 0;
 		const Chunk& owner = world.chunk_system.getChunk(chunk_id);
-		const WorldBody& body = world.data.getWorldBody(owner.world_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(owner.world_body_id);
 		const glm::ivec3 coordinate = glm::ivec3(glm::floor(
-			(owner.position + glm::dvec3(world.data.getPoint(point_id).position)) / planet_chunk_width));
+			(owner.position + glm::dvec3(world.point_data.getPoint(point_id).position)) / planet_chunk_width));
 		const PlanetComponent* planet = nullptr;
 		for(WorldBodyComponentSlotId id : body.component_slot_ids)
 		{
-			if(!world.data.isWorldBodyComponentSlotActive(id)) continue;
-			const WorldBodyComponentSlot& slot = world.data.getWorldBodyComponentSlot(id);
+			if(!world.world_body_data.isWorldBodyComponentSlotActive(id)) continue;
+			const WorldBodyComponentSlot& slot = world.world_body_data.getWorldBodyComponentSlot(id);
 			if(slot.type_id == WorldBodyComponentTypeId::planet)
 			{
 				planet = static_cast<const PlanetComponent*>(slot.getData());
@@ -48,8 +48,8 @@ namespace danikk_space_engine::unit_system_internal
 			if(!world.chunk_system.isChunkActive(candidate_chunk)) return;
 			for(PointComponentSlotId id : world.chunk_system.getChunk(candidate_chunk).point_component_slot_ids)
 			{
-				if(!world.data.isPointComponentSlotActive(id)) continue;
-				const PointComponentSlot& slot = world.data.getPointComponentSlot(id);
+				if(!world.point_data.isPointComponentSlotActive(id)) continue;
+				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
 				if(slot.type_id != PointComponentTypeId::human || slot.point_id == point_id) continue;
 				const UnitTarget target{id, slot.point_id, slot.generation_id};
 				if(isValidEnemy(world, target, faction)) agent.enemy_candidates.push(target);
@@ -86,10 +86,10 @@ namespace danikk_space_engine::unit_system_internal
 			if(agent.order.has_attack_target) markVisibilityChecked(system, previous_target);
 			if(agent.order.has_attack_target && isValidEnemy(world, previous_target, human->faction_id))
 			{
-				const PointComponentSlot& target_slot = world.data.getPointComponentSlot(previous_target.slot_id);
+				const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(previous_target.slot_id);
 				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->chunk_id, human_slot->point_id);
 				const Chunk& chunk = world.chunk_system.getChunk(human_slot->chunk_id);
-				const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+				const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
 				const glm::dvec3 target_position = world.getPointWorldPosition(target_slot.chunk_id, previous_target.point_id);
@@ -112,10 +112,10 @@ namespace danikk_space_engine::unit_system_internal
 				const UnitTarget candidate = agent.enemy_candidates[agent.candidate_index++];
 				if(!isValidEnemy(world, candidate, human->faction_id)) continue;
 				markVisibilityChecked(system, candidate);
-				const PointComponentSlot& target_slot = world.data.getPointComponentSlot(candidate.slot_id);
+				const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(candidate.slot_id);
 				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->chunk_id, human_slot->point_id);
 				const Chunk& chunk = world.chunk_system.getChunk(human_slot->chunk_id);
-				const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+				const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
 				const glm::dvec3 target_position = world.getPointWorldPosition(target_slot.chunk_id, candidate.point_id);

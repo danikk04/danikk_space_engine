@@ -23,13 +23,13 @@ namespace danikk_space_engine
 	/** @brief Resolves camera_component_slot_id to the active camera slot. */
 	PointComponentSlot& World::getCameraSlot()
 	{
-		return data.getPointComponentSlot(camera_component_slot_id);
+		return point_data.getPointComponentSlot(camera_component_slot_id);
 	}
 
 	/** @brief Resolves the configured camera slot as a read-only reference. */
 	const PointComponentSlot& World::getCameraSlot() const
 	{
-		return data.getPointComponentSlot(camera_component_slot_id);
+		return point_data.getPointComponentSlot(camera_component_slot_id);
 	}
 
 	/** @brief Casts the camera slot payload to its registered CameraComponent type. */
@@ -47,13 +47,13 @@ namespace danikk_space_engine
 	/** @brief Resolves the point ID stored by the active camera component slot. */
 	Point& World::getCameraPoint()
 	{
-		return data.getPoint(getCameraSlot().point_id);
+		return point_data.getPoint(getCameraSlot().point_id);
 	}
 
 	/** @brief Returns the camera point as a read-only resource reference. */
 	const Point& World::getCameraPoint() const
 	{
-		return data.getPoint(getCameraSlot().point_id);
+		return point_data.getPoint(getCameraSlot().point_id);
 	}
 
 	/**
@@ -74,7 +74,7 @@ namespace danikk_space_engine
 	glm::dvec3 World::getChunkWorldPosition(ChunkId chunk_id) const
 	{
 		const Chunk& chunk = chunk_system.getChunk(chunk_id);
-		const WorldBody& body = data.getWorldBody(chunk.world_body_id);
+		const WorldBody& body = world_body_data.getWorldBody(chunk.world_body_id);
 		return body.position + body.rotation * chunk.position;
 	}
 
@@ -88,9 +88,9 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		const Chunk& chunk = chunk_system.getChunk(chunk_id);
-		const WorldBody& body = data.getWorldBody(chunk.world_body_id);
+		const WorldBody& body = world_body_data.getWorldBody(chunk.world_body_id);
 		return body.position + body.rotation
-			* (chunk.position + glm::dvec3(data.getPoint(point_id).position));
+			* (chunk.position + glm::dvec3(point_data.getPoint(point_id).position));
 	}
 
 	/**
@@ -100,7 +100,7 @@ namespace danikk_space_engine
 	 */
 	void World::deferPointDestruction(PointId point_id)
 	{
-		if(!data.isPointActive(point_id)) return;
+		if(!point_data.isPointActive(point_id)) return;
 		for(PointId queued_point_id : pending_point_destruction_ids)
 		{
 			if(queued_point_id == point_id) return;
@@ -140,11 +140,11 @@ namespace danikk_space_engine
 			request.chunk_position = chunk.position;
 			for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 			{
-				if(!data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = data.getPointComponentSlot(slot_id);
-				if(slot.type_id != PointComponentTypeId::build_part || !data.isPointActive(slot.point_id)) continue;
+				if(!point_data.isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = point_data.getPointComponentSlot(slot_id);
+				if(slot.type_id != PointComponentTypeId::build_part || !point_data.isPointActive(slot.point_id)) continue;
 				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
-				request.build_parts.push({part.shape, data.getPoint(slot.point_id).position, part.rotation, part.size});
+				request.build_parts.push({part.shape, point_data.getPoint(slot.point_id).position, part.rotation, part.size});
 			}
 
 			for(size_t index = 0; index < chunk_generation_requests.size();)
@@ -202,15 +202,15 @@ namespace danikk_space_engine
 	/** @copydoc World::destroyWorldBody */
 	void World::destroyWorldBody(WorldBodyId body_id)
 	{
-		if(!data.isWorldBodyActive(body_id)) return;
+		if(!world_body_data.isWorldBodyActive(body_id)) return;
 		DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
-		for(WorldBodyComponentSlotId slot_id : data.getWorldBody(body_id).component_slot_ids)
+		for(WorldBodyComponentSlotId slot_id : world_body_data.getWorldBody(body_id).component_slot_ids)
 			component_slot_ids.push(slot_id);
 
 		for(WorldBodyComponentSlotId slot_id : component_slot_ids)
 		{
-			if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
-			const uint64 component_generation_id = data.getWorldBodyComponentSlot(slot_id).generation_id;
+			if(!world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
+			const uint64 component_generation_id = world_body_data.getWorldBodyComponentSlot(slot_id).generation_id;
 			cancelChunkMeshGenerationRequests(slot_id, component_generation_id);
 			for(size_t index = 0; index < chunk_generation_requests.size();)
 			{
@@ -228,9 +228,9 @@ namespace danikk_space_engine
 				chunk_generation_requests_dirty = true;
 			}
 		}
-		WorldBody& body = data.getWorldBody(body_id);
+		WorldBody& body = world_body_data.getWorldBody(body_id);
 		while(body.chunk_ids.size() > 0) destroyChunk(body.chunk_ids[body.chunk_ids.size() - 1]);
-		data.destroyWorldBody(body_id);
+		world_body_data.destroyWorldBody(body_id);
 	}
 
 	/** @copydoc World::destroyChunk */
@@ -293,7 +293,7 @@ namespace danikk_space_engine
 	 * @brief Starts the shared mesh generator, invalidates older results, resets queues, and creates the base scenario.
 	 * Advances the world token while skipping zero, clears the submitted and local
 	 * request arrays plus deferred point removals, then starts the base scenario.
-	 * That scenario clears and repopulates WorldData.
+	 * That scenario clears and repopulates the point and body data pools.
 	 */
 	void World::init()
 	{
@@ -311,7 +311,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Stops and joins the worker, invalidates outstanding results, and releases all WorldData pools.
+	 * @brief Stops and joins the worker, invalidates outstanding results, and releases all resource pools.
 	 * Advances the world token and clears request state before releasing resource pools.
 	 */
 	void World::shutdown()
@@ -323,7 +323,8 @@ namespace danikk_space_engine
 		chunk_generation_requests_dirty = false;
 		clearBuildPartMeshCache();
 		chunk_system.clear();
-		data.release();
+		point_data.release();
+		world_body_data.release();
 		factions.release();
 		pending_point_destruction_ids.clear();
 		unit_system_internal::resetUnitSystems();

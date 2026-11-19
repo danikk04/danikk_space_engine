@@ -20,7 +20,7 @@ namespace danikk_space_engine
 		 */
 		void rebaseCameraLocalPosition(PointComponentSlot& slot, World& world)
 		{
-			Point& point = world.data.getPoint(slot.point_id);
+			Point& point = world.point_data.getPoint(slot.point_id);
 			if(glm::dot(point.position, point.position)
 				<= camera_local_origin_rebase_distance * camera_local_origin_rebase_distance) return;
 
@@ -42,7 +42,7 @@ namespace danikk_space_engine
 		{
 			if(!world.chunk_system.isChunkActive(slot.chunk_id)) return;
 			const Chunk& camera_chunk = world.chunk_system.getChunk(slot.chunk_id);
-			const WorldBody& body = world.data.getWorldBody(camera_chunk.world_body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(camera_chunk.world_body_id);
 			const glm::dvec3 radial = world.getCameraWorldPosition() - body.position;
 			const double radial_length = glm::length(radial);
 			if(radial_length <= 0.000001) return;
@@ -203,7 +203,7 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Camera component tick received null data");
 		}
 
-		if(!world.data.isPointActive(slot.point_id))
+		if(!world.point_data.isPointActive(slot.point_id))
 		{
 			danikk_engine::formatFatalError("Camera component references invalid point %", slot.point_id);
 		}
@@ -270,7 +270,7 @@ namespace danikk_space_engine
 		{
 			direction += camera.getRight();
 		}
-		world.data.getPoint(slot.point_id).position += direction * speed;
+		world.point_data.getPoint(slot.point_id).position += direction * speed;
 		rebaseCameraLocalPosition(slot, world);
 		updateCameraSurfaceFrame(camera, slot, world);
 	}

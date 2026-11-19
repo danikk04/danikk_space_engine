@@ -201,7 +201,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Checks whether generation completed for a coordinate, including an empty result.
 	 * @param grid_coordinate Coordinate to query.
-	 * @return True if a generated record exists, regardless of whether it owns a WorldData chunk.
+	 * @return True if a generated record exists, regardless of whether it owns a loaded chunk.
 	 */
 	bool PlanetChunkLookup::isGenerated(
 		const glm::ivec3& grid_coordinate,

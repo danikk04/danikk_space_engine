@@ -106,22 +106,22 @@ namespace danikk_space_engine::collision_internal
 	{
 		BodyCollider collider;
 		collider.id = id;
-		const WorldBody& body = world.data.getWorldBody(id);
+		const WorldBody& body = world.world_body_data.getWorldBody(id);
 		for(ChunkId chunk_id : body.chunk_ids)
 		{
 			if(!world.chunk_system.isChunkActive(chunk_id)) continue;
 			const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 			for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 			{
-				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 				if(slot.type_id != PointComponentTypeId::build_part
-					|| !world.data.isPointActive(slot.point_id)) continue;
+					|| !world.point_data.isPointActive(slot.point_id)) continue;
 				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
 				ConvexChunkCollider part_shape;
 				const glm::dvec3 anchor = chunk.position
-					+ glm::dvec3(world.data.getPoint(slot.point_id).position);
+					+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
 				part_shape.vertices.reserve(geometry.positions.size());
 				for(const vec3& local_position : geometry.positions)
 				{
@@ -165,7 +165,7 @@ namespace danikk_space_engine::collision_internal
 		const glm::dvec3& world_position, const mat4& body_local_rotation,
 		const vec3& size, double penetration_tolerance)
 	{
-		const WorldBody& body = world.data.getWorldBody(body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 		const BodyCollider existing = createCollider(world, body_id, static_cast<WorldBodyId>(-1));
 		const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
 		ConvexChunkCollider candidate;
@@ -245,7 +245,7 @@ namespace danikk_space_engine
 		const vec3& size, double penetration_tolerance) const
 	{
 		DSE_WATCH();
-		if(!world.data.isWorldBodyActive(body_id)) return true;
+		if(!world.world_body_data.isWorldBodyActive(body_id)) return true;
 		return !collision_internal::hasOverlappingBuildPart(
 			world, body_id, shape, world_position, body_local_rotation, size, penetration_tolerance);
 	}

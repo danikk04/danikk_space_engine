@@ -37,7 +37,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Destroys loaded chunks outside the current desired set and removes their lookup records.
 	 * @param planet Lookup containing the current desired set and loaded chunk IDs.
-	 * @param world WorldData that owns the chunk, point, and mesh resources.
+	 * @param world World that coordinates chunk, point, and mesh resources.
 	 */
 	void unloadPlanetChunksOutsideDesiredSet(PlanetComponent& planet, World& world)
 	{
@@ -170,7 +170,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Destroys generated chunks intersecting a terrain-edit sphere plus a mesh-sampling margin.
 	 * @param planet Planet lookup containing loaded grid coordinates.
-	 * @param world WorldData owning the affected chunk resources.
+	 * @param world World owning the affected chunk resources.
 	 * @param center Edit center relative to the planet origin.
 	 * @param radius Radius of the spherical edit stamp.
 	 */

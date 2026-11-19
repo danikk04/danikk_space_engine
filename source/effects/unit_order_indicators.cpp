@@ -91,11 +91,11 @@ namespace danikk_space_engine
 
 		for(const SelectedUnitRef& reference : player.selected_unit_refs)
 		{
-			if(!world.data.isPointComponentSlotActive(reference.slot_id)) continue;
-			const PointComponentSlot& human_slot = world.data.getPointComponentSlot(reference.slot_id);
+			if(!world.point_data.isPointComponentSlotActive(reference.slot_id)) continue;
+			const PointComponentSlot& human_slot = world.point_data.getPointComponentSlot(reference.slot_id);
 			if(human_slot.generation_id != reference.generation_id
 				|| human_slot.type_id != PointComponentTypeId::human
-				|| !world.data.isPointActive(human_slot.point_id)
+				|| !world.point_data.isPointActive(human_slot.point_id)
 				|| !world.chunk_system.isChunkActive(human_slot.chunk_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(human_slot.getData());
 			if(human.hasDeathTimestamp()) continue;

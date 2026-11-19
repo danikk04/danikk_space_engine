@@ -34,7 +34,7 @@ namespace danikk_space_engine
 		};
 
 		/** @brief Looks up a human payload from its owning chunk's cache of human slot IDs. */
-		HumanComponent& getChunkHuman(WorldData& data, PointComponentSlotId slot_id)
+		HumanComponent& getChunkHuman(PointData& data, PointComponentSlotId slot_id)
 		{
 			return *static_cast<HumanComponent*>(data.getPointComponentSlot(slot_id).getData());
 		}
@@ -44,7 +44,7 @@ namespace danikk_space_engine
 		 * The world transform detects motion inherited from the owning body. The chunk ID also
 		 * catches reattachment without a pose change, which can change the candidate chunk pairs.
 		 */
-		void updateHumanCollisionActivity(WorldData& data, Chunk& chunk, const WorldBody& body)
+		void updateHumanCollisionActivity(PointData& data, Chunk& chunk, const WorldBody& body)
 		{
 			chunk.has_active_human_collisions = false;
 			for(PointComponentSlotId slot_id : chunk.getCollisionHumanComponentSlotIds())
@@ -82,7 +82,7 @@ namespace danikk_space_engine
 		};
 
 		/** @brief Finds a planet component attached to a body, or returns null for other body kinds. */
-		const PlanetComponent* getPlanetComponent(const WorldData& data, const WorldBody& body)
+		const PlanetComponent* getPlanetComponent(const WorldBodyData& data, const WorldBody& body)
 		{
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
@@ -97,10 +97,10 @@ namespace danikk_space_engine
 		/** @brief Builds one collider on the stack from an active human component slot. */
 		bool getHumanCollider(World& world, PointComponentSlotId slot_id, HumanCollider& result)
 		{
-			if(!world.data.isPointComponentSlotActive(slot_id)) return false;
-			PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+			if(!world.point_data.isPointComponentSlotActive(slot_id)) return false;
+			PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 			if(slot.type_id != PointComponentTypeId::human || !world.chunk_system.isChunkActive(slot.chunk_id)
-				|| !world.data.isPointActive(slot.point_id)) return false;
+				|| !world.point_data.isPointActive(slot.point_id)) return false;
 			HumanComponent& component = *static_cast<HumanComponent*>(slot.getData());
 			if(component.hasDeathTimestamp()) return false;
 			const DamageableComponent* health = findDamageable(world, slot.chunk_id, slot.point_id);
@@ -109,7 +109,7 @@ namespace danikk_space_engine
 			if(height <= 0.0) return false;
 
 			Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
-			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 			const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(glm::normalize(component.up)));
 			const double radius = height * 0.14;
 			const glm::dvec3 center = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
@@ -200,7 +200,7 @@ namespace danikk_space_engine
 		 */
 		bool moveHuman(World& world, HumanCollider& human, const glm::dvec3& world_delta)
 		{
-			Point& point = world.data.getPoint(human.point_id);
+			Point& point = world.point_data.getPoint(human.point_id);
 			const vec3 old_position = point.position;
 			point.position += vec3(human.world_to_body_rotation * world_delta);
 			if(point.position == old_position) return false;
@@ -319,7 +319,7 @@ namespace danikk_space_engine
 			const size_t first_count = first_ids.size() - (same_chunk ? 1u : 0u);
 			for(size_t a_index = 0; a_index < first_count; ++a_index)
 			{
-				const auto& activity = getChunkHuman(world.data, first_ids[a_index]).collision_activity;
+				const auto& activity = getChunkHuman(world.point_data, first_ids[a_index]).collision_activity;
 				if(!activity.active && !second.has_active_human_collisions) continue;
 
 				HumanCollider a;
@@ -328,7 +328,7 @@ namespace danikk_space_engine
 				const size_t start = same_chunk ? a_index + 1 : 0;
 				for(size_t b_index = start; b_index < second_ids.size(); ++b_index)
 				{
-					if(!activity.active && !getChunkHuman(world.data, second_ids[b_index]).collision_activity.active)
+					if(!activity.active && !getChunkHuman(world.point_data, second_ids[b_index]).collision_activity.active)
 						continue;
 					if(!has_collider)
 					{
@@ -384,13 +384,13 @@ namespace danikk_space_engine
 				entry.maximum = -infinity;
 				for(PointComponentSlotId slot_id : entry.chunk->getCollisionHumanComponentSlotIds())
 				{
-					const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+					const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 					const auto& human = *static_cast<const HumanComponent*>(slot.getData());
 					const double half_height = human.getHeight() * 0.5;
-					if(half_height <= 0.0 || !world.data.isPointActive(slot.point_id)) continue;
+					if(half_height <= 0.0 || !world.point_data.isPointActive(slot.point_id)) continue;
 
 					const glm::dvec3 local_position = entry.chunk->position
-						+ glm::dvec3(world.data.getPoint(slot.point_id).position);
+						+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
 					const glm::dvec3 center = entry.body->position + entry.body->rotation * local_position;
 					entry.minimum = glm::min(entry.minimum, center - glm::dvec3(half_height));
 					entry.maximum = glm::max(entry.maximum, center + glm::dvec3(half_height));
@@ -448,10 +448,10 @@ namespace danikk_space_engine
 			Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 			if(chunk.getCollisionHumanComponentSlotIds().size() == 0) continue;
 
-			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
-			updateHumanCollisionActivity(world.data, chunk, body);
+			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
+			updateHumanCollisionActivity(world.point_data, chunk, body);
 			has_active_humans |= chunk.has_active_human_collisions;
-			const PlanetComponent* grid_planet = getPlanetComponent(world.data, body);
+			const PlanetComponent* grid_planet = getPlanetComponent(world.world_body_data, body);
 			ChunkId indexed_id;
 			if(grid_planet != nullptr && (!grid_planet->chunk_lookup.getChunk(chunk.grid_coordinate, indexed_id)
 				|| indexed_id != chunk_id))
@@ -482,7 +482,7 @@ namespace danikk_space_engine
 		{
 			for(PointComponentSlotId slot_id : entry.chunk->getCollisionHumanComponentSlotIds())
 			{
-				auto& human = getChunkHuman(world.data, slot_id);
+				auto& human = getChunkHuman(world.point_data, slot_id);
 				if(!human.displaced_by_human_collision) continue;
 
 				HumanCollider collider;

@@ -1,4 +1,5 @@
-#include <danikk_space_engine/world/data.h>
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -41,47 +42,47 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @copydoc WorldData::isPointActive */
-	bool WorldData::isPointActive(PointId id) const { return points.isActive(id); }
-	/** @copydoc WorldData::isWorldBodyActive */
-	bool WorldData::isWorldBodyActive(WorldBodyId id) const { return world_bodies.isActive(id); }
-	/** @copydoc WorldData::isWorldBodyComponentSlotActive */
-	bool WorldData::isWorldBodyComponentSlotActive(WorldBodyComponentSlotId id) const { return world_body_components.isActive(id); }
-	/** @copydoc WorldData::isPointComponentSlotActive */
-	bool WorldData::isPointComponentSlotActive(PointComponentSlotId id) const { return point_components.isActive(id); }
+	/** @copydoc PointData::isPointActive */
+	bool PointData::isPointActive(PointId id) const { return points.isActive(id); }
+	/** @copydoc WorldBodyData::isWorldBodyActive */
+	bool WorldBodyData::isWorldBodyActive(WorldBodyId id) const { return world_bodies.isActive(id); }
+	/** @copydoc WorldBodyData::isWorldBodyComponentSlotActive */
+	bool WorldBodyData::isWorldBodyComponentSlotActive(WorldBodyComponentSlotId id) const { return world_body_components.isActive(id); }
+	/** @copydoc PointData::isPointComponentSlotActive */
+	bool PointData::isPointComponentSlotActive(PointComponentSlotId id) const { return point_components.isActive(id); }
 
-	/** @copydoc WorldData::getUsedPointIds */
-	const DynamicArray<PointId>& WorldData::getUsedPointIds() const { return points.usedIds(); }
-	/** @copydoc WorldData::getUsedWorldBodyIds */
-	const DynamicArray<WorldBodyId>& WorldData::getUsedWorldBodyIds() const { return world_bodies.usedIds(); }
-	/** @copydoc WorldData::getUsedWorldBodyComponentSlotIds */
-	const DynamicArray<WorldBodyComponentSlotId>& WorldData::getUsedWorldBodyComponentSlotIds() const { return world_body_components.usedIds(); }
-	/** @copydoc WorldData::getUsedPointComponentSlotIds */
-	const DynamicArray<PointComponentSlotId>& WorldData::getUsedPointComponentSlotIds() const { return point_components.usedIds(); }
+	/** @copydoc PointData::getUsedPointIds */
+	const DynamicArray<PointId>& PointData::getUsedPointIds() const { return points.usedIds(); }
+	/** @copydoc WorldBodyData::getUsedWorldBodyIds */
+	const DynamicArray<WorldBodyId>& WorldBodyData::getUsedWorldBodyIds() const { return world_bodies.usedIds(); }
+	/** @copydoc WorldBodyData::getUsedWorldBodyComponentSlotIds */
+	const DynamicArray<WorldBodyComponentSlotId>& WorldBodyData::getUsedWorldBodyComponentSlotIds() const { return world_body_components.usedIds(); }
+	/** @copydoc PointData::getUsedPointComponentSlotIds */
+	const DynamicArray<PointComponentSlotId>& PointData::getUsedPointComponentSlotIds() const { return point_components.usedIds(); }
 
-	/** @copydoc WorldData::getPoint */
-	Point& WorldData::getPoint(PointId id) { return getCheckedResource(points, id, "point"); }
-	/** @copydoc WorldData::getPoint */
-	const Point& WorldData::getPoint(PointId id) const { return getCheckedResource(points, id, "point"); }
-	/** @copydoc WorldData::getWorldBody */
-	WorldBody& WorldData::getWorldBody(WorldBodyId id) { return getCheckedResource(world_bodies, id, "world body"); }
-	/** @copydoc WorldData::getWorldBody */
-	const WorldBody& WorldData::getWorldBody(WorldBodyId id) const { return getCheckedResource(world_bodies, id, "world body"); }
-	/** @copydoc WorldData::getWorldBodyComponentSlot */
-	WorldBodyComponentSlot& WorldData::getWorldBodyComponentSlot(WorldBodyComponentSlotId id) { return getCheckedResource(world_body_components, id, "world body component slot"); }
-	/** @copydoc WorldData::getWorldBodyComponentSlot */
-	const WorldBodyComponentSlot& WorldData::getWorldBodyComponentSlot(WorldBodyComponentSlotId id) const { return getCheckedResource(world_body_components, id, "world body component slot"); }
-	/** @copydoc WorldData::getPointComponentSlot */
-	PointComponentSlot& WorldData::getPointComponentSlot(PointComponentSlotId id) { return getCheckedResource(point_components, id, "point component slot"); }
-	/** @copydoc WorldData::getPointComponentSlot */
-	const PointComponentSlot& WorldData::getPointComponentSlot(PointComponentSlotId id) const { return getCheckedResource(point_components, id, "point component slot"); }
+	/** @copydoc PointData::getPoint */
+	Point& PointData::getPoint(PointId id) { return getCheckedResource(points, id, "point"); }
+	/** @copydoc PointData::getPoint */
+	const Point& PointData::getPoint(PointId id) const { return getCheckedResource(points, id, "point"); }
+	/** @copydoc WorldBodyData::getWorldBody */
+	WorldBody& WorldBodyData::getWorldBody(WorldBodyId id) { return getCheckedResource(world_bodies, id, "world body"); }
+	/** @copydoc WorldBodyData::getWorldBody */
+	const WorldBody& WorldBodyData::getWorldBody(WorldBodyId id) const { return getCheckedResource(world_bodies, id, "world body"); }
+	/** @copydoc WorldBodyData::getWorldBodyComponentSlot */
+	WorldBodyComponentSlot& WorldBodyData::getWorldBodyComponentSlot(WorldBodyComponentSlotId id) { return getCheckedResource(world_body_components, id, "world body component slot"); }
+	/** @copydoc WorldBodyData::getWorldBodyComponentSlot */
+	const WorldBodyComponentSlot& WorldBodyData::getWorldBodyComponentSlot(WorldBodyComponentSlotId id) const { return getCheckedResource(world_body_components, id, "world body component slot"); }
+	/** @copydoc PointData::getPointComponentSlot */
+	PointComponentSlot& PointData::getPointComponentSlot(PointComponentSlotId id) { return getCheckedResource(point_components, id, "point component slot"); }
+	/** @copydoc PointData::getPointComponentSlot */
+	const PointComponentSlot& PointData::getPointComponentSlot(PointComponentSlotId id) const { return getCheckedResource(point_components, id, "point component slot"); }
 
-	/** @copydoc WorldData::getPointSlotCount */
-	size_t WorldData::getPointSlotCount() const { return points.size(); }
-	/** @copydoc WorldData::getWorldBodySlotCount */
-	size_t WorldData::getWorldBodySlotCount() const { return world_bodies.size(); }
-	/** @copydoc WorldData::getWorldBodyComponentSlotCount */
-	size_t WorldData::getWorldBodyComponentSlotCount() const { return world_body_components.size(); }
-	/** @copydoc WorldData::getPointComponentSlotCount */
-	size_t WorldData::getPointComponentSlotCount() const { return point_components.size(); }
+	/** @copydoc PointData::getPointSlotCount */
+	size_t PointData::getPointSlotCount() const { return points.size(); }
+	/** @copydoc WorldBodyData::getWorldBodySlotCount */
+	size_t WorldBodyData::getWorldBodySlotCount() const { return world_bodies.size(); }
+	/** @copydoc WorldBodyData::getWorldBodyComponentSlotCount */
+	size_t WorldBodyData::getWorldBodyComponentSlotCount() const { return world_body_components.size(); }
+	/** @copydoc PointData::getPointComponentSlotCount */
+	size_t PointData::getPointComponentSlotCount() const { return point_components.size(); }
 }

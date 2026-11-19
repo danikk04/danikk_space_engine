@@ -49,8 +49,8 @@ namespace danikk_space_engine
 		{
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
 			{
-				if(world.data.isWorldBodyComponentSlotActive(slot_id)
-					&& world.data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
+				if(world.world_body_data.isWorldBodyComponentSlotActive(slot_id)
+					&& world.world_body_data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
 				{
 					return true;
 				}
@@ -61,7 +61,7 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Destroys loaded non-planet bodies and non-camera points inside any planet core.
-	 * @param world World whose WorldData resource pools are modified.
+	 * @param world World whose point and body data pools are modified.
 	 * Planet centers are copied before destruction. Body and point IDs are queued
 	 * before release so pool iteration is not invalidated. Point components in
 	 * inactive chunks are ignored; each point ID is queued at most once.
@@ -73,11 +73,11 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		DynamicArray<PlanetCoreTarget> planets;
-		const DynamicArray<WorldBodyId> world_body_ids(world.data.getUsedWorldBodyIds());
+		const DynamicArray<WorldBodyId> world_body_ids(world.world_body_data.getUsedWorldBodyIds());
 		for(WorldBodyId body_id : world_body_ids)
 		{
-			if(!world.data.isWorldBodyActive(body_id)) continue;
-			const WorldBody& body = world.data.getWorldBody(body_id);
+			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
+			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			if(isPlanetBody(world, body)) planets.push(PlanetCoreTarget{body_id, body.position});
 		}
 		if(planets.size() == 0) return;
@@ -85,8 +85,8 @@ namespace danikk_space_engine
 		DynamicArray<WorldBodyId> bodies_to_destroy;
 		for(WorldBodyId body_id : world_body_ids)
 		{
-			if(!world.data.isWorldBodyActive(body_id)) continue;
-			const WorldBody& body = world.data.getWorldBody(body_id);
+			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
+			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			if(isPlanetBody(world, body) || !collision_internal::hasLoadedChunk(world, body)) continue;
 			if(isInsideAnyPlanetCore(body.position, planets)) bodies_to_destroy.push(body_id);
 		}
@@ -97,18 +97,18 @@ namespace danikk_space_engine
 
 		PointId camera_point_id = static_cast<PointId>(-1);
 
-		if(world.data.isPointComponentSlotActive(world.camera_component_slot_id))
+		if(world.point_data.isPointComponentSlotActive(world.camera_component_slot_id))
 		{
-			camera_point_id = world.data.getPointComponentSlot(world.camera_component_slot_id).point_id;
+			camera_point_id = world.point_data.getPointComponentSlot(world.camera_component_slot_id).point_id;
 		}
 
 		DynamicArray<PointId> points_to_destroy;
 
-		for(PointComponentSlotId slot_id : world.data.getUsedPointComponentSlotIds())
+		for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
 		{
-			if(!world.data.isPointComponentSlotActive(slot_id)) continue;
-			const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
-			if(slot.point_id == camera_point_id || !world.data.isPointActive(slot.point_id)
+			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
+			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
+			if(slot.point_id == camera_point_id || !world.point_data.isPointActive(slot.point_id)
 				|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
 			const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 			if(!isInsideAnyPlanetCore(position, planets)) continue;

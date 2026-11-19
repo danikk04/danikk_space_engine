@@ -17,14 +17,14 @@ namespace danikk_space_engine
 	void ControllerSystem::duplicateControllerPointWithMachinegun(const Point& source_point,
 		const CameraComponent& camera, ChunkId chunk_id)
 	{
-		const PointId point_id = world.data.createPoint();
-		world.data.getPoint(point_id) = source_point;
-		world.data.getPoint(point_id).referencing_chunk_count = 0;
+		const PointId point_id = world.point_data.createPoint();
+		world.point_data.getPoint(point_id) = source_point;
+		world.point_data.getPoint(point_id).referencing_chunk_count = 0;
 		MachinegunComponent machinegun;
 		machinegun.forward = camera.getFront();
 		machinegun.up = camera.getUp();
 		machinegun.right = camera.getRight();
-		const PointComponentSlotId slot_id = world.data.createPointComponentSlot(
+		const PointComponentSlotId slot_id = world.point_data.createPointComponentSlot(
 			point_id, PointComponentTypeId::machine_gun, &machinegun);
 		world.chunk_system.addPointComponentSlotToChunk(chunk_id, slot_id);
 	}
@@ -49,9 +49,9 @@ namespace danikk_space_engine
 		const ChunkId owner_chunk_id = camera_slot.chunk_id;
 		if(spawn_machinegun)
 		{
-			if(!world.data.isPointActive(controlled_point_id))
+			if(!world.point_data.isPointActive(controlled_point_id))
 				danikk_engine::formatFatalError("Controller system references invalid point %", controlled_point_id);
-			source_point = world.data.getPoint(controlled_point_id);
+			source_point = world.point_data.getPoint(controlled_point_id);
 			source_camera = world.getCameraComponent();
 		}
 		if(tool_catalog_open)

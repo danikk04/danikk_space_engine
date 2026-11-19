@@ -13,10 +13,10 @@ namespace danikk_space_engine
 		/** @brief Finds a human component attached to a point, if present. */
 		HumanComponent* getHumanAtPoint(World& world, PointId point_id)
 		{
-			for(PointComponentSlotId slot_id : world.data.getUsedPointComponentSlotIds())
+			for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
 			{
-				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
-				PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
+				PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 				if(slot.point_id == point_id && slot.type_id == PointComponentTypeId::human)
 					return static_cast<HumanComponent*>(slot.getData());
 			}
@@ -30,12 +30,12 @@ namespace danikk_space_engine
 				|| definition.parameters.weapon.projectile_id == projectile_definition_ids::none)
 				return false;
 			HumanComponent* human = getHumanAtPoint(world, owner_point_id);
-			if(human == nullptr || !world.data.isPointActive(owner_point_id)) return false;
+			if(human == nullptr || !world.point_data.isPointActive(owner_point_id)) return false;
 
 			ChunkId chunk_id = static_cast<ChunkId>(-1);
-			for(PointComponentSlotId id : world.data.getUsedPointComponentSlotIds())
+			for(PointComponentSlotId id : world.point_data.getUsedPointComponentSlotIds())
 			{
-				const PointComponentSlot& owner = world.data.getPointComponentSlot(id);
+				const PointComponentSlot& owner = world.point_data.getPointComponentSlot(id);
 				if(owner.point_id == owner_point_id && owner.type_id == PointComponentTypeId::human)
 				{
 					chunk_id = owner.chunk_id;
@@ -47,7 +47,7 @@ namespace danikk_space_engine
 			const ProjectileDefinition& projectile = getProjectileDefinition(definition.parameters.weapon.projectile_id);
 			const vec3 up = glm::normalize(human->up);
 			const vec3 direction = human->getWeaponDirection();
-			const vec3 muzzle = world.data.getPoint(owner_point_id).position
+			const vec3 muzzle = world.point_data.getPoint(owner_point_id).position
 				+ up * (human->getHeight() * 0.2f) + direction * (human->getHeight() * 0.6f);
 			BulletComponent bullet;
 			const vec3 weapon_direction = applyAngularSpread(direction, definition.parameters.weapon.spread_degrees);

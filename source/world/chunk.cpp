@@ -113,7 +113,7 @@ namespace danikk_space_engine
 	 */
 	mat4 Chunk::createWorldMatrix(const World& world) const
 	{
-		const WorldBody& body = world.data.getWorldBody(world_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
 		const glm::dvec3 relative_chunk_position = body.position
 			+ body.rotation * position
 			- world.getCameraWorldPosition();
