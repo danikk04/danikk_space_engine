@@ -136,6 +136,6 @@ namespace danikk_space_engine
 			PointComponentTypeId::camera,
 			&camera);
 		world.data.addPointComponentSlotToChunk(camera_chunk_id, world.camera_component_slot_id);
-		controller_system.reset(world, camera_point_id);
+		world.controller_system.reset(world, camera_point_id);
 	}
 }

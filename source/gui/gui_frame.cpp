@@ -57,7 +57,7 @@ namespace danikk_space_engine
 		}
 
 		const glm::dvec3 camera_position = truncateTo100(world.getCameraWorldPosition());
-		ControllerSystem& controller = controller_system;
+		ControllerSystem& controller = world.controller_system;
 		uint32 selected_unit_count = 0;
 		uint32 health_sample_count = 0;
 		double total_health_percent = 0.0;

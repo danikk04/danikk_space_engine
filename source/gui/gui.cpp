@@ -139,7 +139,7 @@ namespace danikk_space_engine
 		catalog_close_label.text_style = &catalog_text_style;
 		catalog_close_button.on_click = [this]()
 		{
-			controller_system.tool_catalog_open = false;
+			world.controller_system.tool_catalog_open = false;
 		};
 
 		for(uint32 index = 0; index < getToolCategoryCount(); ++index)
@@ -187,7 +187,7 @@ namespace danikk_space_engine
 			button.on_click = [this, index]()
 			{
 				if(index >= getToolCatalogEntryCount(selected_tool_category)) return;
-				ControllerSystem& controller = controller_system;
+				ControllerSystem& controller = world.controller_system;
 				controller.selectToolCatalogEntry(getToolCatalogEntryId(selected_tool_category, index));
 				controller.tool_catalog_open = false;
 				refreshToolCatalog();
@@ -238,7 +238,7 @@ namespace danikk_space_engine
 
 				slot.on_click = [this, index]()
 				{
-					ControllerSystem& controller = controller_system;
+					ControllerSystem& controller = world.controller_system;
 					if(controller.tool_catalog_open)
 					{
 						controller.selectHotbarSlot(index);

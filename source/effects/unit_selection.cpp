@@ -57,7 +57,7 @@ namespace danikk_space_engine
 	/** @copydoc drawUnitSelectionIndicators */
 	void drawUnitSelectionIndicators(World& world)
 	{
-		const ControllerSystem& controller = controller_system;
+		const ControllerSystem& controller = world.controller_system;
 		if(controller.selected_unit_refs.size() == 0) return;
 		initializeSelectionRingMesh();
 		static_asset_collection.bullet_tracer_shader.use();

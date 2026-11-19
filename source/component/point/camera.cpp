@@ -209,8 +209,8 @@ namespace danikk_space_engine
 		}
 
 		CameraComponent& camera = *static_cast<CameraComponent*>(slot.getData());
-		const bool has_controller = controller_system.controls(world);
-		if(has_controller && controller_system.tool_catalog_open) return;
+		const bool has_controller = world.controller_system.controls(world);
+		if(has_controller && world.controller_system.tool_catalog_open) return;
 		updateCameraSurfaceFrame(camera, slot, world);
 
 		const vec2 cursor_delta = getCursorDelta() * getMouseSensivity();
@@ -222,8 +222,8 @@ namespace danikk_space_engine
 		const bool alt_pressed = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
 		const bool drag_rotation_mode = has_controller
-			&& controller_system.active_tool == ToolId::drag
-			&& controller_system.selected_tool_action == ToolActionId::drag
+			&& world.controller_system.active_tool == ToolId::drag
+			&& world.controller_system.selected_tool_action == ToolActionId::drag
 			&& left_mouse_down && alt_pressed;
 		if(!drag_rotation_mode)
 		{
@@ -247,7 +247,7 @@ namespace danikk_space_engine
 			camera.rotation.z += roll_delta;
 		}
 
-		const float speed = (has_controller ? controller_system.camera_movement_speed : 1.0f) * frame_delay;
+		const float speed = (has_controller ? world.controller_system.camera_movement_speed : 1.0f) * frame_delay;
 
 		vec3 direction(0.0f);
 

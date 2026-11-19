@@ -9,6 +9,7 @@
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/chunk_render_system.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
+#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/world/data.h>
 #include <danikk_framework/dynamic_array.h>
 
@@ -65,6 +66,8 @@ namespace danikk_space_engine
 		WorldEnvironment environment;
 		/** @brief Integrates body motion and resolves physical contacts after component ticks. */
 		WorldPhysics physics;
+		/** @brief Processes local player input and stores its selected point and interaction state. */
+		ControllerSystem controller_system;
 		/** @brief Owns GPU meshes and material draw ranges for active chunks. */
 		ChunkRenderSystem chunk_render_system;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */

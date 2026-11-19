@@ -20,8 +20,8 @@ namespace danikk_space_engine
 		 */
 		WorldBodyId getDraggedWorldBodyId(const World& world)
 		{
-			if(!controller_system.controls(world)) return static_cast<WorldBodyId>(-1);
-			return controller_system.dragged_world_body_id;
+			if(!world.controller_system.controls(world)) return static_cast<WorldBodyId>(-1);
+			return world.controller_system.dragged_world_body_id;
 		}
 	}
 

@@ -90,6 +90,4 @@ namespace danikk_space_engine
 		void selectToolCatalogEntry(ToolCatalogEntryId entry_id);
 	};
 
-	/** @brief The single controller-system instance used by the game. */
-	extern ControllerSystem controller_system;
 }

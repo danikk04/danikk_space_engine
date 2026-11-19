@@ -12,8 +12,6 @@
 
 namespace danikk_space_engine
 {
-	ControllerSystem controller_system;
-
 	namespace
 	{
 

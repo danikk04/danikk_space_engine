@@ -77,7 +77,7 @@ namespace danikk_space_engine
 	/** @copydoc drawUnitOrderIndicators */
 	void drawUnitOrderIndicators(World& world)
 	{
-		const ControllerSystem& player = controller_system;
+		const ControllerSystem& player = world.controller_system;
 		if(player.selected_unit_refs.size() == 0) return;
 
 		DynamicArray<DefaultVertex> arrow_vertices;
