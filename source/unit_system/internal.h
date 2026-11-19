@@ -51,6 +51,7 @@ namespace danikk_space_engine
 		PointComponentSlotId human_slot_id = static_cast<PointComponentSlotId>(-1);
 		uint64 human_generation_id = 0;
 		bool enabled = true;
+		UnitActivity activity = UnitActivity::idle;
 		DynamicArray<UnitTarget> enemy_candidates;
 		size_t candidate_index = 0;
 		UnitOrder order;

@@ -68,6 +68,7 @@ namespace danikk_space_engine::unit_system_internal
 			HumanComponent& human = *candidate.human;
 			// Search orders have priority; combat orders are already assigned by assignOrders().
 			if(agent.order.has_attack_target || agent.order.has_move_target) continue;
+			agent.activity = UnitActivity::scanning;
 
 			UnitPostCombatAssignment* assignment = nullptr;
 			for(UnitPostCombatAssignment& existing : assignments)

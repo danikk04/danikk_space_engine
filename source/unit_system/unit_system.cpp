@@ -175,6 +175,23 @@ namespace danikk_space_engine
 		return false;
 	}
 
+	/** @brief Reads the current activity for a registered live unit. */
+	bool getUnitActivity(PointComponentSlotId human_slot_id, uint64 generation_id, UnitActivity& activity)
+	{
+		DSE_WATCH();
+		for(const UnitSystem& system : unit_systems)
+			for(const UnitAgentState& agent : system.agents)
+				if(agent.enabled && agent.human_slot_id == human_slot_id
+					&& agent.human_generation_id == generation_id)
+				{
+					activity = agent.activity;
+					if(activity == UnitActivity::idle && agent.order.has_move_target)
+						activity = UnitActivity::moving;
+					return true;
+				}
+		return false;
+	}
+
 	namespace unit_system_internal
 	{
 		/** @brief Releases all faction-system state when the world is reset or shut down. */

@@ -157,6 +157,7 @@ namespace danikk_space_engine::unit_system_internal
 				else if(!assigned_unit->agent->order.has_attack_target
 					&& world.world_body_data.isWorldBodyActive(location.body_id))
 				{
+					assigned_unit->agent->activity = UnitActivity::searching;
 					const glm::dvec3 target_position = getSearchWorldPosition(world, location);
 					const glm::dvec3 offset = target_position - assigned_unit->position;
 					if(glm::dot(offset, offset) <= 1.5 * 1.5)
@@ -196,6 +197,7 @@ namespace danikk_space_engine::unit_system_internal
 				if(nearest_candidate == nullptr) { ++index; continue; }
 				location.assigned_unit_slot_id = nearest_candidate->slot_id;
 				nearest_candidate->assigned_to_search = true;
+				nearest_candidate->agent->activity = UnitActivity::searching;
 				const glm::dvec3 offset = target_position - nearest_candidate->position;
 				if(glm::dot(offset, offset) <= 1.5 * 1.5)
 				{

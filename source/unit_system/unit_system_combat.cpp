@@ -176,6 +176,7 @@ namespace danikk_space_engine::unit_system_internal
 		DynamicArray<TargetAllocation>& allocations)
 	{
 		DynamicArray<UnitSighting>& known_sightings = system.known_sightings;
+		agent.activity = UnitActivity::idle;
 		const UnitTarget previous_target{agent.order.target_slot_id,
 			agent.order.target_point_id, agent.order.target_generation_id};
 		agent.order.clear();
@@ -201,6 +202,7 @@ namespace danikk_space_engine::unit_system_internal
 		}
 		if(best == nullptr) return;
 
+		agent.activity = UnitActivity::attacking;
 		agent.order.has_attack_target = true;
 		agent.order.target_slot_id = best->target_slot_id;
 		agent.order.target_point_id = best->target_point_id;

@@ -6,6 +6,16 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Current high-level task assigned to a registered unit. */
+	enum class UnitActivity : uint8
+	{
+		idle,
+		moving,
+		attacking,
+		searching,
+		scanning
+	};
+
 	/** @brief Updates faction unit systems, perception, and NPC orders for one world tick. */
 	void unitSystemTick(World& world, float dt);
 	/** @brief Reports hostile fire so the threatened faction can reprioritize the attacker. */
@@ -15,4 +25,6 @@ namespace danikk_space_engine
 	/** @brief Returns the current move target for a live registered unit, if it has one. */
 	bool getUnitMoveTarget(World& world, PointComponentSlotId human_slot_id,
 		uint64 generation_id, glm::dvec3& target_world);
+	/** @brief Returns the current activity for a registered live unit. */
+	bool getUnitActivity(PointComponentSlotId human_slot_id, uint64 generation_id, UnitActivity& activity);
 }

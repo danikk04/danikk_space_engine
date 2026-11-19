@@ -6,6 +6,7 @@
 #include <danikk_space_engine/effects/chunk_boundaries.h>
 #include <danikk_space_engine/effects/unit_selection.h>
 #include <danikk_space_engine/effects/unit_order_indicators.h>
+#include <danikk_space_engine/effects/unit_activity_labels.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
@@ -111,5 +112,6 @@ namespace danikk_space_engine
 			}
 			else drawEventSpawnPreview(*this, hit, player_controller.selected_tool_action);
 		}
+		drawUnitActivityLabels(*this);
 	}
 }
