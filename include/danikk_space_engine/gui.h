@@ -10,7 +10,7 @@ namespace danikk_space_engine
 {
 
 	/**
-	 * @brief Owns the debug overlay, message list, 3x12 hotbar, and modal tool catalog.
+	 * @brief Owns the debug overlay, selected-unit summary, message list, hotbar, and tool catalog.
 	 *
 	 * The GUI text reports FPS, process memory, BuildPart size when applicable, camera speed,
 	 * and camera position. Process memory is sampled at roughly one-second
@@ -45,6 +45,12 @@ namespace danikk_space_engine
 		GUIElement hotbar_slot_labels[hotbar_column_count * hotbar_row_count];
 		/** @brief Compact item names displayed inside assigned hotbar slots. */
 		GUIElement hotbar_item_labels[hotbar_column_count * hotbar_row_count];
+		/** @brief Summary panel for the currently selected allied units. */
+		GUIElement selected_units_panel;
+		/** @brief Selected unit count and average health percentage. */
+		GUIElement selected_units_label;
+		/** @brief Text style for the selected unit summary. */
+		TextStyle selected_units_text_style;
 		/** @brief Shared dark-gray fill style for every empty toolbar slot. */
 		DrawStyle hotbar_slot_fill_style;
 		/** @brief Shared thin gray outline style for every toolbar slot. */
@@ -114,7 +120,8 @@ namespace danikk_space_engine
 		 * builds one multiline string containing FPS, RAM in MiB, relevant BuildPart controls,
 		 * camera speed in m/s, and camera position truncated to hundredths. A zero memory sample is
 		 * shown as unavailable. Pressing G toggles the modal tool catalog; selected slot borders are
-		 * updated from controller state. Rendering is driven by the surrounding engine frame loop.
+		 * updated from controller state. The selected-unit panel shows the living selected-unit count
+		 * and mean health percentage. Rendering is driven by the surrounding engine frame loop.
 		 */
 		void frame();
 

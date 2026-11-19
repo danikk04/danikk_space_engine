@@ -66,6 +66,12 @@ namespace danikk_space_engine
 		hotbar_item_text_style.absolute_char_width = 0.004f;
 		hotbar_item_text_style.absolute_char_height = 0.007f;
 		hotbar_item_text_style.color = vec4(0.88f, 0.89f, 0.90f, 1.0f);
+		selected_units_text_style.shader = static_asset_collection.base2d_shader;
+		selected_units_text_style.font = static_asset_collection.base_font;
+		selected_units_text_style.anchor = TextAnchor::multiline;
+		selected_units_text_style.absolute_char_width = 0.008f;
+		selected_units_text_style.absolute_char_height = 0.014f;
+		selected_units_text_style.color = vec4(0.88f, 0.89f, 0.90f, 1.0f);
 
 		catalog_panel_style.shader = static_asset_collection.base2d_shader;
 		catalog_panel_style.color = vec4(0.12f, 0.13f, 0.14f, 0.97f);
@@ -99,6 +105,22 @@ namespace danikk_space_engine
 		const float hotbar_slot_width = hotbar_slot_height * getPixelSize().x / getPixelSize().y;
 		const float horizontal_step = hotbar_slot_width + hotbar_slot_gap;
 		constexpr float vertical_step = hotbar_slot_height + hotbar_slot_gap;
+		const float leftmost_hotbar_cell_left = 0.5f
+			- (hotbar_column_count - 1) * 0.5f * horizontal_step - hotbar_slot_width * 0.5f;
+		selected_units_panel.anchor = GUIAnchor::down_left;
+		selected_units_panel.pos = vec2(hotbar_bottom_margin, hotbar_bottom_margin);
+		selected_units_panel.relative_size = vec2(
+			leftmost_hotbar_cell_left - hotbar_slot_gap - hotbar_bottom_margin,
+			hotbar_row_count * hotbar_slot_height + (hotbar_row_count - 1) * hotbar_slot_gap);
+		selected_units_panel.draw_style = &catalog_panel_style;
+		selected_units_panel.border_draw_style = &catalog_border_style;
+		selected_units_panel.name = "selected_units_panel";
+		selected_units_panel.flags.set(GUIElementFlags::visible, false);
+		selected_units_label.anchor = GUIAnchor::center;
+		selected_units_label.relative_size = vec2(0.90f, 0.90f);
+		selected_units_label.text_style = &selected_units_text_style;
+		selected_units_label.name = "selected_units_summary";
+		selected_units_panel.addChild(selected_units_label);
 		const uint32 catalog_rows = (getToolCatalogEntryTotalCount() + hotbar_column_count - 1)
 			/ hotbar_column_count;
 		const float catalog_bottom = hotbar_bottom_margin + hotbar_row_count * vertical_step;
@@ -234,6 +256,7 @@ namespace danikk_space_engine
 	void GUI::compose()
 	{
 		gui_root.addChild(debug_info_label);
+		gui_root.addChild(selected_units_panel);
 		for(GUIElement& slot : hotbar_slots)
 		{
 			gui_root.addChild(slot);

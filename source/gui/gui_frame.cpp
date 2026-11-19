@@ -1,5 +1,8 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/gui.h>
+#include <danikk_space_engine/component/point/damageable.h>
+#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/factions.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <danikk_framework/format.h>
@@ -54,6 +57,40 @@ namespace danikk_space_engine
 
 		const glm::dvec3 camera_position = truncateTo100(world.getCameraWorldPosition());
 		LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
+		uint32 selected_unit_count = 0;
+		uint32 health_sample_count = 0;
+		double total_health_percent = 0.0;
+		for(const SelectedUnitRef& reference : controller.selected_unit_refs)
+		{
+			if(!world.data.isPointComponentSlotActive(reference.slot_id)) continue;
+			const PointComponentSlot& slot = world.data.getPointComponentSlot(reference.slot_id);
+			if(slot.generation_id != reference.generation_id
+				|| slot.type_id != PointComponentTypeId::human
+				|| !world.data.isPointActive(slot.point_id)
+				|| !world.data.isChunkActive(slot.chunk_id)) continue;
+			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
+			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
+			++selected_unit_count;
+			const DamageableComponent* damageable = findDamageable(world, slot.chunk_id, slot.point_id);
+			if(damageable == nullptr) continue;
+			const float maximum_health = getDamageableDefinition(damageable->definition_id).max_health;
+			if(maximum_health <= 0.0f) continue;
+			total_health_percent += glm::clamp(damageable->getHealth() / maximum_health, 0.0f, 1.0f) * 100.0;
+			++health_sample_count;
+		}
+		selected_units_panel.flags.set(GUIElementFlags::visible, selected_unit_count > 0);
+		if(selected_unit_count > 0)
+		{
+			selected_units_label.text.clear();
+			formatAppend(selected_units_label.text, "UNITS: %\nAVG HP: ", selected_unit_count);
+			if(health_sample_count > 0)
+			{
+				formatAppend(selected_units_label.text, "%", static_cast<uint64>(
+					total_health_percent / health_sample_count + 0.5));
+				selected_units_label.text << '%';
+			}
+			else selected_units_label.text << "--%";
+		}
 		if(getKeyboardState(keyboard_buttons::g) == button_states::press)
 		{
 			controller.tool_catalog_open = !controller.tool_catalog_open;
