@@ -1,5 +1,4 @@
 sources = files(
-	'asset.cpp', 
 	'tool_catalog.cpp',
 	'config.cpp',
 	'factions.cpp',
@@ -12,6 +11,7 @@ sources = files(
 )
 
 subdir('effects')
+subdir('assets')
 subdir('item')
 subdir('gui')
 subdir('math')

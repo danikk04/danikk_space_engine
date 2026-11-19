@@ -6,7 +6,7 @@
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/unit_system.h>
-#include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/assets/collection.h>
 
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_engine/texture.h>

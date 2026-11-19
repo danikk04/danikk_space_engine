@@ -1,5 +1,5 @@
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/effects/unit_activity_labels.h>
 #include <danikk_space_engine/factions.h>

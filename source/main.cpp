@@ -4,8 +4,8 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/gui.h>
-#include <danikk_space_engine/asset.h>
-#include <danikk_space_engine/component/point/human/skin.h>
+#include <danikk_space_engine/assets/collection.h>
+#include <danikk_space_engine/assets/human_skin.h>
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/world/world.h>

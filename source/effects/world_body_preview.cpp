@@ -4,7 +4,7 @@
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/geometry/cube.h>
 #include <danikk_space_engine/geometry/build_part.h>
-#include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/assets/collection.h>
 #include <danikk_engine/texture_methods.h>
 
 namespace danikk_space_engine

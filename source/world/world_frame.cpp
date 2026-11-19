@@ -9,7 +9,7 @@
 #include <danikk_space_engine/effects/unit_activity_labels.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
-#include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/controller_system.h>
 

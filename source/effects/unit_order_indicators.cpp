@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/unit_system.h>

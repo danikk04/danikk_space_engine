@@ -3,7 +3,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/build_part.h>
-#include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine

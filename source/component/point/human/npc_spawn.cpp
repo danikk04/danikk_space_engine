@@ -2,7 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/component/point/human/skin.h>
+#include <danikk_space_engine/assets/human_skin.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/item/item.h>

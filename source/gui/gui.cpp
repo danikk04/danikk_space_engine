@@ -1,5 +1,5 @@
 #include <danikk_space_engine/gui.h>
-#include <danikk_space_engine/asset.h>
+#include <danikk_space_engine/assets/collection.h>
 #include <danikk_framework/glm.h>
 #include <danikk_engine/input.h>
 

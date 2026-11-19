@@ -1,4 +1,4 @@
-#include <danikk_space_engine/component/point/human/skin.h>
+#include <danikk_space_engine/assets/human_skin.h>
 
 #include <danikk_space_engine/default.h>
 
