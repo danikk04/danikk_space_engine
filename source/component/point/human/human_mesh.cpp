@@ -85,8 +85,17 @@ namespace danikk_space_engine
 			loadPartMesh(part.mesh, origins[index].x, origins[index].y, width, height, depth);
 			loadPartMesh(part.overlay_mesh,
 				overlay_origins[index].x, overlay_origins[index].y, width, height, depth);
+			const bool arm = index == static_cast<size_t>(HumanPart::right_arm)
+				|| index == static_cast<size_t>(HumanPart::left_arm);
+			if(arm)
+			{
+				loadPartMesh(part.slim_mesh, origins[index].x, origins[index].y, 3, height, depth);
+				loadPartMesh(part.slim_overlay_mesh,
+					overlay_origins[index].x, overlay_origins[index].y, 3, height, depth);
+			}
 			part.size = vec3(width, depth, height) / 32.0f;
-			part.pivot = vec3(0.0f, 0.0f, head || index < 4 ? 0.75f : 0.375f);
+			const float pivot_height = head || torso ? 0.75f : arm ? 0.6875f : 0.375f;
+			part.pivot = vec3(0.0f, 0.0f, pivot_height);
 			part.center_offset = vec3(0.0f, 0.0f, head ? 0.125f : -0.1875f);
 			if(index == 2 || index == 3) part.pivot.x = index == 2 ? 0.1875f : -0.1875f;
 			if(index == 4 || index == 5) part.pivot.x = index == 4 ? 0.0625f : -0.0625f;

@@ -11,12 +11,14 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+		constexpr float minecraft_skin_pixel_size = 1.0f / 32.0f;
+
 		/**
 		 * @brief Renders six posed body-part meshes and, when present, their Minecraft outer skin layer.
 		 *
 		 * Base meshes use per-part atlas UVs and either the skin texture or fallback part colors.
-		 * Overlay meshes use the second atlas layer, are scaled by 1.04, and render with depth writes
-		 * disabled so transparent texels reveal the base layer.
+		 * Overlay meshes use the second atlas layer, extend one skin pixel beyond each base face, and
+		 * render with depth writes disabled so transparent texels reveal the base layer.
 		 * @param human Current walk cycle and arm pose.
 		 * @param base Character transform shared by all six parts.
 		 * @param skin_id Index into the loaded Minecraft skin texture array; index zero is fallback.
@@ -26,7 +28,9 @@ namespace danikk_space_engine
 		{
 			DSE_WATCH();
 			HumanDefinition& definition = static_asset_collection.human_definition;
-			Texture& skin = getHumanSkin(skin_id).texture;
+			HumanSkin& human_skin = getHumanSkin(skin_id);
+			Texture& skin = human_skin.texture;
+			const bool slim = human_skin.model_type == HumanSkinModelType::slim;
 			const bool has_skin = !skin.isNull();
 			if(has_skin) skin.bind();
 			else white_texture.bind();
@@ -36,6 +40,16 @@ namespace danikk_space_engine
 			for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
 			{
 				HumanPartDefinition& part = definition.parts[index];
+				const bool slim_arm = slim && (index == static_cast<size_t>(HumanPart::right_arm)
+					|| index == static_cast<size_t>(HumanPart::left_arm));
+				vec3 part_pivot = part.pivot;
+				vec3 part_size = part.size;
+				if(slim_arm)
+				{
+					part_pivot.x = index == static_cast<size_t>(HumanPart::right_arm)
+						? 0.125f + 1.5f / 32.0f : -0.125f - 1.5f / 32.0f;
+					part_size.x = 3.0f / 32.0f;
+				}
 				mat4 joint(1.0f);
 				if(index == static_cast<size_t>(HumanPart::head))
 				{
@@ -72,22 +86,34 @@ namespace danikk_space_engine
 				}
 				joint_matrices[index] = joint;
 				setDrawColor(vec4((has_skin ? vec3(1.0f) : part.color) * vec3(color_tint), color_tint.a));
-				setWorldMatrix(base * glm::translate(mat4(1.0f), part.pivot) * joint
-					* glm::translate(mat4(1.0f), part.center_offset) * glm::scale(mat4(1.0f), part.size));
-				part.mesh.draw();
+				setWorldMatrix(base * glm::translate(mat4(1.0f), part_pivot) * joint
+					* glm::translate(mat4(1.0f), part.center_offset) * glm::scale(mat4(1.0f), part_size));
+				(slim_arm ? part.slim_mesh : part.mesh).draw();
 			}
 
 			if(!has_skin) return;
 			setDepthWriteEnabled(false);
+			setFaceCullingEnabled(false);
 			for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
 			{
 				HumanPartDefinition& part = definition.parts[index];
+				const bool slim_arm = slim && (index == static_cast<size_t>(HumanPart::right_arm)
+					|| index == static_cast<size_t>(HumanPart::left_arm));
+				vec3 part_pivot = part.pivot;
+				vec3 part_size = part.size;
+				if(slim_arm)
+				{
+					part_pivot.x = index == static_cast<size_t>(HumanPart::right_arm)
+						? 0.125f + 1.5f / 32.0f : -0.125f - 1.5f / 32.0f;
+					part_size.x = 3.0f / 32.0f;
+				}
 				setDrawColor(color_tint);
-				setWorldMatrix(base * glm::translate(mat4(1.0f), part.pivot) * joint_matrices[index]
+				setWorldMatrix(base * glm::translate(mat4(1.0f), part_pivot) * joint_matrices[index]
 					* glm::translate(mat4(1.0f), part.center_offset)
-					* glm::scale(mat4(1.0f), part.size * 1.04f));
-				part.overlay_mesh.draw();
+					* glm::scale(mat4(1.0f), part_size + vec3(2.0f * minecraft_skin_pixel_size)));
+				(slim_arm ? part.slim_overlay_mesh : part.overlay_mesh).draw();
 			}
+			setFaceCullingEnabled(true);
 			setDepthWriteEnabled(true);
 		}
 	}

@@ -75,7 +75,6 @@ namespace danikk_space_engine
 		const vec3 camera_front = camera.getFront();
 		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera.getUp());
 		setViewMatrix(view);
-		renderChunkComponents(*this);
 		for(WorldBodyId body_id : data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = data.getWorldBody(body_id);
@@ -85,6 +84,9 @@ namespace danikk_space_engine
 				chunk_render_system.draw(chunk, *this);
 			}
 		}
+		// Draw dynamic chunk components after the world meshes so transparent overlays
+		// do not allow later terrain draws to pass through the base mesh depth.
+		renderChunkComponents(*this);
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
 		drawUnitSelectionIndicators(*this);
 		drawUnitOrderIndicators(*this);

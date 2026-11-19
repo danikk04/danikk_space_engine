@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/component/point/human/skin.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
@@ -41,7 +42,9 @@ namespace danikk_space_engine::human_internal
 					weapon_orientation[0] = vec4(0, 1, 0, 0);
 					weapon_orientation[1] = vec4(0, 0, 1, 0);
 					weapon_orientation[2] = vec4(1, 0, 0, 0);
-					const vec3 shoulder_position = vec3(0.1875f, 0.0f, 0.25f) * human.getHeight();
+					const float shoulder_x = getHumanSkin(human.appearance.skin_id).model_type
+						== HumanSkinModelType::slim ? 0.125f + 1.5f / 32.0f : 0.1875f;
+					const vec3 shoulder_position = vec3(shoulder_x, 0.0f, 0.1875f) * human.getHeight();
 					const vec3 attachment_offset = (vec3(0.11f, 0.37f, 0.22f)
 						- vec3(0.1875f, 0.0f, 0.25f)) * human.getHeight();
 					const mat4 weapon_pitch = glm::rotate(mat4(1.0f),

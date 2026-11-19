@@ -67,6 +67,10 @@ namespace danikk_space_engine
 		Mesh mesh;
 		/** @brief Shared outer-layer mesh used for Minecraft skin overlays. */
 		Mesh overlay_mesh;
+		/** @brief Alternate three-pixel arm mesh; populated only for arm parts. */
+		Mesh slim_mesh;
+		/** @brief Alternate three-pixel arm overlay mesh; populated only for arm parts. */
+		Mesh slim_overlay_mesh;
 		/** @brief Part dimensions as proportions of the character's total height. */
 		vec3 size = vec3(1.0f);
 		/** @brief Local joint location about which animation rotates this part. */

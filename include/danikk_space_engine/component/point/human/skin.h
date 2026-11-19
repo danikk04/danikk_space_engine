@@ -5,6 +5,13 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Selects the arm geometry layout used by a Minecraft skin atlas. */
+	enum class HumanSkinModelType : uint8
+	{
+		classic, ///< Four-pixel-wide arms.
+		slim ///< Three-pixel-wide arms.
+	};
+
 	namespace human_skin_ids
 	{
 		/** @brief ID of the empty fallback skin. */
@@ -26,11 +33,14 @@ namespace danikk_space_engine
 		const char* name = "";
 		/** @brief Skin atlas texture; empty for the fallback skin. */
 		danikk_engine::Texture texture;
+		/** @brief Classic or slim arm geometry expected by this skin's UV layout. */
+		HumanSkinModelType model_type = HumanSkinModelType::classic;
 
 		/** @brief Creates an empty fallback skin record. */
 		HumanSkin() = default;
-		/** @brief Loads one skin atlas with nearest-neighbor filtering. */
-		HumanSkin(const char* name, const char* texture_name);
+		/** @brief Loads one skin atlas and records its arm model type. */
+		HumanSkin(const char* name, const char* texture_name,
+			HumanSkinModelType model_type = HumanSkinModelType::classic);
 	};
 
 	/** @brief Clears and loads the built-in human skin catalog, reserving ID zero for fallback. */
