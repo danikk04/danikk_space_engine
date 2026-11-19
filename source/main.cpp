@@ -20,6 +20,11 @@ namespace danikk_engine_game
 {
 	using namespace danikk_space_engine;
 
+	namespace
+	{
+		World world;
+	}
+
 	/** @brief Collects the World values required to render the GUI without exposing World to GUI. */
 	GUIFrameData collectGUIFrameData(const World& world)
 	{

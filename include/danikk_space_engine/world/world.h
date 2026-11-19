@@ -233,5 +233,4 @@ namespace danikk_space_engine
 
 	};
 
-	extern World world;
 }

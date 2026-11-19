@@ -11,8 +11,6 @@
 
 namespace danikk_space_engine
 {
-	World world;
-
 	World::World()
 		: chunks(*this), environment(*this), physics(*this), controller(*this),
 		  components(*this), planet_terrain(*this)
