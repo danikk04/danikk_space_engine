@@ -9,9 +9,9 @@ namespace danikk_space_engine
 	class GameObject;
 
 	/**
-	 * @brief Processes player input, face selection, and active tool actions.
+	 * @brief Owns player input, selection, tools, and the currently controlled point.
 	 */
-	class LocalPlayerControllerComponent;
+	class ControllerSystem;
 
 	/**
 	 * @brief Coordinates world state, simulation updates, physics, and geometry queries.

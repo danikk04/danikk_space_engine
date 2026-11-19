@@ -3,7 +3,7 @@
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
-#include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/effects/unit_order_indicators.h>
 #include <danikk_space_engine/world/world.h>
 
@@ -77,7 +77,7 @@ namespace danikk_space_engine
 	/** @copydoc drawUnitOrderIndicators */
 	void drawUnitOrderIndicators(World& world)
 	{
-		const LocalPlayerControllerComponent& player = world.getLocalPlayerControllerComponent();
+		const ControllerSystem& player = controller_system;
 		if(player.selected_unit_refs.size() == 0) return;
 
 		DynamicArray<DefaultVertex> arrow_vertices;

@@ -13,7 +13,6 @@ namespace danikk_space_engine
 	{
 		none = 0, ///< Empty slot type with no payload callbacks.
 		camera, ///< Camera orientation, projection, mouse-look, and movement behavior.
-		local_player_controller_component, ///< Input polling, selection, tool use, and drag state.
 		machine_gun, ///< Weapon model state and timed projectile spawning.
 		bullet, ///< Moving projectile state, collision sweep, and tracer rendering.
 		engine, ///< Reserved component type; no implementation is registered yet.

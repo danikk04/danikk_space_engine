@@ -4,6 +4,7 @@
 #include <danikk_space_engine/component_tick_system.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/unit_system.h>
+#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 
 namespace danikk_space_engine
@@ -21,6 +22,7 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		tickWorldBodyComponents(*this);
+		controller_system.tick(*this);
 		for(PointComponentSlotId slot_id : pending_npc_chunk_updates) updateNpcChunkAfterTick(*this, slot_id);
 		pending_npc_chunk_updates.clear();
 		for(PointId point_id : pending_point_destruction_ids)

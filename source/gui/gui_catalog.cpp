@@ -3,6 +3,7 @@
 #include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
 #include <danikk_framework/glm.h>
@@ -145,7 +146,7 @@ namespace danikk_space_engine
 					? &catalog_selected_button_style : &catalog_button_style;
 		}
 		const uint32 item_count = getToolCatalogEntryCount(selected_tool_category);
-		const LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
+		const ControllerSystem& controller = controller_system;
 		const ToolCatalogEntryId selected_entry_id = controller.hotbar_entry_ids[controller.selected_hotbar_slot];
 		for(uint32 index = 0; index < catalog_item_buttons.size(); ++index)
 		{

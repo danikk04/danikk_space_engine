@@ -4,6 +4,7 @@
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/factions.h>
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/controller_system.h>
 
 #include <danikk_framework/format.h>
 #include <danikk_framework/memory.h>
@@ -56,7 +57,7 @@ namespace danikk_space_engine
 		}
 
 		const glm::dvec3 camera_position = truncateTo100(world.getCameraWorldPosition());
-		LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
+		ControllerSystem& controller = controller_system;
 		uint32 selected_unit_count = 0;
 		uint32 health_sample_count = 0;
 		double total_health_percent = 0.0;

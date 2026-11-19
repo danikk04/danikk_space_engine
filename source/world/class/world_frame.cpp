@@ -10,6 +10,7 @@
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/config.h>
+#include <danikk_space_engine/controller_system.h>
 
 namespace danikk_space_engine
 {
@@ -90,7 +91,7 @@ namespace danikk_space_engine
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
 		drawUnitSelectionIndicators(*this);
 		drawUnitOrderIndicators(*this);
-		const LocalPlayerControllerComponent& controller = getLocalPlayerControllerComponent();
+		const ControllerSystem& controller = controller_system;
 		const bool show_build_part_preview = controller.active_tool == ToolId::place
 			&& (controller.selected_tool_action == ToolActionId::create_body
 				|| controller.selected_tool_action == ToolActionId::create_slope);

@@ -5,6 +5,7 @@
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/scenario/base.h>
+#include <danikk_space_engine/controller_system.h>
 
 #include "../../unit_system/internal.h"
 
@@ -85,22 +86,6 @@ namespace danikk_space_engine
 		return body.position + body.rotation
 			* (chunk.position + glm::dvec3(data.getPoint(point_id).position));
 	}
-
-	/** @brief Resolves the configured local-player slot and casts its payload to the controller type. */
-	LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent()
-	{
-		PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_component_slot_id);
-		return *static_cast<LocalPlayerControllerComponent*>(slot.getData());
-	}
-
-	/** @brief Returns the configured local-player controller payload as read-only. */
-	const LocalPlayerControllerComponent& World::getLocalPlayerControllerComponent() const
-	{
-		const PointComponentSlot& slot = data.getPointComponentSlot(local_player_controller_component_slot_id);
-		return *static_cast<const LocalPlayerControllerComponent*>(slot.getData());
-	}
-
-
 
 	/**
 	 * @brief Adds a live point once to the queue drained after component traversal.
@@ -321,6 +306,7 @@ namespace danikk_space_engine
 	 */
 	void World::shutdown()
 	{
+		controller_system.unbind(*this);
 		stopChunkMeshGenerator();
 		chunk_mesh_generator_generation_id++;
 		chunk_generation_requests.clear();

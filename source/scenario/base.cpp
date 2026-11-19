@@ -6,6 +6,7 @@
 #include <danikk_space_engine/component/world_body/planet/terrain.h>
 #include <danikk_space_engine/planet_terrain_system.h>
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/controller_system.h>
 
 #include <cmath>
 
@@ -135,9 +136,6 @@ namespace danikk_space_engine
 			PointComponentTypeId::camera,
 			&camera);
 		world.data.addPointComponentSlotToChunk(camera_chunk_id, world.camera_component_slot_id);
-		world.local_player_controller_component_slot_id = world.data.createPointComponentSlot(
-			camera_point_id,
-			PointComponentTypeId::local_player_controller_component);
-		world.data.addPointComponentSlotToChunk(camera_chunk_id, world.local_player_controller_component_slot_id);
+		controller_system.reset(world, camera_point_id);
 	}
 }

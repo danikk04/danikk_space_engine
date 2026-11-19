@@ -1,6 +1,5 @@
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/component/point/camera.h>
-#include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
 #include <danikk_space_engine/component/point/inventory.h>
@@ -25,16 +24,6 @@ namespace danikk_space_engine
 				destroyCameraComponent,
 				tickCameraComponent,
 				frameCameraComponent
-			},
-			{
-				sizeof(LocalPlayerControllerComponent),
-				alignof(LocalPlayerControllerComponent),
-				false,
-				constructLocalPlayerControllerComponent,
-				moveLocalPlayerControllerComponent,
-				destroyLocalPlayerControllerComponent,
-				tickLocalPlayerControllerComponent,
-				nullptr
 			},
 			{
 				sizeof(MachinegunComponent),

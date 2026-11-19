@@ -153,7 +153,6 @@ namespace danikk_space_engine
 	{
 		World scene;
 		scene.camera_component_slot_id = static_cast<PointComponentSlotId>(-1);
-		scene.local_player_controller_component_slot_id = static_cast<PointComponentSlotId>(-1);
 		scene.data.factions.create(faction_definition_ids::celestial_body);
 		scene.data.factions.create(faction_definition_ids::player);
 		scene.data.factions.create(faction_definition_ids::pirates);

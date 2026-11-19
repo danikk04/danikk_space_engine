@@ -1,5 +1,5 @@
 #include <danikk_space_engine/tool.h>
-#include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_engine/input.h>
@@ -41,7 +41,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Clears drag.
 		 */
-		void clearDrag(LocalPlayerControllerComponent& controller)
+		void clearDrag(ControllerSystem& controller)
 		{
 			controller.dragged_world_body_id = no_dragged_body;
 			controller.dragged_body_distance = 0.0;
@@ -69,7 +69,7 @@ namespace danikk_space_engine
 	 */
 	void tickDragTool(
 		World& world,
-		LocalPlayerControllerComponent& controller,
+		ControllerSystem& controller,
 		const RaycastHit& hit,
 		bool enabled,
 		int mouse_state,

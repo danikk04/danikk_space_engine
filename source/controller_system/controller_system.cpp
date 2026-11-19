@@ -1,5 +1,5 @@
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/factions.h>
@@ -12,32 +12,10 @@
 
 namespace danikk_space_engine
 {
+	ControllerSystem controller_system;
+
 	namespace
 	{
-
-	/**
-	 * @brief Searches active body/chunk ownership lists for the chunk registering this controller.
-	 * @param slot Controller slot whose address is compared with chunk membership.
-	 * @param world World whose bodies and chunks are scanned.
-	 * @return Owning chunk ID or the invalid sentinel when the slot is unattached.
-	 */
-		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
-		{
-			for(WorldBodyId body_id : world.data.getUsedWorldBodyIds())
-			{
-				const WorldBody& body = world.data.getWorldBody(body_id);
-				for(ChunkId chunk_id : body.chunk_ids)
-				{
-					Chunk& chunk = world.data.getChunk(chunk_id);
-					for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
-					{
-						if(world.data.isPointComponentSlotActive(slot_id)
-							&& &world.data.getPointComponentSlot(slot_id) == &slot) return chunk_id;
-					}
-				}
-			}
-			return static_cast<ChunkId>(-1);
-		}
 
 		/**
 		 * @brief Duplicates a point and attaches a machine gun aligned to the camera basis.
@@ -65,7 +43,7 @@ namespace danikk_space_engine
 		}
 
 		/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
-		void validateSelectedUnits(LocalPlayerControllerComponent& controller, World& world)
+		void validateSelectedUnits(ControllerSystem& controller, World& world)
 		{
 			size_t write_index = 0;
 			for(size_t read_index = 0; read_index < controller.selected_unit_refs.size(); ++read_index)
@@ -95,7 +73,7 @@ namespace danikk_space_engine
 		 * can be selected. A normal click also clears the group when no unit is hit.
 		 */
 		bool selectOwnHumanUnderCursor(
-			LocalPlayerControllerComponent& controller, World& world,
+			ControllerSystem& controller, World& world,
 			const RaycastHit& surface_hit, bool shift_pressed)
 		{
 			const glm::dvec3 ray_origin = world.getCameraWorldPosition();
@@ -152,99 +130,6 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Creates default controller state or copies supplied tool, selection, and drag state.
-	 * @param destination Destination storage owned by the point-component slot.
-	 * @param init_data Optional initial controller state; null selects member defaults.
-	 */
-	void constructLocalPlayerControllerComponent(void* destination, const void* init_data)
-	{
-		if(destination == nullptr)
-		{
-			danikk_engine::formatFatalError("Local player controller construction received null destination");
-		}
-		if(init_data == nullptr)
-		{
-			new (destination) LocalPlayerControllerComponent();
-		}
-		else
-		{
-			new (destination) LocalPlayerControllerComponent(*static_cast<const LocalPlayerControllerComponent*>(init_data));
-		}
-	}
-
-	/**
-	 * @brief Transfers controller state and its selected-face array to relocated slot storage.
-	 * @param destination Replacement payload storage.
-	 * @param source Existing controller payload, destroyed after the move.
-	 */
-	void moveLocalPlayerControllerComponent(void* destination, void* source)
-	{
-		if(destination == nullptr || source == nullptr)
-		{
-			danikk_engine::formatFatalError("Local player controller move received null memory");
-		}
-		LocalPlayerControllerComponent* source_controller = static_cast<LocalPlayerControllerComponent*>(source);
-		new (destination) LocalPlayerControllerComponent(static_cast<LocalPlayerControllerComponent&&>(*source_controller));
-		source_controller->~LocalPlayerControllerComponent();
-	}
-
-	/**
-	 * @brief Destroys controller state, including the dynamic selected-face array.
-	 * @param data Existing live controller payload.
-	 */
-	void destroyLocalPlayerControllerComponent(void* data)
-	{
-		if(data == nullptr)
-		{
-			danikk_engine::formatFatalError("Local player controller destruction received null memory");
-		}
-		static_cast<LocalPlayerControllerComponent*>(data)->~LocalPlayerControllerComponent();
-	}
-
-	/**
-	 * @brief Validates the controller, processes its input, then handles a pressed M key by spawning a machine gun.
-	 * @param slot Controller slot whose point/chunk ownership is used for duplication.
-	 * @param world World providing camera orientation and allocating the weapon point/component.
-	 */
-	void tickLocalPlayerControllerComponent(PointComponentSlot& slot, World& world)
-	{
-		/**
-		 * @brief Measures the duration of the enclosing profiler scope.
-		 */
-		DSE_WATCH();
-
-		if(slot.getData() == nullptr)
-		{
-			danikk_engine::formatFatalError("Local player controller tick received null data");
-		}
-
-		const bool spawn_machinegun = getKeyboardState(keyboard_buttons::m) == button_states::press;
-		Point source_point;
-		CameraComponent source_camera;
-		ChunkId owner_chunk_id = static_cast<ChunkId>(-1);
-		if(spawn_machinegun)
-		{
-			if(!world.data.isPointActive(slot.point_id))
-			{
-				danikk_engine::formatFatalError("Local player controller references invalid point %", slot.point_id);
-			}
-			source_point = world.data.getPoint(slot.point_id);
-			source_camera = world.getCameraComponent();
-			owner_chunk_id = findOwningChunkId(slot, world);
-			if(owner_chunk_id == static_cast<ChunkId>(-1))
-			{
-				danikk_engine::formatFatalError("Local player controller is not registered in a chunk");
-			}
-		}
-
-		static_cast<LocalPlayerControllerComponent*>(slot.getData())->tick(world);
-		if(spawn_machinegun)
-		{
-			duplicateControllerPointWithMachinegun(source_point, source_camera, owner_chunk_id, world);
-		}
-	}
-
-	/**
 	 * @brief Updates tool/camera controls, runs drag behavior, applies pressed actions, and refreshes the hover face.
 	 *
 	 * Ctrl-wheel multiplies camera speed by `1.25^scroll_delta`, clamped to
@@ -257,13 +142,79 @@ namespace danikk_space_engine
 	 * a distinct hovered face is appended last for rendering and tool dispatch.
 	 * @param world World providing input context, camera raycast, and tool operations.
 	 */
-	void LocalPlayerControllerComponent::tick(World& world)
+	void ControllerSystem::reset(World& world, PointId point_id)
+	{
+		controlled_world = &world;
+		controlled_point_id = point_id;
+		mode = PlayerMode::god;
+		active_tool = ToolId::none;
+		selected_hotbar_slot = 0;
+		for(ToolCatalogEntryId& entry_id : hotbar_entry_ids) entry_id = 0;
+		tool_catalog_open = false;
+		build_part_size = vec3(1.0f);
+		build_part_size_axis = 2;
+		build_part_size_scroll_accumulator = 0.0f;
+		build_part_rotation_step = 0;
+		build_part_rotation_scroll_accumulator = 0.0f;
+		selected_tool_action = ToolActionId::none;
+		selected_unit_refs.clear();
+		camera_movement_speed = 1.0f;
+		dragged_world_body_id = static_cast<WorldBodyId>(-1);
+		dragged_body_distance = 0.0;
+		dragged_hit_offset = glm::dvec3(0.0);
+		dragged_human_point_id = static_cast<PointId>(-1);
+		dragged_human_chunk_id = static_cast<ChunkId>(-1);
+		dragged_human_slot_id = static_cast<PointComponentSlotId>(-1);
+		dragged_human_distance = 0.0;
+		dragged_human_followed_ground = true;
+	}
+
+	/** @brief Returns whether this controller is bound to the supplied world instance. */
+	bool ControllerSystem::controls(const World& world) const
+	{
+		return controlled_world == &world;
+	}
+
+	/** @brief Releases world ownership and transient selections before the world is destroyed. */
+	void ControllerSystem::unbind(const World& world)
+	{
+		if(!controls(world)) return;
+		controlled_world = nullptr;
+		controlled_point_id = static_cast<PointId>(-1);
+		selected_unit_refs.clear();
+		dragged_world_body_id = static_cast<WorldBodyId>(-1);
+		dragged_human_point_id = static_cast<PointId>(-1);
+		dragged_human_chunk_id = static_cast<ChunkId>(-1);
+		dragged_human_slot_id = static_cast<PointComponentSlotId>(-1);
+	}
+
+	void ControllerSystem::tick(World& world)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		if(tool_catalog_open) return;
+		if(!controls(world)) return;
+		const PointComponentSlot& camera_slot = world.getCameraSlot();
+		if(camera_slot.point_id != controlled_point_id)
+			danikk_engine::formatFatalError("Controller system point does not match the active camera point");
+		const bool spawn_machinegun = getKeyboardState(keyboard_buttons::m) == button_states::press;
+		Point source_point;
+		CameraComponent source_camera;
+		const ChunkId owner_chunk_id = camera_slot.chunk_id;
+		if(spawn_machinegun)
+		{
+			if(!world.data.isPointActive(controlled_point_id))
+				danikk_engine::formatFatalError("Controller system references invalid point %", controlled_point_id);
+			source_point = world.data.getPoint(controlled_point_id);
+			source_camera = world.getCameraComponent();
+		}
+		if(tool_catalog_open)
+		{
+			if(spawn_machinegun)
+				duplicateControllerPointWithMachinegun(source_point, source_camera, owner_chunk_id, world);
+			return;
+		}
 		validateSelectedUnits(*this, world);
 		if(getKeyboardState(keyboard_buttons::slash) == button_states::press)
 		{
@@ -414,11 +365,13 @@ namespace danikk_space_engine
 				hit = world.raycastFromCamera();
 			}
 		}
+		if(spawn_machinegun)
+			duplicateControllerPointWithMachinegun(source_point, source_camera, owner_chunk_id, world);
 
 	}
 
-	/** @copydoc LocalPlayerControllerComponent::selectHotbarSlot */
-	void LocalPlayerControllerComponent::selectHotbarSlot(uint32 slot_index)
+	/** @copydoc ControllerSystem::selectHotbarSlot */
+	void ControllerSystem::selectHotbarSlot(uint32 slot_index)
 	{
 		if(slot_index >= 36)
 		{
@@ -430,8 +383,8 @@ namespace danikk_space_engine
 		selected_tool_action = entry.action;
 	}
 
-	/** @copydoc LocalPlayerControllerComponent::selectToolCatalogEntry */
-	void LocalPlayerControllerComponent::selectToolCatalogEntry(ToolCatalogEntryId entry_id)
+	/** @copydoc ControllerSystem::selectToolCatalogEntry */
+	void ControllerSystem::selectToolCatalogEntry(ToolCatalogEntryId entry_id)
 	{
 		const ToolCatalogEntry& entry = getToolCatalogEntry(entry_id);
 		hotbar_entry_ids[selected_hotbar_slot] = entry_id;

@@ -165,7 +165,7 @@ namespace danikk_space_engine
 	 */
 	void tickDragTool(
 		World& world,
-		LocalPlayerControllerComponent& controller,
+		ControllerSystem& controller,
 		const RaycastHit& hit,
 		bool enabled,
 		int mouse_state,
@@ -185,7 +185,7 @@ namespace danikk_space_engine
 	 */
 	void tickHumanDragTool(
 		World& world,
-		LocalPlayerControllerComponent& controller,
+		ControllerSystem& controller,
 		const RaycastHit& hit,
 		bool enabled,
 		int mouse_state,

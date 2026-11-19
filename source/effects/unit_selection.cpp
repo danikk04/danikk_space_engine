@@ -2,7 +2,7 @@
 
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/effects/unit_selection.h>
 #include <danikk_space_engine/factions.h>
 #include <danikk_space_engine/world/world.h>
@@ -57,7 +57,7 @@ namespace danikk_space_engine
 	/** @copydoc drawUnitSelectionIndicators */
 	void drawUnitSelectionIndicators(World& world)
 	{
-		const LocalPlayerControllerComponent& controller = world.getLocalPlayerControllerComponent();
+		const ControllerSystem& controller = controller_system;
 		if(controller.selected_unit_refs.size() == 0) return;
 		initializeSelectionRingMesh();
 		static_asset_collection.bullet_tracer_shader.use();

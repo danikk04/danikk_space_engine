@@ -9,7 +9,6 @@
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/chunk_render_system.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
-#include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/world/data.h>
 #include <danikk_framework/dynamic_array.h>
 
@@ -74,8 +73,6 @@ namespace danikk_space_engine
 		DynamicArray<PointComponentSlotId> pending_npc_chunk_updates;
 		/** @brief Slot ID of the active camera point component. */
 		PointComponentSlotId camera_component_slot_id = 0;
-		/** @brief Slot ID of the active local player controller component. */
-		PointComponentSlotId local_player_controller_component_slot_id = 0;
 		/** @brief Generation token used to reject worker results from an earlier world lifetime. */
 		uint64 chunk_mesh_generator_generation_id = 0;
 		/** @brief Latest desired chunk-mesh work, awaiting submission to the generator module. */
@@ -213,12 +210,6 @@ namespace danikk_space_engine
 		 * @brief Transforms a point’s chunk-local position through the chunk and body transforms.
 		 */
 		glm::dvec3 getPointWorldPosition(ChunkId chunk_id, PointId point_id) const;
-
-		/** @brief Returns the LocalPlayerControllerComponent from its configured live slot. */
-		LocalPlayerControllerComponent& getLocalPlayerControllerComponent();
-
-		/** @brief Returns the local-player controller payload as a read-only reference. */
-		const LocalPlayerControllerComponent& getLocalPlayerControllerComponent() const;
 
 	};
 

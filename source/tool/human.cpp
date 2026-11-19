@@ -6,7 +6,7 @@
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/point/human/skin.h>
-#include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/factions.h>
 #include <danikk_space_engine/math/ray.h>
 
@@ -25,7 +25,7 @@ namespace danikk_space_engine
 		 * If the captured slot is still active and still represents a human, its
 		 * saved follow_ground value is restored before the IDs and distance are reset.
 		 */
-		void clearHumanDrag(World& world, LocalPlayerControllerComponent& controller)
+		void clearHumanDrag(World& world, ControllerSystem& controller)
 		{
 			if(world.data.isPointComponentSlotActive(controller.dragged_human_slot_id))
 			{
@@ -128,7 +128,7 @@ namespace danikk_space_engine
 	 * it to 0.5–10,000 world units. Releasing the button or disabling this action
 	 * restores the ground-follow value saved when capture began.
 	 */
-	void tickHumanDragTool(World& world, LocalPlayerControllerComponent& controller,
+	void tickHumanDragTool(World& world, ControllerSystem& controller,
 		const RaycastHit& hit, bool enabled, int mouse_state, float scroll_delta, bool alt_pressed)
 	{
 		const bool mouse_down = mouse_state == button_states::press || mouse_state == button_states::hold;

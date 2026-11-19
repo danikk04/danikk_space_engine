@@ -3,6 +3,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/physics.h>
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 #include "internal.h"
 
@@ -13,20 +14,14 @@ namespace danikk_space_engine
 
 		/**
 		 * @brief Reads the body currently controlled by the active local Drag tool.
-		 * @param world World containing the controller component slot.
+		 * @param world World controlled by the singleton ControllerSystem.
 		 * @return Dragged body ID, or the invalid WorldBodyId sentinel when the
-		 *         controller slot is unavailable or inactive.
+		 *         no ControllerSystem is bound to this world.
 		 */
 		WorldBodyId getDraggedWorldBodyId(const World& world)
 		{
-			if(world.local_player_controller_component_slot_id >= world.data.getPointComponentSlotCount()
-				|| !world.data.isPointComponentSlotActive(world.local_player_controller_component_slot_id))
-			{
-				return static_cast<WorldBodyId>(-1);
-			}
-			const PointComponentSlot& slot = world.data.getPointComponentSlot(
-				world.local_player_controller_component_slot_id);
-			return static_cast<const LocalPlayerControllerComponent*>(slot.getData())->dragged_world_body_id;
+			if(!controller_system.controls(world)) return static_cast<WorldBodyId>(-1);
+			return controller_system.dragged_world_body_id;
 		}
 	}
 

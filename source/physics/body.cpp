@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/physics.h>
+#include <danikk_space_engine/controller_system.h>
 #include "internal.h"
 
 namespace danikk_space_engine
@@ -44,8 +45,7 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		WorldBodyId dragged_id = static_cast<WorldBodyId>(-1);
-		if(world.data.isPointComponentSlotActive(world.local_player_controller_component_slot_id))
-			dragged_id = world.getLocalPlayerControllerComponent().dragged_world_body_id;
+		if(controller_system.controls(world)) dragged_id = controller_system.dragged_world_body_id;
 		DynamicArray<BodyCollider> colliders;
 
 		for(WorldBodyId id : world.data.getUsedWorldBodyIds())
