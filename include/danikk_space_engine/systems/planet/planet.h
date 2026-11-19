@@ -27,6 +27,10 @@ namespace danikk_space_engine
 		double core_radius = default_planet_core_radius;
 		double chunk_load_radius = planet_chunk_load_radius;
 		double surface_gravity = 9.8;
+		/** @brief RGB color of the atmosphere near the planet surface. */
+		glm::vec3 atmosphere_color = glm::vec3(0.2f, 0.4f, 0.8f);
+		/** @brief Height above the surface where the atmosphere fades completely to space. */
+		double atmosphere_height = 100000.0;
 		uint64 noise_seed = 0;
 	};
 
@@ -67,6 +71,8 @@ namespace danikk_space_engine
 		double core_radius = default_planet_core_radius;
 		double chunk_load_radius = planet_chunk_load_radius;
 		double surface_gravity = 9.8;
+		glm::vec3 atmosphere_color = glm::vec3(0.2f, 0.4f, 0.8f);
+		double atmosphere_height = 100000.0;
 		uint64 noise_seed = 0;
 		glm::dvec3 last_chunk_update_position = glm::dvec3(0.0);
 		uint64 terrain_revision = 0;
@@ -116,6 +122,8 @@ namespace danikk_space_engine
 		double getPlanetDensity(WorldBodyId world_body_id, const glm::dvec3& position) const;
 		MaterialId getPlanetMaterial(WorldBodyId world_body_id, const glm::dvec3& position) const;
 		double getPlanetHeightAboveSurface(WorldBodyId world_body_id, const glm::dvec3& position) const;
+		/** @brief Blends the nearest planet's atmosphere color into black space by altitude. */
+		glm::vec3 getAtmosphereBackgroundColor(const glm::dvec3& world_position) const;
 		static double getPlanetDensity(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
 		static MaterialId getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
 	};

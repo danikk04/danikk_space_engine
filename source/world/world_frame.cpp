@@ -12,6 +12,7 @@
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/systems/controller/controller.h>
+#include <danikk_engine/texture_methods.h>
 
 namespace danikk_space_engine
 {
@@ -29,6 +30,8 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
+		setClearColor(camera.isActive()
+			? planets.getAtmosphereBackgroundColor(camera.getWorldPosition()) : glm::vec3(0.0f));
 		components.renderWorldBodyComponents();
 		planets.frame();
 		chunk_mesh_generation.frame();

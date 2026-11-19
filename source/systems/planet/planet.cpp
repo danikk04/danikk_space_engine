@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <optional>
 
 #include <danikk_framework/log.h>
@@ -16,7 +17,7 @@ namespace danikk_space_engine
 		const PlanetSettings planet_settings[planet_settings_ids::count] =
 		{
 			{"Earth", default_planet_radius, default_planet_core_radius,
-				planet_chunk_load_radius, 9.8, 0}
+				planet_chunk_load_radius, 9.8, glm::vec3(0.2f, 0.4f, 0.8f), 100000.0, 0}
 		};
 
 		glm::dvec3 planetNoiseSeedOffset(uint64 seed)
@@ -140,6 +141,8 @@ namespace danikk_space_engine
 		planet.core_radius = settings.core_radius;
 		planet.chunk_load_radius = settings.chunk_load_radius;
 		planet.surface_gravity = settings.surface_gravity;
+		planet.atmosphere_color = settings.atmosphere_color;
+		planet.atmosphere_height = settings.atmosphere_height;
 		planet.noise_seed = settings.noise_seed;
 		planets.pushMove(planet);
 		return planets[planets.size() - 1];
@@ -227,6 +230,32 @@ namespace danikk_space_engine
 		if(distance_from_center <= 1e-9) return -planet.radius;
 		const glm::dvec3 direction = position / distance_from_center;
 		return distance_from_center - samplePlanetSurfaceRadius(direction, planet.radius, planet.noise_seed);
+	}
+
+	glm::vec3 PlanetSystem::getAtmosphereBackgroundColor(const glm::dvec3& world_position) const
+	{
+		const PlanetData* nearest_planet = nullptr;
+		double nearest_surface_distance = std::numeric_limits<double>::max();
+		double nearest_surface_height = 0.0;
+		for(const PlanetData& planet : planets)
+		{
+			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)
+				|| planet.atmosphere_height <= 0.0) continue;
+			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
+			const glm::dvec3 planet_position = glm::conjugate(body.rotation)
+				* (world_position - body.position);
+			const double surface_height = getPlanetHeightAboveSurface(planet.world_body_id, planet_position);
+			const double surface_distance = std::abs(surface_height);
+			if(surface_distance >= nearest_surface_distance) continue;
+			nearest_surface_distance = surface_distance;
+			nearest_surface_height = surface_height;
+			nearest_planet = &planet;
+		}
+		if(nearest_planet == nullptr || nearest_surface_height < 0.0) return glm::vec3(0.0f);
+
+		const double atmosphere_factor = 1.0 - glm::smoothstep(
+			0.0, nearest_planet->atmosphere_height, nearest_surface_height);
+		return nearest_planet->atmosphere_color * static_cast<float>(atmosphere_factor);
 	}
 
 	void PlanetSystem::frame()
