@@ -5,7 +5,7 @@
 namespace danikk_space_engine
 {
 	/** @copydoc ComponentSystem::tickChunkComponents */
-	void ComponentSystem::tickChunkComponents(World& world, ChunkId chunk_id)
+	void ComponentSystem::tickChunkComponents(ChunkId chunk_id)
 	{
 		DSE_WATCH();
 		if(!world.chunk_system.isChunkActive(chunk_id)) return;
@@ -33,7 +33,7 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc ComponentSystem::tickWorldBodyComponents */
-	void ComponentSystem::tickWorldBodyComponents(World& world)
+	void ComponentSystem::tickWorldBodyComponents()
 	{
 		DSE_WATCH();
 		const DynamicArray<WorldBodyId> world_body_ids(world.data.getUsedWorldBodyIds());
@@ -62,13 +62,13 @@ namespace danikk_space_engine
 			}
 			for(ChunkId chunk_id : chunk_ids)
 			{
-				if(world.chunk_system.isChunkActive(chunk_id)) tickChunkComponents(world, chunk_id);
+				if(world.chunk_system.isChunkActive(chunk_id)) tickChunkComponents(chunk_id);
 			}
 		}
 	}
 
 	/** @copydoc ComponentSystem::renderWorldBodyComponents */
-	void ComponentSystem::renderWorldBodyComponents(World& world)
+	void ComponentSystem::renderWorldBodyComponents()
 	{
 		DSE_WATCH();
 		const DynamicArray<WorldBodyId> world_body_ids(world.data.getUsedWorldBodyIds());
@@ -91,7 +91,7 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc ComponentSystem::renderChunkComponents */
-	void ComponentSystem::renderChunkComponents(World& world)
+	void ComponentSystem::renderChunkComponents()
 	{
 		DSE_WATCH();
 		const DynamicArray<WorldBodyId> world_body_ids(world.data.getUsedWorldBodyIds());

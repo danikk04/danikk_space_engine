@@ -57,7 +57,7 @@ namespace danikk_space_engine::chunk_mesh_generator_internal
 		for(int z = -1; z <= static_cast<int>(cells_per_axis) + 1; ++z)
 			for(int y = -1; y <= static_cast<int>(cells_per_axis) + 1; ++y)
 				for(int x = -1; x <= static_cast<int>(cells_per_axis) + 1; ++x)
-					densities[sampleIndex(x, y, z)] = getPlanetDensity(
+					densities[sampleIndex(x, y, z)] = PlanetTerrainSystem::getPlanetDensity(
 						*request.planet_terrain, samplePosition(x, y, z));
 
 		constexpr uint8 corner_offsets[8][3]{

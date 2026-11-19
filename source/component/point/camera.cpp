@@ -209,7 +209,7 @@ namespace danikk_space_engine
 		}
 
 		CameraComponent& camera = *static_cast<CameraComponent*>(slot.getData());
-		const bool has_controller = world.controller_system.controls(world);
+		const bool has_controller = world.controller_system.controls();
 		if(has_controller && world.controller_system.tool_catalog_open) return;
 		updateCameraSurfaceFrame(camera, slot, world);
 

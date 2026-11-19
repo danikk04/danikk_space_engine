@@ -7,7 +7,7 @@
 namespace danikk_space_engine
 {
 	/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
-	void ControllerSystem::validateSelectedUnits(World& world)
+	void ControllerSystem::validateSelectedUnits()
 	{
 		size_t write_index = 0;
 		for(size_t read_index = 0; read_index < selected_unit_refs.size(); ++read_index)
@@ -28,13 +28,12 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Selects the nearest visible player-faction human intersected by the camera ray.
-	 * @param world World providing human capsules, factions, and camera transform.
 	 * @param surface_hit Nearest terrain or BuildPart hit used to reject units behind solid geometry.
 	 * @param shift_pressed Keeps the current group and toggles the hit unit; otherwise replaces it.
 	 * @return True if the click selected or deselected a human.
 	 */
 	bool ControllerSystem::selectOwnHumanUnderCursor(
-		World& world, const RaycastHit& surface_hit, bool shift_pressed)
+		const RaycastHit& surface_hit, bool shift_pressed)
 	{
 		const glm::dvec3 ray_origin = world.getCameraWorldPosition();
 		const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.getCameraComponent().getFront()));

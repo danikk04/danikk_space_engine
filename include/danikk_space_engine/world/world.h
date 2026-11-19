@@ -12,6 +12,7 @@
 #include <danikk_space_engine/component_system.h>
 #include <danikk_space_engine/world/data.h>
 #include <danikk_space_engine/chunk_system.h>
+#include <danikk_space_engine/planet_terrain_system.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
@@ -73,6 +74,8 @@ namespace danikk_space_engine
 		ControllerSystem controller_system;
 		/** @brief Dispatches tick and frame callbacks for WorldBody and point components. */
 		ComponentSystem component_system;
+		/** @brief Samples live planet density and material fields. */
+		PlanetTerrainSystem planet_terrain_system;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
 		/** @brief Slot ID of the active camera point component. */
@@ -83,6 +86,11 @@ namespace danikk_space_engine
 		DynamicArray<ChunkMeshGenerationRequest> chunk_generation_requests;
 		/** @brief Set when the queued request array changed and must be sent to the worker. */
 		bool chunk_generation_requests_dirty = false;
+
+		/** @brief Constructs subsystems bound to this World instance. */
+		World();
+		World(const World&) = delete;
+		World& operator=(const World&) = delete;
 
 		/**
 		 * @brief Executes current unit orders, updates UnitSystem decisions, then runs world physics.

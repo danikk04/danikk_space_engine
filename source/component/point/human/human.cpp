@@ -108,7 +108,7 @@ namespace danikk_space_engine
 		Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
 		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 world_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
-		const glm::dvec3 gravity_world = world.environment.sampleGravityAt(world, world_position);
+		const glm::dvec3 gravity_world = world.environment.sampleGravityAt(world_position);
 		const double gravity_magnitude = glm::length(gravity_world);
 		const float gravity = static_cast<float>(gravity_magnitude);
 		if(gravity_magnitude > 1e-8)

@@ -65,7 +65,7 @@ namespace danikk_space_engine
 				glm::max(step, (planet_settings.radius - core_clearance) * 0.25));
 			const auto density_at = [&](const glm::dvec3& position)
 			{
-				return getPlanetDensity(terrain_snapshot, position);
+				return PlanetTerrainSystem::getPlanetDensity(terrain_snapshot, position);
 			};
 
 			for(const glm::dvec3& direction : directions)
@@ -125,7 +125,7 @@ namespace danikk_space_engine
 			danikk_framework::formatLogWarning(
 				"Unable to find solid underground camera position; spawning above the planet");
 		}
-		Chunk& chunk = world.chunk_system.createChunk(world, planet_body_id);
+		Chunk& chunk = world.chunk_system.createChunk(planet_body_id);
 		const ChunkId camera_chunk_id = world.data.getWorldBody(planet_body_id).chunk_ids[
 			world.data.getWorldBody(planet_body_id).chunk_ids.size() - 1];
 		chunk.position = camera_chunk_position;
@@ -135,7 +135,7 @@ namespace danikk_space_engine
 			camera_point_id,
 			PointComponentTypeId::camera,
 			&camera);
-		world.chunk_system.addPointComponentSlotToChunk(world, camera_chunk_id, world.camera_component_slot_id);
-		world.controller_system.reset(world, camera_point_id);
+		world.chunk_system.addPointComponentSlotToChunk(camera_chunk_id, world.camera_component_slot_id);
+		world.controller_system.reset(camera_point_id);
 	}
 }

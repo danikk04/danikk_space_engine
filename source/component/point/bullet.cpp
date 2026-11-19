@@ -23,7 +23,7 @@ namespace danikk_space_engine
 		BulletComponent initial_bullet = bullet;
 		initial_bullet.previous_position = position;
 		const PointComponentSlotId slot_id = world.data.createPointComponentSlot(point_id, PointComponentTypeId::bullet, &initial_bullet);
-		world.chunk_system.addPointComponentSlotToChunk(world, chunk_id, slot_id);
+		world.chunk_system.addPointComponentSlotToChunk(chunk_id, slot_id);
 	}
 
 	/**

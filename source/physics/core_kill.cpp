@@ -66,7 +66,7 @@ namespace danikk_space_engine
 	 * before release so pool iteration is not invalidated. Point components in
 	 * inactive chunks are ignored; each point ID is queued at most once.
 	 */
-	void WorldPhysics::destroyEntitiesInsidePlanetCore(World& world)
+	void WorldPhysics::destroyEntitiesInsidePlanetCore()
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.

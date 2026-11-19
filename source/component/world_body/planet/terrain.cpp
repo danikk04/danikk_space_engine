@@ -16,7 +16,7 @@ namespace danikk_space_engine
 		const glm::dvec3 ray_direction = direction / direction_length;
 		const auto densityAt = [&](double offset)
 		{
-			return getPlanetDensity(world, planet_component_id, origin + ray_direction * offset);
+			return world.planet_terrain_system.getPlanetDensity(planet_component_id, origin + ray_direction * offset);
 		};
 
 		constexpr double step = 0.5;
@@ -46,8 +46,8 @@ namespace danikk_space_engine
 				{
 					glm::dvec3 offset(0.0);
 					offset[axis] = gradient_step;
-					gradient[axis] = getPlanetDensity(world, planet_component_id, hit_position + offset)
-						- getPlanetDensity(world, planet_component_id, hit_position - offset);
+					gradient[axis] = world.planet_terrain_system.getPlanetDensity(planet_component_id, hit_position + offset)
+						- world.planet_terrain_system.getPlanetDensity(planet_component_id, hit_position - offset);
 				}
 				const double gradient_length = glm::length(gradient);
 				if(gradient_length <= 1e-12) return false;

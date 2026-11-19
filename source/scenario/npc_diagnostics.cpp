@@ -58,9 +58,9 @@ namespace danikk_space_engine
 			data.getPoint(point_id).position = vec3(center - world.chunk_system.getChunk(chunk_id).position);
 
 			const PointComponentSlotId human_id = data.createPointComponentSlot(point_id, PointComponentTypeId::human, &human);
-			world.chunk_system.addPointComponentSlotToChunk(world, chunk_id, human_id);
+			world.chunk_system.addPointComponentSlotToChunk(chunk_id, human_id);
 			const PointComponentSlotId health_id = data.createPointComponentSlot(point_id, PointComponentTypeId::damageable);
-			world.chunk_system.addPointComponentSlotToChunk(world, chunk_id, health_id);
+			world.chunk_system.addPointComponentSlotToChunk(chunk_id, health_id);
 
 			registerUnitAgent(world, human_id, false);
 			return human_id;
@@ -82,7 +82,7 @@ namespace danikk_space_engine
 				for(int32 y = -1; y <= 1; ++y)
 					for(int32 x = -1; x <= 1; ++x)
 					{
-						Chunk& chunk = world.chunk_system.createChunk(world, body_id);
+						Chunk& chunk = world.chunk_system.createChunk(body_id);
 						chunk.grid_coordinate = glm::ivec3(x, y, z);
 						chunk.position = glm::dvec3(chunk.grid_coordinate) * planet_chunk_width;
 						planet.chunk_lookup.setChunk(chunk.grid_coordinate, chunk.chunk_id);
@@ -190,7 +190,7 @@ namespace danikk_space_engine
 			&& walking.grounded == npc_count && walking.moved == npc_count && lost_support;
 		formatLogInfo("NPC diagnostics excavation lost_support=% drop_m=%", lost_support, drop);
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
-		scene.chunk_system.clear(scene);
+		scene.chunk_system.clear();
 		scene.data.release();
 		return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 	}

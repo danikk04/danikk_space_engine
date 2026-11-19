@@ -28,7 +28,7 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		component_system.renderWorldBodyComponents(*this);
+		component_system.renderWorldBodyComponents();
 		queueDirtyBuildPartMeshes();
 		if(chunk_generation_requests_dirty)
 		{
@@ -82,12 +82,12 @@ namespace danikk_space_engine
 			for(ChunkId chunk_id : body.chunk_ids)
 			{
 				Chunk& chunk = chunk_system.getChunk(chunk_id);
-				chunk_system.draw(chunk, *this);
+				chunk_system.draw(chunk);
 			}
 		}
 		// Draw dynamic chunk components after the world meshes so transparent overlays
 		// do not allow later terrain draws to pass through the base mesh depth.
-		component_system.renderChunkComponents(*this);
+		component_system.renderChunkComponents();
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
 		drawUnitSelectionIndicators(*this);
 		drawUnitOrderIndicators(*this);

@@ -118,7 +118,7 @@ namespace danikk_space_engine::unit_system_internal
 			const PointComponentSlotId id = old_chunk.point_component_slot_ids[i];
 			if(world.data.getPointComponentSlot(id).point_id != point_id) { ++i; continue; }
 			moved_slots.push(id);
-			world.chunk_system.removePointComponentSlotFromChunk(world, id);
+			world.chunk_system.removePointComponentSlotFromChunk(id);
 		}
 		for(size_t i = 0; i < old_chunk.point_ids.size(); ++i)
 		{
@@ -130,7 +130,7 @@ namespace danikk_space_engine::unit_system_internal
 			break;
 		}
 		world.data.getPoint(point_id).position = vec3(position - world.chunk_system.getChunk(new_chunk_id).position);
-		for(PointComponentSlotId id : moved_slots) world.chunk_system.addPointComponentSlotToChunk(world, new_chunk_id, id);
+		for(PointComponentSlotId id : moved_slots) world.chunk_system.addPointComponentSlotToChunk(new_chunk_id, id);
 	}
 
 	/** @brief Executes current unit orders and then updates each unit's chunk ownership. */

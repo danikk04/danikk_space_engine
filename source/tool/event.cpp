@@ -42,7 +42,7 @@ namespace danikk_space_engine
 			if(!ground.hit || ground.body_id != body_id || glm::dot(ground.normal, surface_up) < 0.5f) continue;
 			const glm::dvec3 local_position = inverse_rotation * (ground.position - body_position);
 			const vec3 local_surface_up = glm::normalize(vec3(inverse_rotation * glm::dvec3(ground.normal)));
-			const glm::dvec3 gravity = world.environment.sampleGravityAt(world, ground.position);
+			const glm::dvec3 gravity = world.environment.sampleGravityAt(ground.position);
 			const glm::dvec3 world_up = glm::length(gravity) > 1e-8
 				? -glm::normalize(gravity) : glm::normalize(glm::dvec3(ground.normal));
 			const vec3 local_up = vec3(inverse_rotation * world_up);

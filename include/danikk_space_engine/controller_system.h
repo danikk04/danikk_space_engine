@@ -29,14 +29,18 @@ namespace danikk_space_engine
 	 */
 	class ControllerSystem
 	{
+		/** @brief Owning World whose input and controlled point this system manages. */
+		World& world;
+		/** @brief Creates a machinegun point copy using the owning world's component pools. */
+		void duplicateControllerPointWithMachinegun(const Point& source_point,
+			const CameraComponent& camera, ChunkId chunk_id);
 		/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
-		void validateSelectedUnits(World& world);
+		void validateSelectedUnits();
 		/** @brief Selects the nearest visible player-faction human intersected by the camera ray. */
-		bool selectOwnHumanUnderCursor(World& world, const RaycastHit& surface_hit, bool shift_pressed);
+		bool selectOwnHumanUnderCursor(const RaycastHit& surface_hit, bool shift_pressed);
 
 	public:
-		/** @brief World instance and point currently controlled by this system. */
-		World* controlled_world = nullptr;
+		/** @brief Point currently controlled by this system, or invalid when unbound. */
 		PointId controlled_point_id = static_cast<PointId>(-1);
 		/** @brief Current interaction mode. */
 		PlayerMode mode = PlayerMode::god;
@@ -81,14 +85,17 @@ namespace danikk_space_engine
 		/** @brief Saved follow-ground setting restored after the human drag ends. */
 		bool dragged_human_followed_ground = true;
 
-		/** @brief Resets controller state and binds it to the supplied point in the supplied world. */
-		void reset(World& world, PointId point_id);
-		/** @brief Returns whether this controller is bound to the supplied world. */
-		bool controls(const World& world) const;
-		/** @brief Releases controller state if the supplied world is currently bound. */
-		void unbind(const World& world);
+		/** @brief Binds the controller to a point and resets transient input state. */
+		void reset(PointId point_id);
+		/** @brief Returns whether a controlled point is currently bound. */
+		bool controls() const;
+		/** @brief Releases controller state and transient selections. */
+		void unbind();
 		/** @brief Processes local input and applies the selected command to the controlled point. */
-		void tick(World& world);
+		void tick();
+
+		/** @brief Binds this controller to its owning World. */
+		explicit ControllerSystem(World& world) : world(world) {}
 		/** @brief Selects a hotbar slot and activates its assigned command. */
 		void selectHotbarSlot(uint32 slot_index);
 		/** @brief Assigns a catalog command to the selected hotbar slot and activates it. */

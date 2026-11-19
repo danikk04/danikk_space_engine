@@ -59,7 +59,7 @@ namespace danikk_space_engine
 			return *static_cast<const PlanetComponent*>(slot.getData());
 		}
 
-		double getPlanetDensity(const glm::dvec3& position, double radius, uint64 noise_seed,
+		double samplePlanetDensity(const glm::dvec3& position, double radius, uint64 noise_seed,
 			const DynamicArray<PlanetTerrainEdit>& edits, double core_radius)
 		{
 			const double distance_from_center = glm::length(position);
@@ -78,7 +78,7 @@ namespace danikk_space_engine
 			return std::max(density, samplePlanetCoreDensity(position, distance_from_center, noise_seed, core_radius));
 		}
 
-		MaterialId getPlanetMaterial(const glm::dvec3& position, double radius, uint64 noise_seed)
+		MaterialId samplePlanetMaterial(const glm::dvec3& position, double radius, uint64 noise_seed)
 		{
 			constexpr double grass_layer_depth = 3.0;
 			const double distance_from_center = glm::length(position);
@@ -90,33 +90,31 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc getPlanetDensity(const PlanetTerrainSnapshot&, const glm::dvec3&) */
-	double getPlanetDensity(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position)
+	double PlanetTerrainSystem::getPlanetDensity(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position)
 	{
-		return getPlanetDensity(position, snapshot.planet_radius, snapshot.noise_seed,
+		return samplePlanetDensity(position, snapshot.planet_radius, snapshot.noise_seed,
 			snapshot.terrain_edits, snapshot.core_radius);
 	}
 
 	/** @copydoc getPlanetMaterial(const PlanetTerrainSnapshot&, const glm::dvec3&) */
-	MaterialId getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position)
+	MaterialId PlanetTerrainSystem::getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position)
 	{
-		return getPlanetMaterial(position, snapshot.planet_radius, snapshot.noise_seed);
+		return samplePlanetMaterial(position, snapshot.planet_radius, snapshot.noise_seed);
 	}
 
 	/** @copydoc getPlanetDensity */
-	double getPlanetDensity(const World& world, WorldBodyComponentSlotId planet_component_id,
-		const glm::dvec3& position)
+	double PlanetTerrainSystem::getPlanetDensity(WorldBodyComponentSlotId planet_component_id, const glm::dvec3& position) const
 	{
-		const PlanetComponent& planet = getPlanetComponent(world, planet_component_id);
-		return getPlanetDensity(position, planet.radius, planet.noise_seed,
+		const PlanetComponent& planet = getPlanetComponent(this->world, planet_component_id);
+		return samplePlanetDensity(position, planet.radius, planet.noise_seed,
 			planet.terrain_edits, planet.core_radius);
 	}
 
 	/** @copydoc getPlanetMaterial(const World&, WorldBodyComponentSlotId, const glm::dvec3&) */
-	MaterialId getPlanetMaterial(const World& world, WorldBodyComponentSlotId planet_component_id,
-		const glm::dvec3& position)
+	MaterialId PlanetTerrainSystem::getPlanetMaterial(WorldBodyComponentSlotId planet_component_id, const glm::dvec3& position) const
 	{
-		const PlanetComponent& planet = getPlanetComponent(world, planet_component_id);
-		return getPlanetMaterial(position, planet.radius, planet.noise_seed);
+		const PlanetComponent& planet = getPlanetComponent(this->world, planet_component_id);
+		return samplePlanetMaterial(position, planet.radius, planet.noise_seed);
 	}
 
 }

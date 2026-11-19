@@ -20,7 +20,7 @@ namespace danikk_space_engine
 		 */
 		WorldBodyId getDraggedWorldBodyId(const World& world)
 		{
-			if(!world.controller_system.controls(world)) return static_cast<WorldBodyId>(-1);
+			if(!world.controller_system.controls()) return static_cast<WorldBodyId>(-1);
 			return world.controller_system.dragged_world_body_id;
 		}
 	}
@@ -33,7 +33,7 @@ namespace danikk_space_engine
 	 * acceleration and position use semi-implicit Euler integration; rotation is
 	 * advanced from angular velocity using an axis-angle delta and normalized.
 	 */
-	void WorldPhysics::integrateMotion(World& world)
+	void WorldPhysics::integrateMotion()
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
@@ -58,7 +58,7 @@ namespace danikk_space_engine
 			if(is_planet) continue;
 
 			if(!collision_internal::hasLoadedChunk(world, body)) continue;
-			const glm::dvec3 acceleration = world.environment.sampleGravityAt(world, body.position);
+			const glm::dvec3 acceleration = world.environment.sampleGravityAt(body.position);
 			body.linear_velocity += acceleration * static_cast<double>(delta_time);
 			body.position += body.linear_velocity * static_cast<double>(delta_time);
 

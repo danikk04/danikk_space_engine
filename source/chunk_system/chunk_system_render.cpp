@@ -133,7 +133,7 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Draws each non-empty material range using the owning chunk's transform. */
-	void ChunkSystem::draw(const Chunk& chunk, World& world)
+	void ChunkSystem::draw(const Chunk& chunk)
 	{
 		DSE_WATCH();
 		const ChunkRenderRecord* record = findRenderRecord(chunk.chunk_id);

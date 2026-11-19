@@ -13,23 +13,27 @@ namespace danikk_space_engine
 	 */
 	class ComponentSystem
 	{
+		/** @brief Owning World whose component callbacks are dispatched. */
+		World& world;
+
 	public:
+		/** @brief Binds this component system to its owning World. */
+		explicit ComponentSystem(World& world) : world(world) {}
+
 		/**
 		 * @brief Ticks each active WorldBody's components and then that body's loaded chunks.
-		 * @param world World containing component slots and loaded chunks.
 		 */
-		void tickWorldBodyComponents(World& world);
+		void tickWorldBodyComponents();
 
 		/**
 		 * @brief Ticks active point components attached to one loaded chunk.
-		 * @param world World providing component pools and callback context.
 		 * @param chunk_id Loaded chunk whose component slots are traversed.
 		 */
-		void tickChunkComponents(World& world, ChunkId chunk_id);
+		void tickChunkComponents(ChunkId chunk_id);
 
 		/** @brief Runs frame callbacks for active components attached to WorldBody instances. */
-		void renderWorldBodyComponents(World& world);
+		void renderWorldBodyComponents();
 		/** @brief Runs frame callbacks for active point components in loaded chunks. */
-		void renderChunkComponents(World& world);
+		void renderChunkComponents();
 	};
 }

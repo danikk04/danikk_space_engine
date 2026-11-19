@@ -28,6 +28,9 @@ namespace danikk_space_engine
 	 */
 	class WorldPhysics;
 
+	/** @brief Stores camera orientation and movement settings. */
+	struct CameraComponent;
+
 	/**
 	 * @brief Stores a human character’s state, orientation, pose, and appearance.
 	 */
@@ -42,6 +45,9 @@ namespace danikk_space_engine
 	 * @brief Associates component data and callbacks with a world point.
 	 */
 	struct PointComponentSlot;
+
+	/** @brief Stores a point's local position and chunk-reference count. */
+	struct Point;
 
 	/**
 	 * @brief Stores the nearest face hit and geometric data returned by a raycast.

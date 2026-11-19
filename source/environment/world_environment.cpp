@@ -7,17 +7,14 @@ namespace danikk_space_engine
 {
 	/**
 	 * @brief Returns unavailable until a temperature provider is registered.
-	 * @param world Unused until world-specific temperature sources are implemented.
 	 * @param world_position Unused sample position.
 	 * @param world_time_seconds Unused simulation time.
 	 * @return Default sample with available false.
 	 */
 	TemperatureSample WorldEnvironment::sampleTemperatureAt(
-		const World& world,
 		const glm::dvec3& world_position,
 		double world_time_seconds) const
 	{
-		(void)world;
 		(void)world_position;
 		(void)world_time_seconds;
 		return TemperatureSample{};
@@ -25,17 +22,14 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Returns unavailable until a radiation provider is registered.
-	 * @param world Unused until world-specific radiation sources are implemented.
 	 * @param world_position Unused sample position.
 	 * @param world_time_seconds Unused simulation time.
 	 * @return Default sample with available false.
 	 */
 	RadiationSample WorldEnvironment::sampleRadiationAt(
-		const World& world,
 		const glm::dvec3& world_position,
 		double world_time_seconds) const
 	{
-		(void)world;
 		(void)world_position;
 		(void)world_time_seconds;
 		return RadiationSample{};
@@ -43,14 +37,13 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Adds the radial gravity contribution of every active planet component.
-	 * @param world World containing planet bodies.
 	 * @param world_position Global position in double precision.
 	 * @return Summed acceleration vector in m/s². Outside a planet the configured
 	 *         surface magnitude follows inverse-square falloff; inside, magnitude is
 	 *         surface_gravity * radius / distance and therefore increases toward the
 	 *         center. Samples within 1e-6 units of a center are skipped.
 	 */
-	glm::dvec3 WorldEnvironment::sampleGravityAt(const World& world, const glm::dvec3& world_position) const
+	glm::dvec3 WorldEnvironment::sampleGravityAt(const glm::dvec3& world_position) const
 	{
 		glm::dvec3 gravity(0.0);
 

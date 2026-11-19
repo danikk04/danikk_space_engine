@@ -435,7 +435,7 @@ namespace danikk_space_engine
 	 * capsule bounds to find neighboring chunks. Pairs of unchanged capsules are skipped
 	 * before construction. After all passes, a short raycast restores clearance for displaced humans.
 	 */
-	void WorldPhysics::resolveHumanCollisions(World& world)
+	void WorldPhysics::resolveHumanCollisions()
 	{
 		DSE_WATCH();
 		DynamicArray<OccupiedHumanChunk> occupied_chunks;

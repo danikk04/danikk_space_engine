@@ -13,6 +13,12 @@ namespace danikk_space_engine
 {
 	World world;
 
+	World::World()
+		: chunk_system(*this), environment(*this), physics(*this), controller_system(*this),
+		  component_system(*this), planet_terrain_system(*this)
+	{
+	}
+
 
 	/** @brief Resolves camera_component_slot_id to the active camera slot. */
 	PointComponentSlot& World::getCameraSlot()
@@ -230,13 +236,13 @@ namespace danikk_space_engine
 	/** @copydoc World::destroyChunk */
 	void World::destroyChunk(ChunkId chunk_id)
 	{
-		chunk_system.destroyChunk(*this, chunk_id);
+		chunk_system.destroyChunk(chunk_id);
 	}
 
 	/** @copydoc World::destroyPoint */
 	void World::destroyPoint(PointId point_id)
 	{
-		chunk_system.destroyPoint(*this, point_id);
+		chunk_system.destroyPoint(point_id);
 	}
 
 	/**
@@ -291,7 +297,7 @@ namespace danikk_space_engine
 	 */
 	void World::init()
 	{
-		chunk_system.clear(*this);
+		chunk_system.clear();
 		startChunkMeshGenerator();
 		chunk_mesh_generator_generation_id++;
 		if(chunk_mesh_generator_generation_id == 0) chunk_mesh_generator_generation_id++;
@@ -309,13 +315,13 @@ namespace danikk_space_engine
 	 */
 	void World::shutdown()
 	{
-		controller_system.unbind(*this);
+		controller_system.unbind();
 		stopChunkMeshGenerator();
 		chunk_mesh_generator_generation_id++;
 		chunk_generation_requests.clear();
 		chunk_generation_requests_dirty = false;
 		clearBuildPartMeshCache();
-		chunk_system.clear(*this);
+		chunk_system.clear();
 		data.release();
 		pending_point_destruction_ids.clear();
 		unit_system_internal::resetUnitSystems();

@@ -29,7 +29,7 @@ namespace danikk_space_engine
 		{
 			const BuildPartPlacement placement = getBuildPartPlacement(world, hit, shape, size, rotation_step);
 			if(placement.body_id != static_cast<WorldBodyId>(-1)
-				&& !world.physics.isBuildPartPlacementClear(world, placement.body_id, shape,
+				&& !world.physics.isBuildPartPlacementClear(placement.body_id, shape,
 					placement.world_position, placement.body_local_rotation, size))
 				return false;
 
@@ -46,7 +46,7 @@ namespace danikk_space_engine
 				body.position = anchor_world_position;
 				body.mass = 1.0;
 				body.collision_radius = 0.0;
-				Chunk& chunk = world.chunk_system.createChunk(world, body_id);
+				Chunk& chunk = world.chunk_system.createChunk(body_id);
 				chunk_id = chunk.chunk_id;
 			}
 
@@ -65,7 +65,7 @@ namespace danikk_space_engine
 			part.rotation = placement.body_local_rotation;
 			const PointComponentSlotId part_slot_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::build_part, &part);
-			world.chunk_system.addPointComponentSlotToChunk(world, chunk_id, part_slot_id);
+			world.chunk_system.addPointComponentSlotToChunk(chunk_id, part_slot_id);
 			DamageableComponent damageable;
 			damageable.definition_id = damageable_definition_ids::build_part;
 			const float volume_factor = shape == BuildPartShape::slope ? 0.5f : 1.0f;
@@ -73,7 +73,7 @@ namespace danikk_space_engine
 				* size.x * size.y * size.z * volume_factor, point_id);
 			const PointComponentSlotId damageable_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::damageable, &damageable);
-			world.chunk_system.addPointComponentSlotToChunk(world, chunk_id, damageable_id);
+			world.chunk_system.addPointComponentSlotToChunk(chunk_id, damageable_id);
 			double shape_radius = 0.0;
 			const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
 			for(const vec3& position : geometry.positions)
@@ -113,7 +113,7 @@ namespace danikk_space_engine
 			machinegun.right = vec3(inverse_body_rotation * glm::dvec3(world.getCameraComponent().getRight()));
 			const PointComponentSlotId slot_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::machine_gun, &machinegun);
-			world.chunk_system.addPointComponentSlotToChunk(world, hit.chunk_id, slot_id);
+			world.chunk_system.addPointComponentSlotToChunk(hit.chunk_id, slot_id);
 		}
 
 	}

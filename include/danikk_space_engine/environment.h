@@ -35,7 +35,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Samples temperature, radiation, and gravitational acceleration at world positions.
 	 *
-	 * The class is stateless and evaluates each requested position on demand. Temperature and
+	 * The class keeps a reference to its owning World and evaluates each requested position on demand. Temperature and
 	 * radiation currently have no providers and return unavailable samples. Gravity sums every
 	 * active planet component: magnitude follows inverse-square falloff outside the nominal radius
 	 * and `surface_gravity * radius / distance` inside it. The interior formula therefore grows
@@ -44,21 +44,24 @@ namespace danikk_space_engine
 	 */
 	class WorldEnvironment
 	{
+		/** @brief Owning World whose environmental sources are sampled. */
+		World& world;
+
 	public:
+		/** @brief Binds this environment sampler to its owning World. */
+		explicit WorldEnvironment(World& world) : world(world) {}
 
 		/**
 		 * @brief Samples the temperature field at a world-space position and time.
 	 *
 	 * No temperature source is implemented yet, so the input position and time are currently
 	 * ignored and the returned sample remains unavailable.
-		 * @param world World that may provide environmental sources.
 		 * @param world_position Position to sample in global double-precision coordinates.
 		 * @param world_time_seconds Simulation time available to time-dependent providers.
 		 * @return Currently unavailable with a zero-valued temperature; availability
 		 *         distinguishes this from a physical reading of 0 K.
 		 */
 		TemperatureSample sampleTemperatureAt(
-			const World& world,
 			const glm::dvec3& world_position,
 			double world_time_seconds) const;
 
@@ -67,13 +70,11 @@ namespace danikk_space_engine
 	 *
 	 * No radiation source is implemented yet, so the input position and time are currently
 	 * ignored and the returned sample remains unavailable.
-		 * @param world World that may provide radiation sources.
 		 * @param world_position Position to sample in global double-precision coordinates.
 		 * @param world_time_seconds Simulation time available to time-dependent providers.
 		 * @return Currently unavailable with a zero-valued dose rate.
 		 */
 		RadiationSample sampleRadiationAt(
-			const World& world,
 			const glm::dvec3& world_position,
 			double world_time_seconds) const;
 
@@ -85,12 +86,11 @@ namespace danikk_space_engine
 	 * `surface_gravity * (R / d)`. This interior rule is an implementation choice rather than
 		 * the field of a uniform-density sphere, and points within 1e-6 units of a center contribute
 		 * nothing.
-		 * @param world World providing planet bodies and their component data.
 		 * @param world_position Global position where acceleration is sampled.
 		 * @return Acceleration vector in m/s² directed toward each contributing planet.
 		 * Planets with non-positive radius or surface gravity and samples within 1e-6 units of
 		 * their center are skipped. This method evaluates position only; it does not use simulation time.
 		 */
-		glm::dvec3 sampleGravityAt(const World& world, const glm::dvec3& world_position) const;
+		glm::dvec3 sampleGravityAt(const glm::dvec3& world_position) const;
 	};
 }

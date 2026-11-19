@@ -240,7 +240,7 @@ namespace danikk_space_engine
 {
 	/** @copydoc WorldPhysics::isBuildPartPlacementClear */
 	bool WorldPhysics::isBuildPartPlacementClear(
-		const World& world, WorldBodyId body_id, BuildPartShape shape,
+		WorldBodyId body_id, BuildPartShape shape,
 		const glm::dvec3& world_position, const mat4& body_local_rotation,
 		const vec3& size, double penetration_tolerance) const
 	{

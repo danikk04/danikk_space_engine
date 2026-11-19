@@ -38,14 +38,14 @@ namespace danikk_space_engine
 	 * is tested by a bounding sphere and SAT. The Drag-held body has zero inverse
 	 * mass and inertia, so the other body receives the pair correction and impulse.
 	 */
-	void WorldPhysics::resolveBodyCollisions(World& world)
+	void WorldPhysics::resolveBodyCollisions()
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
 		WorldBodyId dragged_id = static_cast<WorldBodyId>(-1);
-		if(world.controller_system.controls(world)) dragged_id = world.controller_system.dragged_world_body_id;
+		if(world.controller_system.controls()) dragged_id = world.controller_system.dragged_world_body_id;
 		DynamicArray<BodyCollider> colliders;
 
 		for(WorldBodyId id : world.data.getUsedWorldBodyIds())

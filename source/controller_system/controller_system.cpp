@@ -4,9 +4,8 @@
 namespace danikk_space_engine
 {
 	/** @brief Resets controller state and binds it to the supplied point in the supplied world. */
-	void ControllerSystem::reset(World& world, PointId point_id)
+	void ControllerSystem::reset(PointId point_id)
 	{
-		controlled_world = &world;
 		controlled_point_id = point_id;
 		mode = PlayerMode::god;
 		active_tool = ToolId::none;
@@ -32,16 +31,15 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Returns whether this controller is bound to the supplied world instance. */
-	bool ControllerSystem::controls(const World& world) const
+	bool ControllerSystem::controls() const
 	{
-		return controlled_world == &world;
+		return controlled_point_id != static_cast<PointId>(-1);
 	}
 
 	/** @brief Releases world ownership and transient selections before the world is destroyed. */
-	void ControllerSystem::unbind(const World& world)
+	void ControllerSystem::unbind()
 	{
-		if(!controls(world)) return;
-		controlled_world = nullptr;
+		if(!controls()) return;
 		controlled_point_id = static_cast<PointId>(-1);
 		selected_unit_refs.clear();
 		dragged_world_body_id = static_cast<WorldBodyId>(-1);

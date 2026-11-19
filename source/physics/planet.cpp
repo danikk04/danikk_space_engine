@@ -67,7 +67,7 @@ namespace danikk_space_engine
 			point_contacts.reserve(moving_chunk.point_ids.size() + moving_chunk.point_component_slot_ids.size() * 8);
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
-				return getPlanetDensity(world, target.component_slot_id, position);
+				return world.planet_terrain_system.getPlanetDensity(target.component_slot_id, position);
 			};
 			constexpr double gradient_step = planet_voxel_size * 0.25;
 			DynamicArray<glm::dvec3> local_points;
@@ -198,7 +198,7 @@ namespace danikk_space_engine
 		{
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
-				return getPlanetDensity(world, planet_component_slot_id, position);
+				return world.planet_terrain_system.getPlanetDensity(planet_component_slot_id, position);
 			};
 			penetration = sample_field(field_position) + collider_radius;
 			if(penetration <= 0.0) return false;
@@ -237,7 +237,7 @@ namespace danikk_space_engine
 	 * points. Planet bodies, unloaded bodies, and bodies with invalid mass
 	 * properties are skipped; planets remain static during contact resolution.
 	 */
-	void WorldPhysics::resolvePlanetCollisions(World& world)
+	void WorldPhysics::resolvePlanetCollisions()
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.

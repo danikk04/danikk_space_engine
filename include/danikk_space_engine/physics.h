@@ -18,6 +18,8 @@ namespace danikk_space_engine
 	 */
 	class WorldPhysics
 	{
+		/** @brief Owning World whose bodies and contacts this system simulates. */
+		World& world;
 
 		/**
 		 * @brief Applies gravity and integrates position and orientation of loaded, non-planet bodies.
@@ -26,9 +28,8 @@ namespace danikk_space_engine
 		 * planet bodies, and the body currently held by the Drag tool are skipped.
 		 * Gravity is sampled from WorldEnvironment before linear position is
 		 * advanced; angular velocity is integrated as an axis-angle rotation.
-		 * @param world World whose bodies and environment are updated.
 		 */
-		void integrateMotion(World& world);
+		void integrateMotion();
 
 		/**
 		 * @brief Destroys loaded non-planet bodies and point entities inside a planet's 5 m core radius.
@@ -36,9 +37,8 @@ namespace danikk_space_engine
 		 * Planet centers are snapshotted first. IDs are collected before pool
 		 * destruction to avoid invalidating iteration. The camera point and planet
 		 * bodies are exempt; point components in unloaded chunks are not examined.
-		 * @param world World whose resource pools are modified.
 		 */
-		void destroyEntitiesInsidePlanetCore(World& world);
+		void destroyEntitiesInsidePlanetCore();
 
 		/**
 		 * @brief Resolves contacts between loaded non-planet bodies and planet scalar fields.
@@ -47,9 +47,8 @@ namespace danikk_space_engine
 		 * contacts from scalar-field density and gradient samples. Bodies without
 		 * surface triangles may use collision_radius as a spherical fallback.
 		 * Corrections and impulses affect the moving body; planets are immovable.
-		 * @param world World containing planet fields and moving bodies.
 		 */
-		void resolvePlanetCollisions(World& world);
+		void resolvePlanetCollisions();
 
 		/**
 		 * @brief Resolves pairwise contacts between loaded non-planet mesh bodies.
@@ -58,9 +57,8 @@ namespace danikk_space_engine
 		 * passes. Body and chunk bounding spheres reject distant pairs before SAT;
 		 * each chunk is treated as convex. A dragged body is assigned zero inverse
 		 * mass and inertia for this solver.
-		 * @param world World whose body positions and velocities may be corrected.
 		 */
-		void resolveBodyCollisions(World& world);
+		void resolveBodyCollisions();
 
 		/**
 		 * @brief Separates overlapping human capsules and restores ground clearance afterward.
@@ -70,21 +68,20 @@ namespace danikk_space_engine
 		 * Corrections are projected onto each person's
 		 * local tangent plane. A short raycast may lift a person after separation,
 		 * but this stage does not apply collision impulses or resolve against terrain.
-		 * @param world World whose human point positions are adjusted.
 		 */
-		void resolveHumanCollisions(World& world);
+		void resolveHumanCollisions();
 
 	public:
+		/** @brief Binds physics to its owning World. */
+		explicit WorldPhysics(World& world) : world(world) {}
 
 		/**
 		 * @brief Advances physics by one update step using the documented stage order.
-		 * @param world World to simulate.
 		 */
-		void tick(World& world);
+		void tick();
 
 		/**
 		 * @brief Checks whether a proposed BuildPart penetrates another part on the same body.
-		 * @param world World providing the body and its active BuildPart components.
 		 * @param body_id Existing body receiving the part.
 		 * @param shape Primitive geometry of the proposed part.
 		 * @param world_position Proposed part center in world coordinates.
@@ -94,7 +91,7 @@ namespace danikk_space_engine
 		 * @return False when the candidate intersects any existing BuildPart beyond the tolerance.
 		 */
 		bool isBuildPartPlacementClear(
-			const World& world, WorldBodyId body_id, BuildPartShape shape,
+			WorldBodyId body_id, BuildPartShape shape,
 			const glm::dvec3& world_position, const mat4& body_local_rotation,
 			const vec3& size, double penetration_tolerance = 0.001) const;
 	};

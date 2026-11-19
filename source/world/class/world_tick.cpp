@@ -20,14 +20,14 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		component_system.tickWorldBodyComponents(*this);
-		controller_system.tick(*this);
+		component_system.tickWorldBodyComponents();
+		controller_system.tick();
 		for(PointId point_id : pending_point_destruction_ids)
 		{
 			if(data.isPointActive(point_id)) destroyPoint(point_id);
 		}
 		pending_point_destruction_ids.clear();
 		unitSystemTick(*this, glm::max(getTargetFrameDelay(), 0.0f));
-		physics.tick(*this);
+		physics.tick();
 	}
 }

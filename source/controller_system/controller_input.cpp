@@ -12,20 +12,21 @@ namespace danikk_space_engine
 	namespace
 	{
 		/** @brief Duplicates a point and attaches a machine gun aligned to the camera basis. */
-		void duplicateControllerPointWithMachinegun(
-			const Point& source_point, const CameraComponent& camera, ChunkId chunk_id, World& world)
-		{
-			const PointId point_id = world.data.createPoint();
-			world.data.getPoint(point_id) = source_point;
-			world.data.getPoint(point_id).referencing_chunk_count = 0;
-			MachinegunComponent machinegun;
-			machinegun.forward = camera.getFront();
-			machinegun.up = camera.getUp();
-			machinegun.right = camera.getRight();
-			const PointComponentSlotId slot_id = world.data.createPointComponentSlot(
-				point_id, PointComponentTypeId::machine_gun, &machinegun);
-			world.chunk_system.addPointComponentSlotToChunk(world, chunk_id, slot_id);
-		}
+	}
+
+	void ControllerSystem::duplicateControllerPointWithMachinegun(const Point& source_point,
+		const CameraComponent& camera, ChunkId chunk_id)
+	{
+		const PointId point_id = world.data.createPoint();
+		world.data.getPoint(point_id) = source_point;
+		world.data.getPoint(point_id).referencing_chunk_count = 0;
+		MachinegunComponent machinegun;
+		machinegun.forward = camera.getFront();
+		machinegun.up = camera.getUp();
+		machinegun.right = camera.getRight();
+		const PointComponentSlotId slot_id = world.data.createPointComponentSlot(
+			point_id, PointComponentTypeId::machine_gun, &machinegun);
+		world.chunk_system.addPointComponentSlotToChunk(chunk_id, slot_id);
 	}
 
 	/**
@@ -35,10 +36,10 @@ namespace danikk_space_engine
 	 * unmodified wheel rotates the placement. Number keys select hotbar slots, while mouse input
 	 * drives selection, tools, and drag actions.
 	 */
-	void ControllerSystem::tick(World& world)
+	void ControllerSystem::tick()
 	{
 		DSE_WATCH();
-		if(!controls(world)) return;
+		if(!controls()) return;
 		const PointComponentSlot& camera_slot = world.getCameraSlot();
 		if(camera_slot.point_id != controlled_point_id)
 			danikk_engine::formatFatalError("Controller system point does not match the active camera point");
@@ -56,11 +57,11 @@ namespace danikk_space_engine
 		if(tool_catalog_open)
 		{
 			if(spawn_machinegun)
-				duplicateControllerPointWithMachinegun(source_point, source_camera, owner_chunk_id, world);
+				duplicateControllerPointWithMachinegun(source_point, source_camera, owner_chunk_id);
 			return;
 		}
 
-		validateSelectedUnits(world);
+		validateSelectedUnits();
 		if(getKeyboardState(keyboard_buttons::slash) == button_states::press)
 			mode = mode == PlayerMode::god ? PlayerMode::commander : PlayerMode::god;
 
@@ -155,7 +156,7 @@ namespace danikk_space_engine
 		RaycastHit hit = world.raycastFromCamera();
 		const bool unit_selection_click = left_mouse_state == button_states::press
 			&& !(mode == PlayerMode::god && drag_tool_selected)
-			&& selectOwnHumanUnderCursor(world, hit, shift_pressed);
+			&& selectOwnHumanUnderCursor(hit, shift_pressed);
 		if(drag_tool_down)
 		{
 			tickHumanDragTool(world, *this, hit, true, left_mouse_state,
@@ -178,6 +179,6 @@ namespace danikk_space_engine
 			}
 		}
 		if(spawn_machinegun)
-			duplicateControllerPointWithMachinegun(source_point, source_camera, owner_chunk_id, world);
+			duplicateControllerPointWithMachinegun(source_point, source_camera, owner_chunk_id);
 	}
 }

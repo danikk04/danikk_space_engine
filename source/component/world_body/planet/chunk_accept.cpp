@@ -53,7 +53,7 @@ namespace danikk_space_engine
 		if(world.chunk_system.isChunkActive(chunk_id) || has_geometry)
 		{
 			if(!world.chunk_system.isChunkActive(chunk_id))
-				chunk_id = world.chunk_system.createChunk(world, slot.world_body_id).chunk_id;
+				chunk_id = world.chunk_system.createChunk(slot.world_body_id).chunk_id;
 			Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 			chunk.grid_coordinate = generated_chunk.grid_coordinate;
 			chunk.position = generated_chunk.chunk_position;
