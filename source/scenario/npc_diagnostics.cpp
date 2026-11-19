@@ -62,7 +62,7 @@ namespace danikk_space_engine
 			const PointComponentSlotId health_id = data.createPointComponentSlot(point_id, PointComponentTypeId::damageable);
 			world.chunks.addPointComponentSlotToChunk(chunk_id, health_id);
 
-			registerUnitAgent(world, human_id, false);
+			world.unit_system.registerAgent(human_id, false);
 			return human_id;
 		}
 

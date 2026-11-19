@@ -7,13 +7,11 @@
 #include <danikk_space_engine/scenario/base.h>
 #include <danikk_space_engine/controller_system.h>
 
-#include "../unit_system/internal.h"
-
 namespace danikk_space_engine
 {
 	World::World()
 		: chunks(*this), environment(*this), physics(*this), controller(*this), camera(*this),
-		  components(*this), planets(*this), raycasts(*this)
+		  components(*this), planets(*this), raycasts(*this), factions(), unit_system(*this)
 	{
 	}
 
@@ -224,7 +222,7 @@ namespace danikk_space_engine
 		chunk_generation_requests_dirty = false;
 		updateChunkMeshGenerationRequests(chunk_mesh_generator_generation_id, chunk_generation_requests);
 		pending_point_destruction_ids.clear();
-		unit_system_internal::resetUnitSystems();
+		unit_system.reset();
 		factions.clear();
 		startBaseScenario(*this);
 	}
@@ -252,6 +250,6 @@ namespace danikk_space_engine
 		world_body_data.release();
 		factions.release();
 		pending_point_destruction_ids.clear();
-		unit_system_internal::resetUnitSystems();
+		unit_system.reset();
 	}
 }

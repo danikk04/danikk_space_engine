@@ -28,7 +28,7 @@ namespace danikk_space_engine
 			if(point_data.isPointActive(point_id)) chunks.destroyPoint(point_id);
 		}
 		pending_point_destruction_ids.clear();
-		unitSystemTick(*this, glm::max(getTargetFrameDelay(), 0.0f));
+		unit_system.tick(glm::max(getTargetFrameDelay(), 0.0f));
 		physics.tick();
 	}
 }

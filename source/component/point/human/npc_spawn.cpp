@@ -61,7 +61,7 @@ namespace danikk_space_engine
 		if(!equipItem(world, point_id, weapon_slot.item_definition_id))
 			formatFatalError("Failed to equip MG-42 for human soldier");
 
-		registerUnitAgent(world, human_id);
+		world.unit_system.registerAgent(human_id);
 		return human_id;
 	}
 

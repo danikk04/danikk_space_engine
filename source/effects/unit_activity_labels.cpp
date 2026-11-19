@@ -104,7 +104,7 @@ namespace danikk_space_engine
 
 			UnitGlobalState global_state;
 			UnitSubstate substate;
-			if(!getUnitState(slot_id, slot.generation_id, global_state, substate)) continue;
+			if(!world.unit_system.getState(slot_id, slot.generation_id, global_state, substate)) continue;
 			const char* label = getStateText(global_state, substate);
 			const size_t character_count = getTextLength(label);
 			const float text_width = character_count * glyph_size.x

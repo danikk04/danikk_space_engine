@@ -101,7 +101,7 @@ namespace danikk_space_engine
 			if(human.hasDeathTimestamp()) continue;
 
 			glm::dvec3 move_target_world;
-			if(!getUnitMoveTarget(world, reference.slot_id, reference.generation_id, move_target_world)) continue;
+			if(!world.unit_system.getMoveTarget(reference.slot_id, reference.generation_id, move_target_world)) continue;
 
 			const glm::dvec3 start_world = world.getPointWorldPosition(
 				human_slot.chunk_id, human_slot.point_id);

@@ -155,7 +155,7 @@ namespace danikk_space_engine
 				DamageableComponent* health = findDamageable(world, victim.chunk_id, victim.point_id);
 				if(health != nullptr)
 				{
-					reportUnitAttack(world, bullet.owner_point_id, victim.point_id);
+					world.unit_system.reportAttack(bullet.owner_point_id, victim.point_id);
 					applyBallisticDamage(*health, bullet.damage, victim.point_id);
 				}
 				bullet.destruction_queued = true;
@@ -165,7 +165,7 @@ namespace danikk_space_engine
 			if(suppression_target_id != static_cast<PointComponentSlotId>(-1))
 			{
 				const PointComponentSlot& target = world.point_data.getPointComponentSlot(suppression_target_id);
-				reportUnitAttack(world, bullet.owner_point_id, target.point_id);
+				world.unit_system.reportAttack(bullet.owner_point_id, target.point_id);
 			}
 			if(hit.hit)
 			{

@@ -15,6 +15,7 @@
 #include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/raycast_system.h>
 #include <danikk_space_engine/factions.h>
+#include <danikk_space_engine/unit_system.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
@@ -54,6 +55,8 @@ namespace danikk_space_engine
 		RaycastSystem raycasts;
 		/** @brief Owns this world's faction instances and diplomatic relations. */
 		FactionSystem factions;
+		/** @brief Owns per-faction unit groups, tactical memory, and orders. */
+		UnitSystem unit_system;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
 		/** @brief Generation token used to reject worker results from an earlier world lifetime. */

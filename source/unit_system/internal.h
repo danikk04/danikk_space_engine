@@ -129,10 +129,14 @@ namespace danikk_space_engine
 		bool war_active = false;
 	};
 
+	/** @brief Private storage owned by one World::unit_system instance. */
+	struct UnitSystem::Impl
+	{
+		DynamicArray<UnitGroup> groups;
+	};
+
 	namespace unit_system_internal
 	{
-		/** @brief Releases all faction-system state when the world is reset or shut down. */
-		void resetUnitSystems();
 		/** @brief Checks that a cached target is still a living hostile human. */
 		bool isValidEnemy(World&, const UnitTarget&, FactionId);
 		/** @brief Rebuilds a unit's nearby hostile-human candidate list. */
