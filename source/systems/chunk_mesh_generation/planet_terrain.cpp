@@ -2,9 +2,9 @@
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/chunk_mesh_generator.h>
+#include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
 #include <danikk_space_engine/systems/planet/planet.h>
-#include "internal.h"
+#include "mesh_algorithms.h"
 #include <danikk_engine/danikk_engine.h>
 
 namespace danikk_space_engine
@@ -277,7 +277,7 @@ namespace danikk_space_engine
 				case PlanetMeshGenerator::marching_tetrahedra:
 					return generatePlanetChunkMarchingTetrahedra(request);
 				case PlanetMeshGenerator::surface_nets:
-					return chunk_mesh_generator_internal::generatePlanetTerrainChunkMeshSurfaceNets(request);
+					return chunk_mesh_generation_internal::generatePlanetTerrainChunkMeshSurfaceNets(request);
 			}
 			danikk_engine::formatFatalError("Unsupported planet mesh generator %",
 				static_cast<uint32>(request.planet_mesh_generator));
@@ -293,7 +293,7 @@ namespace danikk_space_engine
 	 *         sampled field contains no surface in this chunk.
 	 * This worker-side function does not allocate World resources or upload a mesh.
 	 */
-	GeneratedChunkMesh chunk_mesh_generator_internal::generatePlanetTerrainChunkMesh(
+	GeneratedChunkMesh chunk_mesh_generation_internal::generatePlanetTerrainChunkMesh(
 		const ChunkMeshGenerationRequest& request)
 	{
 		/**

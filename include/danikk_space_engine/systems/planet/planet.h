@@ -3,7 +3,7 @@
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
-#include <danikk_space_engine/chunk_mesh_generator.h>
+#include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
 
 namespace danikk_space_engine
 {

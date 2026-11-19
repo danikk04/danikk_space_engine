@@ -4,25 +4,32 @@
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 
+#include "internal.h"
+
 namespace danikk_space_engine
 {
+	ChunkMeshGenerationSystem::ChunkMeshGenerationSystem(World& world)
+		: world(world), worker(std::make_unique<chunk_mesh_generation_internal::Worker>()) {}
+
+	ChunkMeshGenerationSystem::~ChunkMeshGenerationSystem() { shutdown(); }
+
 	/** @copydoc ChunkMeshGenerationSystem::init */
 	void ChunkMeshGenerationSystem::init()
 	{
 		DSE_WATCH();
-		startChunkMeshGenerator();
+		worker->start();
 		generation_id++;
 		if(generation_id == 0) generation_id++;
 		requests.clear();
 		requests_dirty = false;
-		updateChunkMeshGenerationRequests(generation_id, requests);
+		worker->update(generation_id, requests);
 	}
 
 	/** @copydoc ChunkMeshGenerationSystem::shutdown */
 	void ChunkMeshGenerationSystem::shutdown()
 	{
 		DSE_WATCH();
-		stopChunkMeshGenerator();
+		worker->stop();
 		generation_id++;
 		requests.clear();
 		requests_dirty = false;
@@ -83,7 +90,7 @@ namespace danikk_space_engine
 		uint64 planet_generation_id)
 	{
 		DSE_WATCH();
-		cancelChunkMeshGenerationRequests(world_body_id, planet_generation_id);
+		worker->cancel(world_body_id, planet_generation_id);
 		for(size_t index = 0; index < requests.size();)
 		{
 			const ChunkMeshGenerationRequest& request = requests[index];
@@ -184,12 +191,12 @@ namespace danikk_space_engine
 		queueDirtyBuildPartMeshes();
 		if(requests_dirty)
 		{
-			updateChunkMeshGenerationRequests(generation_id, requests);
+			worker->update(generation_id, requests);
 			requests_dirty = false;
 		}
 
 		GeneratedChunkMesh generated;
-		if(!tryTakeGeneratedChunkMesh(generated) || generated.generation_id != generation_id) return;
+		if(!worker->tryTake(generated) || generated.generation_id != generation_id) return;
 		if(generated.source == ChunkMeshSource::build_parts)
 		{
 			if(!world.world_body_data.isWorldBodyActive(generated.world_body_id)

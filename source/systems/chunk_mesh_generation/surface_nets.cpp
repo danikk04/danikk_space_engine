@@ -1,10 +1,10 @@
 #include <algorithm>
 #include <cmath>
 
-#include <danikk_space_engine/chunk_mesh_generator.h>
+#include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
 #include <danikk_space_engine/systems/planet/planet.h>
 
-namespace danikk_space_engine::chunk_mesh_generator_internal
+namespace danikk_space_engine::chunk_mesh_generation_internal
 {
 	/**
 	 * @brief Extracts a planet isosurface with the Surface Nets algorithm.

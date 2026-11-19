@@ -1,9 +1,9 @@
-#include <danikk_space_engine/chunk_mesh_generator.h>
+#include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
 #include <danikk_space_engine/material.h>
 
-#include "internal.h"
+#include "mesh_algorithms.h"
 
-namespace danikk_space_engine::chunk_mesh_generator_internal
+namespace danikk_space_engine::chunk_mesh_generation_internal
 {
 	/** @brief Combines immutable BuildPart snapshots into one chunk-local indexed mesh. */
 	GeneratedChunkMesh generateBuildPartChunkMesh(const ChunkMeshGenerationRequest& request)
