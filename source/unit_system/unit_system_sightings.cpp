@@ -10,7 +10,7 @@ namespace danikk_space_engine::unit_system_internal
 	static constexpr uint32 sighting_timeout_ms = 8000;
 
 		/** @brief Adds or refreshes the investigation location associated with a lost target. */
-		void rememberSearchLocation(UnitSystem& system, const UnitSighting& sighting)
+		void rememberSearchLocation(UnitSystem& system, const UnitSighting& sighting, bool is_corpse = false)
 		{
 			for(UnitSearchLocation& location : system.search_locations)
 			{
@@ -18,6 +18,7 @@ namespace danikk_space_engine::unit_system_internal
 					|| location.target_generation_id != sighting.target_generation_id) continue;
 				location.body_id = sighting.body_id;
 				location.body_local_position = sighting.body_local_position;
+				location.is_corpse = is_corpse;
 				return;
 			}
 			UnitSearchLocation location;
@@ -25,6 +26,7 @@ namespace danikk_space_engine::unit_system_internal
 			location.body_local_position = sighting.body_local_position;
 			location.target_slot_id = sighting.target_slot_id;
 			location.target_generation_id = sighting.target_generation_id;
+			location.is_corpse = is_corpse;
 			system.search_locations.push(location);
 		}
 		/** @brief Adds known dead faction members to the same post-combat inspection queue as lost contacts. */
@@ -49,7 +51,7 @@ namespace danikk_space_engine::unit_system_internal
 				corpse_location.body_id = chunk.world_body_id;
 				corpse_location.body_local_position = chunk.position
 					+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
-				rememberSearchLocation(system, corpse_location);
+				rememberSearchLocation(system, corpse_location, true);
 			}
 		}
 	/** @brief Checks whether a sighting timestamp is within the eight-second tactical memory window. */
@@ -138,17 +140,52 @@ namespace danikk_space_engine::unit_system_internal
 			sightings[i - 1] = static_cast<UnitSighting&&>(sightings[i]);
 		sightings.resize(sightings.size() - 1);
 	}
-	/** @brief Converts visible-to-lost transitions into search locations and advances the combat timer. */
+	/** @brief Updates the group-wide combat timer and records lost contacts for reconnaissance. */
 	void finishPerception(World& world, UnitSystem& system, float dt)
 	{
 		DSE_WATCH();
-		system.enemy_contact_this_tick = system.enemy_seen_this_tick || system.attack_reported_this_tick;
-		if(system.enemy_contact_this_tick)
+		const bool war_was_active = system.war_active;
+		if(system.enemy_seen_this_tick || system.attack_reported_this_tick)
 		{
 			system.has_had_enemy_contact = true;
+			system.war_active = true;
+			if(!war_was_active) system.time_since_enemy_visible = 0.0f;
+		}
+		if(system.enemy_seen_this_tick)
+		{
 			system.time_since_enemy_visible = 0.0f;
 		}
-		else system.time_since_enemy_visible += glm::max(dt, 0.0f);
+		else if(system.war_active)
+		{
+			system.time_since_enemy_visible += glm::max(dt, 0.0f);
+			if(system.time_since_enemy_visible >= 10.0f)
+			{
+				system.war_active = false;
+				system.known_sightings.clear();
+				for(UnitSearchLocation& location : system.search_locations)
+					if(!location.is_corpse)
+					{
+						// Last-known hostile positions become post-war corpse inspection tasks.
+						location.is_corpse = true;
+						location.assigned_unit_slot_id = static_cast<PointComponentSlotId>(-1);
+					}
+				for(UnitAgentState& agent : system.agents)
+				{
+					agent.order.clear();
+					agent.global_state = system.search_locations.size() > 0
+						? UnitGlobalState::work : UnitGlobalState::rest;
+					agent.substate = UnitSubstate::idle;
+				}
+			}
+		}
+		if(system.war_active)
+			for(UnitAgentState& agent : system.agents)
+			{
+				agent.global_state = UnitGlobalState::war;
+				agent.substate = system.enemy_seen_this_tick && agent.order.has_attack_target
+					? (agent.order.has_move_target ? UnitSubstate::pursuit : UnitSubstate::attack)
+					: UnitSubstate::reconnaissance;
+			}
 		system.attack_reported_this_tick = false;
 
 		for(size_t index = 0; index < system.known_sightings.size();)

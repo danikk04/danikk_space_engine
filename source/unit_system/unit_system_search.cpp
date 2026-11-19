@@ -97,12 +97,20 @@ namespace danikk_space_engine::unit_system_internal
 					}
 		}
 
-	/** @brief Orders available units to inspect lost-contact locations after ten seconds without sightings. */
+	/** @brief Sends units to investigate lost contacts during war or collect corpses afterward. */
 	void assignSearchOrders(World& world, UnitSystem& system)
 	{
 		DSE_WATCH();
-		if(!system.has_had_enemy_contact || system.enemy_contact_this_tick
-			|| system.time_since_enemy_visible < 10.0f || system.search_locations.size() == 0) return;
+		if(!system.has_had_enemy_contact || (system.war_active && system.enemy_seen_this_tick)) return;
+
+		if(system.war_active)
+			for(UnitAgentState& agent : system.agents)
+			{
+				agent.order.clear();
+				agent.global_state = UnitGlobalState::war;
+				agent.substate = UnitSubstate::reconnaissance;
+			}
+		if(system.search_locations.size() == 0) return;
 
 		DynamicArray<UnitSearchCandidate>& candidates = system.search_candidates;
 		candidates.clear();
@@ -112,6 +120,11 @@ namespace danikk_space_engine::unit_system_internal
 			PointComponentSlot* slot = nullptr;
 			HumanComponent* human = nullptr;
 			if(!getActiveUnit(world, agent, slot, human) || human->faction_id != system.faction_id) continue;
+			if(!system.war_active)
+			{
+				agent.global_state = UnitGlobalState::rest;
+				agent.substate = UnitSubstate::idle;
+			}
 			const WorldBodyId body_id = world.chunks.getChunk(slot->chunk_id).world_body_id;
 			const glm::dvec3 position = world.getPointWorldPosition(slot->chunk_id, slot->point_id);
 			candidates.push(UnitSearchCandidate{agent.human_slot_id, slot, &agent, human, body_id, position, false});
@@ -120,6 +133,7 @@ namespace danikk_space_engine::unit_system_internal
 		// Reserve agents already assigned to valid locations before assigning the remaining units.
 		for(const UnitSearchLocation& location : system.search_locations)
 		{
+			if(location.is_corpse == system.war_active) continue;
 			if(location.assigned_unit_slot_id == static_cast<PointComponentSlotId>(-1)) continue;
 			for(UnitSearchCandidate& candidate : candidates)
 			{
@@ -140,6 +154,7 @@ namespace danikk_space_engine::unit_system_internal
 		for(size_t index = 0; index < system.search_locations.size();)
 		{
 			UnitSearchLocation& location = system.search_locations[index];
+			if(location.is_corpse == system.war_active) { ++index; continue; }
 			UnitSearchCandidate* assigned_unit = nullptr;
 			if(location.assigned_unit_slot_id != static_cast<PointComponentSlotId>(-1))
 			{
@@ -154,16 +169,21 @@ namespace danikk_space_engine::unit_system_internal
 					if(assigned_unit != nullptr) assigned_unit->assigned_to_search = false;
 					location.assigned_unit_slot_id = static_cast<PointComponentSlotId>(-1);
 				}
-				else if(!assigned_unit->agent->order.has_attack_target
-					&& world.world_body_data.isWorldBodyActive(location.body_id))
+				else if(world.world_body_data.isWorldBodyActive(location.body_id))
 				{
-					assigned_unit->agent->activity = UnitActivity::searching;
+					assigned_unit->agent->global_state = system.war_active
+						? UnitGlobalState::war : UnitGlobalState::work;
 					const glm::dvec3 target_position = getSearchWorldPosition(world, location);
 					const glm::dvec3 offset = target_position - assigned_unit->position;
-					if(glm::dot(offset, offset) <= 1.5 * 1.5)
+					const bool reached_location = glm::dot(offset, offset) <= 1.5 * 1.5;
+					assigned_unit->agent->substate = system.war_active
+						? UnitSubstate::reconnaissance
+						: (reached_location ? UnitSubstate::collecting_corpses : UnitSubstate::moving_to_work);
+					if(reached_location)
 					{
-						removeCorpsesAtSearchLocation(world, system, *assigned_unit->slot,
-							*assigned_unit->human, location, target_position);
+						if(location.is_corpse)
+							removeCorpsesAtSearchLocation(world, system, *assigned_unit->slot,
+								*assigned_unit->human, location, target_position);
 						assigned_unit->assigned_to_search = false;
 						eraseCurrentLocation(index);
 						continue;
@@ -197,12 +217,18 @@ namespace danikk_space_engine::unit_system_internal
 				if(nearest_candidate == nullptr) { ++index; continue; }
 				location.assigned_unit_slot_id = nearest_candidate->slot_id;
 				nearest_candidate->assigned_to_search = true;
-				nearest_candidate->agent->activity = UnitActivity::searching;
+				nearest_candidate->agent->global_state = system.war_active
+					? UnitGlobalState::war : UnitGlobalState::work;
 				const glm::dvec3 offset = target_position - nearest_candidate->position;
-				if(glm::dot(offset, offset) <= 1.5 * 1.5)
+				const bool reached_location = glm::dot(offset, offset) <= 1.5 * 1.5;
+				nearest_candidate->agent->substate = system.war_active
+					? UnitSubstate::reconnaissance
+					: (reached_location ? UnitSubstate::collecting_corpses : UnitSubstate::moving_to_work);
+				if(reached_location)
 				{
-					removeCorpsesAtSearchLocation(world, system, *nearest_candidate->slot,
-						*nearest_candidate->human, location, target_position);
+					if(location.is_corpse)
+						removeCorpsesAtSearchLocation(world, system, *nearest_candidate->slot,
+							*nearest_candidate->human, location, target_position);
 					nearest_candidate->assigned_to_search = false;
 					eraseCurrentLocation(index);
 					continue;

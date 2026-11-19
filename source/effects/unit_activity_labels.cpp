@@ -13,16 +13,28 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		/** @brief Returns the short label associated with one UnitSystem activity. */
-		const char* getActivityText(UnitActivity activity)
+		/** @brief Returns the text shown for one hierarchical unit state. */
+		const char* getStateText(UnitGlobalState global_state, UnitSubstate substate)
 		{
-			switch(activity)
+			switch(global_state)
 			{
-				case UnitActivity::idle: return "IDLE";
-				case UnitActivity::moving: return "MOVE";
-				case UnitActivity::attacking: return "ATTACK";
-				case UnitActivity::searching: return "SEARCH";
-				case UnitActivity::scanning: return "SCAN";
+				case UnitGlobalState::war:
+					switch(substate)
+					{
+						case UnitSubstate::pursuit: return "PURSUIT";
+						case UnitSubstate::attack: return "ATTACK";
+						case UnitSubstate::reconnaissance: return "RECON";
+						default: return "WAR";
+					}
+				case UnitGlobalState::work:
+					switch(substate)
+					{
+						case UnitSubstate::moving_to_work: return "TO WORK";
+						case UnitSubstate::collecting_corpses: return "CORPSES";
+						default: return "WORK";
+					}
+				case UnitGlobalState::rest:
+					return substate == UnitSubstate::sleep ? "SLEEP" : "IDLE";
 			}
 			return "IDLE";
 		}
@@ -90,9 +102,10 @@ namespace danikk_space_engine
 				|| world.factions.getRelation(base_faction_ids::player, human.faction_id).type
 					!= FactionRelationType::allied) continue;
 
-			UnitActivity activity;
-			if(!getUnitActivity(slot_id, slot.generation_id, activity)) continue;
-			const char* label = getActivityText(activity);
+			UnitGlobalState global_state;
+			UnitSubstate substate;
+			if(!getUnitState(slot_id, slot.generation_id, global_state, substate)) continue;
+			const char* label = getStateText(global_state, substate);
 			const size_t character_count = getTextLength(label);
 			const float text_width = character_count * glyph_size.x
 				+ (character_count - 1) * glyph_spacing;

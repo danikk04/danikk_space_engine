@@ -51,7 +51,8 @@ namespace danikk_space_engine
 		PointComponentSlotId human_slot_id = static_cast<PointComponentSlotId>(-1);
 		uint64 human_generation_id = 0;
 		bool enabled = true;
-		UnitActivity activity = UnitActivity::idle;
+		UnitGlobalState global_state = UnitGlobalState::rest;
+		UnitSubstate substate = UnitSubstate::idle;
 		DynamicArray<UnitTarget> enemy_candidates;
 		size_t candidate_index = 0;
 		UnitOrder order;
@@ -75,7 +76,7 @@ namespace danikk_space_engine
 		bool visibility_checked_this_tick = false;
 	};
 
-	/** @brief Last-known hostile location awaiting a post-combat inspection. */
+	/** @brief Remembered hostile contact or known corpse location awaiting a unit visit. */
 	struct UnitSearchLocation
 	{
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
@@ -83,6 +84,7 @@ namespace danikk_space_engine
 		PointComponentSlotId target_slot_id = static_cast<PointComponentSlotId>(-1);
 		uint64 target_generation_id = 0;
 		PointComponentSlotId assigned_unit_slot_id = static_cast<PointComponentSlotId>(-1);
+		bool is_corpse = false;
 	};
 
 	/** @brief Tick-local candidate data reused while assigning one faction's search orders. */
@@ -117,13 +119,14 @@ namespace danikk_space_engine
 		DynamicArray<UnitSearchLocation> search_locations;
 		/** @brief Reusable temporary storage; pointers are valid only during assignSearchOrders(). */
 		DynamicArray<UnitSearchCandidate> search_candidates;
-		/** @brief Stable dispersal destinations and scan phases while the faction is out of combat. */
+		/** @brief Stable dispersal destinations and scan phases while the faction is reconnoitring. */
 		DynamicArray<UnitPostCombatAssignment> post_combat_assignments;
+		/** @brief Group-wide time since any faction unit last saw or reported a hostile. */
 		float time_since_enemy_visible = 0.0f;
 		bool enemy_seen_this_tick = false;
 		bool attack_reported_this_tick = false;
 		bool has_had_enemy_contact = false;
-		bool enemy_contact_this_tick = false;
+		bool war_active = false;
 	};
 
 	namespace unit_system_internal

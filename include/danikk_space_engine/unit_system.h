@@ -6,14 +6,24 @@
 
 namespace danikk_space_engine
 {
-	/** @brief Current high-level task assigned to a registered unit. */
-	enum class UnitActivity : uint8
+	/** @brief Strategic state shared by the registered units of one faction. */
+	enum class UnitGlobalState : uint8
 	{
-		idle,
-		moving,
-		attacking,
-		searching,
-		scanning
+		war,
+		work,
+		rest
+	};
+
+	/** @brief Current task within a unit's strategic state. */
+	enum class UnitSubstate : uint8
+	{
+		pursuit,
+		attack,
+		reconnaissance,
+		moving_to_work,
+		collecting_corpses,
+		sleep,
+		idle
 	};
 
 	/** @brief Updates faction unit systems, perception, and NPC orders for one world tick. */
@@ -25,6 +35,7 @@ namespace danikk_space_engine
 	/** @brief Returns the current move target for a live registered unit, if it has one. */
 	bool getUnitMoveTarget(World& world, PointComponentSlotId human_slot_id,
 		uint64 generation_id, glm::dvec3& target_world);
-	/** @brief Returns the current activity for a registered live unit. */
-	bool getUnitActivity(PointComponentSlotId human_slot_id, uint64 generation_id, UnitActivity& activity);
+	/** @brief Returns the current global state and substate of a registered live unit. */
+	bool getUnitState(PointComponentSlotId human_slot_id, uint64 generation_id,
+		UnitGlobalState& global_state, UnitSubstate& substate);
 }

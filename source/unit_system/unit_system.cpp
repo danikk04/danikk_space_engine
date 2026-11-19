@@ -175,8 +175,9 @@ namespace danikk_space_engine
 		return false;
 	}
 
-	/** @brief Reads the current activity for a registered live unit. */
-	bool getUnitActivity(PointComponentSlotId human_slot_id, uint64 generation_id, UnitActivity& activity)
+	/** @brief Reads the current hierarchical state for a registered live unit. */
+	bool getUnitState(PointComponentSlotId human_slot_id, uint64 generation_id,
+		UnitGlobalState& global_state, UnitSubstate& substate)
 	{
 		DSE_WATCH();
 		for(const UnitSystem& system : unit_systems)
@@ -184,9 +185,8 @@ namespace danikk_space_engine
 				if(agent.enabled && agent.human_slot_id == human_slot_id
 					&& agent.human_generation_id == generation_id)
 				{
-					activity = agent.activity;
-					if(activity == UnitActivity::idle && agent.order.has_move_target)
-						activity = UnitActivity::moving;
+					global_state = agent.global_state;
+					substate = agent.substate;
 					return true;
 				}
 		return false;

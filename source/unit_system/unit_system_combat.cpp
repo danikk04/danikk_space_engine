@@ -176,7 +176,8 @@ namespace danikk_space_engine::unit_system_internal
 		DynamicArray<TargetAllocation>& allocations)
 	{
 		DynamicArray<UnitSighting>& known_sightings = system.known_sightings;
-		agent.activity = UnitActivity::idle;
+		agent.global_state = system.war_active ? UnitGlobalState::war : UnitGlobalState::rest;
+		agent.substate = system.war_active ? UnitSubstate::reconnaissance : UnitSubstate::idle;
 		const UnitTarget previous_target{agent.order.target_slot_id,
 			agent.order.target_point_id, agent.order.target_generation_id};
 		agent.order.clear();
@@ -202,7 +203,7 @@ namespace danikk_space_engine::unit_system_internal
 		}
 		if(best == nullptr) return;
 
-		agent.activity = UnitActivity::attacking;
+		agent.global_state = UnitGlobalState::war;
 		agent.order.has_attack_target = true;
 		agent.order.target_slot_id = best->target_slot_id;
 		agent.order.target_point_id = best->target_point_id;
@@ -224,6 +225,7 @@ namespace danikk_space_engine::unit_system_internal
 		const bool visible = !hit.hit || hit.distance >= distance - 0.1;
 		if(visible)
 		{
+			agent.substate = UnitSubstate::attack;
 			agent.order.has_look_target = true;
 			agent.order.look_target_world = target_position;
 			rememberSighting(world, system, human.faction_id,
@@ -245,6 +247,7 @@ namespace danikk_space_engine::unit_system_internal
 		}
 		else
 		{
+			agent.substate = UnitSubstate::pursuit;
 			agent.order.has_move_target = true;
 			agent.order.move_target_world = best->position;
 			agent.order.has_look_target = true;

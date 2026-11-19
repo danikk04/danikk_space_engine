@@ -16,12 +16,12 @@ namespace danikk_space_engine::unit_system_internal
 		assignments.resize(assignments.size() - 1);
 	}
 
-	/** @brief Assigns stable dispersal positions and staggered look-around orders outside combat. */
+	/** @brief Spreads out the group and scans its surroundings during the reconnaissance phase. */
 	void assignPostCombatOrders(World& world, UnitSystem& system)
 	{
 		DSE_WATCH();
 		DynamicArray<UnitPostCombatAssignment>& assignments = system.post_combat_assignments;
-		if(!system.has_had_enemy_contact || system.enemy_contact_this_tick)
+		if(!system.has_had_enemy_contact || !system.war_active || system.enemy_seen_this_tick)
 		{
 			assignments.clear();
 			return;
@@ -66,9 +66,10 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			UnitAgentState& agent = *candidate.agent;
 			HumanComponent& human = *candidate.human;
-			// Search orders have priority; combat orders are already assigned by assignOrders().
+			// Last-known enemy locations have priority over general area scanning.
 			if(agent.order.has_attack_target || agent.order.has_move_target) continue;
-			agent.activity = UnitActivity::scanning;
+			agent.global_state = UnitGlobalState::war;
+			agent.substate = UnitSubstate::reconnaissance;
 
 			UnitPostCombatAssignment* assignment = nullptr;
 			for(UnitPostCombatAssignment& existing : assignments)
