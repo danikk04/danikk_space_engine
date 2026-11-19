@@ -111,7 +111,7 @@ namespace danikk_space_engine::human_internal
 			const glm::dvec3 foot = body.position
 				+ body.rotation * (chunk.position + glm::dvec3(proposed_foot));
 			const vec3 world_up = vec3(body.rotation * glm::dvec3(up));
-			const RaycastHit hit = world.raycastBody(chunk.world_body_id,
+			const RaycastHit hit = world.raycasts.castBody(chunk.world_body_id,
 				foot + glm::dvec3(world_up) * static_cast<double>(step_height),
 				-world_up, step_height + maximum_drop);
 			if(!hit.hit || glm::dot(hit.normal, world_up) < minimum_ground_normal_dot) return false;

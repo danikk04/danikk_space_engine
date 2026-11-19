@@ -5,6 +5,7 @@
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/world.h>
+#include <danikk_space_engine/raycast_system.h>
 #include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/component/point/build_part.h>
@@ -37,21 +38,19 @@ namespace danikk_space_engine
 
 	}
 
-	/** @copydoc World::raycast */
-	RaycastHit World::raycast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
+	RaycastHit RaycastSystem::cast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
 		DSE_WATCH();
-		const auto& body_ids = world_body_data.getUsedWorldBodyIds();
-		return raycastBodies(body_ids.begin(), body_ids.size(), origin, direction, max_distance);
+		const auto& body_ids = world.world_body_data.getUsedWorldBodyIds();
+		return castBodies(body_ids.begin(), body_ids.size(), origin, direction, max_distance);
 	}
 
-	/** @copydoc World::raycastBody */
-	RaycastHit World::raycastBody(WorldBodyId body_id, const glm::dvec3& origin,
+	RaycastHit RaycastSystem::castBody(WorldBodyId body_id, const glm::dvec3& origin,
 		const vec3& direction, float max_distance) const
 	{
 		DSE_WATCH();
-		if(!world_body_data.isWorldBodyActive(body_id)) return RaycastHit{};
-		return raycastBodies(&body_id, 1, origin, direction, max_distance);
+		if(!world.world_body_data.isWorldBodyActive(body_id)) return RaycastHit{};
+		return castBodies(&body_id, 1, origin, direction, max_distance);
 	}
 
 	/**
@@ -67,9 +66,18 @@ namespace danikk_space_engine
 	 * @param max_distance Maximum accepted distance in world units.
 	 * @return Nearest hit or a default miss result.
 	 */
-	RaycastHit World::raycastBodies(const WorldBodyId* body_ids, size_t body_count,
+	RaycastHit RaycastSystem::castBodies(const WorldBodyId* body_ids, size_t body_count,
 		const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
+		const World& owner = world;
+		const WorldBodyData& world_body_data = owner.world_body_data;
+		const PlanetSystem& planets = owner.planets;
+		const ChunkSystem& chunks = owner.chunks;
+		const PointData& point_data = owner.point_data;
+		const auto getChunkWorldPosition = [&owner](ChunkId chunk_id)
+		{
+			return owner.getChunkWorldPosition(chunk_id);
+		};
 		RaycastHit result;
 		const float direction_length = glm::length(direction);
 		if(direction_length <= 0.000001f || max_distance < 0.0f) return result;
@@ -190,7 +198,7 @@ namespace danikk_space_engine
 						double field_distance;
 						glm::dvec3 field_normal;
 						if(segment_end >= distance_along_ray && raycastPlanetScalarField(
-							*this, body_id,
+							owner, body_id,
 							local_origin + glm::dvec3(local_direction) * distance_along_ray,
 							glm::dvec3(local_direction), segment_end - distance_along_ray,
 							field_distance, field_normal))
@@ -227,12 +235,12 @@ namespace danikk_space_engine
 	 * @param max_distance Maximum accepted ray length.
 	 * @return Nearest hit, or a miss if the camera slot/point is not active.
 	 */
-	RaycastHit World::raycastFromCamera(float max_distance) const
+	RaycastHit RaycastSystem::castFromCamera(float max_distance) const
 	{
-		if(camera_component_slot_id >= point_data.getPointComponentSlotCount()) return RaycastHit{};
-		if(!point_data.isPointComponentSlotActive(camera_component_slot_id)) return RaycastHit{};
-		const PointComponentSlot& camera_slot = point_data.getPointComponentSlot(camera_component_slot_id);
-		if(!point_data.isPointActive(camera_slot.point_id)) return RaycastHit{};
-		return raycast(getCameraWorldPosition(), getCameraComponent().getFront(), max_distance);
+		if(world.camera_component_slot_id >= world.point_data.getPointComponentSlotCount()) return RaycastHit{};
+		if(!world.point_data.isPointComponentSlotActive(world.camera_component_slot_id)) return RaycastHit{};
+		const PointComponentSlot& camera_slot = world.point_data.getPointComponentSlot(world.camera_component_slot_id);
+		if(!world.point_data.isPointActive(camera_slot.point_id)) return RaycastHit{};
+		return cast(world.getCameraWorldPosition(), world.getCameraComponent().getFront(), max_distance);
 	}
 }

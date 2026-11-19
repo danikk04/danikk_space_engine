@@ -221,7 +221,7 @@ namespace danikk_space_engine::unit_system_internal
 			agent.order.has_equip_order = true;
 			agent.order.equip_item_definition_id = weapon->item_definition_id;
 		}
-		const RaycastHit hit = world.raycast(shot_origin, vec3(delta), static_cast<float>(distance));
+		const RaycastHit hit = world.raycasts.cast(shot_origin, vec3(delta), static_cast<float>(distance));
 		const bool visible = !hit.hit || hit.distance >= distance - 0.1;
 		if(visible)
 		{

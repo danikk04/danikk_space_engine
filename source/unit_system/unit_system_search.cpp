@@ -46,7 +46,7 @@ namespace danikk_space_engine::unit_system_internal
 			const double ray_length = glm::length(ray);
 			if(ray_length > 0.001)
 			{
-				const RaycastHit hit = world.raycast(eye_position, vec3(ray), static_cast<float>(ray_length));
+				const RaycastHit hit = world.raycasts.cast(eye_position, vec3(ray), static_cast<float>(ray_length));
 				if(hit.hit && hit.distance < ray_length - 0.1) continue;
 			}
 			world.deferPointDestruction(corpse_slot.point_id);

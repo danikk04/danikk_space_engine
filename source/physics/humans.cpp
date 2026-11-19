@@ -218,7 +218,7 @@ namespace danikk_space_engine
 			const glm::dvec3 foot_position = human.center - human.up * (human.height * 0.5);
 			constexpr double probe_height = 1.0;
 			constexpr double maximum_lift = 1.0;
-			const RaycastHit hit = world.raycastBody(
+			const RaycastHit hit = world.raycasts.castBody(
 				human.body_id,
 				foot_position + human.up * probe_height,
 				vec3(-human.up),

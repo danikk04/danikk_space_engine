@@ -42,7 +42,7 @@ namespace danikk_space_engine
 	 * back-face culling and has no maximum-distance limit. Distance is measured
 	 * in the same units as the vertex coordinates because the ray direction is
 	 * normalized before intersection.
-	 * @see World::raycast(), which applies chunk broadphase before testing triangles.
+	 * @see RaycastSystem::cast(), which applies chunk broadphase before testing triangles.
 	 */
 	RayTriangleIntersection intersectRayTriangle(
 		const Ray& ray,

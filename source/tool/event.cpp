@@ -38,7 +38,7 @@ namespace danikk_space_engine
 			const glm::dvec3 origin = hit.position
 				+ glm::dvec3(tangent * ((static_cast<float>(index) - 2.0f) * column_spacing)
 					+ surface_up * 3.0f);
-			const RaycastHit ground = world.raycast(origin, -surface_up, 6.0f);
+			const RaycastHit ground = world.raycasts.cast(origin, -surface_up, 6.0f);
 			if(!ground.hit || ground.body_id != body_id || glm::dot(ground.normal, surface_up) < 0.5f) continue;
 			const glm::dvec3 local_position = inverse_rotation * (ground.position - body_position);
 			const vec3 local_surface_up = glm::normalize(vec3(inverse_rotation * glm::dvec3(ground.normal)));

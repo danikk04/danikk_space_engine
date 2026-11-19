@@ -86,7 +86,7 @@ namespace danikk_space_engine::unit_system_internal
 				const double distance = glm::length(delta);
 				if(distance > 0.001)
 				{
-					const RaycastHit hit = world.raycast(shot_origin, vec3(delta), static_cast<float>(distance));
+					const RaycastHit hit = world.raycasts.cast(shot_origin, vec3(delta), static_cast<float>(distance));
 					if(!hit.hit || hit.distance >= distance - 0.1)
 						rememberSighting(world, system, human->faction_id, previous_target, target_position);
 				}
@@ -111,7 +111,7 @@ namespace danikk_space_engine::unit_system_internal
 				const glm::dvec3 delta = target_position - shot_origin;
 				const double distance = glm::length(delta);
 				if(distance <= 0.001) continue;
-				const RaycastHit hit = world.raycast(shot_origin, vec3(delta), static_cast<float>(distance));
+				const RaycastHit hit = world.raycasts.cast(shot_origin, vec3(delta), static_cast<float>(distance));
 				if(!hit.hit || hit.distance >= distance - 0.1)
 					rememberSighting(world, system, human->faction_id, candidate, target_position);
 			}

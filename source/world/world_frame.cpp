@@ -92,7 +92,7 @@ namespace danikk_space_engine
 				|| player_controller.selected_tool_action == ToolActionId::spawn_5_pirates);
 		if(settings.show_world_body_preview && (show_build_part_preview || show_event_spawn_preview))
 		{
-			const RaycastHit hit = raycastFromCamera();
+			const RaycastHit hit = raycasts.castFromCamera();
 			if(show_build_part_preview)
 			{
 				const BuildPartShape shape = player_controller.selected_tool_action == ToolActionId::create_slope

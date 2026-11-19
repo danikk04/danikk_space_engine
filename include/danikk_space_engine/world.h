@@ -13,40 +13,12 @@
 #include <danikk_space_engine/world_body.h>
 #include <danikk_space_engine/chunk_system.h>
 #include <danikk_space_engine/planet_system.h>
+#include <danikk_space_engine/raycast_system.h>
 #include <danikk_space_engine/factions.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
 {
-
-	/**
-	 * @brief Stores the nearest surface-face or BuildPart hit returned by a raycast.
-	 *
-	 * A miss leaves `hit` false and the remaining fields at their default values. `face` is a
-	 * stable chunk/triangle handle suitable for editing while its owning resources remain active;
-	 * the point IDs preserve the triangle's stored winding for callers that need its geometry.
-	 */
-	struct RaycastHit
-	{
-		/** @brief True when the ray intersects supported world geometry within the requested range. */
-		bool hit = false;
-		/** @brief Distance from the ray origin to the nearest hit, in world units. */
-		float distance = 0.0f;
-		/** @brief Nearest hit position in world coordinates. */
-		glm::dvec3 position = glm::dvec3(0.0);
-		/** @brief Surface normal transformed into world orientation. */
-		vec3 normal = vec3(0.0f);
-		/** @brief True when the nearest hit is a BuildPart point component. */
-		bool hit_build_part = false;
-		/** @brief True when the hit was found in a planet scalar field. */
-		bool hit_terrain = false;
-		/** @brief WorldBody containing the hit geometry. */
-		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
-		/** @brief Chunk containing the hit geometry or point component. */
-		ChunkId chunk_id = static_cast<ChunkId>(-1);
-		/** @brief Point-component slot of the hit BuildPart, valid when hit_build_part is true. */
-		PointComponentSlotId build_part_slot_id = static_cast<PointComponentSlotId>(-1);
-	};
 
 	/**
 	 * @brief Coordinates world state, simulation updates, physics, and geometry queries.
@@ -59,10 +31,6 @@ namespace danikk_space_engine
 	 */
 	class World
 	{
-		/** @brief Traces a ray through the supplied active bodies and returns their nearest hit. */
-		RaycastHit raycastBodies(const WorldBodyId* body_ids, size_t body_count,
-			const glm::dvec3& origin, const vec3& direction, float max_distance) const;
-
 	public:
 		/** @brief Owns point resources and their component slots. */
 		PointData point_data;
@@ -80,6 +48,8 @@ namespace danikk_space_engine
 		ComponentSystem components;
 		/** @brief Owns planet data, terrain queries, edits, and chunk streaming. */
 		PlanetSystem planets;
+		/** @brief Performs terrain and BuildPart ray queries. */
+		RaycastSystem raycasts;
 		/** @brief Owns this world's faction instances and diplomatic relations. */
 		FactionSystem factions;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
@@ -163,36 +133,6 @@ namespace danikk_space_engine
 		 * release their GPU resources safely.
 		 */
 		void shutdown();
-
-		/**
-		 * @brief Finds the nearest hit against terrain or a BuildPart in the world.
-		 *
-		 * Planet chunks are visited with a 3D grid DDA; other bodies scan their chunk lists. Valid
-		 * chunk bounds reject misses before triangle tests. The supplied direction is normalized here.
-		 * @param origin Ray origin in world coordinates.
-		 * @param direction Ray direction; need not be normalized.
-		 * @param max_distance Maximum accepted ray length in world units.
-		 * @return Closest hit data, or a default result with `hit == false`.
-		 */
-		RaycastHit raycast(const glm::dvec3& origin, const vec3& direction, float max_distance = 10000.0f) const;
-
-		/**
-		 * @brief Finds the nearest hit against terrain or a BuildPart in one WorldBody.
-		 * @param body_id Body that owns the geometry to query.
-		 * @param origin Ray origin in world coordinates.
-		 * @param direction Ray direction; need not be normalized.
-		 * @param max_distance Maximum accepted ray length in world units.
-		 * @return Closest hit in the specified body, or a default miss if the body is inactive or no hit was found.
-		 */
-		RaycastHit raycastBody(WorldBodyId body_id, const glm::dvec3& origin,
-			const vec3& direction, float max_distance) const;
-
-		/**
-		 * @brief Casts a ray from the active camera along its current forward axis.
-		 * @param max_distance Maximum ray length in world units.
-		 * @return Closest hit data or a default miss when no active camera is available.
-		 */
-		RaycastHit raycastFromCamera(float max_distance = 10000.0f) const;
 
 		/** @brief Returns the active camera slot; the stored ID must refer to a live slot. */
 		PointComponentSlot& getCameraSlot();

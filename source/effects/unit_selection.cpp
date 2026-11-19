@@ -92,7 +92,7 @@ namespace danikk_space_engine
 			const glm::dvec3 feet = center - body_up * half_height;
 			// Query the ground for every selected unit so stale grounded state cannot leave a ring floating in the air.
 			const glm::dvec3 ray_origin = center + body_up * 0.1;
-			const RaycastHit ground_hit = world.raycastBody(chunk.world_body_id, ray_origin,
+			const RaycastHit ground_hit = world.raycasts.castBody(chunk.world_body_id, ray_origin,
 				vec3(-body_up), static_cast<float>(half_height + maximum_ground_gap + 0.25));
 			if(!ground_hit.hit) continue;
 			glm::dvec3 ground_normal = glm::dvec3(ground_hit.normal);

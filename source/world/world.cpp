@@ -13,7 +13,7 @@ namespace danikk_space_engine
 {
 	World::World()
 		: chunks(*this), environment(*this), physics(*this), controller(*this),
-		  components(*this), planets(*this)
+		  components(*this), planets(*this), raycasts(*this)
 	{
 	}
 

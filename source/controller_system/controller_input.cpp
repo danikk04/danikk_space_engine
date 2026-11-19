@@ -153,7 +153,7 @@ namespace danikk_space_engine
 			camera_movement_speed = glm::clamp(
 				camera_movement_speed * std::pow(1.25f, mouse_scroll_delta), 0.01f, 1000000.0f);
 
-		RaycastHit hit = world.raycastFromCamera();
+		RaycastHit hit = world.raycasts.castFromCamera();
 		const bool unit_selection_click = left_mouse_state == button_states::press
 			&& !(mode == PlayerMode::god && drag_tool_selected)
 			&& selectOwnHumanUnderCursor(hit, shift_pressed);
@@ -175,7 +175,7 @@ namespace danikk_space_engine
 			{
 				applyTool(active_tool, selected_tool_action, world, hit,
 					build_part_size, build_part_rotation_step);
-				hit = world.raycastFromCamera();
+				hit = world.raycasts.castFromCamera();
 			}
 		}
 		if(spawn_machinegun)

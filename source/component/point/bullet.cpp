@@ -112,7 +112,7 @@ namespace danikk_space_engine
 			const Chunk& owner_chunk = world.chunks.getChunk(slot.chunk_id);
 			const glm::dquat body_rotation = world.world_body_data.getWorldBody(owner_chunk.world_body_id).rotation;
 			const glm::dvec3 direction = glm::normalize(body_rotation * glm::dvec3(bullet.velocity));
-			const RaycastHit hit = world.raycast(start_world_position, vec3(direction), step_distance);
+			const RaycastHit hit = world.raycasts.cast(start_world_position, vec3(direction), step_distance);
 			double nearest = hit.hit ? hit.distance : step_distance;
 			PointComponentSlotId victim_id = static_cast<PointComponentSlotId>(-1);
 			PointComponentSlotId suppression_target_id = static_cast<PointComponentSlotId>(-1);

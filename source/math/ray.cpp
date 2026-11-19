@@ -14,7 +14,7 @@ namespace danikk_space_engine
 	 *         normalized face normal. Degenerate, parallel, outside, and
 	 *         behind-origin intersections return a default miss.
 	 * The test is two-sided: the determinant sign is not used for back-face culling.
-	 * @see World::raycast(), which calls this test only for triangles in candidate chunks.
+	 * @see RaycastSystem::cast(), which calls this test only for triangles in candidate chunks.
 	 */
 	RayTriangleIntersection intersectRayTriangle(
 		const Ray& ray,
