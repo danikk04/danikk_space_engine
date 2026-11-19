@@ -20,16 +20,16 @@ License: https://creativecommons.org/licenses/by/4.0/
 Minecraft character skins
 
 touhou_reimu.png
-Skin: Hakurei Reimu (Chibi)
-Author: Um11a
-Source: https://www.minecraftskins.com/skin/23265624/-touhou--hakurei-reimu---chibi/
-The author says the skin is free to use and requests credit for edited/filming use.
+Skin: Reimu Hakurei 博麗霊夢 | Touhou 東方
+Author: strawbrysage
+Source: https://www.planetminecraft.com/skin/reimu-hakurei-touhou-5476735/
+No separate reuse license is stated on the skin page.
 
 touhou_marisa.png
-Skin: Kirisame Marisa (Chibi)
-Author: Um11a
-Source: https://www.minecraftskins.com/skin/23477246/-touhou--kirisame-marisa---chibi/
-The creator is credited here; the source page does not state a separate redistribution license.
+Skin: Marisa Kirisame
+Author: Pill0w686
+Source: https://www.planetminecraft.com/skin/marisa-kirisame-6931108/
+No separate reuse license is stated on the skin page.
 
 touhou_tsumi_bukuro.png
 Skin: Touhou sin sack (Tsumi-bukuro)
