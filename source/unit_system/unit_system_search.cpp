@@ -49,7 +49,7 @@ namespace danikk_space_engine::unit_system_internal
 				const RaycastHit hit = world.raycasts.cast(eye_position, vec3(ray), static_cast<float>(ray_length));
 				if(hit.hit && hit.distance < ray_length - 0.1) continue;
 			}
-			world.deferPointDestruction(corpse_slot.point_id);
+			world.components.deferPointDestruction(corpse_slot.point_id);
 		}
 	}
 

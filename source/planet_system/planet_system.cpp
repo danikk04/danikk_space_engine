@@ -148,23 +148,7 @@ namespace danikk_space_engine
 
 	void PlanetSystem::removeQueuedRequests(const PlanetData& planet)
 	{
-		cancelChunkMeshGenerationRequests(planet.world_body_id, planet.generation_id);
-		for(size_t index = 0; index < world.chunk_generation_requests.size();)
-		{
-			const ChunkMeshGenerationRequest& request = world.chunk_generation_requests[index];
-			if(request.source != ChunkMeshSource::planet_terrain
-				|| request.world_body_id != planet.world_body_id
-				|| request.planet_generation_id != planet.generation_id)
-			{
-				++index;
-				continue;
-			}
-			for(size_t shift = index + 1; shift < world.chunk_generation_requests.size(); ++shift)
-				world.chunk_generation_requests[shift - 1] =
-					static_cast<ChunkMeshGenerationRequest&&>(world.chunk_generation_requests[shift]);
-			world.chunk_generation_requests.resize(world.chunk_generation_requests.size() - 1);
-			world.chunk_generation_requests_dirty = true;
-		}
+		world.chunk_mesh_generation.cancelPlanetRequests(planet.world_body_id, planet.generation_id);
 	}
 
 	void PlanetSystem::destroyPlanet(WorldBodyId world_body_id)

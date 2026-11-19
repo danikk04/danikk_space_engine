@@ -62,7 +62,7 @@ namespace danikk_space_engine
 		}
 		planet->chunk_lookup.setChunk(
 			generated_chunk.grid_coordinate, chunk_id, generated_chunk.planet_mesh_generator);
-		world.removeChunkMeshGenerationRequest(planet->world_body_id,
+		world.chunk_mesh_generation.removePlanetRequest(planet->world_body_id,
 			planet->generation_id, generated_chunk.grid_coordinate);
 		for(size_t index = 0; index < planet->pending_requests.size(); index++)
 		{

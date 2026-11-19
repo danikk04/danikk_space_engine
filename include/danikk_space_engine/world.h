@@ -7,16 +7,15 @@
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/camera_system.h>
 #include <danikk_space_engine/chunk.h>
-#include <danikk_space_engine/chunk_mesh_generator.h>
 #include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/component_system.h>
 #include <danikk_space_engine/world_body.h>
 #include <danikk_space_engine/chunk_system.h>
+#include <danikk_space_engine/chunk_mesh_generation_system.h>
 #include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/raycast_system.h>
 #include <danikk_space_engine/factions.h>
 #include <danikk_space_engine/unit_system.h>
-#include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
 {
@@ -39,6 +38,8 @@ namespace danikk_space_engine
 		WorldBodyData world_body_data;
 		/** @brief Owns chunk data, chunk memberships, and chunk meshes. */
 		ChunkSystem chunks;
+		/** @brief Owns asynchronous chunk mesh requests and result acceptance. */
+		ChunkMeshGenerationSystem chunk_mesh_generation;
 		/** @brief Samples global gravity and other spatial environment fields. */
 		EnvironmentSystem environment;
 		/** @brief Integrates body motion and resolves physical contacts after component ticks. */
@@ -57,14 +58,6 @@ namespace danikk_space_engine
 		FactionSystem factions;
 		/** @brief Owns per-faction unit groups, tactical memory, and orders. */
 		UnitSystem unit_system;
-		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
-		DynamicArray<PointId> pending_point_destruction_ids;
-		/** @brief Generation token used to reject worker results from an earlier world lifetime. */
-		uint64 chunk_mesh_generator_generation_id = 0;
-		/** @brief Latest desired chunk-mesh work, awaiting submission to the generator module. */
-		DynamicArray<ChunkMeshGenerationRequest> chunk_generation_requests;
-		/** @brief Set when the queued request array changed and must be sent to the worker. */
-		bool chunk_generation_requests_dirty = false;
 
 		/** @brief Constructs subsystems bound to this World instance. */
 		World();
@@ -75,63 +68,31 @@ namespace danikk_space_engine
 		 * @brief Executes current unit orders, updates UnitGroup decisions, then runs world physics.
 		 *
 		 * Component and chunk ID lists are snapshotted where callbacks may mutate ownership lists.
-		 * Deferred point deletion runs after traversal. UnitGroup then executes stored agent orders,
+		 * Deferred point deletion is flushed after component and controller updates. UnitGroup executes stored agent orders,
 		 * performs vision/raycast work, and assigns the next orders before PhysicsSystem advances.
 		 */
 		void tick();
 
 		/**
-		 * @brief Adds a live point ID once to the queue drained after component traversal.
-		 * @param point_id Point to destroy after all current component callbacks complete.
-		 * Inactive IDs are ignored and duplicate requests are coalesced.
-		 */
-		void deferPointDestruction(PointId point_id);
-
-		/** @brief Snapshots dirty BuildPart chunks into CPU-only mesh generation jobs. */
-		void queueDirtyBuildPartMeshes();
-
-		/**
-		 * @brief Replaces queued requests for one planet and marks the worker queue dirty.
-		 * @param world_body_id Planet body owning the requests.
-		 * @param planet_generation_id Planet incarnation used to reject stale work.
-		 * @param requests Current immutable request set for that planet.
-		 */
-		void replaceChunkMeshGenerationRequests(
-			WorldBodyId world_body_id, uint64 planet_generation_id,
-			const DynamicArray<ChunkMeshGenerationRequest>& requests);
-
-		/**
-		 * @brief Removes one queued or pending request matching a component and planet-grid coordinate.
-		 * @param world_body_id Planet body that owns the request.
-		 * @param planet_generation_id Planet incarnation that owns the request.
-		 * @param grid_coordinate Coordinate to cancel or forget.
-		 */
-		void removeChunkMeshGenerationRequest(WorldBodyId world_body_id,
-			uint64 planet_generation_id, const glm::ivec3& grid_coordinate);
-		/** @brief Removes the queued BuildPart mesh job for one chunk. */
-		void removeBuildPartMeshRequest(ChunkId chunk_id);
-
-		/**
 		 * @brief Accepts completed generation work, runs frame callbacks, and draws resident meshes.
 		 *
-		 * Body components update first; changed request snapshots are sent to the
-		 * worker; at most one valid generated chunk is accepted and its transient CPU
-		 * mesh buffer is uploaded immediately. The method then runs chunk frame callbacks, draws chunks,
+		 * Body components update first; ChunkMeshGenerationSystem submits changed requests
+		 * and accepts at most one valid generated mesh. The method then runs chunk frame callbacks, draws chunks,
 		 * and conditionally draws debug overlays and the placement preview.
 		 */
 		void frame();
 
 		/**
-		 * @brief Starts the loader, invalidates older results, resets queues, and creates the base scenario.
-		 * Advances the world token while skipping zero, clears queued generation and
-		 * deferred-destruction IDs, then calls `startBaseScenario()`, which clears
-		 * and repopulates the point and body data pools. Results from an earlier initialization are stale.
+		 * @brief Resets world state, initializes asynchronous chunk generation, and creates the base scenario.
+		 * Clears old chunks and bodies, resets the owning subsystems, then calls
+		 * `startBaseScenario()` to repopulate point and body data. The mesh-generation
+		 * subsystem advances its token so results from an earlier initialization are stale.
 		 */
 		void init();
 
 		/**
-		 * @brief Stops and joins chunk generation, invalidates outstanding results, and releases world data.
-		 * Advances the world token, clears pending requests, and releases the point and body pools.
+		 * @brief Stops chunk generation, invalidates outstanding results, and releases world data.
+		 * The mesh-generation subsystem joins its worker and clears requests before point and body pools are released.
 		 * Call before destroying the graphics context so owned chunk meshes can
 		 * release their GPU resources safely.
 		 */

@@ -4,6 +4,32 @@
 
 namespace danikk_space_engine
 {
+	/** @copydoc ComponentSystem::deferPointDestruction */
+	void ComponentSystem::deferPointDestruction(PointId point_id)
+	{
+		DSE_WATCH();
+		if(!world.point_data.isPointActive(point_id)) return;
+		for(PointId queued_point_id : deferred_point_destruction_ids)
+			if(queued_point_id == point_id) return;
+		deferred_point_destruction_ids.push(point_id);
+	}
+
+	/** @copydoc ComponentSystem::flushDeferredPointDestruction */
+	void ComponentSystem::flushDeferredPointDestruction()
+	{
+		DSE_WATCH();
+		for(PointId point_id : deferred_point_destruction_ids)
+			if(world.point_data.isPointActive(point_id)) world.chunks.destroyPoint(point_id);
+		deferred_point_destruction_ids.clear();
+	}
+
+	/** @copydoc ComponentSystem::clearDeferredPointDestruction */
+	void ComponentSystem::clearDeferredPointDestruction()
+	{
+		DSE_WATCH();
+		deferred_point_destruction_ids.clear();
+	}
+
 	/** @copydoc ComponentSystem::tickChunkComponents */
 	void ComponentSystem::tickChunkComponents(ChunkId chunk_id)
 	{

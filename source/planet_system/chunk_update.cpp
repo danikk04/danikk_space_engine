@@ -30,7 +30,7 @@ namespace danikk_space_engine
 			request.world_body_id = planet.world_body_id;
 			request.planet_generation_id = planet.generation_id;
 		}
-		world.replaceChunkMeshGenerationRequests(
+		world.chunk_mesh_generation.replacePlanetRequests(
 			planet.world_body_id, planet.generation_id, planet.pending_requests);
 	}
 

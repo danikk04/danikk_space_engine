@@ -159,7 +159,7 @@ namespace danikk_space_engine
 					applyBallisticDamage(*health, bullet.damage, victim.point_id);
 				}
 				bullet.destruction_queued = true;
-				world.deferPointDestruction(slot.point_id);
+				world.components.deferPointDestruction(slot.point_id);
 				return;
 			}
 			if(suppression_target_id != static_cast<PointComponentSlotId>(-1))
@@ -176,12 +176,12 @@ namespace danikk_space_engine
 					if(health != nullptr)
 					{
 						applyBallisticDamage(*health, bullet.damage, part.point_id);
-						if(health->getHealth() <= 0.0f) world.deferPointDestruction(part.point_id);
+						if(health->getHealth() <= 0.0f) world.components.deferPointDestruction(part.point_id);
 					}
 				}
 				point.position = vec3(glm::conjugate(body_rotation) * (hit.position - world.getChunkWorldPosition(slot.chunk_id)));
 				bullet.destruction_queued = true;
-				world.deferPointDestruction(slot.point_id);
+				world.components.deferPointDestruction(slot.point_id);
 				return;
 			}
 			point.position = start_position + displacement;
@@ -191,7 +191,7 @@ namespace danikk_space_engine
 		if(bullet.age >= bullet.lifetime)
 		{
 			bullet.destruction_queued = true;
-			world.deferPointDestruction(slot.point_id);
+			world.components.deferPointDestruction(slot.point_id);
 		}
 	}
 

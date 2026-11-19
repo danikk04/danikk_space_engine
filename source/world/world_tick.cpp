@@ -23,11 +23,7 @@ namespace danikk_space_engine
 		components.tickWorldBodyComponents();
 		camera.tick();
 		controller.tick();
-		for(PointId point_id : pending_point_destruction_ids)
-		{
-			if(point_data.isPointActive(point_id)) chunks.destroyPoint(point_id);
-		}
-		pending_point_destruction_ids.clear();
+		components.flushDeferredPointDestruction();
 		unit_system.tick(glm::max(getTargetFrameDelay(), 0.0f));
 		physics.tick();
 	}
