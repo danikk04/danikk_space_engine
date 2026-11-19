@@ -2,9 +2,9 @@
 
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/controller_system.h>
+#include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/effects/unit_selection.h>
-#include <danikk_space_engine/factions.h>
+#include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/world.h>
 
 #include <danikk_engine/mesh.h>

@@ -2,7 +2,7 @@
 #include <cmath>
 
 #include <danikk_space_engine/chunk_mesh_generator.h>
-#include <danikk_space_engine/planet_system.h>
+#include <danikk_space_engine/systems/planet/planet.h>
 
 namespace danikk_space_engine::chunk_mesh_generator_internal
 {

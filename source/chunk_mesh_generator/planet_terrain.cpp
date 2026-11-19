@@ -3,7 +3,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
-#include <danikk_space_engine/planet_system.h>
+#include <danikk_space_engine/systems/planet/planet.h>
 #include "internal.h"
 #include <danikk_engine/danikk_engine.h>
 

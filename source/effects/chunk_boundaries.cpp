@@ -1,6 +1,6 @@
 #include <danikk_space_engine/effects/chunk_boundaries.h>
 
-#include <danikk_space_engine/planet_system.h>
+#include <danikk_space_engine/systems/planet/planet.h>
 #include <danikk_space_engine/world.h>
 
 #include <danikk_engine/mesh.h>

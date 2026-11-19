@@ -6,8 +6,8 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/scenario/npc_diagnostics.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/planet_system.h>
-#include <danikk_space_engine/unit_system.h>
+#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine

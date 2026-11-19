@@ -1,5 +1,5 @@
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/component_system.h>
+#include <danikk_space_engine/systems/component/component.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/effects/world_body_preview.h>
 #include <danikk_space_engine/effects/event_spawn_preview.h>
@@ -11,7 +11,7 @@
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/config.h>
-#include <danikk_space_engine/controller_system.h>
+#include <danikk_space_engine/systems/controller/controller.h>
 
 namespace danikk_space_engine
 {

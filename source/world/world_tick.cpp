@@ -1,10 +1,10 @@
 #include <danikk_framework/glm.h>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/component_system.h>
+#include <danikk_space_engine/systems/component/component.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/unit_system.h>
-#include <danikk_space_engine/controller_system.h>
+#include <danikk_space_engine/systems/unit/unit.h>
+#include <danikk_space_engine/systems/controller/controller.h>
 
 namespace danikk_space_engine
 {

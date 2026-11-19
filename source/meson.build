@@ -1,12 +1,10 @@
 sources = files(
 	'tool_catalog.cpp',
 	'config.cpp',
-	'factions.cpp',
 	'localization.cpp', 
 	'main.cpp', 
 	'material.cpp',
 	'profiler.cpp',
-	'chunk.cpp',
 	'resource_pool.cpp',
 )
 
@@ -22,14 +20,5 @@ subdir('point')
 subdir('world_body')
 subdir('world')
 subdir('chunk_mesh_generator')
-subdir('chunk_mesh_generation_system')
-subdir('chunk_system')
-subdir('physics')
 subdir('tool')
-subdir('unit_system')
-subdir('component_system')
-subdir('controller_system')
-subdir('camera_system')
-subdir('environment')
-subdir('planet_system')
-subdir('raycast_system')
+subdir('systems')

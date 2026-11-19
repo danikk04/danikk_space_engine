@@ -2,8 +2,8 @@
 
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/controller_system.h>
-#include <danikk_space_engine/unit_system.h>
+#include <danikk_space_engine/systems/controller/controller.h>
+#include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/effects/unit_order_indicators.h>
 #include <danikk_space_engine/world.h>
 

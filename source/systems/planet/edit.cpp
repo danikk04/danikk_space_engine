@@ -1,0 +1,13 @@
+#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/world.h>
+
+namespace danikk_space_engine
+{
+
+	/** @copydoc editPlanetGround */
+	bool editPlanetGround(World& world, WorldBodyId body_id, const glm::dvec3& position,
+		double radius, bool adds_solid_terrain)
+	{
+		return world.planets.editGround(body_id, position, radius, adds_solid_terrain);
+	}
+}

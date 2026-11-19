@@ -5,7 +5,7 @@
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/scenario/base.h>
-#include <danikk_space_engine/controller_system.h>
+#include <danikk_space_engine/systems/controller/controller.h>
 
 namespace danikk_space_engine
 {

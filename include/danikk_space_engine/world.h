@@ -1,21 +1,21 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/environment.h>
-#include <danikk_space_engine/physics.h>
+#include <danikk_space_engine/systems/environment/environment.h>
+#include <danikk_space_engine/systems/physics/physics.h>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/camera_system.h>
-#include <danikk_space_engine/chunk.h>
-#include <danikk_space_engine/controller_system.h>
-#include <danikk_space_engine/component_system.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/chunk/chunk.h>
+#include <danikk_space_engine/systems/controller/controller.h>
+#include <danikk_space_engine/systems/component/component.h>
 #include <danikk_space_engine/world_body.h>
-#include <danikk_space_engine/chunk_system.h>
-#include <danikk_space_engine/chunk_mesh_generation_system.h>
-#include <danikk_space_engine/planet_system.h>
-#include <danikk_space_engine/raycast_system.h>
-#include <danikk_space_engine/factions.h>
-#include <danikk_space_engine/unit_system.h>
+#include <danikk_space_engine/systems/chunk/manager.h>
+#include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
+#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/raycast/raycast.h>
+#include <danikk_space_engine/systems/faction/faction.h>
+#include <danikk_space_engine/systems/unit/unit.h>
 
 namespace danikk_space_engine
 {
