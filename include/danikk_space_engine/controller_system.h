@@ -29,6 +29,11 @@ namespace danikk_space_engine
 	 */
 	class ControllerSystem
 	{
+		/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
+		void validateSelectedUnits(World& world);
+		/** @brief Selects the nearest visible player-faction human intersected by the camera ray. */
+		bool selectOwnHumanUnderCursor(World& world, const RaycastHit& surface_hit, bool shift_pressed);
+
 	public:
 		/** @brief World instance and point currently controlled by this system. */
 		World* controlled_world = nullptr;

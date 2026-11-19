@@ -25,5 +25,10 @@ subdir('chunk_render_system')
 subdir('physics')
 subdir('tool')
 subdir('unit_system')
-sources += files('controller_system/controller_system.cpp')
+sources += files(
+	'controller_system/controller_system.cpp',
+	'controller_system/controller_input.cpp',
+	'controller_system/controller_selection.cpp',
+	'controller_system/controller_hotbar.cpp',
+)
 subdir('environment')
