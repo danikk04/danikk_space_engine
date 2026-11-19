@@ -27,6 +27,28 @@ namespace danikk_space_engine
 			}
 		}
 
+		/** @brief Removes agent entries whose pooled human slot was destroyed or reused. */
+		void pruneUnitAgents(World& world, UnitSystem& system)
+		{
+			for(size_t i = 0; i < system.agents.size();)
+			{
+				const UnitAgentState& agent = system.agents[i];
+				if(world.data.isPointComponentSlotActive(agent.human_slot_id))
+				{
+					const PointComponentSlot& slot = world.data.getPointComponentSlot(agent.human_slot_id);
+					if(slot.type_id == PointComponentTypeId::human
+						&& slot.generation_id == agent.human_generation_id)
+					{
+						++i;
+						continue;
+					}
+				}
+				for(size_t j = i + 1; j < system.agents.size(); ++j)
+					system.agents[j - 1] = static_cast<UnitAgentState&&>(system.agents[j]);
+				system.agents.resize(system.agents.size() - 1);
+			}
+		}
+
 		/** @brief Finds a living human component attached to a point. */
 		PointComponentSlot* findHumanSlot(World& world, PointId point_id, PointComponentSlotId* found_id)
 		{
@@ -101,16 +123,56 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		ensureUnitSystemCount(world.data.factions.size());
-
-		const DynamicArray<PointComponentSlotId>& slot_ids = world.data.getUsedPointComponentSlotIds();
 		for(UnitSystem& system : unit_systems)
 		{
-			unit_system_internal::updatePerception(world, system, slot_ids);
-			unit_system_internal::assignOrders(world, system, slot_ids);
+			pruneUnitAgents(world, system);
+			unit_system_internal::executeUnitOrders(world, system);
+			unit_system_internal::updatePerception(world, system);
+			unit_system_internal::assignOrders(world, system);
 			unit_system_internal::finishPerception(world, system, dt);
-			unit_system_internal::assignSearchOrders(world, system, slot_ids);
-			unit_system_internal::assignPostCombatOrders(world, system, slot_ids);
+			unit_system_internal::assignSearchOrders(world, system);
+			unit_system_internal::assignPostCombatOrders(world, system);
 		}
+	}
+
+	/** @brief Registers a human in the central AI system associated with its current faction. */
+	void registerUnitAgent(World& world, PointComponentSlotId human_slot_id, bool enabled)
+	{
+		DSE_WATCH();
+		if(!world.data.isPointComponentSlotActive(human_slot_id)) return;
+		PointComponentSlot& slot = world.data.getPointComponentSlot(human_slot_id);
+		if(slot.type_id != PointComponentTypeId::human) return;
+		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
+		if(human.faction_id >= world.data.factions.size()) return;
+		ensureUnitSystemCount(world.data.factions.size());
+		UnitSystem& system = unit_systems[human.faction_id];
+		for(UnitAgentState& agent : system.agents)
+			if(agent.human_slot_id == human_slot_id && agent.human_generation_id == slot.generation_id)
+			{
+				agent.enabled = enabled;
+				return;
+			}
+		UnitAgentState agent;
+		agent.human_slot_id = human_slot_id;
+		agent.human_generation_id = slot.generation_id;
+		agent.enabled = enabled;
+		system.agents.push(static_cast<UnitAgentState&&>(agent));
+	}
+
+	/** @brief Reads the registered unit's current movement target for its order indicator. */
+	bool getUnitMoveTarget(World& world, PointComponentSlotId human_slot_id,
+		uint64 generation_id, glm::dvec3& target_world)
+	{
+		DSE_WATCH();
+		for(UnitSystem& system : unit_systems)
+			for(UnitAgentState& agent : system.agents)
+				if(agent.enabled && agent.human_slot_id == human_slot_id
+					&& agent.human_generation_id == generation_id && agent.order.has_move_target)
+				{
+					target_world = agent.order.move_target_world;
+					return true;
+				}
+		return false;
 	}
 
 	namespace unit_system_internal

@@ -16,7 +16,7 @@ namespace danikk_space_engine::unit_system_internal
 	namespace
 	{
 		/** @brief Marks a previously recorded target as checked by at least one faction unit this tick. */
-		void markVisibilityChecked(UnitSystem& system, const NpcTarget& target)
+		void markVisibilityChecked(UnitSystem& system, const UnitTarget& target)
 		{
 			for(UnitSighting& sighting : system.known_sightings)
 			{
@@ -81,7 +81,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Checks that a cached target still identifies a living hostile human. */
-	bool isValidEnemy(World& world, const NpcTarget& target, FactionId faction)
+	bool isValidEnemy(World& world, const UnitTarget& target, FactionId faction)
 	{
 		if(!world.data.isPointComponentSlotActive(target.slot_id)) return false;
 		const PointComponentSlot& slot = world.data.getPointComponentSlot(target.slot_id);
@@ -96,12 +96,12 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Rebuilds a unit's nearby hostile-human candidates from its loaded 3x3x3 chunk neighborhood. */
-	void collectEnemyCandidates(World& world, PointId point_id, ChunkId chunk_id, FactionId faction,
-		NpcControllerComponent& controller)
+	void collectEnemyTargets(World& world, PointId point_id, ChunkId chunk_id, FactionId faction,
+		UnitAgentState& agent)
 	{
 		DSE_WATCH();
-		controller.enemy_candidates.clear();
-		controller.candidate_index = 0;
+		agent.enemy_candidates.clear();
+		agent.candidate_index = 0;
 		const Chunk& owner = world.data.getChunk(chunk_id);
 		const WorldBody& body = world.data.getWorldBody(owner.world_body_id);
 		const glm::ivec3 coordinate = glm::ivec3(glm::floor(
@@ -125,8 +125,8 @@ namespace danikk_space_engine::unit_system_internal
 				if(!world.data.isPointComponentSlotActive(id)) continue;
 				const PointComponentSlot& slot = world.data.getPointComponentSlot(id);
 				if(slot.type_id != PointComponentTypeId::human || slot.point_id == point_id) continue;
-				const NpcTarget target{id, slot.point_id, slot.generation_id};
-				if(isValidEnemy(world, target, faction)) controller.enemy_candidates.push(target);
+				const UnitTarget target{id, slot.point_id, slot.generation_id};
+				if(isValidEnemy(world, target, faction)) agent.enemy_candidates.push(target);
 			}
 		};
 		if(planet == nullptr) { collect(chunk_id); return; }
@@ -160,7 +160,7 @@ namespace danikk_space_engine::unit_system_internal
 
 	/** @brief Refreshes an existing faction contact or appends a newly observed target. */
 	void rememberSighting(World& world, UnitSystem& system, FactionId faction_id,
-		const NpcTarget& target, const glm::dvec3& position)
+		const UnitTarget& target, const glm::dvec3& position)
 	{
 		if(!world.data.isPointComponentSlotActive(target.slot_id)) return;
 		const PointComponentSlot& target_slot = world.data.getPointComponentSlot(target.slot_id);
@@ -206,8 +206,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Ages and prunes faction intelligence, then performs the scheduled NPC visibility raycasts. */
-	void updatePerception(World& world, UnitSystem& system,
-		const DynamicArray<PointComponentSlotId>& slot_ids)
+	void updatePerception(World& world, UnitSystem& system)
 	{
 		DSE_WATCH();
 		system.enemy_seen_this_tick = false;
@@ -217,21 +216,20 @@ namespace danikk_space_engine::unit_system_internal
 			sighting.visibility_checked_this_tick = false;
 		}
 
-		for(PointComponentSlotId id : slot_ids)
+		for(UnitAgentState& agent : system.agents)
 		{
-			PointComponentSlot* controller_slot = nullptr;
-			NpcControllerComponent* controller = nullptr;
+			PointComponentSlot* human_slot = nullptr;
 			HumanComponent* human = nullptr;
-			if(!getActiveNpc(world, id, controller_slot, controller, human)) continue;
+			if(!getActiveUnit(world, agent, human_slot, human)) continue;
 			if(human->faction_id != system.faction_id) continue;
-			const NpcTarget previous_target{controller->order.target_slot_id,
-				controller->order.target_point_id, controller->order.target_generation_id};
-			if(controller->order.has_attack_target) markVisibilityChecked(system, previous_target);
-			if(controller->order.has_attack_target && isValidEnemy(world, previous_target, human->faction_id))
+			const UnitTarget previous_target{agent.order.target_slot_id,
+				agent.order.target_point_id, agent.order.target_generation_id};
+			if(agent.order.has_attack_target) markVisibilityChecked(system, previous_target);
+			if(agent.order.has_attack_target && isValidEnemy(world, previous_target, human->faction_id))
 			{
 				const PointComponentSlot& target_slot = world.data.getPointComponentSlot(previous_target.slot_id);
-				const glm::dvec3 origin = world.getPointWorldPosition(controller_slot->chunk_id, controller_slot->point_id);
-				const Chunk& chunk = world.data.getChunk(controller_slot->chunk_id);
+				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->chunk_id, human_slot->point_id);
+				const Chunk& chunk = world.data.getChunk(human_slot->chunk_id);
 				const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
@@ -247,17 +245,17 @@ namespace danikk_space_engine::unit_system_internal
 			}
 			else
 			{
-				controller->order.has_attack_target = false;
-				if(controller->candidate_index >= controller->enemy_candidates.size())
-					collectEnemyCandidates(world, controller_slot->point_id,
-						controller_slot->chunk_id, human->faction_id, *controller);
-				if(controller->candidate_index >= controller->enemy_candidates.size()) continue;
-				const NpcTarget candidate = controller->enemy_candidates[controller->candidate_index++];
+				agent.order.has_attack_target = false;
+				if(agent.candidate_index >= agent.enemy_candidates.size())
+					collectEnemyTargets(world, human_slot->point_id,
+						human_slot->chunk_id, human->faction_id, agent);
+				if(agent.candidate_index >= agent.enemy_candidates.size()) continue;
+				const UnitTarget candidate = agent.enemy_candidates[agent.candidate_index++];
 				if(!isValidEnemy(world, candidate, human->faction_id)) continue;
 				markVisibilityChecked(system, candidate);
 				const PointComponentSlot& target_slot = world.data.getPointComponentSlot(candidate.slot_id);
-				const glm::dvec3 origin = world.getPointWorldPosition(controller_slot->chunk_id, controller_slot->point_id);
-				const Chunk& chunk = world.data.getChunk(controller_slot->chunk_id);
+				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->chunk_id, human_slot->point_id);
+				const Chunk& chunk = world.data.getChunk(human_slot->chunk_id);
 				const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));

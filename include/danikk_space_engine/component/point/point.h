@@ -17,7 +17,6 @@ namespace danikk_space_engine
 		bullet, ///< Moving projectile state, collision sweep, and tracer rendering.
 		engine, ///< Reserved component type; no implementation is registered yet.
 		human, ///< Human pose, locomotion, ground following, and appearance.
-		npc_controller, ///< Autonomous human movement and head-look command generator.
 		inventory, ///< Dynamic item-stack storage attached to a point.
 		build_part, ///< Structural cube or slope with rendering and collision geometry.
 		damageable, ///< Health and damage resistance for a point-attached object.

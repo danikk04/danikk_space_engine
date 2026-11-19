@@ -72,8 +72,6 @@ namespace danikk_space_engine
 		ChunkRenderSystem chunk_render_system;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
-		/** @brief NPC slots awaiting a chunk transition after component iteration. */
-		DynamicArray<PointComponentSlotId> pending_npc_chunk_updates;
 		/** @brief Slot ID of the active camera point component. */
 		PointComponentSlotId camera_component_slot_id = 0;
 		/** @brief Generation token used to reject worker results from an earlier world lifetime. */
@@ -87,8 +85,8 @@ namespace danikk_space_engine
 		 * @brief Executes current unit orders, updates UnitSystem decisions, then runs world physics.
 		 *
 		 * Component and chunk ID lists are snapshotted where callbacks may mutate ownership lists.
-		 * Deferred point deletion runs after traversal. UnitSystem then performs vision/raycast work
-		 * and writes orders that NPC controllers execute on their next component tick.
+		 * Deferred point deletion runs after traversal. UnitSystem then executes stored agent orders,
+		 * performs vision/raycast work, and assigns the next orders before WorldPhysics advances.
 		 */
 		void tick();
 

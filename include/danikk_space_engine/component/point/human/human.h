@@ -97,7 +97,7 @@ namespace danikk_space_engine
 	 * @brief Stores a human character’s state, orientation, pose, and appearance.
 	 *
 	 * The owning Point is at the vertical center of the character. `forward`, `up`, and the
-	 * one-tick `desired_velocity` are in the owning Chunk's local axes. NPC or player control
+	 * one-tick `desired_velocity` are in the owning Chunk's local axes. UnitSystem or player control
 	 * writes the velocity command; this component consumes and clears it during its tick, updates
 	 * gravity/support state, and advances the visual walking pose from actual tangential travel.
 	 */
@@ -240,7 +240,11 @@ namespace danikk_space_engine
 	 * @return ID of the new human component slot.
 	 */
 	PointComponentSlotId createHumanSoldier(World& world, ChunkId chunk_id,
-		const glm::dvec3& position, const vec3& up, const vec3& forward);
+		const glm::dvec3& position, const vec3& up, const vec3& forward, FactionId faction_id);
+
+	/** @brief Creates and registers a faction-controlled human soldier in an existing chunk. */
+	PointComponentSlotId createNpc(World& world, ChunkId chunk_id,
+		const glm::dvec3& position, const vec3& up, const vec3& forward, FactionId faction_id);
 
 	/**
 	 * @brief Placement-constructs a HumanComponent from optional initial state.

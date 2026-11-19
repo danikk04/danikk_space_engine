@@ -6,7 +6,6 @@
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/component/point/human/npc_controller.h>
 
 namespace danikk_space_engine
 {
@@ -50,11 +49,6 @@ namespace danikk_space_engine
 				sizeof(HumanComponent), alignof(HumanComponent), true,
 				constructHumanComponent, moveHumanComponent, destroyHumanComponent,
 				tickHumanComponent, frameHumanComponent
-			},
-			{
-				sizeof(NpcControllerComponent), alignof(NpcControllerComponent), false,
-				constructNpcControllerComponent, moveNpcControllerComponent, destroyNpcControllerComponent,
-				tickNpcControllerComponent, nullptr
 			},
 			{
 				sizeof(InventoryComponent), alignof(InventoryComponent), false,

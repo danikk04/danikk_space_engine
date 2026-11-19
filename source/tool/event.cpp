@@ -1,7 +1,6 @@
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
 
 namespace danikk_space_engine
@@ -64,13 +63,8 @@ namespace danikk_space_engine
 		for(uint8 index = 0; index < placement_count; ++index)
 		{
 			const EventSpawnPlacement& placement = placements[index];
-			const PointComponentSlotId controller_id = createNpc(world, placement.chunk_id,
-				placement.feet_position, placement.up, placement.forward);
-			const NpcControllerComponent& controller = *static_cast<const NpcControllerComponent*>(
-				world.data.getPointComponentSlot(controller_id).getData());
-			HumanComponent& human = *static_cast<HumanComponent*>(
-				world.data.getPointComponentSlot(controller.human_slot_id).getData());
-			human.faction_id = faction_id;
+			createNpc(world, placement.chunk_id, placement.feet_position,
+				placement.up, placement.forward, faction_id);
 		}
 		return {};
 	}

@@ -6,8 +6,8 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/scenario/npc_diagnostics.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
@@ -42,13 +42,13 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Attaches the regular human, health and controller components without render assets.
-		 * The controller still processes chunk membership. Movement comes from the scenario so
-		 * faction combat and input cannot change the test.
+		 * @brief Attaches a human and health component, then registers a disabled central agent.
+		 * Movement comes from the scenario so faction combat and input cannot change the test.
 		 */
-		PointComponentSlotId spawnDiagnosticNpc(WorldData& data, ChunkId chunk_id, FactionId faction_id,
+		PointComponentSlotId spawnDiagnosticNpc(World& world, ChunkId chunk_id, FactionId faction_id,
 			const glm::dvec3& feet)
 		{
+			WorldData& data = world.data;
 			const PointId point_id = data.createPoint();
 			HumanComponent human;
 			human.faction_id = faction_id;
@@ -61,12 +61,7 @@ namespace danikk_space_engine
 			const PointComponentSlotId health_id = data.createPointComponentSlot(point_id, PointComponentTypeId::damageable);
 			data.addPointComponentSlotToChunk(chunk_id, health_id);
 
-			NpcControllerComponent controller;
-			controller.human_slot_id = human_id;
-			controller.enabled = false;
-			const PointComponentSlotId controller_id = data.createPointComponentSlot(
-				point_id, PointComponentTypeId::npc_controller, &controller);
-			data.addPointComponentSlotToChunk(chunk_id, controller_id);
+			registerUnitAgent(world, human_id, false);
 			return human_id;
 		}
 
@@ -75,9 +70,10 @@ namespace danikk_space_engine
 		 * The hill sits above the surrounding procedural terrain so cave placement and player saves
 		 * cannot affect the initial support. Chunks retain the normal planet grid ownership.
 		 */
-		void createNpcFixture(WorldData& data, WorldBodyId body_id, PlanetComponent& planet,
+		void createNpcFixture(World& world, WorldBodyId body_id, PlanetComponent& planet,
 			DiagnosticNpc (&npcs)[npc_count])
 		{
+			WorldData& data = world.data;
 			const glm::dvec3 hill_center(0.0, 0.0, planet.radius + 64.0 - hill_radius);
 			planet.terrain_edits.push({hill_center, hill_radius, true});
 			++planet.terrain_revision;
@@ -102,7 +98,7 @@ namespace danikk_space_engine
 				ChunkId chunk_id;
 				if(!planet.chunk_lookup.getChunk(coord, chunk_id)) formatFatalError("NPC diagnostics spawn chunk is missing");
 				const FactionId faction = i % 2 == 0 ? base_faction_ids::player : base_faction_ids::pirates;
-				npcs[i].slot_id = spawnDiagnosticNpc(data, chunk_id, faction, feet);
+				npcs[i].slot_id = spawnDiagnosticNpc(world, chunk_id, faction, feet);
 			}
 		}
 
@@ -163,7 +159,7 @@ namespace danikk_space_engine
 			body_id, WorldBodyComponentTypeId::planet, &settings);
 		auto& planet = *static_cast<PlanetComponent*>(scene.data.getWorldBodyComponentSlot(planet_id).getData());
 		DiagnosticNpc npcs[npc_count]{};
-		createNpcFixture(scene.data, body_id, planet, npcs);
+		createNpcFixture(scene, body_id, planet, npcs);
 
 		formatLogInfo("NPC diagnostics population=% PlayerFaction=% Pirates=%", npc_count, npc_count / 2, npc_count / 2);
 		profiler.setReportIntervalMilliseconds(std::numeric_limits<uint64>::max());

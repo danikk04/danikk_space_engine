@@ -4,7 +4,6 @@
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/point/human/skin.h>
 #include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/factions.h>
@@ -75,14 +74,10 @@ namespace danikk_space_engine
 			const vec3 local_normal = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			if(glm::dot(up, local_normal) < 0.5f) return;
 			const vec3 forward = vec3(inverse_rotation * (world.getCameraWorldPosition() - hit.position));
-			const PointComponentSlotId controller_id = createNpc(world, hit.chunk_id,
-				local_position + glm::dvec3(up * 0.02f), up, forward);
-			const NpcControllerComponent& npc_controller = *static_cast<const NpcControllerComponent*>(
-				world.data.getPointComponentSlot(controller_id).getData());
-			HumanComponent& human = *static_cast<HumanComponent*>(
-				world.data.getPointComponentSlot(npc_controller.human_slot_id).getData());
+			const PointComponentSlotId human_id = createNpc(world, hit.chunk_id,
+				local_position + glm::dvec3(up * 0.02f), up, forward, faction_id);
+			HumanComponent& human = *static_cast<HumanComponent*>(world.data.getPointComponentSlot(human_id).getData());
 			human.appearance.skin_id = skin_id;
-			human.faction_id = faction_id;
 		}
 	}
 

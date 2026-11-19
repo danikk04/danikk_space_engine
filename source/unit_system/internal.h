@@ -1,11 +1,61 @@
 #pragma once
 
 #include <danikk_space_engine/unit_system.h>
-#include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/point/human/human.h>
 
 namespace danikk_space_engine
 {
+	/** @brief Pooled point-component identity used for safe enemy references. */
+	struct UnitTarget
+	{
+		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1);
+		PointId point_id = static_cast<PointId>(-1);
+		uint64 generation_id = 0;
+	};
+
+	/** @brief Current action values assigned by UnitSystem to one unit. */
+	struct UnitOrder
+	{
+		bool has_move_target = false;
+		glm::dvec3 move_target_world = glm::dvec3(0.0);
+		bool has_look_target = false;
+		glm::dvec3 look_target_world = glm::dvec3(0.0);
+		bool has_attack_target = false;
+		PointComponentSlotId target_slot_id = static_cast<PointComponentSlotId>(-1);
+		PointId target_point_id = static_cast<PointId>(-1);
+		uint64 target_generation_id = 0;
+		bool has_equip_order = false;
+		ItemDefinitionId equip_item_definition_id = static_cast<ItemDefinitionId>(-1);
+		bool should_fire = false;
+		ItemDefinitionId fire_item_definition_id = static_cast<ItemDefinitionId>(-1);
+
+		/** @brief Clears actions and invalidates any current target. */
+		void clear()
+		{
+			has_move_target = false;
+			has_look_target = false;
+			has_attack_target = false;
+			target_slot_id = static_cast<PointComponentSlotId>(-1);
+			target_point_id = static_cast<PointId>(-1);
+			target_generation_id = 0;
+			has_equip_order = false;
+			equip_item_definition_id = static_cast<ItemDefinitionId>(-1);
+			should_fire = false;
+			fire_item_definition_id = static_cast<ItemDefinitionId>(-1);
+		}
+	};
+
+	/** @brief Central AI state and current order for one registered human. */
+	struct UnitAgentState
+	{
+		PointComponentSlotId human_slot_id = static_cast<PointComponentSlotId>(-1);
+		uint64 human_generation_id = 0;
+		bool enabled = true;
+		DynamicArray<UnitTarget> enemy_candidates;
+		size_t candidate_index = 0;
+		UnitOrder order;
+	};
+
 	/** @brief One faction's report that a hostile unit was seen. */
 	struct UnitSighting
 	{
@@ -31,7 +81,7 @@ namespace danikk_space_engine
 		glm::dvec3 body_local_position = glm::dvec3(0.0);
 		PointComponentSlotId target_slot_id = static_cast<PointComponentSlotId>(-1);
 		uint64 target_generation_id = 0;
-		PointComponentSlotId assigned_controller_slot_id = static_cast<PointComponentSlotId>(-1);
+		PointComponentSlotId assigned_unit_slot_id = static_cast<PointComponentSlotId>(-1);
 	};
 
 	/** @brief Tick-local candidate data reused while assigning one faction's search orders. */
@@ -39,7 +89,7 @@ namespace danikk_space_engine
 	{
 		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1);
 		PointComponentSlot* slot = nullptr;
-		NpcControllerComponent* controller = nullptr;
+		UnitAgentState* agent = nullptr;
 		HumanComponent* human = nullptr;
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 position = glm::dvec3(0.0);
@@ -49,8 +99,8 @@ namespace danikk_space_engine
 	/** @brief Persistent post-combat position and scan phase assigned to one unit. */
 	struct UnitPostCombatAssignment
 	{
-		PointComponentSlotId controller_slot_id = static_cast<PointComponentSlotId>(-1);
-		uint64 controller_generation_id = 0;
+		PointComponentSlotId unit_slot_id = static_cast<PointComponentSlotId>(-1);
+		uint64 unit_generation_id = 0;
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 body_local_position = glm::dvec3(0.0);
 		float scan_angle = 0.0f;
@@ -62,6 +112,7 @@ namespace danikk_space_engine
 	{
 		FactionId faction_id = static_cast<FactionId>(-1);
 		DynamicArray<UnitSighting> known_sightings;
+		DynamicArray<UnitAgentState> agents;
 		DynamicArray<UnitSearchLocation> search_locations;
 		/** @brief Reusable temporary storage; pointers are valid only during assignSearchOrders(). */
 		DynamicArray<UnitSearchCandidate> search_candidates;
@@ -79,26 +130,30 @@ namespace danikk_space_engine
 		/** @brief Releases all faction-system state when the world is reset or shut down. */
 		void resetUnitSystems();
 		/** @brief Checks that a cached target is still a living hostile human. */
-		bool isValidEnemy(World&, const NpcTarget&, FactionId);
+		bool isValidEnemy(World&, const UnitTarget&, FactionId);
 		/** @brief Rebuilds a unit's nearby hostile-human candidate list. */
-		void collectEnemyCandidates(World&, PointId, ChunkId, FactionId, NpcControllerComponent&);
+		void collectEnemyTargets(World&, PointId, ChunkId, FactionId, UnitAgentState&);
 		/** @brief Checks that a shared contact still names a living hostile human. */
 		bool isValidSighting(World&, const UnitSighting&);
 		/** @brief Reports whether the last observation is no older than the contact timeout. */
 		bool isRecentSighting(const UnitSighting&);
 		/** @brief Refreshes a faction contact or appends a newly observed target. */
-		void rememberSighting(World&, UnitSystem&, FactionId, const NpcTarget&, const glm::dvec3&);
+		void rememberSighting(World&, UnitSystem&, FactionId, const UnitTarget&, const glm::dvec3&);
 		/** @brief Records contacts that transitioned from visible to lost and updates combat inactivity. */
 		void finishPerception(World&, UnitSystem&, float);
-		/** @brief Resolves an active controller and its paired living human. */
-		bool getActiveNpc(World&, PointComponentSlotId, PointComponentSlot*&, NpcControllerComponent*&, HumanComponent*&);
+		/** @brief Resolves a registered live human and its point slot. */
+		bool getActiveUnit(World&, UnitAgentState&, PointComponentSlot*&, HumanComponent*&);
 		/** @brief Updates faction contacts by scanning candidates and raycasting visible targets. */
-		void updatePerception(World&, UnitSystem&, const DynamicArray<PointComponentSlotId>&);
-		/** @brief Assigns orders to all active NPC controllers. */
-		void assignOrders(World&, UnitSystem&, const DynamicArray<PointComponentSlotId>&);
+		void updatePerception(World&, UnitSystem&);
+		/** @brief Assigns orders to all active agents in a faction. */
+		void assignOrders(World&, UnitSystem&);
 		/** @brief Assigns idle units to inspect lost-contact locations after combat ends. */
-		void assignSearchOrders(World&, UnitSystem&, const DynamicArray<PointComponentSlotId>&);
+		void assignSearchOrders(World&, UnitSystem&);
 		/** @brief Disperses idle units and periodically changes their look direction after combat. */
-		void assignPostCombatOrders(World&, UnitSystem&, const DynamicArray<PointComponentSlotId>&);
+		void assignPostCombatOrders(World&, UnitSystem&);
+		/** @brief Executes stored orders and migrates units after component traversal. */
+		void executeUnitOrders(World&, UnitSystem&);
+		/** @brief Moves a unit point and all attached slots into its newly occupied loaded chunk. */
+		void updateUnitChunk(World&, PointComponentSlot&);
 	}
 }

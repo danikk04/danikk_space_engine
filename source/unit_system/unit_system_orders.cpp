@@ -82,7 +82,7 @@ namespace danikk_space_engine::unit_system_internal
 
 		/** @brief Scores a visible or remembered hostile using hit chance, threat, urgency, and team focus. */
 		float scoreTarget(World& world, const UnitSighting& sighting, const PointComponentSlot& own_slot,
-			const HumanComponent& human, const NpcTarget& previous_target, const glm::dvec3& own_position,
+			const HumanComponent& human, const UnitTarget& previous_target, const glm::dvec3& own_position,
 			const glm::dvec3& target_position, const WorldBody& body,
 			const DynamicArray<TargetAllocation>& allocations)
 		{
@@ -171,16 +171,16 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Fills one unit's attack, movement, look, and equipment commands from faction intel. */
-	void assignOrder(World& world, UnitSystem& system, PointComponentSlot& controller_slot,
-		NpcControllerComponent& controller, HumanComponent& human,
+	void assignOrder(World& world, UnitSystem& system, PointComponentSlot& human_slot,
+		UnitAgentState& agent, HumanComponent& human,
 		DynamicArray<TargetAllocation>& allocations)
 	{
 		DynamicArray<UnitSighting>& known_sightings = system.known_sightings;
-		const NpcTarget previous_target{controller.order.target_slot_id,
-			controller.order.target_point_id, controller.order.target_generation_id};
-		controller.order.clear();
-		const glm::dvec3 own_position = world.getPointWorldPosition(controller_slot.chunk_id, controller_slot.point_id);
-		const WorldBodyId own_body_id = world.data.getChunk(controller_slot.chunk_id).world_body_id;
+		const UnitTarget previous_target{agent.order.target_slot_id,
+			agent.order.target_point_id, agent.order.target_generation_id};
+		agent.order.clear();
+		const glm::dvec3 own_position = world.getPointWorldPosition(human_slot.chunk_id, human_slot.point_id);
+		const WorldBodyId own_body_id = world.data.getChunk(human_slot.chunk_id).world_body_id;
 		const WorldBody& body = world.data.getWorldBody(own_body_id);
 		const UnitSighting* best = nullptr;
 		float best_score = -1.0f;
@@ -191,7 +191,7 @@ namespace danikk_space_engine::unit_system_internal
 			const PointComponentSlot& sighted_slot = world.data.getPointComponentSlot(sighting.target_slot_id);
 			if(world.data.getChunk(sighted_slot.chunk_id).world_body_id != own_body_id) continue;
 			const glm::dvec3 target_position = world.getPointWorldPosition(sighted_slot.chunk_id, sighted_slot.point_id);
-			const float score = scoreTarget(world, sighting, controller_slot, human, previous_target,
+			const float score = scoreTarget(world, sighting, human_slot, human, previous_target,
 				own_position, target_position, body, allocations);
 			if(score > best_score)
 			{
@@ -201,10 +201,10 @@ namespace danikk_space_engine::unit_system_internal
 		}
 		if(best == nullptr) return;
 
-		controller.order.has_attack_target = true;
-		controller.order.target_slot_id = best->target_slot_id;
-		controller.order.target_point_id = best->target_point_id;
-		controller.order.target_generation_id = best->target_generation_id;
+		agent.order.has_attack_target = true;
+		agent.order.target_slot_id = best->target_slot_id;
+		agent.order.target_point_id = best->target_point_id;
+		agent.order.target_generation_id = best->target_generation_id;
 		const PointComponentSlot& target_slot = world.data.getPointComponentSlot(best->target_slot_id);
 		const glm::dvec3 target_position = world.getPointWorldPosition(target_slot.chunk_id, target_slot.point_id);
 		const glm::dvec3 shot_origin = own_position
@@ -212,20 +212,20 @@ namespace danikk_space_engine::unit_system_internal
 		const glm::dvec3 delta = target_position - shot_origin;
 		const double distance = glm::length(delta);
 		if(distance <= 0.001) return;
-		InventorySlot* weapon = findWeapon(world, controller_slot.chunk_id, controller_slot.point_id);
+		InventorySlot* weapon = findWeapon(world, human_slot.chunk_id, human_slot.point_id);
 		if(weapon != nullptr && !weapon->is_equipped)
 		{
-			controller.order.has_equip_order = true;
-			controller.order.equip_item_definition_id = weapon->item_definition_id;
+			agent.order.has_equip_order = true;
+			agent.order.equip_item_definition_id = weapon->item_definition_id;
 		}
 		const RaycastHit hit = world.raycast(shot_origin, vec3(delta), static_cast<float>(distance));
 		const bool visible = !hit.hit || hit.distance >= distance - 0.1;
 		if(visible)
 		{
-			controller.order.has_look_target = true;
-			controller.order.look_target_world = target_position;
+			agent.order.has_look_target = true;
+			agent.order.look_target_world = target_position;
 			rememberSighting(world, system, human.faction_id,
-				NpcTarget{best->target_slot_id, best->target_point_id, best->target_generation_id},
+				UnitTarget{best->target_slot_id, best->target_point_id, best->target_generation_id},
 				target_position);
 
 			if(weapon != nullptr && weapon->is_equipped)
@@ -236,76 +236,56 @@ namespace danikk_space_engine::unit_system_internal
 					&& glm::dot(human.getWeaponDirection(), local_direction / direction_length)
 						>= std::cos(glm::radians(10.0f)))
 				{
-					controller.order.should_fire = true;
-					controller.order.fire_item_definition_id = weapon->item_definition_id;
+					agent.order.should_fire = true;
+					agent.order.fire_item_definition_id = weapon->item_definition_id;
 				}
 			}
 		}
 		else
 		{
-			controller.order.has_move_target = true;
-			controller.order.move_target_world = best->position;
-			controller.order.has_look_target = true;
-			controller.order.look_target_world = best->position;
+			agent.order.has_move_target = true;
+			agent.order.move_target_world = best->position;
+			agent.order.has_look_target = true;
+			agent.order.look_target_world = best->position;
 		}
 		const HumanComponent& target_human = *static_cast<const HumanComponent*>(target_slot.getData());
-		const float assigned_damage = estimateExpectedDamagePerSecond(world, controller_slot.chunk_id,
-			controller_slot.point_id, human, target_human.getHeight(), distance);
+		const float assigned_damage = estimateExpectedDamagePerSecond(world, human_slot.chunk_id,
+			human_slot.point_id, human, target_human.getHeight(), distance);
 		recordAllocation(allocations, *best, assigned_damage);
 	}
 
-	/** @brief Resolves an active NPC controller and its paired human component. */
-	bool getActiveNpc(World& world, PointComponentSlotId controller_id,
-		PointComponentSlot*& controller_slot, NpcControllerComponent*& controller, HumanComponent*& human)
+	/** @brief Resolves a registered live human and its point slot. */
+	bool getActiveUnit(World& world, UnitAgentState& agent,
+		PointComponentSlot*& human_slot, HumanComponent*& human)
 	{
-		if(!world.data.isPointComponentSlotActive(controller_id)) return false;
-		controller_slot = &world.data.getPointComponentSlot(controller_id);
-		if(controller_slot->type_id != PointComponentTypeId::npc_controller
-			|| !world.data.isPointActive(controller_slot->point_id)
-			|| !world.data.isChunkActive(controller_slot->chunk_id)) return false;
-		controller = static_cast<NpcControllerComponent*>(controller_slot->getData());
-		if(!controller->enabled)
-		{
-			controller->order.clear();
-			return false;
-		}
-		if(!world.data.isPointComponentSlotActive(controller->human_slot_id))
-		{
-			controller->order.clear();
-			return false;
-		}
-		PointComponentSlot& human_slot = world.data.getPointComponentSlot(controller->human_slot_id);
-		if(human_slot.type_id != PointComponentTypeId::human
-			|| human_slot.point_id != controller_slot->point_id
-			|| human_slot.chunk_id != controller_slot->chunk_id)
-		{
-			controller->order.clear();
-			return false;
-		}
-		human = static_cast<HumanComponent*>(human_slot.getData());
-		const DamageableComponent* health = findDamageable(world, controller_slot->chunk_id, controller_slot->point_id);
+		if(!agent.enabled || !world.data.isPointComponentSlotActive(agent.human_slot_id)) return false;
+		human_slot = &world.data.getPointComponentSlot(agent.human_slot_id);
+		if(human_slot->type_id != PointComponentTypeId::human
+			|| human_slot->generation_id != agent.human_generation_id
+			|| !world.data.isPointActive(human_slot->point_id)
+			|| !world.data.isChunkActive(human_slot->chunk_id)) return false;
+		human = static_cast<HumanComponent*>(human_slot->getData());
+		const DamageableComponent* health = findDamageable(world, human_slot->chunk_id, human_slot->point_id);
 		if(health == nullptr || health->getHealth() <= 0.0f)
 		{
-			controller->order.clear();
+			agent.order.clear();
 			return false;
 		}
 		return true;
 	}
 
 	/** @brief Assigns commands to every active NPC using the latest faction intelligence. */
-	void assignOrders(World& world, UnitSystem& system,
-		const DynamicArray<PointComponentSlotId>& slot_ids)
+	void assignOrders(World& world, UnitSystem& system)
 	{
 		DSE_WATCH();
 		DynamicArray<TargetAllocation> allocations;
-		for(PointComponentSlotId id : slot_ids)
+		for(UnitAgentState& agent : system.agents)
 		{
-			PointComponentSlot* controller_slot = nullptr;
-			NpcControllerComponent* controller = nullptr;
+			PointComponentSlot* human_slot = nullptr;
 			HumanComponent* human = nullptr;
-			if(!getActiveNpc(world, id, controller_slot, controller, human)) continue;
+			if(!getActiveUnit(world, agent, human_slot, human)) continue;
 			if(human->faction_id != system.faction_id) continue;
-			assignOrder(world, system, *controller_slot, *controller, *human, allocations);
+			assignOrder(world, system, *human_slot, agent, *human, allocations);
 		}
 	}
 
@@ -398,8 +378,7 @@ namespace danikk_space_engine::unit_system_internal
 		}
 
 	/** @brief Orders available units to inspect lost-contact locations after ten seconds without sightings. */
-	void assignSearchOrders(World& world, UnitSystem& system,
-		const DynamicArray<PointComponentSlotId>& slot_ids)
+	void assignSearchOrders(World& world, UnitSystem& system)
 	{
 		DSE_WATCH();
 		if(!system.has_had_enemy_contact || system.enemy_contact_this_tick
@@ -407,25 +386,24 @@ namespace danikk_space_engine::unit_system_internal
 
 		DynamicArray<UnitSearchCandidate>& candidates = system.search_candidates;
 		candidates.clear();
-		candidates.reserve(slot_ids.size());
-		for(PointComponentSlotId id : slot_ids)
+		candidates.reserve(system.agents.size());
+		for(UnitAgentState& agent : system.agents)
 		{
 			PointComponentSlot* slot = nullptr;
-			NpcControllerComponent* controller = nullptr;
 			HumanComponent* human = nullptr;
-			if(!getActiveNpc(world, id, slot, controller, human) || human->faction_id != system.faction_id) continue;
+			if(!getActiveUnit(world, agent, slot, human) || human->faction_id != system.faction_id) continue;
 			const WorldBodyId body_id = world.data.getChunk(slot->chunk_id).world_body_id;
 			const glm::dvec3 position = world.getPointWorldPosition(slot->chunk_id, slot->point_id);
-			candidates.push(UnitSearchCandidate{id, slot, controller, human, body_id, position, false});
+			candidates.push(UnitSearchCandidate{agent.human_slot_id, slot, &agent, human, body_id, position, false});
 		}
 
-		// Reserve controllers already assigned to valid locations before assigning the remaining units.
+		// Reserve agents already assigned to valid locations before assigning the remaining units.
 		for(const UnitSearchLocation& location : system.search_locations)
 		{
-			if(location.assigned_controller_slot_id == static_cast<PointComponentSlotId>(-1)) continue;
+			if(location.assigned_unit_slot_id == static_cast<PointComponentSlotId>(-1)) continue;
 			for(UnitSearchCandidate& candidate : candidates)
 			{
-				if(candidate.slot_id != location.assigned_controller_slot_id
+				if(candidate.slot_id != location.assigned_unit_slot_id
 					|| candidate.body_id != location.body_id) continue;
 				candidate.assigned_to_search = true;
 				break;
@@ -443,10 +421,10 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			UnitSearchLocation& location = system.search_locations[index];
 			UnitSearchCandidate* assigned_unit = nullptr;
-			if(location.assigned_controller_slot_id != static_cast<PointComponentSlotId>(-1))
+			if(location.assigned_unit_slot_id != static_cast<PointComponentSlotId>(-1))
 			{
 				for(UnitSearchCandidate& candidate : candidates)
-					if(candidate.slot_id == location.assigned_controller_slot_id)
+					if(candidate.slot_id == location.assigned_unit_slot_id)
 					{
 						assigned_unit = &candidate;
 						break;
@@ -454,9 +432,9 @@ namespace danikk_space_engine::unit_system_internal
 				if(assigned_unit == nullptr || assigned_unit->body_id != location.body_id)
 				{
 					if(assigned_unit != nullptr) assigned_unit->assigned_to_search = false;
-					location.assigned_controller_slot_id = static_cast<PointComponentSlotId>(-1);
+					location.assigned_unit_slot_id = static_cast<PointComponentSlotId>(-1);
 				}
-				else if(!assigned_unit->controller->order.has_attack_target
+				else if(!assigned_unit->agent->order.has_attack_target
 					&& world.data.isWorldBodyActive(location.body_id))
 				{
 					const glm::dvec3 target_position = getSearchWorldPosition(world, location);
@@ -469,23 +447,23 @@ namespace danikk_space_engine::unit_system_internal
 						eraseCurrentLocation(index);
 						continue;
 					}
-					assigned_unit->controller->order.has_move_target = true;
-					assigned_unit->controller->order.move_target_world = target_position;
-					assigned_unit->controller->order.has_look_target = true;
-					assigned_unit->controller->order.look_target_world = target_position;
+					assigned_unit->agent->order.has_move_target = true;
+					assigned_unit->agent->order.move_target_world = target_position;
+					assigned_unit->agent->order.has_look_target = true;
+					assigned_unit->agent->order.look_target_world = target_position;
 					++index;
 					continue;
 				}
 			}
 
-			if(location.assigned_controller_slot_id == static_cast<PointComponentSlotId>(-1))
+			if(location.assigned_unit_slot_id == static_cast<PointComponentSlotId>(-1))
 			{
 				const glm::dvec3 target_position = getSearchWorldPosition(world, location);
 				UnitSearchCandidate* nearest_candidate = nullptr;
 				double nearest_distance_squared = std::numeric_limits<double>::max();
 				for(UnitSearchCandidate& candidate : candidates)
 				{
-					if(candidate.body_id != location.body_id || candidate.controller->order.has_attack_target
+					if(candidate.body_id != location.body_id || candidate.agent->order.has_attack_target
 						|| candidate.assigned_to_search) continue;
 					const glm::dvec3 offset = candidate.position - target_position;
 					const double distance_squared = glm::dot(offset, offset);
@@ -496,7 +474,7 @@ namespace danikk_space_engine::unit_system_internal
 					}
 				}
 				if(nearest_candidate == nullptr) { ++index; continue; }
-				location.assigned_controller_slot_id = nearest_candidate->slot_id;
+				location.assigned_unit_slot_id = nearest_candidate->slot_id;
 				nearest_candidate->assigned_to_search = true;
 				const glm::dvec3 offset = target_position - nearest_candidate->position;
 				if(glm::dot(offset, offset) <= 1.5 * 1.5)
@@ -507,10 +485,10 @@ namespace danikk_space_engine::unit_system_internal
 					eraseCurrentLocation(index);
 					continue;
 				}
-				nearest_candidate->controller->order.has_move_target = true;
-				nearest_candidate->controller->order.move_target_world = target_position;
-				nearest_candidate->controller->order.has_look_target = true;
-				nearest_candidate->controller->order.look_target_world = target_position;
+				nearest_candidate->agent->order.has_move_target = true;
+				nearest_candidate->agent->order.move_target_world = target_position;
+				nearest_candidate->agent->order.has_look_target = true;
+				nearest_candidate->agent->order.look_target_world = target_position;
 			}
 			++index;
 		}
@@ -526,8 +504,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Assigns stable dispersal positions and staggered look-around orders outside combat. */
-	void assignPostCombatOrders(World& world, UnitSystem& system,
-		const DynamicArray<PointComponentSlotId>& slot_ids)
+	void assignPostCombatOrders(World& world, UnitSystem& system)
 	{
 		DSE_WATCH();
 		DynamicArray<UnitPostCombatAssignment>& assignments = system.post_combat_assignments;
@@ -539,16 +516,15 @@ namespace danikk_space_engine::unit_system_internal
 
 		DynamicArray<UnitSearchCandidate>& candidates = system.search_candidates;
 		candidates.clear();
-		candidates.reserve(slot_ids.size());
-		for(PointComponentSlotId id : slot_ids)
+		candidates.reserve(system.agents.size());
+		for(UnitAgentState& agent : system.agents)
 		{
 			PointComponentSlot* slot = nullptr;
-			NpcControllerComponent* controller = nullptr;
 			HumanComponent* human = nullptr;
-			if(!getActiveNpc(world, id, slot, controller, human) || human->faction_id != system.faction_id) continue;
+			if(!getActiveUnit(world, agent, slot, human) || human->faction_id != system.faction_id) continue;
 			const WorldBodyId body_id = world.data.getChunk(slot->chunk_id).world_body_id;
 			const glm::dvec3 position = world.getPointWorldPosition(slot->chunk_id, slot->point_id);
-			candidates.push(UnitSearchCandidate{id, slot, controller, human, body_id, position, false});
+			candidates.push(UnitSearchCandidate{agent.human_slot_id, slot, &agent, human, body_id, position, false});
 		}
 
 		// Drop assignments for removed units, units that moved to another body, and units now fighting/searching.
@@ -557,14 +533,14 @@ namespace danikk_space_engine::unit_system_internal
 			UnitPostCombatAssignment& assignment = assignments[i];
 			UnitSearchCandidate* candidate = nullptr;
 			for(UnitSearchCandidate& current : candidates)
-				if(current.slot_id == assignment.controller_slot_id)
+				if(current.slot_id == assignment.unit_slot_id)
 				{
 					candidate = &current;
 					break;
 				}
-			if(candidate == nullptr || candidate->slot->generation_id != assignment.controller_generation_id
-				|| candidate->body_id != assignment.body_id || candidate->controller->order.has_attack_target
-				|| candidate->controller->order.has_move_target)
+			if(candidate == nullptr || candidate->slot->generation_id != assignment.unit_generation_id
+				|| candidate->body_id != assignment.body_id || candidate->agent->order.has_attack_target
+				|| candidate->agent->order.has_move_target)
 			{
 				removePostCombatAssignment(assignments, i);
 				continue;
@@ -575,15 +551,15 @@ namespace danikk_space_engine::unit_system_internal
 		const uint32 now = danikk_engine::getMsTimestamp();
 		for(UnitSearchCandidate& candidate : candidates)
 		{
-			NpcControllerComponent& controller = *candidate.controller;
+			UnitAgentState& agent = *candidate.agent;
 			HumanComponent& human = *candidate.human;
 			// Search orders have priority; combat orders are already assigned by assignOrders().
-			if(controller.order.has_attack_target || controller.order.has_move_target) continue;
+			if(agent.order.has_attack_target || agent.order.has_move_target) continue;
 
 			UnitPostCombatAssignment* assignment = nullptr;
 			for(UnitPostCombatAssignment& existing : assignments)
-				if(existing.controller_slot_id == candidate.slot_id
-					&& existing.controller_generation_id == candidate.slot->generation_id
+				if(existing.unit_slot_id == candidate.slot_id
+					&& existing.unit_generation_id == candidate.slot->generation_id
 					&& existing.body_id == candidate.body_id)
 				{
 					assignment = &existing;
@@ -607,8 +583,8 @@ namespace danikk_space_engine::unit_system_internal
 				const float angle = static_cast<float>(seed % 6283u) * 0.001f;
 				const float radius = 2.5f + static_cast<float>((seed >> 8) % 4u) * 0.75f;
 				UnitPostCombatAssignment created;
-				created.controller_slot_id = candidate.slot_id;
-				created.controller_generation_id = candidate.slot->generation_id;
+				created.unit_slot_id = candidate.slot_id;
+				created.unit_generation_id = candidate.slot->generation_id;
 				created.body_id = candidate.body_id;
 				created.body_local_position = body_local_position
 					+ glm::dvec3((tangent_x * std::cos(angle) + tangent_y * std::sin(angle)) * radius);
@@ -622,8 +598,8 @@ namespace danikk_space_engine::unit_system_internal
 			const glm::dvec3 move_offset = move_target - candidate.position;
 			if(glm::dot(move_offset, move_offset) > 0.5 * 0.5)
 			{
-				controller.order.has_move_target = true;
-				controller.order.move_target_world = move_target;
+				agent.order.has_move_target = true;
+				agent.order.move_target_world = move_target;
 			}
 
 			if(now - assignment->next_scan_timestamp_ms < 0x80000000u)
@@ -643,8 +619,8 @@ namespace danikk_space_engine::unit_system_internal
 			const vec3 tangent_y = glm::normalize(glm::cross(up, tangent_x));
 			const vec3 look_direction = tangent_x * std::cos(assignment->scan_angle)
 				+ tangent_y * std::sin(assignment->scan_angle) + up * 0.18f;
-			controller.order.has_look_target = true;
-			controller.order.look_target_world = body.position
+			agent.order.has_look_target = true;
+			agent.order.look_target_world = body.position
 				+ body.rotation * (body_local_position + glm::dvec3(look_direction * 8.0f));
 		}
 	}

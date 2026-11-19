@@ -295,7 +295,6 @@ namespace danikk_space_engine
 		chunk_generation_requests_dirty = false;
 		updateChunkMeshGenerationRequests(chunk_mesh_generator_generation_id, chunk_generation_requests);
 		pending_point_destruction_ids.clear();
-		pending_npc_chunk_updates.clear();
 		unit_system_internal::resetUnitSystems();
 		startBaseScenario(*this);
 	}
@@ -315,7 +314,6 @@ namespace danikk_space_engine
 		chunk_render_system.clear();
 		data.release();
 		pending_point_destruction_ids.clear();
-		pending_npc_chunk_updates.clear();
 		unit_system_internal::resetUnitSystems();
 	}
 }

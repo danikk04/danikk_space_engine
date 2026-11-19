@@ -9,4 +9,3 @@ sources += files(
 )
 
 subdir('human')
-subdir('npc_controller')

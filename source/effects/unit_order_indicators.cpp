@@ -2,8 +2,8 @@
 
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/controller_system.h>
+#include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/effects/unit_order_indicators.h>
 #include <danikk_space_engine/world/world.h>
 
@@ -100,27 +100,13 @@ namespace danikk_space_engine
 			const HumanComponent& human = *static_cast<const HumanComponent*>(human_slot.getData());
 			if(human.hasDeathTimestamp()) continue;
 
-			const Chunk& chunk = world.data.getChunk(human_slot.chunk_id);
-			const NpcControllerComponent* npc_controller = nullptr;
-			for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
-			{
-				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
-				if(slot.point_id != human_slot.point_id
-					|| slot.type_id != PointComponentTypeId::npc_controller) continue;
-				const NpcControllerComponent& candidate =
-					*static_cast<const NpcControllerComponent*>(slot.getData());
-				if(candidate.human_slot_id != reference.slot_id) continue;
-				npc_controller = &candidate;
-				break;
-			}
-			if(npc_controller == nullptr || !npc_controller->enabled
-				|| !npc_controller->order.has_move_target) continue;
+			glm::dvec3 move_target_world;
+			if(!getUnitMoveTarget(world, reference.slot_id, reference.generation_id, move_target_world)) continue;
 
 			const glm::dvec3 start_world = world.getPointWorldPosition(
 				human_slot.chunk_id, human_slot.point_id);
 			const glm::dvec3 start = start_world - camera_position;
-			const glm::dvec3 target = npc_controller->order.move_target_world - camera_position;
+			const glm::dvec3 target = move_target_world - camera_position;
 			appendMovementArrow(arrow_vertices, arrow_indices, vec3(start), vec3(target), camera_up);
 			appendDestinationMarker(marker_vertices, marker_indices, vec3(target), camera_right, camera_up);
 		}
