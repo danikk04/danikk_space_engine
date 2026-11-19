@@ -44,7 +44,7 @@ namespace danikk_space_engine
 				const WorldBody& body = world.data.getWorldBody(body_id);
 				for(ChunkId chunk_id : body.chunk_ids)
 				{
-					const Chunk& chunk = world.data.getChunk(chunk_id);
+					const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 					for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 					{
 						if(world.data.isPointComponentSlotActive(slot_id)
@@ -206,7 +206,7 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Machinegun component references invalid point %", slot.point_id);
 		}
 		const MachinegunComponent& machinegun = *static_cast<const MachinegunComponent*>(slot.getData());
-		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
+		const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
 		const mat4 world_matrix = chunk.createWorldMatrix(world)
 			* glm::translate(
 				mat4(1.0f),

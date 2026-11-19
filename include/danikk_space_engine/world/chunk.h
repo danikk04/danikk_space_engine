@@ -7,6 +7,8 @@
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/fwd.h>
 
+namespace danikk_space_engine { class ChunkSystem; }
+
 namespace danikk_space_engine
 {
 
@@ -14,14 +16,13 @@ namespace danikk_space_engine
 	 * @brief Stores spatial data and component-slot lists for one chunk.
 	 *
 	 * A Chunk is positioned relative to its WorldBody and references pooled point
-	 * and component lists. Render meshes are owned by ChunkRenderSystem; the chunk keeps only
+	 * and component lists. Render meshes are owned by ChunkSystem; the chunk keeps only
 	 * spatial bounds used by raycast broadphase.
 	 * Planet streaming metadata uses grid_coordinate.
 	 */
 	class Chunk
 	{
-		friend class WorldData;
-		friend class ChunkRenderSystem;
+		friend class ChunkSystem;
 
 		/** @brief True when bounds describe the most recently built, non-dirty mesh. */
 		bool bounds_valid = false;

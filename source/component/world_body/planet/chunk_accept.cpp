@@ -50,14 +50,14 @@ namespace danikk_space_engine
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		planet.chunk_lookup.getChunk(generated_chunk.grid_coordinate, chunk_id);
 		const bool has_geometry = generated_chunk.triangle_point_indices.size() > 0;
-		if(world.data.isChunkActive(chunk_id) || has_geometry)
+		if(world.chunk_system.isChunkActive(chunk_id) || has_geometry)
 		{
-			if(!world.data.isChunkActive(chunk_id))
-				chunk_id = world.data.createChunk(slot.world_body_id).chunk_id;
-			Chunk& chunk = world.data.getChunk(chunk_id);
+			if(!world.chunk_system.isChunkActive(chunk_id))
+				chunk_id = world.chunk_system.createChunk(world, slot.world_body_id).chunk_id;
+			Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 			chunk.grid_coordinate = generated_chunk.grid_coordinate;
 			chunk.position = generated_chunk.chunk_position;
-			world.chunk_render_system.createMesh(chunk,
+			world.chunk_system.createMesh(chunk,
 				generated_chunk.point_positions.data(), generated_chunk.point_positions.size(),
 				generated_chunk.triangle_point_indices.data(), generated_chunk.triangle_point_indices.size(),
 				generated_chunk.triangle_material_ids.data(), generated_chunk.triangle_material_ids.size());

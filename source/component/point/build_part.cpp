@@ -103,13 +103,13 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		if(!world.data.isPointActive(slot.point_id)
-			|| !world.data.isChunkActive(slot.chunk_id))
+			|| !world.chunk_system.isChunkActive(slot.chunk_id))
 		{
 			danikk_engine::formatFatalError("BuildPart component references an invalid anchor");
 		}
 		const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
-		const Chunk& chunk = world.data.getChunk(slot.chunk_id);
-		if(world.chunk_render_system.hasBuildPartMesh(chunk.chunk_id)) return;
+		const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
+		if(world.chunk_system.hasBuildPartMesh(chunk.chunk_id)) return;
 		const mat4 world_matrix = chunk.createWorldMatrix(world)
 			* glm::translate(mat4(1.0f), world.data.getPoint(slot.point_id).position)
 			* part.rotation

@@ -42,8 +42,8 @@ namespace danikk_space_engine
 
 			for(ChunkId chunk_id : chunk_ids)
 			{
-				if(!world.data.isChunkActive(chunk_id)) continue;
-				const Chunk& chunk = world.data.getChunk(chunk_id);
+				if(!world.chunk_system.isChunkActive(chunk_id)) continue;
+				const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 				const size_t component_count = chunk.point_component_slot_ids.size();
 				for(size_t component_index = 0; component_index < component_count; component_index++)
 				{

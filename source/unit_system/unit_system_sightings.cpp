@@ -35,13 +35,13 @@ namespace danikk_space_engine::unit_system_internal
 				if(!world.data.isPointComponentSlotActive(id)) continue;
 				const PointComponentSlot& slot = world.data.getPointComponentSlot(id);
 				if(slot.type_id != PointComponentTypeId::human || !world.data.isPointActive(slot.point_id)
-					|| !world.data.isChunkActive(slot.chunk_id)) continue;
+					|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
 				const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 				if(human.faction_id != system.faction_id) continue;
 				const DamageableComponent* health = findDamageable(world, slot.chunk_id, slot.point_id);
 				if(health == nullptr || health->getHealth() > 0.0f) continue;
 
-				const Chunk& chunk = world.data.getChunk(slot.chunk_id);
+				const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
 				UnitSighting corpse_location;
 				corpse_location.faction_id = system.faction_id;
 				corpse_location.target_slot_id = id;
@@ -66,7 +66,7 @@ namespace danikk_space_engine::unit_system_internal
 		const PointComponentSlot& slot = world.data.getPointComponentSlot(target.slot_id);
 		if(slot.type_id != PointComponentTypeId::human || slot.point_id != target.point_id
 			|| slot.generation_id != target.generation_id || !world.data.isPointActive(slot.point_id)
-			|| !world.data.isChunkActive(slot.chunk_id)) return false;
+			|| !world.chunk_system.isChunkActive(slot.chunk_id)) return false;
 		const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 		const DamageableComponent* health = findDamageable(world, slot.chunk_id, slot.point_id);
 		return health != nullptr && health->getHealth() > 0.0f && faction < world.data.factions.size()
@@ -83,7 +83,7 @@ namespace danikk_space_engine::unit_system_internal
 			|| target_slot.point_id != sighting.target_point_id
 			|| target_slot.generation_id != sighting.target_generation_id
 			|| !world.data.isPointActive(target_slot.point_id)
-			|| !world.data.isChunkActive(target_slot.chunk_id)) return false;
+			|| !world.chunk_system.isChunkActive(target_slot.chunk_id)) return false;
 		const HumanComponent& target = *static_cast<const HumanComponent*>(target_slot.getData());
 		if(target.faction_id >= world.data.factions.size()
 			|| world.data.factions.getRelation(sighting.faction_id, target.faction_id).type != FactionRelationType::hostile)
@@ -98,8 +98,8 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		if(!world.data.isPointComponentSlotActive(target.slot_id)) return;
 		const PointComponentSlot& target_slot = world.data.getPointComponentSlot(target.slot_id);
-		if(!world.data.isChunkActive(target_slot.chunk_id) || !world.data.isPointActive(target.point_id)) return;
-		const Chunk& target_chunk = world.data.getChunk(target_slot.chunk_id);
+		if(!world.chunk_system.isChunkActive(target_slot.chunk_id) || !world.data.isPointActive(target.point_id)) return;
+		const Chunk& target_chunk = world.chunk_system.getChunk(target_slot.chunk_id);
 		const glm::dvec3 body_local_position = target_chunk.position
 			+ glm::dvec3(world.data.getPoint(target.point_id).position);
 		for(UnitSighting& sighting : system.known_sightings)

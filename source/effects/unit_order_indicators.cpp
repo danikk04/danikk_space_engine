@@ -96,7 +96,7 @@ namespace danikk_space_engine
 			if(human_slot.generation_id != reference.generation_id
 				|| human_slot.type_id != PointComponentTypeId::human
 				|| !world.data.isPointActive(human_slot.point_id)
-				|| !world.data.isChunkActive(human_slot.chunk_id)) continue;
+				|| !world.chunk_system.isChunkActive(human_slot.chunk_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(human_slot.getData());
 			if(human.hasDeathTimestamp()) continue;
 

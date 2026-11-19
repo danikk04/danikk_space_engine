@@ -109,7 +109,7 @@ namespace danikk_space_engine
 			if(!world.data.isPointComponentSlotActive(slot_id)) continue;
 			const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
 			if(slot.point_id == camera_point_id || !world.data.isPointActive(slot.point_id)
-				|| !world.data.isChunkActive(slot.chunk_id)) continue;
+				|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
 			const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 			if(!isInsideAnyPlanetCore(position, planets)) continue;
 
@@ -126,7 +126,7 @@ namespace danikk_space_engine
 		}
 		for(PointId point_id : points_to_destroy)
 		{
-			world.data.destroyPoint(point_id);
+			world.destroyPoint(point_id);
 		}
 	}
 }

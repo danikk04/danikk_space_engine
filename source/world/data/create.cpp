@@ -91,30 +91,6 @@ namespace danikk_space_engine
 		return id;
 	}
 
-	/**
-	 * @brief Creates a chunk owned by a body and registers the reverse body-to-chunk link.
-	 *
-	 * New chunks start with an origin grid coordinate and zero local position; generation or
-	 * placement code assigns their spatial coordinates afterward.
-	 * @param world_body_id Active body that will own the chunk.
-	 * @return Mutable reference to the initialized chunk resource.
-	 */
-	Chunk& WorldData::createChunk(WorldBodyId world_body_id)
-	{
-
-		if(!isWorldBodyActive(world_body_id))
-		{
-			danikk_engine::formatFatalError("Chunk references invalid world body %", world_body_id);
-		}
-		const ChunkId id = chunks.create();
-		Chunk& chunk = chunks[id];
-		chunk.chunk_id = id;
-		chunk.world_body_id = world_body_id;
-		chunk.grid_coordinate = glm::ivec3(0);
-		getWorldBody(world_body_id).addChunk(id);
-		return chunk;
-	}
-
 	/** @copydoc WorldData::createPointComponentSlot */
 	PointComponentSlotId WorldData::createPointComponentSlot(
 		PointId point_id,

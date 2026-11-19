@@ -54,7 +54,7 @@ namespace danikk_space_engine
 				++index;
 				continue;
 			}
-			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(entry.chunk_id))
+			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.chunk_system.isChunkActive(entry.chunk_id))
 			{
 				world.destroyChunk(entry.chunk_id);
 			}
@@ -195,7 +195,7 @@ namespace danikk_space_engine
 			{
 				continue;
 			}
-			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.data.isChunkActive(entry.chunk_id))
+			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.chunk_system.isChunkActive(entry.chunk_id))
 			{
 				entry.has_record = false;
 			}

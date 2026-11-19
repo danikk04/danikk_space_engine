@@ -4,7 +4,7 @@
 #include <new>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/chunk_render_system.h>
+#include <danikk_space_engine/chunk_system.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <danikk_engine/texture_methods.h>
@@ -26,17 +26,17 @@ namespace danikk_space_engine
 		}
 	}
 
-	ChunkRenderRecord& ChunkRenderSystem::getRecord(ChunkId chunk_id)
+	ChunkRenderRecord& ChunkSystem::getRenderRecord(ChunkId chunk_id)
 	{
 		DSE_WATCH();
-		if(records.size() <= chunk_id) records.resize(static_cast<size_t>(chunk_id) + 1);
-		return records[chunk_id];
+		if(render_records.size() <= chunk_id) render_records.resize(static_cast<size_t>(chunk_id) + 1);
+		return render_records[chunk_id];
 	}
 
-	const ChunkRenderRecord* ChunkRenderSystem::findRecord(ChunkId chunk_id) const
+	const ChunkRenderRecord* ChunkSystem::findRenderRecord(ChunkId chunk_id) const
 	{
 		DSE_WATCH();
-		return chunk_id < records.size() ? &records[chunk_id] : nullptr;
+		return chunk_id < render_records.size() ? &render_records[chunk_id] : nullptr;
 	}
 
 	/**
@@ -46,7 +46,7 @@ namespace danikk_space_engine
 	 * face normal, calculates local bounds for raycast broadphase, then uploads the arrays. CPU
 	 * geometry remains owned by the caller and is not retained.
 	 */
-	void ChunkRenderSystem::createMesh(Chunk& chunk, const vec3* positions, size_t position_count,
+	void ChunkSystem::createMesh(Chunk& chunk, const vec3* positions, size_t position_count,
 		const uint32* triangle_indices, size_t index_count,
 		const MaterialId* triangle_material_ids, size_t material_count,
 		bool is_planet_terrain, bool is_build_part_mesh)
@@ -56,7 +56,7 @@ namespace danikk_space_engine
 			|| (index_count > 0 && (positions == nullptr || triangle_indices == nullptr || triangle_material_ids == nullptr)))
 			danikk_engine::formatFatalError("Invalid temporary chunk mesh buffer");
 
-		ChunkRenderRecord& record = getRecord(chunk.chunk_id);
+		ChunkRenderRecord& record = getRenderRecord(chunk.chunk_id);
 		if(record.mesh == nullptr)
 		{
 			void* memory = malloc(sizeof(Mesh));
@@ -133,10 +133,10 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Draws each non-empty material range using the owning chunk's transform. */
-	void ChunkRenderSystem::draw(const Chunk& chunk, World& world)
+	void ChunkSystem::draw(const Chunk& chunk, World& world)
 	{
 		DSE_WATCH();
-		const ChunkRenderRecord* record = findRecord(chunk.chunk_id);
+		const ChunkRenderRecord* record = findRenderRecord(chunk.chunk_id);
 		if(record == nullptr || record->mesh == nullptr || record->material_ranges.size() == 0) return;
 		setWorldMatrix(chunk.createWorldMatrix(world));
 		for(const ChunkMaterialRange& range : record->material_ranges)
@@ -150,13 +150,14 @@ namespace danikk_space_engine
 		}
 	}
 
-	void ChunkRenderSystem::destroyChunk(Chunk& chunk)
+	/** @copydoc ChunkSystem::destroyRenderData */
+	void ChunkSystem::destroyRenderData(Chunk& chunk)
 	{
 		DSE_WATCH();
 		const ChunkId chunk_id = chunk.chunk_id;
-		if(chunk_id < records.size())
+		if(chunk_id < render_records.size())
 		{
-			ChunkRenderRecord& record = records[chunk_id];
+			ChunkRenderRecord& record = render_records[chunk_id];
 			if(record.mesh != nullptr)
 			{
 				record.mesh->free();
@@ -173,10 +174,11 @@ namespace danikk_space_engine
 		chunk.planet_terrain = false;
 	}
 
-	void ChunkRenderSystem::clear()
+	/** @copydoc ChunkSystem::clearRenderData */
+	void ChunkSystem::clearRenderData()
 	{
 		DSE_WATCH();
-		for(ChunkRenderRecord& record : records)
+		for(ChunkRenderRecord& record : render_records)
 		{
 			if(record.mesh == nullptr) continue;
 			record.mesh->free();
@@ -186,13 +188,13 @@ namespace danikk_space_engine
 			record.material_ranges.clear();
 			record.has_build_part_mesh = false;
 		}
-		records.clear();
+		render_records.clear();
 	}
 
-	bool ChunkRenderSystem::hasBuildPartMesh(ChunkId chunk_id) const
+	bool ChunkSystem::hasBuildPartMesh(ChunkId chunk_id) const
 	{
 		DSE_WATCH();
-		const ChunkRenderRecord* record = findRecord(chunk_id);
+		const ChunkRenderRecord* record = findRenderRecord(chunk_id);
 		return record != nullptr && record->has_build_part_mesh;
 	}
 }

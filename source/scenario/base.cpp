@@ -125,7 +125,7 @@ namespace danikk_space_engine
 			danikk_framework::formatLogWarning(
 				"Unable to find solid underground camera position; spawning above the planet");
 		}
-		Chunk& chunk = world.data.createChunk(planet_body_id);
+		Chunk& chunk = world.chunk_system.createChunk(world, planet_body_id);
 		const ChunkId camera_chunk_id = world.data.getWorldBody(planet_body_id).chunk_ids[
 			world.data.getWorldBody(planet_body_id).chunk_ids.size() - 1];
 		chunk.position = camera_chunk_position;
@@ -135,7 +135,7 @@ namespace danikk_space_engine
 			camera_point_id,
 			PointComponentTypeId::camera,
 			&camera);
-		world.data.addPointComponentSlotToChunk(camera_chunk_id, world.camera_component_slot_id);
+		world.chunk_system.addPointComponentSlotToChunk(world, camera_chunk_id, world.camera_component_slot_id);
 		world.controller_system.reset(world, camera_point_id);
 	}
 }

@@ -99,7 +99,7 @@ namespace danikk_space_engine
 		{
 			if(!world.data.isPointComponentSlotActive(slot_id)) return false;
 			PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
-			if(slot.type_id != PointComponentTypeId::human || !world.data.isChunkActive(slot.chunk_id)
+			if(slot.type_id != PointComponentTypeId::human || !world.chunk_system.isChunkActive(slot.chunk_id)
 				|| !world.data.isPointActive(slot.point_id)) return false;
 			HumanComponent& component = *static_cast<HumanComponent*>(slot.getData());
 			if(component.hasDeathTimestamp()) return false;
@@ -108,7 +108,7 @@ namespace danikk_space_engine
 			const double height = component.getHeight();
 			if(height <= 0.0) return false;
 
-			Chunk& chunk = world.data.getChunk(slot.chunk_id);
+			Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
 			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 			const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(glm::normalize(component.up)));
 			const double radius = height * 0.14;
@@ -357,9 +357,9 @@ namespace danikk_space_engine
 						const glm::ivec3 coordinate = chunk.grid_coordinate + glm::ivec3(x, y, z);
 						ChunkId neighbor_id;
 						if(!entry.grid_planet->chunk_lookup.getChunk(coordinate, neighbor_id)
-							|| !world.data.isChunkActive(neighbor_id)) continue;
+							|| !world.chunk_system.isChunkActive(neighbor_id)) continue;
 
-						const Chunk& neighbor = world.data.getChunk(neighbor_id);
+						const Chunk& neighbor = world.chunk_system.getChunk(neighbor_id);
 						if(neighbor.world_body_id == chunk.world_body_id && neighbor.grid_coordinate == coordinate)
 							corrected |= resolveHumanChunkPair(world, chunk, neighbor);
 					}
@@ -443,9 +443,9 @@ namespace danikk_space_engine
 		bool has_multiple_bodies = false;
 		bool has_active_humans = false;
 
-		for(ChunkId chunk_id : world.data.getUsedChunkIds())
+		for(ChunkId chunk_id : world.chunk_system.getUsedChunkIds())
 		{
-			Chunk& chunk = world.data.getChunk(chunk_id);
+			Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 			if(chunk.getCollisionHumanComponentSlotIds().size() == 0) continue;
 
 			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);

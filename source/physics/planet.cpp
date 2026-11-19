@@ -280,8 +280,8 @@ namespace danikk_space_engine
 			bool has_surface_geometry = false;
 			for(ChunkId chunk_id : moving_body.chunk_ids)
 			{
-				if(!world.data.isChunkActive(chunk_id)) continue;
-				const Chunk& chunk = world.data.getChunk(chunk_id);
+				if(!world.chunk_system.isChunkActive(chunk_id)) continue;
+				const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
 				{
 					if(world.data.isPointComponentSlotActive(slot_id)
@@ -315,8 +315,8 @@ namespace danikk_space_engine
 
 			for(ChunkId chunk_id : moving_body.chunk_ids)
 			{
-				if(!world.data.isChunkActive(chunk_id)) continue;
-				const Chunk& chunk = world.data.getChunk(chunk_id);
+				if(!world.chunk_system.isChunkActive(chunk_id)) continue;
+				const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 				for(const PlanetCollisionTarget& target : planets)
 				{
 					if(target.body_id == moving_body_id) continue;

@@ -24,7 +24,7 @@ namespace danikk_space_engine
 			if(glm::dot(point.position, point.position)
 				<= camera_local_origin_rebase_distance * camera_local_origin_rebase_distance) return;
 
-			Chunk& chunk = world.data.getChunk(slot.chunk_id);
+			Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
 			chunk.position += glm::dvec3(point.position);
 			point.position = vec3(0.0f);
 		}
@@ -40,8 +40,8 @@ namespace danikk_space_engine
 		 */
 		void updateCameraSurfaceFrame(CameraComponent& camera, const PointComponentSlot& slot, const World& world)
 		{
-			if(!world.data.isChunkActive(slot.chunk_id)) return;
-			const Chunk& camera_chunk = world.data.getChunk(slot.chunk_id);
+			if(!world.chunk_system.isChunkActive(slot.chunk_id)) return;
+			const Chunk& camera_chunk = world.chunk_system.getChunk(slot.chunk_id);
 			const WorldBody& body = world.data.getWorldBody(camera_chunk.world_body_id);
 			const glm::dvec3 radial = world.getCameraWorldPosition() - body.position;
 			const double radial_length = glm::length(radial);

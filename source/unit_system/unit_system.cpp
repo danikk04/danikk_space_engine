@@ -57,7 +57,7 @@ namespace danikk_space_engine
 				if(!world.data.isPointComponentSlotActive(id)) continue;
 				PointComponentSlot& slot = world.data.getPointComponentSlot(id);
 				if(slot.type_id == PointComponentTypeId::human && slot.point_id == point_id
-					&& world.data.isPointActive(point_id) && world.data.isChunkActive(slot.chunk_id))
+					&& world.data.isPointActive(point_id) && world.chunk_system.isChunkActive(slot.chunk_id))
 				{
 					if(found_id != nullptr) *found_id = id;
 					return &slot;
@@ -83,7 +83,7 @@ namespace danikk_space_engine
 		ensureUnitSystemCount(world.data.factions.size());
 		UnitSystem& system = unit_systems[victim.faction_id];
 		const uint32 now = danikk_engine::getMsTimestamp();
-		const Chunk& attacker_chunk = world.data.getChunk(attacker_slot->chunk_id);
+		const Chunk& attacker_chunk = world.chunk_system.getChunk(attacker_slot->chunk_id);
 		const glm::dvec3 attacker_position = world.getPointWorldPosition(attacker_slot->chunk_id, attacker_point_id);
 		const glm::dvec3 local_position = attacker_chunk.position
 			+ glm::dvec3(world.data.getPoint(attacker_point_id).position);

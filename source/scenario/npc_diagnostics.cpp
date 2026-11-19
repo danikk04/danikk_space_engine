@@ -36,9 +36,10 @@ namespace danikk_space_engine
 		};
 
 		/** @brief Reads the point center in planet coordinates without adding profiler scopes. */
-		glm::dvec3 getNpcPosition(const WorldData& data, const PointComponentSlot& slot)
+		glm::dvec3 getNpcPosition(const World& world, const PointComponentSlot& slot)
 		{
-			return data.getChunk(slot.chunk_id).position + glm::dvec3(data.getPoint(slot.point_id).position);
+			return world.chunk_system.getChunk(slot.chunk_id).position
+				+ glm::dvec3(world.data.getPoint(slot.point_id).position);
 		}
 
 		/**
@@ -54,12 +55,12 @@ namespace danikk_space_engine
 			human.faction_id = faction_id;
 			human.up = vec3(glm::normalize(feet));
 			const glm::dvec3 center = feet + glm::dvec3(human.up) * (human.getHeight() * 0.5);
-			data.getPoint(point_id).position = vec3(center - data.getChunk(chunk_id).position);
+			data.getPoint(point_id).position = vec3(center - world.chunk_system.getChunk(chunk_id).position);
 
 			const PointComponentSlotId human_id = data.createPointComponentSlot(point_id, PointComponentTypeId::human, &human);
-			data.addPointComponentSlotToChunk(chunk_id, human_id);
+			world.chunk_system.addPointComponentSlotToChunk(world, chunk_id, human_id);
 			const PointComponentSlotId health_id = data.createPointComponentSlot(point_id, PointComponentTypeId::damageable);
-			data.addPointComponentSlotToChunk(chunk_id, health_id);
+			world.chunk_system.addPointComponentSlotToChunk(world, chunk_id, health_id);
 
 			registerUnitAgent(world, human_id, false);
 			return human_id;
@@ -73,7 +74,6 @@ namespace danikk_space_engine
 		void createNpcFixture(World& world, WorldBodyId body_id, PlanetComponent& planet,
 			DiagnosticNpc (&npcs)[npc_count])
 		{
-			WorldData& data = world.data;
 			const glm::dvec3 hill_center(0.0, 0.0, planet.radius + 64.0 - hill_radius);
 			planet.terrain_edits.push({hill_center, hill_radius, true});
 			++planet.terrain_revision;
@@ -82,7 +82,7 @@ namespace danikk_space_engine
 				for(int32 y = -1; y <= 1; ++y)
 					for(int32 x = -1; x <= 1; ++x)
 					{
-						Chunk& chunk = data.createChunk(body_id);
+						Chunk& chunk = world.chunk_system.createChunk(world, body_id);
 						chunk.grid_coordinate = glm::ivec3(x, y, z);
 						chunk.position = glm::dvec3(chunk.grid_coordinate) * planet_chunk_width;
 						planet.chunk_lookup.setChunk(chunk.grid_coordinate, chunk.chunk_id);
@@ -113,7 +113,7 @@ namespace danikk_space_engine
 			formatLogInfo("NPC diagnostics phase=% ticks=%", name, ticks);
 			for(DiagnosticNpc& npc : npcs)
 				if(world.data.isPointComponentSlotActive(npc.slot_id))
-					npc.start_position = getNpcPosition(world.data, world.data.getPointComponentSlot(npc.slot_id));
+				npc.start_position = getNpcPosition(world, world.data.getPointComponentSlot(npc.slot_id));
 
 			for(uint32 tick = 0; tick < ticks; ++tick)
 			{
@@ -136,7 +136,7 @@ namespace danikk_space_engine
 				const auto& human = *static_cast<const HumanComponent*>(slot.getData());
 				++result.active;
 				if(human.grounded) ++result.grounded;
-				if(glm::length(getNpcPosition(world.data, slot) - npc.start_position) > 0.001) ++result.moved;
+				if(glm::length(getNpcPosition(world, slot) - npc.start_position) > 0.001) ++result.moved;
 			}
 			formatLogInfo("NPC diagnostics result phase=% active=% grounded=% moved=%",
 				name, result.active, result.grounded, result.moved);
@@ -172,7 +172,7 @@ namespace danikk_space_engine
 		if(scene.data.isPointComponentSlotActive(npcs[0].slot_id))
 		{
 			const auto& before = scene.data.getPointComponentSlot(npcs[0].slot_id);
-			const glm::dvec3 center = getNpcPosition(scene.data, before);
+			const glm::dvec3 center = getNpcPosition(scene, before);
 			planet.terrain_edits.push({center, 2.0, false});
 			++planet.terrain_revision;
 			measureNpcPhase(scene, npcs, "excavation", 1, vec3(0.0f));
@@ -181,7 +181,7 @@ namespace danikk_space_engine
 			{
 				const auto& after = scene.data.getPointComponentSlot(npcs[0].slot_id);
 				const auto& human = *static_cast<const HumanComponent*>(after.getData());
-				drop = glm::dot(center - getNpcPosition(scene.data, after), glm::dvec3(human.up));
+				drop = glm::dot(center - getNpcPosition(scene, after), glm::dvec3(human.up));
 				lost_support = !human.grounded && drop > 0.0001;
 			}
 		}
@@ -190,6 +190,7 @@ namespace danikk_space_engine
 			&& walking.grounded == npc_count && walking.moved == npc_count && lost_support;
 		formatLogInfo("NPC diagnostics excavation lost_support=% drop_m=%", lost_support, drop);
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
+		scene.chunk_system.clear(scene);
 		scene.data.release();
 		return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 	}

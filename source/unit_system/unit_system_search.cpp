@@ -22,8 +22,8 @@ namespace danikk_space_engine::unit_system_internal
 			const glm::dvec3& search_position,
 			const glm::dvec3& eye_position, double search_radius_squared, ChunkId chunk_id)
 	{
-			if(!world.data.isChunkActive(chunk_id)) return;
-			const Chunk& chunk = world.data.getChunk(chunk_id);
+			if(!world.chunk_system.isChunkActive(chunk_id)) return;
+			const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 			for(PointComponentSlotId id : chunk.getHumanComponentSlotIds())
 		{
 			if(!world.data.isPointComponentSlotActive(id)) continue;
@@ -90,8 +90,8 @@ namespace danikk_space_engine::unit_system_internal
 						const glm::ivec3 coordinate = center_coordinate + glm::ivec3(x, y, z);
 						ChunkId chunk_id;
 						if(!planet->chunk_lookup.getChunk(coordinate, chunk_id)
-							|| !world.data.isChunkActive(chunk_id)) continue;
-						const Chunk& chunk = world.data.getChunk(chunk_id);
+							|| !world.chunk_system.isChunkActive(chunk_id)) continue;
+						const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 						if(chunk.world_body_id != location.body_id || chunk.grid_coordinate != coordinate) continue;
 						inspectChunkCorpses(world, system, search_position, eye_position, search_radius_squared, chunk_id);
 					}
@@ -112,7 +112,7 @@ namespace danikk_space_engine::unit_system_internal
 			PointComponentSlot* slot = nullptr;
 			HumanComponent* human = nullptr;
 			if(!getActiveUnit(world, agent, slot, human) || human->faction_id != system.faction_id) continue;
-			const WorldBodyId body_id = world.data.getChunk(slot->chunk_id).world_body_id;
+			const WorldBodyId body_id = world.chunk_system.getChunk(slot->chunk_id).world_body_id;
 			const glm::dvec3 position = world.getPointWorldPosition(slot->chunk_id, slot->point_id);
 			candidates.push(UnitSearchCandidate{agent.human_slot_id, slot, &agent, human, body_id, position, false});
 		}

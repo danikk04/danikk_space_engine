@@ -41,13 +41,13 @@ namespace danikk_space_engine
 			&& generated_chunk.generation_id == chunk_mesh_generator_generation_id
 			&& generated_chunk.source == ChunkMeshSource::build_parts
 			&& data.isWorldBodyActive(generated_chunk.world_body_id)
-			&& data.isChunkActive(generated_chunk.chunk_id))
+			&& chunk_system.isChunkActive(generated_chunk.chunk_id))
 		{
-			Chunk& chunk = data.getChunk(generated_chunk.chunk_id);
+			Chunk& chunk = chunk_system.getChunk(generated_chunk.chunk_id);
 			if(chunk.world_body_id == generated_chunk.world_body_id
 				&& chunk.build_part_mesh_revision == generated_chunk.source_revision)
 			{
-				chunk_render_system.createMesh(chunk,
+				chunk_system.createMesh(chunk,
 					generated_chunk.point_positions.data(), generated_chunk.point_positions.size(),
 					generated_chunk.triangle_point_indices.data(), generated_chunk.triangle_point_indices.size(),
 					generated_chunk.triangle_material_ids.data(), generated_chunk.triangle_material_ids.size(),
@@ -81,8 +81,8 @@ namespace danikk_space_engine
 			const WorldBody& body = data.getWorldBody(body_id);
 			for(ChunkId chunk_id : body.chunk_ids)
 			{
-				Chunk& chunk = data.getChunk(chunk_id);
-				chunk_render_system.draw(chunk, *this);
+				Chunk& chunk = chunk_system.getChunk(chunk_id);
+				chunk_system.draw(chunk, *this);
 			}
 		}
 		// Draw dynamic chunk components after the world meshes so transparent overlays

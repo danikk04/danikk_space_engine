@@ -67,7 +67,7 @@ namespace danikk_space_engine
 	 */
 	glm::dvec3 World::getChunkWorldPosition(ChunkId chunk_id) const
 	{
-		const Chunk& chunk = data.getChunk(chunk_id);
+		const Chunk& chunk = chunk_system.getChunk(chunk_id);
 		const WorldBody& body = data.getWorldBody(chunk.world_body_id);
 		return body.position + body.rotation * chunk.position;
 	}
@@ -81,7 +81,7 @@ namespace danikk_space_engine
 	glm::dvec3 World::getPointWorldPosition(ChunkId chunk_id, PointId point_id) const
 	{
 		DSE_WATCH();
-		const Chunk& chunk = data.getChunk(chunk_id);
+		const Chunk& chunk = chunk_system.getChunk(chunk_id);
 		const WorldBody& body = data.getWorldBody(chunk.world_body_id);
 		return body.position + body.rotation
 			* (chunk.position + glm::dvec3(data.getPoint(point_id).position));
@@ -108,7 +108,7 @@ namespace danikk_space_engine
 		for(size_t index = 0; index < chunk_generation_requests.size();)
 		{
 			const ChunkMeshGenerationRequest& request = chunk_generation_requests[index];
-			if(request.source != ChunkMeshSource::build_parts || data.isChunkActive(request.chunk_id))
+			if(request.source != ChunkMeshSource::build_parts || chunk_system.isChunkActive(request.chunk_id))
 			{
 				index++;
 				continue;
@@ -119,11 +119,11 @@ namespace danikk_space_engine
 			chunk_generation_requests_dirty = true;
 		}
 
-		for(ChunkId chunk_id : data.getUsedChunkIds())
+		for(ChunkId chunk_id : chunk_system.getUsedChunkIds())
 		{
-			Chunk& chunk = data.getChunk(chunk_id);
+			Chunk& chunk = chunk_system.getChunk(chunk_id);
 			if(!chunk.build_part_mesh_dirty) continue;
-			chunk_render_system.destroyChunk(chunk);
+			chunk_system.destroyRenderData(chunk);
 
 			ChunkMeshGenerationRequest request;
 			request.source = ChunkMeshSource::build_parts;
@@ -222,17 +222,21 @@ namespace danikk_space_engine
 				chunk_generation_requests_dirty = true;
 			}
 		}
-		for(ChunkId chunk_id : data.getWorldBody(body_id).chunk_ids)
-			chunk_render_system.destroyChunk(data.getChunk(chunk_id));
+		WorldBody& body = data.getWorldBody(body_id);
+		while(body.chunk_ids.size() > 0) destroyChunk(body.chunk_ids[body.chunk_ids.size() - 1]);
 		data.destroyWorldBody(body_id);
 	}
 
 	/** @copydoc World::destroyChunk */
 	void World::destroyChunk(ChunkId chunk_id)
 	{
-		if(!data.isChunkActive(chunk_id)) return;
-		chunk_render_system.destroyChunk(data.getChunk(chunk_id));
-		data.destroyChunk(chunk_id);
+		chunk_system.destroyChunk(*this, chunk_id);
+	}
+
+	/** @copydoc World::destroyPoint */
+	void World::destroyPoint(PointId point_id)
+	{
+		chunk_system.destroyPoint(*this, point_id);
 	}
 
 	/**
@@ -287,7 +291,7 @@ namespace danikk_space_engine
 	 */
 	void World::init()
 	{
-		chunk_render_system.clear();
+		chunk_system.clear(*this);
 		startChunkMeshGenerator();
 		chunk_mesh_generator_generation_id++;
 		if(chunk_mesh_generator_generation_id == 0) chunk_mesh_generator_generation_id++;
@@ -311,7 +315,7 @@ namespace danikk_space_engine
 		chunk_generation_requests.clear();
 		chunk_generation_requests_dirty = false;
 		clearBuildPartMeshCache();
-		chunk_render_system.clear();
+		chunk_system.clear(*this);
 		data.release();
 		pending_point_destruction_ids.clear();
 		unit_system_internal::resetUnitSystems();

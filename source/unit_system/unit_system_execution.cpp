@@ -18,7 +18,7 @@ namespace danikk_space_engine::unit_system_internal
 		InventoryComponent* findUnitInventory(World& world, ChunkId chunk_id, PointId point_id)
 		{
 			DSE_WATCH();
-			for(PointComponentSlotId id : world.data.getChunk(chunk_id).point_component_slot_ids)
+			for(PointComponentSlotId id : world.chunk_system.getChunk(chunk_id).point_component_slot_ids)
 			{
 				if(!world.data.isPointComponentSlotActive(id)) continue;
 				PointComponentSlot& slot = world.data.getPointComponentSlot(id);
@@ -33,7 +33,7 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			DSE_WATCH();
 			const float dt = glm::max(getTargetFrameDelay(), 0.0f);
-			const Chunk& chunk = world.data.getChunk(slot.chunk_id);
+			const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
 			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 			const glm::dvec3 own_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 			human.desired_velocity = vec3(0.0f);
@@ -87,7 +87,7 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		DSE_WATCH();
 		if(!world.data.isPointActive(human_slot.point_id)) return;
-		Chunk& old_chunk = world.data.getChunk(human_slot.chunk_id);
+		Chunk& old_chunk = world.chunk_system.getChunk(human_slot.chunk_id);
 		WorldBody& body = world.data.getWorldBody(old_chunk.world_body_id);
 		const PointId point_id = human_slot.point_id;
 		const glm::dvec3 position = old_chunk.position + glm::dvec3(world.data.getPoint(point_id).position);
@@ -104,7 +104,7 @@ namespace danikk_space_engine::unit_system_internal
 			break;
 		}
 		if(planet == nullptr || new_chunk_id == human_slot.chunk_id) return;
-		if(!world.data.isChunkActive(new_chunk_id))
+		if(!world.chunk_system.isChunkActive(new_chunk_id))
 		{
 			const glm::dvec3 minimum = glm::dvec3(old_chunk.grid_coordinate) * planet_chunk_width;
 			const glm::dvec3 maximum = minimum + glm::dvec3(planet_chunk_width - 0.001);
@@ -118,7 +118,7 @@ namespace danikk_space_engine::unit_system_internal
 			const PointComponentSlotId id = old_chunk.point_component_slot_ids[i];
 			if(world.data.getPointComponentSlot(id).point_id != point_id) { ++i; continue; }
 			moved_slots.push(id);
-			world.data.removePointComponentSlotFromChunk(id);
+			world.chunk_system.removePointComponentSlotFromChunk(world, id);
 		}
 		for(size_t i = 0; i < old_chunk.point_ids.size(); ++i)
 		{
@@ -129,8 +129,8 @@ namespace danikk_space_engine::unit_system_internal
 			world.data.getPoint(point_id).referencing_chunk_count--;
 			break;
 		}
-		world.data.getPoint(point_id).position = vec3(position - world.data.getChunk(new_chunk_id).position);
-		for(PointComponentSlotId id : moved_slots) world.data.addPointComponentSlotToChunk(new_chunk_id, id);
+		world.data.getPoint(point_id).position = vec3(position - world.chunk_system.getChunk(new_chunk_id).position);
+		for(PointComponentSlotId id : moved_slots) world.chunk_system.addPointComponentSlotToChunk(world, new_chunk_id, id);
 	}
 
 	/** @brief Executes current unit orders and then updates each unit's chunk ownership. */

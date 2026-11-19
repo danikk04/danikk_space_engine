@@ -16,8 +16,8 @@ namespace danikk_space_engine
 
 	DamageableComponent* findDamageable(World& world, ChunkId chunk_id, PointId point_id)
 	{
-		if(!world.data.isChunkActive(chunk_id)) return nullptr;
-		for(PointComponentSlotId id : world.data.getChunk(chunk_id).point_component_slot_ids)
+		if(!world.chunk_system.isChunkActive(chunk_id)) return nullptr;
+		for(PointComponentSlotId id : world.chunk_system.getChunk(chunk_id).point_component_slot_ids)
 		{
 			if(!world.data.isPointComponentSlotActive(id)) continue;
 			PointComponentSlot& slot = world.data.getPointComponentSlot(id);

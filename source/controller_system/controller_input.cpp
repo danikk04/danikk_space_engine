@@ -24,7 +24,7 @@ namespace danikk_space_engine
 			machinegun.right = camera.getRight();
 			const PointComponentSlotId slot_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::machine_gun, &machinegun);
-			world.data.addPointComponentSlotToChunk(chunk_id, slot_id);
+			world.chunk_system.addPointComponentSlotToChunk(world, chunk_id, slot_id);
 		}
 	}
 

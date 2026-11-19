@@ -68,7 +68,7 @@ namespace danikk_space_engine
 			if(slot.generation_id != reference.generation_id
 				|| slot.type_id != PointComponentTypeId::human
 				|| !world.data.isPointActive(slot.point_id)
-				|| !world.data.isChunkActive(slot.chunk_id)) continue;
+				|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 			++selected_unit_count;

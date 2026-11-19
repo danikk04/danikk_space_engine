@@ -15,8 +15,8 @@ namespace danikk_space_engine
 		 */
 		bool isPlanetChunk(const World& world, ChunkId chunk_id)
 		{
-			if(!world.data.isChunkActive(chunk_id)) return false;
-			const Chunk& chunk = world.data.getChunk(chunk_id);
+			if(!world.chunk_system.isChunkActive(chunk_id)) return false;
+			const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
 			if(!world.data.isWorldBodyActive(chunk.world_body_id)) return false;
 			const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)

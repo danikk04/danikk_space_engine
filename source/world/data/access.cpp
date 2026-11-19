@@ -43,8 +43,6 @@ namespace danikk_space_engine
 
 	/** @copydoc WorldData::isPointActive */
 	bool WorldData::isPointActive(PointId id) const { return points.isActive(id); }
-	/** @copydoc WorldData::isChunkActive */
-	bool WorldData::isChunkActive(ChunkId id) const { return chunks.isActive(id); }
 	/** @copydoc WorldData::isWorldBodyActive */
 	bool WorldData::isWorldBodyActive(WorldBodyId id) const { return world_bodies.isActive(id); }
 	/** @copydoc WorldData::isWorldBodyComponentSlotActive */
@@ -54,8 +52,6 @@ namespace danikk_space_engine
 
 	/** @copydoc WorldData::getUsedPointIds */
 	const DynamicArray<PointId>& WorldData::getUsedPointIds() const { return points.usedIds(); }
-	/** @copydoc WorldData::getUsedChunkIds */
-	const DynamicArray<ChunkId>& WorldData::getUsedChunkIds() const { return chunks.usedIds(); }
 	/** @copydoc WorldData::getUsedWorldBodyIds */
 	const DynamicArray<WorldBodyId>& WorldData::getUsedWorldBodyIds() const { return world_bodies.usedIds(); }
 	/** @copydoc WorldData::getUsedWorldBodyComponentSlotIds */
@@ -67,10 +63,6 @@ namespace danikk_space_engine
 	Point& WorldData::getPoint(PointId id) { return getCheckedResource(points, id, "point"); }
 	/** @copydoc WorldData::getPoint */
 	const Point& WorldData::getPoint(PointId id) const { return getCheckedResource(points, id, "point"); }
-	/** @copydoc WorldData::getChunk */
-	Chunk& WorldData::getChunk(ChunkId id) { return getCheckedResource(chunks, id, "chunk"); }
-	/** @copydoc WorldData::getChunk */
-	const Chunk& WorldData::getChunk(ChunkId id) const { return getCheckedResource(chunks, id, "chunk"); }
 	/** @copydoc WorldData::getWorldBody */
 	WorldBody& WorldData::getWorldBody(WorldBodyId id) { return getCheckedResource(world_bodies, id, "world body"); }
 	/** @copydoc WorldData::getWorldBody */
@@ -86,8 +78,6 @@ namespace danikk_space_engine
 
 	/** @copydoc WorldData::getPointSlotCount */
 	size_t WorldData::getPointSlotCount() const { return points.size(); }
-	/** @copydoc WorldData::getChunkSlotCount */
-	size_t WorldData::getChunkSlotCount() const { return chunks.size(); }
 	/** @copydoc WorldData::getWorldBodySlotCount */
 	size_t WorldData::getWorldBodySlotCount() const { return world_bodies.size(); }
 	/** @copydoc WorldData::getWorldBodyComponentSlotCount */

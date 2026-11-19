@@ -144,9 +144,9 @@ namespace danikk_space_engine
 				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
 				const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
 				if(slot.type_id != PointComponentTypeId::human || !world.data.isPointActive(slot.point_id)
-					|| !world.data.isChunkActive(slot.chunk_id)) continue;
+					|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
 				const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
-				const Chunk& chunk = world.data.getChunk(slot.chunk_id);
+				const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
 				const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 				const glm::dvec3 center = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 				const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(human.up));
@@ -176,7 +176,7 @@ namespace danikk_space_engine
 
 		if(!world.data.isPointComponentSlotActive(controller.dragged_human_slot_id)
 			|| !world.data.isPointActive(controller.dragged_human_point_id)
-			|| !world.data.isChunkActive(controller.dragged_human_chunk_id))
+			|| !world.chunk_system.isChunkActive(controller.dragged_human_chunk_id))
 		{
 			clearHumanDrag(world, controller);
 			return;
@@ -187,7 +187,7 @@ namespace danikk_space_engine
 			controller.dragged_human_distance *= std::pow(1.2, static_cast<double>(scroll_delta));
 			controller.dragged_human_distance = glm::clamp(controller.dragged_human_distance, 0.5, 10000.0);
 		}
-		const Chunk& chunk = world.data.getChunk(controller.dragged_human_chunk_id);
+		const Chunk& chunk = world.chunk_system.getChunk(controller.dragged_human_chunk_id);
 		const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 target = world.getCameraWorldPosition()
 			+ glm::dvec3(world.getCameraComponent().getFront()) * controller.dragged_human_distance;

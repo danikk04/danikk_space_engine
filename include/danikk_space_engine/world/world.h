@@ -7,10 +7,10 @@
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/world/chunk.h>
-#include <danikk_space_engine/chunk_render_system.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
 #include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/world/data.h>
+#include <danikk_space_engine/chunk_system.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
@@ -60,16 +60,16 @@ namespace danikk_space_engine
 			const glm::dvec3& origin, const vec3& direction, float max_distance) const;
 
 	public:
-		/** @brief Owns all indexed geometry, chunks, bodies, and component-slot pools. */
+		/** @brief Owns points, bodies, and component-slot pools. */
 		WorldData data;
+		/** @brief Owns chunk data, chunk memberships, and chunk meshes. */
+		ChunkSystem chunk_system;
 		/** @brief Samples global gravity and other spatial environment fields. */
 		WorldEnvironment environment;
 		/** @brief Integrates body motion and resolves physical contacts after component ticks. */
 		WorldPhysics physics;
 		/** @brief Processes local player input and stores its selected point and interaction state. */
 		ControllerSystem controller_system;
-		/** @brief Owns GPU meshes and material draw ranges for active chunks. */
-		ChunkRenderSystem chunk_render_system;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
 		/** @brief Slot ID of the active camera point component. */
@@ -101,6 +101,8 @@ namespace danikk_space_engine
 		void destroyWorldBody(WorldBodyId body_id);
 		/** @brief Releases a chunk's render resources, then destroys its WorldData resource. */
 		void destroyChunk(ChunkId chunk_id);
+		/** @brief Detaches and destroys a point together with its component payloads. */
+		void destroyPoint(PointId point_id);
 
 		/** @brief Snapshots dirty BuildPart chunks into CPU-only mesh generation jobs. */
 		void queueDirtyBuildPartMeshes();
