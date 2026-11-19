@@ -69,14 +69,14 @@ namespace danikk_space_engine::unit_system_internal
 			|| !world.chunk_system.isChunkActive(slot.chunk_id)) return false;
 		const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 		const DamageableComponent* health = findDamageable(world, slot.chunk_id, slot.point_id);
-		return health != nullptr && health->getHealth() > 0.0f && faction < world.data.factions.size()
-			&& human.faction_id < world.data.factions.size()
-			&& world.data.factions.getRelation(faction, human.faction_id).type == FactionRelationType::hostile;
+		return health != nullptr && health->getHealth() > 0.0f && faction < world.factions.size()
+			&& human.faction_id < world.factions.size()
+			&& world.factions.getRelation(faction, human.faction_id).type == FactionRelationType::hostile;
 	}
 	/** @brief Checks that a shared contact still names a living hostile human. */
 	bool isValidSighting(World& world, const UnitSighting& sighting)
 	{
-		if(sighting.faction_id >= world.data.factions.size()
+		if(sighting.faction_id >= world.factions.size()
 			|| !world.data.isPointComponentSlotActive(sighting.target_slot_id)) return false;
 		const PointComponentSlot& target_slot = world.data.getPointComponentSlot(sighting.target_slot_id);
 		if(target_slot.type_id != PointComponentTypeId::human
@@ -85,8 +85,8 @@ namespace danikk_space_engine::unit_system_internal
 			|| !world.data.isPointActive(target_slot.point_id)
 			|| !world.chunk_system.isChunkActive(target_slot.chunk_id)) return false;
 		const HumanComponent& target = *static_cast<const HumanComponent*>(target_slot.getData());
-		if(target.faction_id >= world.data.factions.size()
-			|| world.data.factions.getRelation(sighting.faction_id, target.faction_id).type != FactionRelationType::hostile)
+		if(target.faction_id >= world.factions.size()
+			|| world.factions.getRelation(sighting.faction_id, target.faction_id).type != FactionRelationType::hostile)
 			return false;
 		const DamageableComponent* health = findDamageable(world, target_slot.chunk_id, target_slot.point_id);
 		return health != nullptr && health->getHealth() > 0.0f;

@@ -149,9 +149,9 @@ namespace danikk_space_engine
 	{
 		World scene;
 		scene.camera_component_slot_id = static_cast<PointComponentSlotId>(-1);
-		scene.data.factions.create(faction_definition_ids::celestial_body);
-		scene.data.factions.create(faction_definition_ids::player);
-		scene.data.factions.create(faction_definition_ids::pirates);
+		scene.factions.create(faction_definition_ids::celestial_body);
+		scene.factions.create(faction_definition_ids::player);
+		scene.factions.create(faction_definition_ids::pirates);
 
 		const WorldBodyId body_id = scene.data.createWorldBody();
 		const auto& settings = getPlanetSettings(planet_settings_ids::earth);
@@ -192,6 +192,7 @@ namespace danikk_space_engine
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
 		scene.chunk_system.clear();
 		scene.data.release();
+		scene.factions.release();
 		return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }

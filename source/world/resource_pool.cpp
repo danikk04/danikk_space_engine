@@ -1,5 +1,5 @@
 #include <danikk_framework/log.h>
-#include <danikk_space_engine/world/resource_pool.h>
+#include <danikk_space_engine/resource_pool.h>
 
 namespace danikk_space_engine
 {

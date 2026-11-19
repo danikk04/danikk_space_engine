@@ -76,11 +76,11 @@ namespace danikk_space_engine
 		if(attacker_slot == nullptr || victim_slot == nullptr) return;
 		HumanComponent& attacker = *static_cast<HumanComponent*>(attacker_slot->getData());
 		HumanComponent& victim = *static_cast<HumanComponent*>(victim_slot->getData());
-		if(attacker.faction_id >= world.data.factions.size() || victim.faction_id >= world.data.factions.size()
-			|| world.data.factions.getRelation(victim.faction_id, attacker.faction_id).type != FactionRelationType::hostile)
+		if(attacker.faction_id >= world.factions.size() || victim.faction_id >= world.factions.size()
+			|| world.factions.getRelation(victim.faction_id, attacker.faction_id).type != FactionRelationType::hostile)
 			return;
 
-		ensureUnitSystemCount(world.data.factions.size());
+		ensureUnitSystemCount(world.factions.size());
 		UnitSystem& system = unit_systems[victim.faction_id];
 		const uint32 now = danikk_engine::getMsTimestamp();
 		const Chunk& attacker_chunk = world.chunk_system.getChunk(attacker_slot->chunk_id);
@@ -122,7 +122,7 @@ namespace danikk_space_engine
 	void unitSystemTick(World& world, float dt)
 	{
 		DSE_WATCH();
-		ensureUnitSystemCount(world.data.factions.size());
+		ensureUnitSystemCount(world.factions.size());
 		for(UnitSystem& system : unit_systems)
 		{
 			pruneUnitAgents(world, system);
@@ -143,8 +143,8 @@ namespace danikk_space_engine
 		PointComponentSlot& slot = world.data.getPointComponentSlot(human_slot_id);
 		if(slot.type_id != PointComponentTypeId::human) return;
 		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
-		if(human.faction_id >= world.data.factions.size()) return;
-		ensureUnitSystemCount(world.data.factions.size());
+		if(human.faction_id >= world.factions.size()) return;
+		ensureUnitSystemCount(world.factions.size());
 		UnitSystem& system = unit_systems[human.faction_id];
 		for(UnitAgentState& agent : system.agents)
 			if(agent.human_slot_id == human_slot_id && agent.human_generation_id == slot.generation_id)

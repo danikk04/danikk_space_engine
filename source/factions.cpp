@@ -19,7 +19,7 @@ namespace danikk_space_engine
 		return definitions[id];
 	}
 
-	FactionId FactionData::create(FactionDefinitionId definition_id)
+	FactionId FactionSystem::create(FactionDefinitionId definition_id)
 	{
 		const FactionDefinition& definition = getFactionDefinition(definition_id);
 		const size_t old_count = factions.size();
@@ -35,21 +35,21 @@ namespace danikk_space_engine
 		return static_cast<FactionId>(old_count);
 	}
 
-	size_t FactionData::size() const { return factions.size(); }
+	size_t FactionSystem::size() const { return factions.size(); }
 
-	Faction& FactionData::get(FactionId id)
+	Faction& FactionSystem::get(FactionId id)
 	{
 		if(id >= factions.size()) danikk_engine::formatFatalError("Invalid faction ID %", id);
 		return factions[id];
 	}
 
-	const Faction& FactionData::get(FactionId id) const
+	const Faction& FactionSystem::get(FactionId id) const
 	{
 		if(id >= factions.size()) danikk_engine::formatFatalError("Invalid faction ID %", id);
 		return factions[id];
 	}
 
-	FactionRelation FactionData::getRelation(FactionId a, FactionId b) const
+	FactionRelation FactionSystem::getRelation(FactionId a, FactionId b) const
 	{
 		get(a);
 		get(b);
@@ -57,7 +57,7 @@ namespace danikk_space_engine
 		return factions[a].relations[b];
 	}
 
-	void FactionData::setRelation(FactionId a, FactionId b, const FactionRelation& relation)
+	void FactionSystem::setRelation(FactionId a, FactionId b, const FactionRelation& relation)
 	{
 		get(a);
 		get(b);
@@ -66,8 +66,8 @@ namespace danikk_space_engine
 		factions[b].relations[a] = relation;
 	}
 
-	void FactionData::clear() { factions.clear(); }
-	void FactionData::release()
+	void FactionSystem::clear() { factions.clear(); }
+	void FactionSystem::release()
 	{
 		factions = DynamicArray<Faction>();
 	}

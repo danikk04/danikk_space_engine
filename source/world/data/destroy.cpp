@@ -189,7 +189,6 @@ namespace danikk_space_engine
 	 */
 	void WorldData::clear()
 	{
-		factions.clear();
 		destroyLastUntilEmpty(world_body_components.usedIds(),
 			[this](WorldBodyComponentSlotId id) { destroyWorldBodyComponentSlot(id); });
 		destroyLastUntilEmpty(point_components.usedIds(),
@@ -203,7 +202,6 @@ namespace danikk_space_engine
 	void WorldData::release()
 	{
 		clear();
-		factions.release();
 		releasePools(points, world_bodies, world_body_components, point_components);
 	}
 }

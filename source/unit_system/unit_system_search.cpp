@@ -31,10 +31,10 @@ namespace danikk_space_engine::unit_system_internal
 				if(!world.data.isPointActive(corpse_slot.point_id)) continue;
 			const HumanComponent& corpse = *static_cast<const HumanComponent*>(corpse_slot.getData());
 				if(!corpse.hasDeathTimestamp()) continue;
-			if(corpse.faction_id >= world.data.factions.size()
-				|| system.faction_id >= world.data.factions.size()) continue;
+			if(corpse.faction_id >= world.factions.size()
+				|| system.faction_id >= world.factions.size()) continue;
 			const bool is_ally = corpse.faction_id == system.faction_id;
-			const bool is_hostile = world.data.factions.getRelation(
+			const bool is_hostile = world.factions.getRelation(
 				system.faction_id, corpse.faction_id).type == FactionRelationType::hostile;
 			if(!is_ally && !is_hostile) continue;
 			const glm::dvec3 corpse_position = world.getPointWorldPosition(corpse_slot.chunk_id, corpse_slot.point_id);

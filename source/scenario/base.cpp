@@ -103,10 +103,10 @@ namespace danikk_space_engine
 	void startBaseScenario(World& world)
 	{
 		world.data.clear();
-		world.data.factions.create(faction_definition_ids::celestial_body);
-		world.data.factions.create(faction_definition_ids::player);
-		world.data.factions.create(faction_definition_ids::pirates);
-		world.data.factions.setRelation(base_faction_ids::player, base_faction_ids::pirates,
+		world.factions.create(faction_definition_ids::celestial_body);
+		world.factions.create(faction_definition_ids::player);
+		world.factions.create(faction_definition_ids::pirates);
+		world.factions.setRelation(base_faction_ids::player, base_faction_ids::pirates,
 			{FactionRelationType::hostile, 0.0f});
 
 		const WorldBodyId planet_body_id = world.data.createWorldBody();

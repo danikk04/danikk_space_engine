@@ -2,7 +2,7 @@
 
 #include <danikk_framework/dynamic_array.h>
 
-#include <danikk_space_engine/world/chunk.h>
+#include <danikk_space_engine/chunk.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/factions.h>
 

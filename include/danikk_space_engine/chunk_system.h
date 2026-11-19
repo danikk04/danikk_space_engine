@@ -3,8 +3,8 @@
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_engine/mesh.h>
 
-#include <danikk_space_engine/world/chunk.h>
-#include <danikk_space_engine/world/resource_pool.h>
+#include <danikk_space_engine/chunk.h>
+#include <danikk_space_engine/resource_pool.h>
 
 namespace danikk_space_engine
 {

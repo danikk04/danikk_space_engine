@@ -46,9 +46,9 @@ namespace danikk_space_engine
 		String name; ///< World-specific faction name.
 		vec3 color = vec3(1.0f); ///< World-specific faction color.
 	private:
-		/** @brief Relations managed symmetrically by FactionData. */
+		/** @brief Relations managed symmetrically by FactionSystem. */
 		DynamicArray<FactionRelation> relations;
-		friend class FactionData;
+		friend class FactionSystem;
 	};
 
 	/** @brief Returns the number of built-in faction templates. */
@@ -56,8 +56,8 @@ namespace danikk_space_engine
 	/** @brief Returns a template by index; an invalid index terminates with a diagnostic. */
 	const FactionDefinition& getFactionDefinition(FactionDefinitionId id);
 
-	/** @brief Owns world-local factions and manages their symmetric relations. */
-	class FactionData
+	/** @brief Owns world-local factions, their relations, and faction-state lifecycle. */
+	class FactionSystem
 	{
 		DynamicArray<Faction> factions;
 	public:

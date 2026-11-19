@@ -6,13 +6,14 @@
 
 #include <danikk_space_engine/world/point.h>
 #include <danikk_space_engine/component/point/camera.h>
-#include <danikk_space_engine/world/chunk.h>
+#include <danikk_space_engine/chunk.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
 #include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/component_system.h>
 #include <danikk_space_engine/world/data.h>
 #include <danikk_space_engine/chunk_system.h>
 #include <danikk_space_engine/planet_terrain_system.h>
+#include <danikk_space_engine/factions.h>
 #include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
@@ -76,6 +77,8 @@ namespace danikk_space_engine
 		ComponentSystem component_system;
 		/** @brief Samples live planet density and material fields. */
 		PlanetTerrainSystem planet_terrain_system;
+		/** @brief Owns this world's faction instances and diplomatic relations. */
+		FactionSystem factions;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
 		/** @brief Slot ID of the active camera point component. */
