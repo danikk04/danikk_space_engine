@@ -12,56 +12,9 @@
 namespace danikk_space_engine
 {
 	World::World()
-		: chunks(*this), environment(*this), physics(*this), controller(*this),
+		: chunks(*this), environment(*this), physics(*this), controller(*this), camera(*this),
 		  components(*this), planets(*this), raycasts(*this)
 	{
-	}
-
-
-	/** @brief Resolves camera_component_slot_id to the active camera slot. */
-	PointComponentSlot& World::getCameraSlot()
-	{
-		return point_data.getPointComponentSlot(camera_component_slot_id);
-	}
-
-	/** @brief Resolves the configured camera slot as a read-only reference. */
-	const PointComponentSlot& World::getCameraSlot() const
-	{
-		return point_data.getPointComponentSlot(camera_component_slot_id);
-	}
-
-	/** @brief Casts the camera slot payload to its registered CameraComponent type. */
-	CameraComponent& World::getCameraComponent()
-	{
-		return *static_cast<CameraComponent*>(getCameraSlot().getData());
-	}
-
-	/** @brief Returns the registered camera payload without permitting mutation. */
-	const CameraComponent& World::getCameraComponent() const
-	{
-		return *static_cast<const CameraComponent*>(getCameraSlot().getData());
-	}
-
-	/** @brief Resolves the point ID stored by the active camera component slot. */
-	Point& World::getCameraPoint()
-	{
-		return point_data.getPoint(getCameraSlot().point_id);
-	}
-
-	/** @brief Returns the camera point as a read-only resource reference. */
-	const Point& World::getCameraPoint() const
-	{
-		return point_data.getPoint(getCameraSlot().point_id);
-	}
-
-	/**
-	 * @brief Converts camera point coordinates from chunk-local to double-precision world space.
-	 * @return Body position plus rotated chunk origin and camera-point offset.
-	 */
-	glm::dvec3 World::getCameraWorldPosition() const
-	{
-		const PointComponentSlot& camera_slot = getCameraSlot();
-		return getPointWorldPosition(camera_slot.chunk_id, camera_slot.point_id);
 	}
 
 	/**
@@ -257,6 +210,7 @@ namespace danikk_space_engine
 	 */
 	void World::init()
 	{
+		camera.unbind();
 		chunks.clear();
 		while(world_body_data.getUsedWorldBodyIds().size() > 0)
 		{
@@ -281,6 +235,7 @@ namespace danikk_space_engine
 	 */
 	void World::shutdown()
 	{
+		camera.unbind();
 		controller.unbind();
 		stopChunkMeshGenerator();
 		chunk_mesh_generator_generation_id++;

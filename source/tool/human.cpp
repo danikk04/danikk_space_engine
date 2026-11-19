@@ -70,7 +70,7 @@ namespace danikk_space_engine
 			up = glm::normalize(up);
 			const vec3 local_normal = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			if(glm::dot(up, local_normal) < 0.5f) return;
-			const vec3 forward = vec3(inverse_rotation * (world.getCameraWorldPosition() - hit.position));
+			const vec3 forward = vec3(inverse_rotation * (world.camera.getWorldPosition() - hit.position));
 			const PointComponentSlotId human_id = createNpc(world, hit.chunk_id,
 				local_position + glm::dvec3(up * 0.02f), up, forward, faction_id);
 			HumanComponent& human = *static_cast<HumanComponent*>(world.point_data.getPointComponentSlot(human_id).getData());
@@ -133,8 +133,8 @@ namespace danikk_space_engine
 		if(mouse_state == button_states::press)
 		{
 			clearHumanDrag(world, controller);
-			const glm::dvec3 ray_origin = world.getCameraWorldPosition();
-			const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.getCameraComponent().getFront()));
+			const glm::dvec3 ray_origin = world.camera.getWorldPosition();
+			const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.camera.getFront()));
 			double closest_distance = hit.hit ? hit.distance : 10000.0;
 			for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
 			{
@@ -186,8 +186,8 @@ namespace danikk_space_engine
 		}
 		const Chunk& chunk = world.chunks.getChunk(controller.dragged_human_chunk_id);
 		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
-		const glm::dvec3 target = world.getCameraWorldPosition()
-			+ glm::dvec3(world.getCameraComponent().getFront()) * controller.dragged_human_distance;
+		const glm::dvec3 target = world.camera.getWorldPosition()
+			+ glm::dvec3(world.camera.getFront()) * controller.dragged_human_distance;
 		const glm::dvec3 body_local_target = glm::conjugate(body.rotation) * (target - body.position);
 		world.point_data.getPoint(controller.dragged_human_point_id).position = vec3(body_local_target - chunk.position);
 	}

@@ -5,7 +5,7 @@
 #include <danikk_space_engine/physics.h>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/component/point/camera.h>
+#include <danikk_space_engine/camera_system.h>
 #include <danikk_space_engine/chunk.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
 #include <danikk_space_engine/controller_system.h>
@@ -44,6 +44,8 @@ namespace danikk_space_engine
 		PhysicsSystem physics;
 		/** @brief Processes local player input and stores its selected point and interaction state. */
 		ControllerSystem controller;
+		/** @brief Owns camera state, input, point binding, and projection. */
+		CameraSystem camera;
 		/** @brief Dispatches tick and frame callbacks for WorldBody and point components. */
 		ComponentSystem components;
 		/** @brief Owns planet data, terrain queries, edits, and chunk streaming. */
@@ -54,8 +56,6 @@ namespace danikk_space_engine
 		FactionSystem factions;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
-		/** @brief Slot ID of the active camera point component. */
-		PointComponentSlotId camera_component_slot_id = 0;
 		/** @brief Generation token used to reject worker results from an earlier world lifetime. */
 		uint64 chunk_mesh_generator_generation_id = 0;
 		/** @brief Latest desired chunk-mesh work, awaiting submission to the generator module. */
@@ -133,29 +133,6 @@ namespace danikk_space_engine
 		 * release their GPU resources safely.
 		 */
 		void shutdown();
-
-		/** @brief Returns the active camera slot; the stored ID must refer to a live slot. */
-		PointComponentSlot& getCameraSlot();
-
-		/** @brief Returns the active camera slot as a read-only reference. */
-		const PointComponentSlot& getCameraSlot() const;
-
-		/** @brief Returns the CameraComponent payload associated with `camera_component_slot_id`. */
-		CameraComponent& getCameraComponent();
-
-		/** @brief Returns the camera payload as a read-only reference. */
-		const CameraComponent& getCameraComponent() const;
-
-		/** @brief Returns the point whose chunk-local position defines the camera origin. */
-		Point& getCameraPoint();
-
-		/** @brief Returns the camera point as a read-only reference. */
-		const Point& getCameraPoint() const;
-
-		/**
-		 * @brief Transforms the camera point through its chunk and world body into world-space coordinates.
-		 */
-		glm::dvec3 getCameraWorldPosition() const;
 
 		/**
 		 * @brief Transforms the chunk origin through its owning world body into world-space coordinates.

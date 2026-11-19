@@ -148,7 +148,7 @@ namespace danikk_space_engine
 	int runNpcDiagnostics()
 	{
 		World scene;
-		scene.camera_component_slot_id = static_cast<PointComponentSlotId>(-1);
+		scene.camera.unbind();
 		scene.factions.create(faction_definition_ids::celestial_body);
 		scene.factions.create(faction_definition_ids::player);
 		scene.factions.create(faction_definition_ids::pirates);

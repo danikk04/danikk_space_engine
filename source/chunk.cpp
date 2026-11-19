@@ -116,7 +116,7 @@ namespace danikk_space_engine
 		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
 		const glm::dvec3 relative_chunk_position = body.position
 			+ body.rotation * position
-			- world.getCameraWorldPosition();
+			- world.camera.getWorldPosition();
 		mat4 body_rotation(1.0f);
 		body_rotation[0] = vec4(vec3(body.rotation * glm::dvec3(1.0, 0.0, 0.0)), 0.0f);
 		body_rotation[1] = vec4(vec3(body.rotation * glm::dvec3(0.0, 1.0, 0.0)), 0.0f);

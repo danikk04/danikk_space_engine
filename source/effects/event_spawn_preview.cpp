@@ -42,7 +42,7 @@ namespace danikk_space_engine
 			const glm::dvec3 center_world = body.position + body.rotation
 				* (placement.feet_position + glm::dvec3(local_up * (height * 0.5f)));
 			const mat4 body_matrix = glm::translate(mat4(1.0f),
-				vec3(center_world - world.getCameraWorldPosition())) * orientation;
+				vec3(center_world - world.camera.getWorldPosition())) * orientation;
 			const mat4 feet_matrix = body_matrix
 				* glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, -0.5f))
 				* glm::scale(mat4(1.0f), vec3(height));

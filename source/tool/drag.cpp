@@ -19,9 +19,9 @@ namespace danikk_space_engine
 		{
 			if(!world.world_body_data.isWorldBodyActive(body_id)) return false;
 
-			const PointComponentSlot& camera_slot = world.getCameraSlot();
-			if(world.chunks.isChunkActive(camera_slot.chunk_id)
-				&& world.chunks.getChunk(camera_slot.chunk_id).world_body_id == body_id)
+			const ChunkId camera_chunk_id = world.camera.getChunkId();
+			if(world.chunks.isChunkActive(camera_chunk_id)
+				&& world.chunks.getChunk(camera_chunk_id).world_body_id == body_id)
 			{
 				return false;
 			}
@@ -109,7 +109,7 @@ namespace danikk_space_engine
 		}
 		else if(!alt_pressed && scroll_delta != 0.0f)
 		{
-			const glm::dvec3 axis = glm::normalize(glm::dvec3(world.getCameraComponent().getUp()));
+			const glm::dvec3 axis = glm::normalize(glm::dvec3(world.camera.getUp()));
 			constexpr double half_angle_per_scroll = 3.14159265358979323846 / 24.0;
 			const double half_angle = static_cast<double>(scroll_delta) * half_angle_per_scroll;
 			const double sine = std::sin(half_angle);
@@ -118,8 +118,8 @@ namespace danikk_space_engine
 		}
 		if(alt_pressed && (cursor_delta.x != 0.0f || cursor_delta.y != 0.0f))
 		{
-			const glm::dvec3 camera_up = glm::normalize(glm::dvec3(world.getCameraComponent().getUp()));
-			const glm::dvec3 camera_right = glm::normalize(glm::dvec3(world.getCameraComponent().getRight()));
+			const glm::dvec3 camera_up = glm::normalize(glm::dvec3(world.camera.getUp()));
+			const glm::dvec3 camera_right = glm::normalize(glm::dvec3(world.camera.getRight()));
 			const double yaw_half_angle = -static_cast<double>(cursor_delta.x) * 0.5;
 			const double pitch_half_angle = -static_cast<double>(cursor_delta.y) * 0.5;
 			const glm::dquat yaw_rotation(
@@ -135,8 +135,8 @@ namespace danikk_space_engine
 			body.rotation = glm::normalize(pitch_rotation * yaw_rotation * body.rotation);
 		}
 
-		const glm::dvec3 target = world.getCameraWorldPosition()
-			+ glm::dvec3(world.getCameraComponent().getFront()) * controller.dragged_body_distance;
+		const glm::dvec3 target = world.camera.getWorldPosition()
+			+ glm::dvec3(world.camera.getFront()) * controller.dragged_body_distance;
 		body.position = target - body.rotation * controller.dragged_hit_offset;
 	}
 }

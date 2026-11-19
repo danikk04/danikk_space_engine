@@ -77,8 +77,8 @@ namespace danikk_space_engine
 		panel_vertices.clear();
 		panel_indices.clear();
 
-		const glm::dvec3 camera_position = world.getCameraWorldPosition();
-		const CameraComponent& camera = world.getCameraComponent();
+		const glm::dvec3 camera_position = world.camera.getWorldPosition();
+		const CameraSystem& camera = world.camera;
 		const vec3 camera_front = glm::normalize(camera.getFront());
 		const vec3 camera_up = glm::normalize(camera.getUp());
 		const vec3 camera_right = glm::normalize(glm::cross(camera_front, camera_up));

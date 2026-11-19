@@ -27,7 +27,7 @@ namespace danikk_space_engine
 		if(!hit.hit) return;
 
 		const BuildPartPlacement placement = getBuildPartPlacement(world, hit, shape, size, rotation_step);
-		const vec3 camera_relative_center = vec3(placement.world_position - world.getCameraWorldPosition());
+		const vec3 camera_relative_center = vec3(placement.world_position - world.camera.getWorldPosition());
 		const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
 
 		DynamicArray<DefaultVertex> vertices;

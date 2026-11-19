@@ -79,10 +79,7 @@ namespace danikk_space_engine
 
 		PointId camera_point_id = static_cast<PointId>(-1);
 
-		if(world.point_data.isPointComponentSlotActive(world.camera_component_slot_id))
-		{
-			camera_point_id = world.point_data.getPointComponentSlot(world.camera_component_slot_id).point_id;
-		}
+		if(world.camera.isActive()) camera_point_id = world.camera.getPointId();
 
 		DynamicArray<PointId> points_to_destroy;
 

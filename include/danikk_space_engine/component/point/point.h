@@ -11,7 +11,6 @@ namespace danikk_space_engine
 	enum class PointComponentTypeId : uint32
 	{
 		none = 0, ///< Empty slot type with no payload callbacks.
-		camera, ///< Camera orientation, projection, mouse-look, and movement behavior.
 		machine_gun, ///< Weapon model state and timed projectile spawning.
 		bullet, ///< Moving projectile state, collision sweep, and tracer rendering.
 		engine, ///< Reserved component type; no implementation is registered yet.

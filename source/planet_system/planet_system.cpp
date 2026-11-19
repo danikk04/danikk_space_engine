@@ -256,7 +256,7 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)
-			|| !world.point_data.isPointComponentSlotActive(world.camera_component_slot_id)) return;
+			|| !world.camera.isActive()) return;
 		if(!planet.terrain_edits_loaded)
 		{
 			loadPlanetTerrainEdits(planet.world_body_id, planet.radius, planet.noise_seed,
@@ -265,7 +265,7 @@ namespace danikk_space_engine
 			planet.processed_edit_count = planet.terrain_edits.size();
 		}
 		const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
-		const glm::dvec3 camera_position = world.getCameraWorldPosition() - body.position;
+		const glm::dvec3 camera_position = world.camera.getWorldPosition() - body.position;
 		const double distance_from_center = glm::length(camera_position);
 		const bool in_chunk_range = distance_from_center
 			<= planet.radius + planet.chunk_load_radius + planet_chunk_width;

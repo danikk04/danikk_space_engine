@@ -237,10 +237,7 @@ namespace danikk_space_engine
 	 */
 	RaycastHit RaycastSystem::castFromCamera(float max_distance) const
 	{
-		if(world.camera_component_slot_id >= world.point_data.getPointComponentSlotCount()) return RaycastHit{};
-		if(!world.point_data.isPointComponentSlotActive(world.camera_component_slot_id)) return RaycastHit{};
-		const PointComponentSlot& camera_slot = world.point_data.getPointComponentSlot(world.camera_component_slot_id);
-		if(!world.point_data.isPointActive(camera_slot.point_id)) return RaycastHit{};
-		return cast(world.getCameraWorldPosition(), world.getCameraComponent().getFront(), max_distance);
+		if(!world.camera.isActive()) return RaycastHit{};
+		return cast(world.camera.getWorldPosition(), world.camera.getFront(), max_distance);
 	}
 }

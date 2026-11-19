@@ -18,11 +18,10 @@ namespace danikk_space_engine
 		const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 		if(glm::length(hit.normal) <= 1e-6f) return 0;
 		const vec3 surface_up = glm::normalize(hit.normal);
-		const PointComponentSlot& camera_slot = world.getCameraSlot();
 		const WorldBody& camera_body = world.world_body_data.getWorldBody(
-			world.chunks.getChunk(camera_slot.chunk_id).world_body_id);
+			world.chunks.getChunk(world.camera.getChunkId()).world_body_id);
 		const vec3 camera_right = vec3(camera_body.rotation
-			* glm::dvec3(world.getCameraComponent().getRight()));
+			* glm::dvec3(world.camera.getRight()));
 		vec3 tangent = camera_right - surface_up * glm::dot(camera_right, surface_up);
 		if(glm::length(tangent) <= 1e-6f)
 		{
@@ -46,7 +45,7 @@ namespace danikk_space_engine
 			const glm::dvec3 world_up = glm::length(gravity) > 1e-8
 				? -glm::normalize(gravity) : glm::normalize(glm::dvec3(ground.normal));
 			const vec3 local_up = vec3(inverse_rotation * world_up);
-			const vec3 forward = vec3(inverse_rotation * (world.getCameraWorldPosition() - ground.position));
+			const vec3 forward = vec3(inverse_rotation * (world.camera.getWorldPosition() - ground.position));
 			placements[placement_count++] = {
 				ground.chunk_id, local_position + glm::dvec3(local_surface_up * 0.02f), local_up, forward};
 		}

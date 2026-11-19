@@ -217,7 +217,7 @@ namespace danikk_space_engine
 		orientation[1] = vec4(forward, 0);
 		orientation[2] = vec4(up, 0);
 		const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
-		mat4 body_matrix = glm::translate(mat4(1.0f), vec3(position - world.getCameraWorldPosition()))
+		mat4 body_matrix = glm::translate(mat4(1.0f), vec3(position - world.camera.getWorldPosition()))
 			* orientation;
 		if(human.body_pose != HumanBodyPose::standing)
 		{

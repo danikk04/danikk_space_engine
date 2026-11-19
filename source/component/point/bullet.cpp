@@ -226,7 +226,7 @@ namespace danikk_space_engine
 		const Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
 		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 camera_local_position = glm::inverse(body.rotation)
-			* (world.getCameraWorldPosition() - body.position) - chunk.position;
+			* (world.camera.getWorldPosition() - body.position) - chunk.position;
 		const vec3 midpoint = (start_position + current_position) * 0.5f;
 		const vec3 to_camera = vec3(camera_local_position - glm::dvec3(midpoint));
 		vec3 side = glm::cross(forward, to_camera);
@@ -261,7 +261,7 @@ namespace danikk_space_engine
 			4 * (sizeof(DefaultVertex) / sizeof(float)), indices, 6);
 		DefaultVertex::setAttributes();
 		static_asset_collection.bullet_tracer_shader.use();
-		const CameraComponent& camera = world.getCameraComponent();
+		const CameraSystem& camera = world.camera;
 		const mat4 view = glm::lookAt(vec3(0.0f), camera.getFront(), camera.getUp());
 		const mat4 projection = glm::perspective(glm::radians(camera.vertical_fov_degrees),
 			screen_ratio_gz, camera.near_clip_distance, camera.far_clip_distance);

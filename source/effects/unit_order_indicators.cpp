@@ -84,8 +84,8 @@ namespace danikk_space_engine
 		DynamicArray<gl_point_index_t> arrow_indices;
 		DynamicArray<DefaultVertex> marker_vertices;
 		DynamicArray<gl_point_index_t> marker_indices;
-		const glm::dvec3 camera_position = world.getCameraWorldPosition();
-		const CameraComponent& camera = world.getCameraComponent();
+		const glm::dvec3 camera_position = world.camera.getWorldPosition();
+		const CameraSystem& camera = world.camera;
 		const vec3 camera_up = glm::normalize(camera.getUp());
 		const vec3 camera_right = glm::normalize(glm::cross(camera.getFront(), camera_up));
 

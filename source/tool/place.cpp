@@ -108,9 +108,9 @@ namespace danikk_space_engine
 				- world.getChunkWorldPosition(hit.chunk_id)));
 
 			MachinegunComponent machinegun;
-			machinegun.forward = vec3(inverse_body_rotation * glm::dvec3(world.getCameraComponent().getFront()));
-			machinegun.up = vec3(inverse_body_rotation * glm::dvec3(world.getCameraComponent().getUp()));
-			machinegun.right = vec3(inverse_body_rotation * glm::dvec3(world.getCameraComponent().getRight()));
+			machinegun.forward = vec3(inverse_body_rotation * glm::dvec3(world.camera.getFront()));
+			machinegun.up = vec3(inverse_body_rotation * glm::dvec3(world.camera.getUp()));
+			machinegun.right = vec3(inverse_body_rotation * glm::dvec3(world.camera.getRight()));
 			const PointComponentSlotId slot_id = world.point_data.createPointComponentSlot(
 				point_id, PointComponentTypeId::machine_gun, &machinegun);
 			world.chunks.addPointComponentSlotToChunk(hit.chunk_id, slot_id);

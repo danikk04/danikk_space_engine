@@ -40,8 +40,8 @@ namespace danikk_space_engine
 	 */
 	class PhysicsSystem;
 
-	/** @brief Stores camera orientation and movement settings. */
-	struct CameraComponent;
+	/** @brief Owns active camera state, movement, and projection. */
+	class CameraSystem;
 
 	/**
 	 * @brief Stores a human character’s state, orientation, pose, and appearance.

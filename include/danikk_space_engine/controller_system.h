@@ -33,7 +33,7 @@ namespace danikk_space_engine
 		World& world;
 		/** @brief Creates a machinegun point copy using the owning world's component pools. */
 		void duplicateControllerPointWithMachinegun(const Point& source_point,
-			const CameraComponent& camera, ChunkId chunk_id);
+			const CameraSystem& camera, ChunkId chunk_id);
 		/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
 		void validateSelectedUnits();
 		/** @brief Selects the nearest visible player-faction human intersected by the camera ray. */

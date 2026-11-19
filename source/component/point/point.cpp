@@ -1,5 +1,4 @@
 #include <danikk_space_engine/component/point/point.h>
-#include <danikk_space_engine/component/point/camera.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
 #include <danikk_space_engine/component/point/inventory.h>
@@ -14,16 +13,6 @@ namespace danikk_space_engine
 		const PointComponentType point_component_types[] =
 		{
 			{}, // none
-			{
-				sizeof(CameraComponent),
-				alignof(CameraComponent),
-				true,
-				constructCameraComponent,
-				moveCameraComponent,
-				destroyCameraComponent,
-				tickCameraComponent,
-				frameCameraComponent
-			},
 			{
 				sizeof(MachinegunComponent),
 				alignof(MachinegunComponent),

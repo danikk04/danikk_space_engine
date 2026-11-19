@@ -61,13 +61,13 @@ namespace danikk_space_engine
 		if(controller.selected_unit_refs.size() == 0) return;
 		initializeSelectionRingMesh();
 		static_asset_collection.bullet_tracer_shader.use();
-		const CameraComponent& camera = world.getCameraComponent();
+		const CameraSystem& camera = world.camera;
 		setViewMatrix(glm::lookAt(vec3(0.0f), camera.getFront(), camera.getUp()));
 		setProjectionMatrix(glm::perspective(glm::radians(camera.vertical_fov_degrees),
 			screen_ratio_gz, camera.near_clip_distance, camera.far_clip_distance));
 		white_texture.bind();
 		setDrawColor(vec4(1.0f));
-		const glm::dvec3 camera_position = world.getCameraWorldPosition();
+		const glm::dvec3 camera_position = world.camera.getWorldPosition();
 
 		for(const SelectedUnitRef& reference : controller.selected_unit_refs)
 		{

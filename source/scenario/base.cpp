@@ -128,13 +128,9 @@ namespace danikk_space_engine
 		const ChunkId camera_chunk_id = world.world_body_data.getWorldBody(planet_body_id).chunk_ids[
 			world.world_body_data.getWorldBody(planet_body_id).chunk_ids.size() - 1];
 		chunk.position = camera_chunk_position;
-		CameraComponent camera;
-		camera.rotation.y = -pi_half;
-		world.camera_component_slot_id = world.point_data.createPointComponentSlot(
-			camera_point_id,
-			PointComponentTypeId::camera,
-			&camera);
-		world.chunks.addPointComponentSlotToChunk(camera_chunk_id, world.camera_component_slot_id);
+		world.chunks.addPointReferenceToChunk(camera_chunk_id, camera_point_id);
+		world.camera.bind(camera_point_id, camera_chunk_id);
+		world.camera.rotation.y = -pi_half;
 		world.controller.reset(camera_point_id);
 	}
 }

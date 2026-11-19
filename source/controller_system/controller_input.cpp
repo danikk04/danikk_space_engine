@@ -2,6 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/controller_system.h>
+#include <danikk_space_engine/camera_system.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/world.h>
 
@@ -15,7 +16,7 @@ namespace danikk_space_engine
 	}
 
 	void ControllerSystem::duplicateControllerPointWithMachinegun(const Point& source_point,
-		const CameraComponent& camera, ChunkId chunk_id)
+		const CameraSystem& camera, ChunkId chunk_id)
 	{
 		const PointId point_id = world.point_data.createPoint();
 		world.point_data.getPoint(point_id) = source_point;
@@ -40,19 +41,17 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		if(!controls()) return;
-		const PointComponentSlot& camera_slot = world.getCameraSlot();
-		if(camera_slot.point_id != controlled_point_id)
+		if(world.camera.getPointId() != controlled_point_id)
 			danikk_engine::formatFatalError("Controller system point does not match the active camera point");
 		const bool spawn_machinegun = getKeyboardState(keyboard_buttons::m) == button_states::press;
 		Point source_point;
-		CameraComponent source_camera;
-		const ChunkId owner_chunk_id = camera_slot.chunk_id;
+		CameraSystem& source_camera = world.camera;
+		const ChunkId owner_chunk_id = world.camera.getChunkId();
 		if(spawn_machinegun)
 		{
 			if(!world.point_data.isPointActive(controlled_point_id))
 				danikk_engine::formatFatalError("Controller system references invalid point %", controlled_point_id);
 			source_point = world.point_data.getPoint(controlled_point_id);
-			source_camera = world.getCameraComponent();
 		}
 		if(tool_catalog_open)
 		{

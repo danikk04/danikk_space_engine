@@ -21,6 +21,7 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		components.tickWorldBodyComponents();
+		camera.tick();
 		controller.tick();
 		for(PointId point_id : pending_point_destruction_ids)
 		{

@@ -64,7 +64,7 @@ namespace danikk_space_engine
 			planets.acceptGeneratedChunk(generated_chunk);
 		}
 		static_asset_collection.base3d_shader.use();
-		const CameraComponent& camera = getCameraComponent();
+		camera.frame();
 		const vec3 camera_front = camera.getFront();
 		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera.getUp());
 		setViewMatrix(view);

@@ -31,7 +31,7 @@ namespace danikk_engine_game
 	GUIFrameData collectGUIFrameData(const World& world)
 	{
 		GUIFrameData data;
-		data.camera_position = world.getCameraWorldPosition();
+		data.camera_position = world.camera.getWorldPosition();
 		double nearest_surface_distance = std::numeric_limits<double>::max();
 		for(const PlanetData& planet : world.planets.getPlanets())
 		{
@@ -47,7 +47,7 @@ namespace danikk_engine_game
 			data.nearest_planet_height = height;
 			data.nearest_planet_height_available = true;
 		}
-		const CameraComponent& camera = world.getCameraComponent();
+		const CameraSystem& camera = world.camera;
 		data.preview_camera_front = camera.getFront();
 		data.preview_camera_up = camera.getUp();
 		data.preview_vertical_fov_degrees = camera.vertical_fov_degrees;

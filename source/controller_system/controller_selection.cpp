@@ -35,8 +35,8 @@ namespace danikk_space_engine
 	bool ControllerSystem::selectOwnHumanUnderCursor(
 		const RaycastHit& surface_hit, bool shift_pressed)
 	{
-		const glm::dvec3 ray_origin = world.getCameraWorldPosition();
-		const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.getCameraComponent().getFront()));
+		const glm::dvec3 ray_origin = world.camera.getWorldPosition();
+		const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.camera.getFront()));
 		double closest_distance = surface_hit.hit ? surface_hit.distance : 10000.0;
 		PointComponentSlotId closest_slot_id = static_cast<PointComponentSlotId>(-1);
 

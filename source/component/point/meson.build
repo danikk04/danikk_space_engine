@@ -1,5 +1,4 @@
 sources += files(
-	'camera.cpp',
 	'bullet.cpp',
 	'machinegun.cpp',
 	'inventory.cpp',
