@@ -1,9 +1,10 @@
 #pragma once
 
+#include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/component/point/human/human.h>
 
-namespace danikk_space_engine
+namespace danikk_space_engine::unit_system_internal
 {
 	/** @brief Pooled point-component identity used for safe enemy references. */
 	struct UnitTarget
@@ -13,7 +14,7 @@ namespace danikk_space_engine
 		uint64 generation_id = 0;
 	};
 
-	/** @brief Current action values assigned by UnitGroup to one unit. */
+	/** @brief Current action values assigned by the unit system to one human. */
 	struct UnitOrder
 	{
 		bool has_move_target = false;
@@ -76,7 +77,7 @@ namespace danikk_space_engine
 		bool visibility_checked_this_tick = false;
 	};
 
-	/** @brief Remembered hostile contact or known corpse location awaiting a unit visit. */
+	/** @brief A remembered hostile contact location used by battle reconnaissance. */
 	struct UnitSearchLocation
 	{
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
@@ -94,7 +95,7 @@ namespace danikk_space_engine
 		corpse_recovery
 	};
 
-	/** @brief Tick-local candidate data reused while assigning one faction's search orders. */
+	/** @brief Tick-local candidate data reused while assigning one faction's search tasks. */
 	struct UnitSearchCandidate
 	{
 		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1);
@@ -106,7 +107,7 @@ namespace danikk_space_engine
 		bool assigned_to_search = false;
 	};
 
-	/** @brief Persistent post-combat position and scan phase assigned to one unit. */
+	/** @brief Persistent dispersal position and scan phase for one battle recon unit. */
 	struct UnitPostCombatAssignment
 	{
 		PointComponentSlotId unit_slot_id = static_cast<PointComponentSlotId>(-1);
@@ -117,16 +118,16 @@ namespace danikk_space_engine
 		uint32 next_scan_timestamp_ms = 0;
 	};
 
-	/** @brief Per-faction tactical memory and processing state. */
+	/** @brief Per-faction tactical memory, agents, and behavior scratch storage. */
 	struct UnitGroup
 	{
 		FactionId faction_id = static_cast<FactionId>(-1);
 		DynamicArray<UnitSighting> known_sightings;
 		DynamicArray<UnitAgentState> agents;
 		DynamicArray<UnitSearchLocation> search_locations;
-		/** @brief Reusable temporary storage; pointers are valid only during search-task assignment. */
+		/** @brief Reusable temporary storage with pointers valid only during task assignment. */
 		DynamicArray<UnitSearchCandidate> search_candidates;
-		/** @brief Stable dispersal destinations and scan phases while the faction is reconnoitring. */
+		/** @brief Stable dispersal destinations and scan phases during battle reconnaissance. */
 		DynamicArray<UnitPostCombatAssignment> post_combat_assignments;
 		/** @brief Group-wide time since any faction unit last saw or reported a hostile. */
 		float time_since_enemy_visible = 0.0f;
@@ -135,50 +136,13 @@ namespace danikk_space_engine
 		bool has_had_enemy_contact = false;
 		bool war_active = false;
 	};
+}
 
+namespace danikk_space_engine
+{
 	/** @brief Private storage owned by one World::unit_system instance. */
 	struct UnitSystem::Impl
 	{
-		DynamicArray<UnitGroup> groups;
+		DynamicArray<unit_system_internal::UnitGroup> groups;
 	};
-
-	namespace unit_system_internal
-	{
-		/** @brief Checks that a cached target is still a living hostile human. */
-		bool isValidEnemy(World&, const UnitTarget&, FactionId);
-		/** @brief Rebuilds a unit's nearby hostile-human candidate list. */
-		void collectEnemyTargets(World&, PointId, ChunkId, FactionId, UnitAgentState&);
-		/** @brief Checks that a shared contact still names a living hostile human. */
-		bool isValidSighting(World&, const UnitSighting&);
-		/** @brief Reports whether the last observation is no older than the contact timeout. */
-		bool isRecentSighting(const UnitSighting&);
-		/** @brief Refreshes a faction contact or appends a newly observed target. */
-		void rememberSighting(World&, UnitGroup&, FactionId, const UnitTarget&, const glm::dvec3&);
-		/** @brief Updates remembered contacts, lost sightings, and visible corpse locations. */
-		void updateTacticalMemory(World&, UnitGroup&);
-		/** @brief Applies group-wide battle entry and exit rules from this tick's observations. */
-		void updateGroupMode(UnitGroup&, float);
-		/** @brief Resolves a registered live human and its point slot. */
-		bool getActiveUnit(World&, UnitAgentState&, PointComponentSlot*&, HumanComponent*&);
-		/** @brief Updates faction contacts by scanning candidates and raycasting visible targets. */
-		void updatePerception(World&, UnitGroup&);
-		/** @brief Assigns orders to all active agents in a faction. */
-		void assignOrders(World&, UnitGroup&);
-		/** @brief Assigns agents to matching remembered locations for the selected mode. */
-		void assignSearchTasks(World&, UnitGroup&, UnitSearchTaskType);
-		void assignBattleSearchOrders(World&, UnitGroup&);
-		void assignCorpseRecoveryOrders(World&, UnitGroup&);
-		/** @brief Chooses battle behavior for one faction group. */
-		void tickBattle(World&, UnitGroup&);
-		/** @brief Assigns postwar corpse-recovery work. */
-		void tickWork(World&, UnitGroup&);
-		/** @brief Leaves agents without an assigned job in the idle rest state. */
-		void tickRest(UnitGroup&);
-		/** @brief Disperses units and scans their surroundings during battle reconnaissance. */
-		void assignBattleReconnaissanceOrders(World&, UnitGroup&);
-		/** @brief Executes stored orders and migrates units after component traversal. */
-		void executeUnitOrders(World&, UnitGroup&);
-		/** @brief Moves a unit point and all attached slots into its newly occupied loaded chunk. */
-		void updateUnitChunk(World&, PointComponentSlot&);
-	}
 }

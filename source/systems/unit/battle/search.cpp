@@ -1,4 +1,5 @@
-#include "../internal.h"
+#include <danikk_space_engine/systems/unit/internal/battle.h>
+#include <danikk_space_engine/systems/unit/internal/orders.h>
 
 namespace danikk_space_engine::unit_system_internal
 {

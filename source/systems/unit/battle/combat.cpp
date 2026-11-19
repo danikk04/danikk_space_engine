@@ -10,7 +10,10 @@
 #include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/item/definition.h>
 
-#include "../internal.h"
+#include <danikk_space_engine/systems/unit/internal/battle.h>
+#include <danikk_space_engine/systems/unit/internal/orders.h>
+#include <danikk_space_engine/systems/unit/internal/perception.h>
+#include <danikk_space_engine/systems/unit/internal/state.h>
 
 namespace danikk_space_engine::unit_system_internal
 {
@@ -254,26 +257,6 @@ namespace danikk_space_engine::unit_system_internal
 		const float assigned_damage = estimateExpectedDamagePerSecond(world, human_slot.chunk_id,
 			human_slot.point_id, human, target_human.getHeight(), distance);
 		recordAllocation(allocations, *best, assigned_damage);
-	}
-
-	/** @brief Resolves a registered live human and its point slot. */
-	bool getActiveUnit(World& world, UnitAgentState& agent,
-		PointComponentSlot*& human_slot, HumanComponent*& human)
-	{
-		if(!agent.enabled || !world.point_data.isPointComponentSlotActive(agent.human_slot_id)) return false;
-		human_slot = &world.point_data.getPointComponentSlot(agent.human_slot_id);
-		if(human_slot->type_id != PointComponentTypeId::human
-			|| human_slot->generation_id != agent.human_generation_id
-			|| !world.point_data.isPointActive(human_slot->point_id)
-			|| !world.chunks.isChunkActive(human_slot->chunk_id)) return false;
-		human = static_cast<HumanComponent*>(human_slot->getData());
-		const DamageableComponent* health = findDamageable(world, human_slot->chunk_id, human_slot->point_id);
-		if(health == nullptr || health->getHealth() <= 0.0f)
-		{
-			agent.order.clear();
-			return false;
-		}
-		return true;
 	}
 
 	/** @brief Assigns commands to every active NPC using the latest faction intelligence. */

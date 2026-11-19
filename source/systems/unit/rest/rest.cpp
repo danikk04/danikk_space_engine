@@ -1,6 +1,7 @@
 #include <danikk_space_engine/profiler.h>
 
-#include "../internal.h"
+#include <danikk_space_engine/systems/unit/internal/rest.h>
+#include <danikk_space_engine/systems/unit/internal/state.h>
 
 namespace danikk_space_engine::unit_system_internal
 {

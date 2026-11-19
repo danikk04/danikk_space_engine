@@ -1,13 +1,23 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/systems/unit/unit.h>
+#include <danikk_space_engine/systems/unit/internal/battle.h>
+#include <danikk_space_engine/systems/unit/internal/mode.h>
+#include <danikk_space_engine/systems/unit/internal/orders.h>
+#include <danikk_space_engine/systems/unit/internal/perception.h>
+#include <danikk_space_engine/systems/unit/internal/rest.h>
+#include <danikk_space_engine/systems/unit/internal/state.h>
+#include <danikk_space_engine/systems/unit/internal/work.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_space_engine/component/point/human/human.h>
-
-#include "internal.h"
+#include <danikk_space_engine/component/point/damageable.h>
 
 namespace danikk_space_engine
 {
+	using unit_system_internal::UnitAgentState;
+	using unit_system_internal::UnitGroup;
+	using unit_system_internal::UnitSighting;
+
 	namespace
 	{
 		/** @brief Ensures storage contains a tactical group for every configured faction. */
@@ -60,6 +70,28 @@ namespace danikk_space_engine
 			}
 			return nullptr;
 		}
+
+	}
+
+	/** @brief Resolves a registered live human and its point slot. */
+	bool unit_system_internal::getActiveUnit(World& world, UnitAgentState& agent,
+		PointComponentSlot*& human_slot, HumanComponent*& human)
+	{
+		if(!agent.enabled || !world.point_data.isPointComponentSlotActive(agent.human_slot_id)) return false;
+		human_slot = &world.point_data.getPointComponentSlot(agent.human_slot_id);
+		if(human_slot->type_id != PointComponentTypeId::human
+			|| human_slot->generation_id != agent.human_generation_id
+			|| !world.point_data.isPointActive(human_slot->point_id)
+			|| !world.chunks.isChunkActive(human_slot->chunk_id)) return false;
+		human = static_cast<HumanComponent*>(human_slot->getData());
+		const DamageableComponent* health = findDamageable(
+			world, human_slot->chunk_id, human_slot->point_id);
+		if(health == nullptr || health->getHealth() <= 0.0f)
+		{
+			agent.order.clear();
+			return false;
+		}
+		return true;
 	}
 
 	UnitSystem::UnitSystem(World& owner) : world(owner), impl(new Impl()) {}

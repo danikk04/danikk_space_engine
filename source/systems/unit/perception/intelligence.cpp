@@ -3,7 +3,8 @@
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/damageable.h>
 
-#include "../internal.h"
+#include <danikk_space_engine/systems/unit/internal/perception.h>
+#include <danikk_space_engine/systems/unit/internal/state.h>
 
 namespace danikk_space_engine::unit_system_internal
 {
