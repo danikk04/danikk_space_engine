@@ -2,12 +2,11 @@
 
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
 
 namespace danikk_space_engine
 {
-	struct ItemDefinition;
-
 	/** @brief Category IDs index the registered category definitions. */
 	namespace item_category_ids
 	{

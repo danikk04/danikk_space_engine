@@ -1,14 +1,10 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <danikk_space_engine/fwd.h>
 
 namespace danikk_space_engine
 {
-
-	/**
-	 * @brief Forward declaration used by environmental sampling interfaces.
-	 */
-	class World;
 
 	/**
 	 * @brief Holds a temperature result and distinguishes an unavailable field from a valid zero.

@@ -7,8 +7,6 @@
 
 namespace danikk_space_engine
 {
-	struct PlanetTerrainSnapshot;
-
 	/**
 	 * @brief Samples a planet's scalar field and terrain material within its owning World.
 	 *

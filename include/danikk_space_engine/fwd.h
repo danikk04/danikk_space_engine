@@ -18,6 +18,12 @@ namespace danikk_space_engine
 	 */
 	class World;
 
+	/** @brief Immutable planet-field data captured for background chunk generation. */
+	struct PlanetTerrainSnapshot;
+
+	/** @brief Concrete item metadata referenced by item-category callbacks. */
+	struct ItemDefinition;
+
 	/**
 	 * @brief Computes environmental fields at a world position.
 	 */
