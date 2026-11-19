@@ -7,7 +7,8 @@ sources = files(
 	'main.cpp', 
 	'material.cpp',
 	'profiler.cpp',
-	'component_system/component_system.cpp',
+	'chunk.cpp',
+	'resource_pool.cpp',
 	'planet_terrain_system.cpp',
 )
 
@@ -18,16 +19,14 @@ subdir('math')
 subdir('geometry')
 subdir('component')
 subdir('scenario')
+subdir('point')
+subdir('world_body')
 subdir('world')
 subdir('chunk_mesh_generator')
 subdir('chunk_system')
 subdir('physics')
 subdir('tool')
 subdir('unit_system')
-sources += files(
-	'controller_system/controller_system.cpp',
-	'controller_system/controller_input.cpp',
-	'controller_system/controller_selection.cpp',
-	'controller_system/controller_hotbar.cpp',
-)
+subdir('component_system')
+subdir('controller_system')
 subdir('environment')

@@ -7,7 +7,7 @@
 #include <danikk_space_engine/scenario/base.h>
 #include <danikk_space_engine/controller_system.h>
 
-#include "../../unit_system/internal.h"
+#include "../unit_system/internal.h"
 
 namespace danikk_space_engine
 {
