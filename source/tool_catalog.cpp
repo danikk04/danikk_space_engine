@@ -29,6 +29,9 @@ namespace danikk_space_engine
 			{parts_category_id, "Slope", "SLOPE", ToolId::place, ToolActionId::create_slope},
 			{parts_category_id, "MG-42", "MG42", ToolId::place, ToolActionId::machinegun},
 			{human_category_id, "Create human", "HUMAN", ToolId::human, ToolActionId::create_human},
+			{human_category_id, "Reimu Hakurei", "REIMU", ToolId::human, ToolActionId::create_reimu},
+			{human_category_id, "Marisa Kirisame", "MARISA", ToolId::human, ToolActionId::create_marisa},
+			{human_category_id, "Tsumi-bukuro", "TSUMI", ToolId::human, ToolActionId::create_tsumi_bukuro},
 			{event_category_id, "Spawn 5 allies", "5ALL", ToolId::event, ToolActionId::spawn_5_allies},
 			{event_category_id, "Spawn 5 pirates", "5PIR", ToolId::event, ToolActionId::spawn_5_pirates}
 		};

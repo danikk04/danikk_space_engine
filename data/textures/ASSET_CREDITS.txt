@@ -16,3 +16,23 @@ medium-loadout-marpat-woodland-14906056-e1810.png
 License: CC BY 4.0.
 Source: https://www.planetminecraft.com/skin/usmc-marpat-woodland-infantry-with-iotv-vest/
 License: https://creativecommons.org/licenses/by/4.0/
+
+Minecraft character skins
+
+touhou_reimu.png
+Skin: Hakurei Reimu (Chibi)
+Author: Um11a
+Source: https://www.minecraftskins.com/skin/23265624/-touhou--hakurei-reimu---chibi/
+The author says the skin is free to use and requests credit for edited/filming use.
+
+touhou_marisa.png
+Skin: Kirisame Marisa (Chibi)
+Author: Um11a
+Source: https://www.minecraftskins.com/skin/23477246/-touhou--kirisame-marisa---chibi/
+The creator is credited here; the source page does not state a separate redistribution license.
+
+touhou_tsumi_bukuro.png
+Skin: Touhou sin sack (Tsumi-bukuro)
+Author: Ringo1978
+Source: https://www.minecraftskins.com/skin/18746450/touhou-sin-sack/
+The creator is credited here; the source page does not state a separate redistribution license.

@@ -150,6 +150,9 @@ namespace danikk_space_engine
 			case ToolActionId::erase:
 			case ToolActionId::drag:
 			case ToolActionId::create_human:
+			case ToolActionId::create_reimu:
+			case ToolActionId::create_marisa:
+			case ToolActionId::create_tsumi_bukuro:
 			case ToolActionId::spawn_5_allies:
 			case ToolActionId::spawn_5_pirates:
 			case ToolActionId::count:

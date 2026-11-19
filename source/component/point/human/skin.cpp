@@ -19,6 +19,9 @@ namespace danikk_space_engine
 		human_skins.pushCtor();
 		human_skins.pushCtor("USMC MARPAT Woodland",
 			"minecraft_skins/medium-loadout-marpat-woodland-14906056-e1810");
+		human_skins.pushCtor("Reimu Hakurei", "minecraft_skins/touhou_reimu");
+		human_skins.pushCtor("Marisa Kirisame", "minecraft_skins/touhou_marisa");
+		human_skins.pushCtor("Tsumi-bukuro", "minecraft_skins/touhou_tsumi_bukuro");
 	}
 
 	HumanSkin& getHumanSkin(HumanSkinId skin_id)

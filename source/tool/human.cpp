@@ -5,7 +5,9 @@
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
+#include <danikk_space_engine/component/point/human/skin.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/factions.h>
 #include <danikk_space_engine/math/ray.h>
 
 namespace danikk_space_engine
@@ -51,7 +53,8 @@ namespace danikk_space_engine
 		 * human's feet are placed 0.02 m above the hit before createNpc() offsets
 		 * its center by half the configured height.
 		 */
-		void createHumanAtHit(World& world, const RaycastHit& hit)
+		void createHumanAtHit(World& world, const RaycastHit& hit,
+			HumanSkinId skin_id, FactionId faction_id)
 		{
 			if(!world.data.isWorldBodyActive(hit.body_id)) return;
 			const WorldBodyId body_id = hit.body_id;
@@ -72,7 +75,14 @@ namespace danikk_space_engine
 			const vec3 local_normal = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			if(glm::dot(up, local_normal) < 0.5f) return;
 			const vec3 forward = vec3(inverse_rotation * (world.getCameraWorldPosition() - hit.position));
-			createNpc(world, hit.chunk_id, local_position + glm::dvec3(up * 0.02f), up, forward);
+			const PointComponentSlotId controller_id = createNpc(world, hit.chunk_id,
+				local_position + glm::dvec3(up * 0.02f), up, forward);
+			const NpcControllerComponent& npc_controller = *static_cast<const NpcControllerComponent*>(
+				world.data.getPointComponentSlot(controller_id).getData());
+			HumanComponent& human = *static_cast<HumanComponent*>(
+				world.data.getPointComponentSlot(npc_controller.human_slot_id).getData());
+			human.appearance.skin_id = skin_id;
+			human.faction_id = faction_id;
 		}
 	}
 
@@ -85,7 +95,20 @@ namespace danikk_space_engine
 	 */
 	ToolApplyResult applyHumanTool(World& world, const RaycastHit& hit, ToolActionId action)
 	{
-		if(action == ToolActionId::create_human && hit.hit) createHumanAtHit(world, hit);
+		HumanSkinId skin_id = human_skin_ids::usmc_marpat_woodland;
+		FactionId faction_id = base_faction_ids::player;
+		switch(action)
+		{
+			case ToolActionId::create_human: break;
+			case ToolActionId::create_reimu: skin_id = human_skin_ids::reimu_hakurei; break;
+			case ToolActionId::create_marisa: skin_id = human_skin_ids::marisa_kirisame; break;
+			case ToolActionId::create_tsumi_bukuro:
+				skin_id = human_skin_ids::tsumi_bukuro;
+				faction_id = base_faction_ids::pirates;
+				break;
+			default: return ToolApplyResult();
+		}
+		if(hit.hit) createHumanAtHit(world, hit, skin_id, faction_id);
 		return ToolApplyResult();
 	}
 

@@ -42,6 +42,9 @@ namespace danikk_space_engine
 		create_body, ///< Creates a WorldBody with a cube BuildPart.
 		create_slope, ///< Creates a WorldBody with a slope BuildPart.
 		create_human, ///< Creates a human at a supported surface hit.
+		create_reimu, ///< Creates a human using the Reimu Hakurei skin.
+		create_marisa, ///< Creates a human using the Marisa Kirisame skin.
+		create_tsumi_bukuro, ///< Creates a human using the Tsumi-bukuro skin.
 		spawn_5_allies, ///< Spawns five player-faction soldiers in a column.
 		spawn_5_pirates, ///< Spawns five pirate soldiers in a column.
 		count ///< Number of action identifiers; not a selectable action.
