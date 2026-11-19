@@ -1,6 +1,6 @@
 #pragma once
 
-#include <danikk_space_engine/component/world_body/planet/terrain.h>
+#include <danikk_space_engine/planet_system/terrain.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_framework/dynamic_array.h>
 

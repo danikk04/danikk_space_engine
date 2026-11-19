@@ -13,7 +13,7 @@
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/geometry/build_part.h>
-#include <danikk_space_engine/component/world_body/planet/terrain.h>
+#include <danikk_space_engine/planet_system/terrain.h>
 
 namespace danikk_space_engine
 {

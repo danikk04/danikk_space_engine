@@ -1,7 +1,7 @@
 #include <algorithm>
 
 #include <danikk_space_engine/planet_system.h>
-#include <danikk_space_engine/component/world_body/planet/terrain.h>
+#include <danikk_space_engine/planet_system/terrain.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine

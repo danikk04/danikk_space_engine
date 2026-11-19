@@ -6,7 +6,7 @@
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system/planet.h>
 #include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/world.h>
 

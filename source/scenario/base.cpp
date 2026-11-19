@@ -1,8 +1,8 @@
 #include <danikk_space_engine/scenario/base.h>
 
 #include <danikk_space_engine/config.h>
-#include <danikk_space_engine/component/world_body/planet/terrain_edit_save.h>
-#include <danikk_space_engine/component/world_body/planet/terrain.h>
+#include <danikk_space_engine/planet_system/terrain_edit_save.h>
+#include <danikk_space_engine/planet_system/terrain.h>
 #include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/controller_system.h>
