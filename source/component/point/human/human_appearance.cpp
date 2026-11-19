@@ -17,8 +17,9 @@ namespace danikk_space_engine
 		 * @brief Renders six posed body-part meshes and, when present, their Minecraft outer skin layer.
 		 *
 		 * Base meshes use per-part atlas UVs and either the skin texture or fallback part colors.
-		 * Overlay meshes use the second atlas layer, extend one skin pixel beyond each base face, and
-		 * render with depth writes disabled so transparent texels reveal the base layer.
+		 * Overlay meshes use the second atlas layer and extend one skin pixel beyond each base face.
+		 * Alpha discard preserves transparent texels while depth writes keep overlapping shell faces
+		 * correctly ordered.
 		 * @param human Current walk cycle and arm pose.
 		 * @param base Character transform shared by all six parts.
 		 * @param skin_id Index into the loaded Minecraft skin texture array; index zero is fallback.
@@ -92,7 +93,8 @@ namespace danikk_space_engine
 			}
 
 			if(!has_skin) return;
-			setDepthWriteEnabled(false);
+			setDepthWriteEnabled(true);
+			setAlphaDiscardEnabled(true);
 			setFaceCullingEnabled(false);
 			for(size_t index = 0; index < static_cast<size_t>(HumanPart::count); index++)
 			{
@@ -114,6 +116,7 @@ namespace danikk_space_engine
 				(slim_arm ? part.slim_overlay_mesh : part.overlay_mesh).draw();
 			}
 			setFaceCullingEnabled(true);
+			setAlphaDiscardEnabled(false);
 			setDepthWriteEnabled(true);
 		}
 	}

@@ -1,6 +1,8 @@
 #include<uniforms.glslh>
 #include<frag.glslh>
 
+layout(location = 9) uniform bool alpha_discard_enabled;
+
 /**
  * @brief Applies a solid-style directional diffuse shade to the sampled material color.
  * The normalized interpolated normal is lit from a fixed direction. Brightness
@@ -9,7 +11,9 @@
  */
 void main()
 {
-	vec4 surface_color = color * texture(diffuse_texture, frag_uv);
+	vec4 texel_color = texture(diffuse_texture, frag_uv);
+	if(alpha_discard_enabled && texel_color.a < 0.5f) discard;
+	vec4 surface_color = color * texel_color;
 	vec3 normal = normalize(frag_normal);
 	vec3 light_direction = normalize(vec3(-0.4f, 0.7f, 0.6f));
 	float diffuse = max(dot(normal, light_direction), 0.0f);
