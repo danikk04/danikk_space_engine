@@ -29,8 +29,8 @@ namespace danikk_space_engine
 		const glm::dvec3& position, const vec3& up, const vec3& forward, FactionId faction_id)
 	{
 		DSE_WATCH();
-		if(!world.chunk_system.isChunkActive(chunk_id)) formatFatalError("Cannot create NPC in an invalid chunk");
-		const glm::dvec3 chunk_position = world.chunk_system.getChunk(chunk_id).position;
+		if(!world.chunks.isChunkActive(chunk_id)) formatFatalError("Cannot create NPC in an invalid chunk");
+		const glm::dvec3 chunk_position = world.chunks.getChunk(chunk_id).position;
 		const PointId point_id = world.point_data.createPoint();
 		Point& point = world.point_data.getPoint(point_id);
 		HumanComponent human;
@@ -41,12 +41,12 @@ namespace danikk_space_engine
 		point.position = vec3(position - chunk_position) + human.up * (human.getHeight() * 0.5f);
 		const PointComponentSlotId human_id = world.point_data.createPointComponentSlot(
 			point_id, PointComponentTypeId::human, &human);
-		world.chunk_system.addPointComponentSlotToChunk(chunk_id, human_id);
+		world.chunks.addPointComponentSlotToChunk(chunk_id, human_id);
 		DamageableComponent damageable;
 		damageable.setHealth(getDamageableDefinition(damageable.definition_id).max_health, point_id);
 		const PointComponentSlotId damageable_id = world.point_data.createPointComponentSlot(
 			point_id, PointComponentTypeId::damageable, &damageable);
-		world.chunk_system.addPointComponentSlotToChunk(chunk_id, damageable_id);
+		world.chunks.addPointComponentSlotToChunk(chunk_id, damageable_id);
 
 		InventoryComponent inventory;
 		inventory.slots.pushCtor();
@@ -57,7 +57,7 @@ namespace danikk_space_engine
 		weapon_slot.is_equipped = true;
 		const PointComponentSlotId inventory_id = world.point_data.createPointComponentSlot(
 			point_id, PointComponentTypeId::inventory, &inventory);
-		world.chunk_system.addPointComponentSlotToChunk(chunk_id, inventory_id);
+		world.chunks.addPointComponentSlotToChunk(chunk_id, inventory_id);
 		if(!equipItem(world, point_id, weapon_slot.item_definition_id))
 			formatFatalError("Failed to equip MG-42 for human soldier");
 

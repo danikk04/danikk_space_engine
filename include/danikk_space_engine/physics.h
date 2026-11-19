@@ -16,7 +16,7 @@ namespace danikk_space_engine
 	 * Later contact stages do not cause an earlier stage to run again during the
 	 * same tick.
 	 */
-	class WorldPhysics
+	class PhysicsSystem
 	{
 		/** @brief Owning World whose bodies and contacts this system simulates. */
 		World& world;
@@ -26,7 +26,7 @@ namespace danikk_space_engine
 		 *
 		 * Uses the engine's target frame delay. Bodies without an active chunk,
 		 * planet bodies, and the body currently held by the Drag tool are skipped.
-		 * Gravity is sampled from WorldEnvironment before linear position is
+		 * Gravity is sampled from EnvironmentSystem before linear position is
 		 * advanced; angular velocity is integrated as an axis-angle rotation.
 		 */
 		void integrateMotion();
@@ -73,7 +73,7 @@ namespace danikk_space_engine
 
 	public:
 		/** @brief Binds physics to its owning World. */
-		explicit WorldPhysics(World& world) : world(world) {}
+		explicit PhysicsSystem(World& world) : world(world) {}
 
 		/**
 		 * @brief Advances physics by one update step using the documented stage order.

@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	 * point entities that cross the exclusion radius are released before contact
 	 * resolution in this tick.
 	 */
-	void WorldPhysics::tick()
+	void PhysicsSystem::tick()
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.

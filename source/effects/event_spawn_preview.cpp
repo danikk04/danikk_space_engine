@@ -14,8 +14,8 @@ namespace danikk_space_engine
 		for(uint8 index = 0; index < placement_count; ++index)
 		{
 			const EventSpawnPlacement& placement = placements[index];
-			if(!world.chunk_system.isChunkActive(placement.chunk_id)) continue;
-			const Chunk& chunk = world.chunk_system.getChunk(placement.chunk_id);
+			if(!world.chunks.isChunkActive(placement.chunk_id)) continue;
+			const Chunk& chunk = world.chunks.getChunk(placement.chunk_id);
 			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 			const vec3 local_up = glm::normalize(placement.up);
 			vec3 local_forward = placement.forward - local_up * glm::dot(placement.forward, local_up);

@@ -20,8 +20,8 @@ namespace danikk_space_engine
 			if(!world.world_body_data.isWorldBodyActive(body_id)) return false;
 
 			const PointComponentSlot& camera_slot = world.getCameraSlot();
-			if(world.chunk_system.isChunkActive(camera_slot.chunk_id)
-				&& world.chunk_system.getChunk(camera_slot.chunk_id).world_body_id == body_id)
+			if(world.chunks.isChunkActive(camera_slot.chunk_id)
+				&& world.chunks.getChunk(camera_slot.chunk_id).world_body_id == body_id)
 			{
 				return false;
 			}

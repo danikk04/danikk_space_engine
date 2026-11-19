@@ -14,8 +14,8 @@ namespace danikk_space_engine
 	World world;
 
 	World::World()
-		: chunk_system(*this), environment(*this), physics(*this), controller_system(*this),
-		  component_system(*this), planet_terrain_system(*this)
+		: chunks(*this), environment(*this), physics(*this), controller(*this),
+		  components(*this), planet_terrain(*this)
 	{
 	}
 
@@ -73,7 +73,7 @@ namespace danikk_space_engine
 	 */
 	glm::dvec3 World::getChunkWorldPosition(ChunkId chunk_id) const
 	{
-		const Chunk& chunk = chunk_system.getChunk(chunk_id);
+		const Chunk& chunk = chunks.getChunk(chunk_id);
 		const WorldBody& body = world_body_data.getWorldBody(chunk.world_body_id);
 		return body.position + body.rotation * chunk.position;
 	}
@@ -87,7 +87,7 @@ namespace danikk_space_engine
 	glm::dvec3 World::getPointWorldPosition(ChunkId chunk_id, PointId point_id) const
 	{
 		DSE_WATCH();
-		const Chunk& chunk = chunk_system.getChunk(chunk_id);
+		const Chunk& chunk = chunks.getChunk(chunk_id);
 		const WorldBody& body = world_body_data.getWorldBody(chunk.world_body_id);
 		return body.position + body.rotation
 			* (chunk.position + glm::dvec3(point_data.getPoint(point_id).position));
@@ -114,7 +114,7 @@ namespace danikk_space_engine
 		for(size_t index = 0; index < chunk_generation_requests.size();)
 		{
 			const ChunkMeshGenerationRequest& request = chunk_generation_requests[index];
-			if(request.source != ChunkMeshSource::build_parts || chunk_system.isChunkActive(request.chunk_id))
+			if(request.source != ChunkMeshSource::build_parts || chunks.isChunkActive(request.chunk_id))
 			{
 				index++;
 				continue;
@@ -125,11 +125,11 @@ namespace danikk_space_engine
 			chunk_generation_requests_dirty = true;
 		}
 
-		for(ChunkId chunk_id : chunk_system.getUsedChunkIds())
+		for(ChunkId chunk_id : chunks.getUsedChunkIds())
 		{
-			Chunk& chunk = chunk_system.getChunk(chunk_id);
+			Chunk& chunk = chunks.getChunk(chunk_id);
 			if(!chunk.build_part_mesh_dirty) continue;
-			chunk_system.destroyRenderData(chunk);
+			chunks.destroyRenderData(chunk);
 
 			ChunkMeshGenerationRequest request;
 			request.source = ChunkMeshSource::build_parts;
@@ -236,13 +236,13 @@ namespace danikk_space_engine
 	/** @copydoc World::destroyChunk */
 	void World::destroyChunk(ChunkId chunk_id)
 	{
-		chunk_system.destroyChunk(chunk_id);
+		chunks.destroyChunk(chunk_id);
 	}
 
 	/** @copydoc World::destroyPoint */
 	void World::destroyPoint(PointId point_id)
 	{
-		chunk_system.destroyPoint(point_id);
+		chunks.destroyPoint(point_id);
 	}
 
 	/**
@@ -297,7 +297,7 @@ namespace danikk_space_engine
 	 */
 	void World::init()
 	{
-		chunk_system.clear();
+		chunks.clear();
 		startChunkMeshGenerator();
 		chunk_mesh_generator_generation_id++;
 		if(chunk_mesh_generator_generation_id == 0) chunk_mesh_generator_generation_id++;
@@ -316,13 +316,13 @@ namespace danikk_space_engine
 	 */
 	void World::shutdown()
 	{
-		controller_system.unbind();
+		controller.unbind();
 		stopChunkMeshGenerator();
 		chunk_mesh_generator_generation_id++;
 		chunk_generation_requests.clear();
 		chunk_generation_requests_dirty = false;
 		clearBuildPartMeshCache();
-		chunk_system.clear();
+		chunks.clear();
 		point_data.release();
 		world_body_data.release();
 		factions.release();

@@ -62,7 +62,7 @@ namespace danikk_space_engine::human_internal
 				+ glm::dvec3(proposed - up * static_cast<float>(half_axis));
 			const auto densityAtOffset = [&](double offset)
 			{
-				return world.planet_terrain_system.getPlanetDensity(planet_component_slot_id,
+				return world.planet_terrain.getPlanetDensity(planet_component_slot_id,
 					bottom_center + glm::dvec3(up) * offset);
 			};
 			double upper = step_height;
@@ -90,8 +90,8 @@ namespace danikk_space_engine::human_internal
 			{
 				glm::dvec3 offset(0.0);
 				offset[axis] = gradient_step;
-				gradient[axis] = (world.planet_terrain_system.getPlanetDensity(planet_component_slot_id, contact_position + offset)
-					- world.planet_terrain_system.getPlanetDensity(planet_component_slot_id, contact_position - offset))
+				gradient[axis] = (world.planet_terrain.getPlanetDensity(planet_component_slot_id, contact_position + offset)
+					- world.planet_terrain.getPlanetDensity(planet_component_slot_id, contact_position - offset))
 					/ (2.0 * gradient_step);
 			}
 			const double gradient_length = glm::length(gradient);

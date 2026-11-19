@@ -160,7 +160,7 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Finds the inventory component on an NPC's point, if one is attached. */
 	InventoryComponent* findInventory(World& world, ChunkId chunk_id, PointId point_id)
 	{
-		for(PointComponentSlotId id : world.chunk_system.getChunk(chunk_id).point_component_slot_ids)
+		for(PointComponentSlotId id : world.chunks.getChunk(chunk_id).point_component_slot_ids)
 		{
 			if(!world.point_data.isPointComponentSlotActive(id)) continue;
 			PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
@@ -180,7 +180,7 @@ namespace danikk_space_engine::unit_system_internal
 			agent.order.target_point_id, agent.order.target_generation_id};
 		agent.order.clear();
 		const glm::dvec3 own_position = world.getPointWorldPosition(human_slot.chunk_id, human_slot.point_id);
-		const WorldBodyId own_body_id = world.chunk_system.getChunk(human_slot.chunk_id).world_body_id;
+		const WorldBodyId own_body_id = world.chunks.getChunk(human_slot.chunk_id).world_body_id;
 		const WorldBody& body = world.world_body_data.getWorldBody(own_body_id);
 		const UnitSighting* best = nullptr;
 		float best_score = -1.0f;
@@ -189,7 +189,7 @@ namespace danikk_space_engine::unit_system_internal
 			if(sighting.faction_id != human.faction_id || !isRecentSighting(sighting)
 				|| !isValidSighting(world, sighting)) continue;
 			const PointComponentSlot& sighted_slot = world.point_data.getPointComponentSlot(sighting.target_slot_id);
-			if(world.chunk_system.getChunk(sighted_slot.chunk_id).world_body_id != own_body_id) continue;
+			if(world.chunks.getChunk(sighted_slot.chunk_id).world_body_id != own_body_id) continue;
 			const glm::dvec3 target_position = world.getPointWorldPosition(sighted_slot.chunk_id, sighted_slot.point_id);
 			const float score = scoreTarget(world, sighting, human_slot, human, previous_target,
 				own_position, target_position, body, allocations);
@@ -263,7 +263,7 @@ namespace danikk_space_engine::unit_system_internal
 		if(human_slot->type_id != PointComponentTypeId::human
 			|| human_slot->generation_id != agent.human_generation_id
 			|| !world.point_data.isPointActive(human_slot->point_id)
-			|| !world.chunk_system.isChunkActive(human_slot->chunk_id)) return false;
+			|| !world.chunks.isChunkActive(human_slot->chunk_id)) return false;
 		human = static_cast<HumanComponent*>(human_slot->getData());
 		const DamageableComponent* health = findDamageable(world, human_slot->chunk_id, human_slot->point_id);
 		if(health == nullptr || health->getHealth() <= 0.0f)

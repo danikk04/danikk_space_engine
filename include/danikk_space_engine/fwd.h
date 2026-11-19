@@ -27,12 +27,12 @@ namespace danikk_space_engine
 	/**
 	 * @brief Computes environmental fields at a world position.
 	 */
-	class WorldEnvironment;
+	class EnvironmentSystem;
 
 	/**
 	 * @brief Integrates world body motion and resolves physical collisions.
 	 */
-	class WorldPhysics;
+	class PhysicsSystem;
 
 	/** @brief Stores camera orientation and movement settings. */
 	struct CameraComponent;

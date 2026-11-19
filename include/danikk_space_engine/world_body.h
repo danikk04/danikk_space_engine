@@ -29,9 +29,9 @@ namespace danikk_space_engine
 		glm::dvec3 position = glm::dvec3(0.0);
 		/** @brief Body orientation mapping body-local coordinates into world orientation. */
 		glm::dquat rotation = glm::dquat(1.0, 0.0, 0.0, 0.0);
-		/** @brief Linear velocity in world units per second, integrated by WorldPhysics. */
+		/** @brief Linear velocity in world units per second, integrated by PhysicsSystem. */
 		glm::dvec3 linear_velocity = glm::dvec3(0.0);
-		/** @brief Angular velocity vector in radians per second, integrated by WorldPhysics. */
+		/** @brief Angular velocity vector in radians per second, integrated by PhysicsSystem. */
 		glm::dvec3 angular_velocity = glm::dvec3(0.0);
 		/** @brief Body mass used by gravity and collision response. */
 		double mass = 1.0;

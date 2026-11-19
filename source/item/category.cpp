@@ -42,7 +42,7 @@ namespace danikk_space_engine
 					break;
 				}
 			}
-			if(!world.chunk_system.isChunkActive(chunk_id)) return false;
+			if(!world.chunks.isChunkActive(chunk_id)) return false;
 
 			const ProjectileDefinition& projectile = getProjectileDefinition(definition.parameters.weapon.projectile_id);
 			const vec3 up = glm::normalize(human->up);

@@ -57,7 +57,7 @@ namespace danikk_space_engine
 	/** @copydoc drawUnitSelectionIndicators */
 	void drawUnitSelectionIndicators(World& world)
 	{
-		const ControllerSystem& controller = world.controller_system;
+		const ControllerSystem& controller = world.controller;
 		if(controller.selected_unit_refs.size() == 0) return;
 		initializeSelectionRingMesh();
 		static_asset_collection.bullet_tracer_shader.use();
@@ -76,11 +76,11 @@ namespace danikk_space_engine
 			if(slot.generation_id != reference.generation_id
 				|| slot.type_id != PointComponentTypeId::human
 				|| !world.point_data.isPointActive(slot.point_id)
-				|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
+				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 
-			const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
+			const Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
 			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 			const glm::dvec3 center = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 			glm::dvec3 body_up = body.rotation * glm::dvec3(human.up);

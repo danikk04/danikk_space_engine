@@ -28,7 +28,7 @@ namespace danikk_space_engine::unit_system_internal
 		DSE_WATCH();
 		agent.enemy_candidates.clear();
 		agent.candidate_index = 0;
-		const Chunk& owner = world.chunk_system.getChunk(chunk_id);
+		const Chunk& owner = world.chunks.getChunk(chunk_id);
 		const WorldBody& body = world.world_body_data.getWorldBody(owner.world_body_id);
 		const glm::ivec3 coordinate = glm::ivec3(glm::floor(
 			(owner.position + glm::dvec3(world.point_data.getPoint(point_id).position)) / planet_chunk_width));
@@ -45,8 +45,8 @@ namespace danikk_space_engine::unit_system_internal
 		}
 		auto collect = [&](ChunkId candidate_chunk)
 		{
-			if(!world.chunk_system.isChunkActive(candidate_chunk)) return;
-			for(PointComponentSlotId id : world.chunk_system.getChunk(candidate_chunk).point_component_slot_ids)
+			if(!world.chunks.isChunkActive(candidate_chunk)) return;
+			for(PointComponentSlotId id : world.chunks.getChunk(candidate_chunk).point_component_slot_ids)
 			{
 				if(!world.point_data.isPointComponentSlotActive(id)) continue;
 				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
@@ -88,7 +88,7 @@ namespace danikk_space_engine::unit_system_internal
 			{
 				const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(previous_target.slot_id);
 				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->chunk_id, human_slot->point_id);
-				const Chunk& chunk = world.chunk_system.getChunk(human_slot->chunk_id);
+				const Chunk& chunk = world.chunks.getChunk(human_slot->chunk_id);
 				const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
@@ -114,7 +114,7 @@ namespace danikk_space_engine::unit_system_internal
 				markVisibilityChecked(system, candidate);
 				const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(candidate.slot_id);
 				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->chunk_id, human_slot->point_id);
-				const Chunk& chunk = world.chunk_system.getChunk(human_slot->chunk_id);
+				const Chunk& chunk = world.chunks.getChunk(human_slot->chunk_id);
 				const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));

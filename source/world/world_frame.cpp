@@ -28,7 +28,7 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		component_system.renderWorldBodyComponents();
+		components.renderWorldBodyComponents();
 		queueDirtyBuildPartMeshes();
 		if(chunk_generation_requests_dirty)
 		{
@@ -41,13 +41,13 @@ namespace danikk_space_engine
 			&& generated_chunk.generation_id == chunk_mesh_generator_generation_id
 			&& generated_chunk.source == ChunkMeshSource::build_parts
 			&& world_body_data.isWorldBodyActive(generated_chunk.world_body_id)
-			&& chunk_system.isChunkActive(generated_chunk.chunk_id))
+			&& chunks.isChunkActive(generated_chunk.chunk_id))
 		{
-			Chunk& chunk = chunk_system.getChunk(generated_chunk.chunk_id);
+			Chunk& chunk = chunks.getChunk(generated_chunk.chunk_id);
 			if(chunk.world_body_id == generated_chunk.world_body_id
 				&& chunk.build_part_mesh_revision == generated_chunk.source_revision)
 			{
-				chunk_system.createMesh(chunk,
+				chunks.createMesh(chunk,
 					generated_chunk.point_positions.data(), generated_chunk.point_positions.size(),
 					generated_chunk.triangle_point_indices.data(), generated_chunk.triangle_point_indices.size(),
 					generated_chunk.triangle_material_ids.data(), generated_chunk.triangle_material_ids.size(),
@@ -81,35 +81,35 @@ namespace danikk_space_engine
 			const WorldBody& body = world_body_data.getWorldBody(body_id);
 			for(ChunkId chunk_id : body.chunk_ids)
 			{
-				Chunk& chunk = chunk_system.getChunk(chunk_id);
-				chunk_system.draw(chunk);
+				Chunk& chunk = chunks.getChunk(chunk_id);
+				chunks.draw(chunk);
 			}
 		}
 		// Draw dynamic chunk components after the world meshes so transparent overlays
 		// do not allow later terrain draws to pass through the base mesh depth.
-		component_system.renderChunkComponents();
+		components.renderChunkComponents();
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
 		drawUnitSelectionIndicators(*this);
 		drawUnitOrderIndicators(*this);
-		const ControllerSystem& controller = controller_system;
-		const bool show_build_part_preview = controller.active_tool == ToolId::place
-			&& (controller.selected_tool_action == ToolActionId::create_body
-				|| controller.selected_tool_action == ToolActionId::create_slope);
-		const bool show_event_spawn_preview = controller.active_tool == ToolId::event
-			&& (controller.selected_tool_action == ToolActionId::spawn_5_allies
-				|| controller.selected_tool_action == ToolActionId::spawn_5_pirates);
+		const ControllerSystem& player_controller = controller;
+		const bool show_build_part_preview = player_controller.active_tool == ToolId::place
+			&& (player_controller.selected_tool_action == ToolActionId::create_body
+				|| player_controller.selected_tool_action == ToolActionId::create_slope);
+		const bool show_event_spawn_preview = player_controller.active_tool == ToolId::event
+			&& (player_controller.selected_tool_action == ToolActionId::spawn_5_allies
+				|| player_controller.selected_tool_action == ToolActionId::spawn_5_pirates);
 		if(settings.show_world_body_preview && (show_build_part_preview || show_event_spawn_preview))
 		{
 			const RaycastHit hit = raycastFromCamera();
 			if(show_build_part_preview)
 			{
-				const BuildPartShape shape = controller.selected_tool_action == ToolActionId::create_slope
+				const BuildPartShape shape = player_controller.selected_tool_action == ToolActionId::create_slope
 					? BuildPartShape::slope : BuildPartShape::cube;
 				drawWorldBodyPlacementPreview(
-					*this, hit, shape, controller.build_part_size, controller.build_part_size_axis,
-					controller.build_part_rotation_step);
+					*this, hit, shape, player_controller.build_part_size, player_controller.build_part_size_axis,
+					player_controller.build_part_rotation_step);
 			}
-			else drawEventSpawnPreview(*this, hit, controller.selected_tool_action);
+			else drawEventSpawnPreview(*this, hit, player_controller.selected_tool_action);
 		}
 	}
 }

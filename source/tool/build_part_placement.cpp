@@ -42,9 +42,9 @@ namespace danikk_space_engine
 
 		const PointComponentSlot& parent_slot = world.point_data.getPointComponentSlot(hit.build_part_slot_id);
 		if(parent_slot.type_id != PointComponentTypeId::build_part
-			|| !world.chunk_system.isChunkActive(parent_slot.chunk_id)) return placement;
+			|| !world.chunks.isChunkActive(parent_slot.chunk_id)) return placement;
 
-		const Chunk& chunk = world.chunk_system.getChunk(parent_slot.chunk_id);
+		const Chunk& chunk = world.chunks.getChunk(parent_slot.chunk_id);
 		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 		const BuildPartComponent& parent_part = *static_cast<const BuildPartComponent*>(parent_slot.getData());
 		const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);

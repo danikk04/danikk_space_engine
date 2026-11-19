@@ -23,7 +23,7 @@ namespace danikk_space_engine
 		BulletComponent initial_bullet = bullet;
 		initial_bullet.previous_position = position;
 		const PointComponentSlotId slot_id = world.point_data.createPointComponentSlot(point_id, PointComponentTypeId::bullet, &initial_bullet);
-		world.chunk_system.addPointComponentSlotToChunk(chunk_id, slot_id);
+		world.chunks.addPointComponentSlotToChunk(chunk_id, slot_id);
 	}
 
 	/**
@@ -109,7 +109,7 @@ namespace danikk_space_engine
 		if(step_distance > 0.000001f)
 		{
 			const glm::dvec3 start_world_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
-			const Chunk& owner_chunk = world.chunk_system.getChunk(slot.chunk_id);
+			const Chunk& owner_chunk = world.chunks.getChunk(slot.chunk_id);
 			const glm::dquat body_rotation = world.world_body_data.getWorldBody(owner_chunk.world_body_id).rotation;
 			const glm::dvec3 direction = glm::normalize(body_rotation * glm::dvec3(bullet.velocity));
 			const RaycastHit hit = world.raycast(start_world_position, vec3(direction), step_distance);
@@ -122,11 +122,11 @@ namespace danikk_space_engine
 				if(!world.point_data.isPointComponentSlotActive(id)) continue;
 				const PointComponentSlot& candidate = world.point_data.getPointComponentSlot(id);
 				if(candidate.type_id != PointComponentTypeId::human || candidate.point_id == bullet.owner_point_id
-					|| !world.point_data.isPointActive(candidate.point_id) || !world.chunk_system.isChunkActive(candidate.chunk_id)) continue;
+					|| !world.point_data.isPointActive(candidate.point_id) || !world.chunks.isChunkActive(candidate.chunk_id)) continue;
 				const HumanComponent& human = *static_cast<const HumanComponent*>(candidate.getData());
 				const DamageableComponent* health = findDamageable(world, candidate.chunk_id, candidate.point_id);
 				if(health == nullptr || health->getHealth() <= 0.0f) continue;
-				const Chunk& human_chunk = world.chunk_system.getChunk(candidate.chunk_id);
+				const Chunk& human_chunk = world.chunks.getChunk(candidate.chunk_id);
 				const glm::dvec3 up = glm::normalize(world.world_body_data.getWorldBody(human_chunk.world_body_id).rotation * glm::dvec3(human.up));
 				const glm::dvec3 center = world.getPointWorldPosition(candidate.chunk_id, candidate.point_id);
 				const double radius = human.getHeight() * 0.14;
@@ -223,7 +223,7 @@ namespace danikk_space_engine
 			glm::max(actual_segment_length, glm::min(velocity_length * 0.12f, 12.0f)));
 		const vec3 start_position = bullet.previous_position
 			- forward * glm::max(0.0f, visible_trail_length - actual_segment_length);
-		const Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
+		const Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
 		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 camera_local_position = glm::inverse(body.rotation)
 			* (world.getCameraWorldPosition() - body.position) - chunk.position;

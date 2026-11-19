@@ -77,7 +77,7 @@ namespace danikk_space_engine
 	/** @copydoc drawUnitOrderIndicators */
 	void drawUnitOrderIndicators(World& world)
 	{
-		const ControllerSystem& player = world.controller_system;
+		const ControllerSystem& player = world.controller;
 		if(player.selected_unit_refs.size() == 0) return;
 
 		DynamicArray<DefaultVertex> arrow_vertices;
@@ -96,7 +96,7 @@ namespace danikk_space_engine
 			if(human_slot.generation_id != reference.generation_id
 				|| human_slot.type_id != PointComponentTypeId::human
 				|| !world.point_data.isPointActive(human_slot.point_id)
-				|| !world.chunk_system.isChunkActive(human_slot.chunk_id)) continue;
+				|| !world.chunks.isChunkActive(human_slot.chunk_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(human_slot.getData());
 			if(human.hasDeathTimestamp()) continue;
 

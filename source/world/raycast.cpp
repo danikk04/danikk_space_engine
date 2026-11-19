@@ -112,8 +112,8 @@ namespace danikk_space_engine
 
 			auto test_chunk = [&](ChunkId chunk_id)
 			{
-				if(!chunk_system.isChunkActive(chunk_id)) return;
-				const Chunk& chunk = chunk_system.getChunk(chunk_id);
+				if(!chunks.isChunkActive(chunk_id)) return;
+				const Chunk& chunk = chunks.getChunk(chunk_id);
 				if(chunk.world_body_id != body_id) return;
 				const vec3 chunk_relative_position = vec3(getChunkWorldPosition(chunk_id) - origin);
 				const vec3 rotated_bounds_center = vec3(body.rotation * glm::dvec3(chunk.bounds_center));
@@ -207,7 +207,7 @@ namespace danikk_space_engine
 					if(next_boundary.y < next_boundary.x) next_axis = 1;
 					if(next_boundary.z < next_boundary[next_axis]) next_axis = 2;
 					const double segment_end = std::min(static_cast<double>(nearest_distance), next_boundary[next_axis]);
-					if(planet->chunk_lookup.getChunk(cell, chunk_id) && chunk_system.isChunkActive(chunk_id))
+					if(planet->chunk_lookup.getChunk(cell, chunk_id) && chunks.isChunkActive(chunk_id))
 					{
 						double field_distance;
 						glm::dvec3 field_normal;

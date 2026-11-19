@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Ticks body and chunk components, drains deferred point deletion, then advances physics.
 	 * Body, chunk, and per-body component IDs are snapshotted before callbacks can mutate ownership lists.
-	 * Deferred cleanup completes before UnitSystem updates faction intelligence and orders. WorldPhysics
+	 * Deferred cleanup completes before UnitSystem updates faction intelligence and orders. PhysicsSystem
 	 * then advances motion and resolves contacts.
 	 */
 	void World::tick()
@@ -20,8 +20,8 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		component_system.tickWorldBodyComponents();
-		controller_system.tick();
+		components.tickWorldBodyComponents();
+		controller.tick();
 		for(PointId point_id : pending_point_destruction_ids)
 		{
 			if(point_data.isPointActive(point_id)) destroyPoint(point_id);

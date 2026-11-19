@@ -43,7 +43,7 @@ namespace danikk_space_engine
 			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			for(ChunkId chunk_id : body.chunk_ids)
 			{
-				const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
+				const Chunk& chunk = world.chunks.getChunk(chunk_id);
 				vec3 minimum(0.0f);
 				vec3 maximum(0.0f);
 				bool bounds_found = false;

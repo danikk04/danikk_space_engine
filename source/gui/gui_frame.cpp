@@ -57,7 +57,7 @@ namespace danikk_space_engine
 		}
 
 		const glm::dvec3 camera_position = truncateTo100(world.getCameraWorldPosition());
-		ControllerSystem& controller = world.controller_system;
+		ControllerSystem& controller = world.controller;
 		uint32 selected_unit_count = 0;
 		uint32 health_sample_count = 0;
 		double total_health_percent = 0.0;
@@ -68,7 +68,7 @@ namespace danikk_space_engine
 			if(slot.generation_id != reference.generation_id
 				|| slot.type_id != PointComponentTypeId::human
 				|| !world.point_data.isPointActive(slot.point_id)
-				|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
+				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 			++selected_unit_count;

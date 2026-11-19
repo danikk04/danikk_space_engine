@@ -8,9 +8,9 @@ namespace danikk_space_engine
 	void ComponentSystem::tickChunkComponents(ChunkId chunk_id)
 	{
 		DSE_WATCH();
-		if(!world.chunk_system.isChunkActive(chunk_id)) return;
+		if(!world.chunks.isChunkActive(chunk_id)) return;
 
-		Chunk& chunk = world.chunk_system.getChunk(chunk_id);
+		Chunk& chunk = world.chunks.getChunk(chunk_id);
 		const size_t component_count = chunk.point_component_slot_ids.size();
 		for(size_t component_index = 0; component_index < component_count; component_index++)
 		{
@@ -62,7 +62,7 @@ namespace danikk_space_engine
 			}
 			for(ChunkId chunk_id : chunk_ids)
 			{
-				if(world.chunk_system.isChunkActive(chunk_id)) tickChunkComponents(chunk_id);
+				if(world.chunks.isChunkActive(chunk_id)) tickChunkComponents(chunk_id);
 			}
 		}
 	}
@@ -105,8 +105,8 @@ namespace danikk_space_engine
 
 			for(ChunkId chunk_id : chunk_ids)
 			{
-				if(!world.chunk_system.isChunkActive(chunk_id)) continue;
-				const Chunk& chunk = world.chunk_system.getChunk(chunk_id);
+				if(!world.chunks.isChunkActive(chunk_id)) continue;
+				const Chunk& chunk = world.chunks.getChunk(chunk_id);
 				const size_t component_count = chunk.point_component_slot_ids.size();
 				for(size_t component_index = 0; component_index < component_count; component_index++)
 				{

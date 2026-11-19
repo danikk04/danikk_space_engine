@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	 * @param world_time_seconds Unused simulation time.
 	 * @return Default sample with available false.
 	 */
-	TemperatureSample WorldEnvironment::sampleTemperatureAt(
+	TemperatureSample EnvironmentSystem::sampleTemperatureAt(
 		const glm::dvec3& world_position,
 		double world_time_seconds) const
 	{
@@ -26,7 +26,7 @@ namespace danikk_space_engine
 	 * @param world_time_seconds Unused simulation time.
 	 * @return Default sample with available false.
 	 */
-	RadiationSample WorldEnvironment::sampleRadiationAt(
+	RadiationSample EnvironmentSystem::sampleRadiationAt(
 		const glm::dvec3& world_position,
 		double world_time_seconds) const
 	{
@@ -43,7 +43,7 @@ namespace danikk_space_engine
 	 *         surface_gravity * radius / distance and therefore increases toward the
 	 *         center. Samples within 1e-6 units of a center are skipped.
 	 */
-	glm::dvec3 WorldEnvironment::sampleGravityAt(const glm::dvec3& world_position) const
+	glm::dvec3 EnvironmentSystem::sampleGravityAt(const glm::dvec3& world_position) const
 	{
 		glm::dvec3 gravity(0.0);
 

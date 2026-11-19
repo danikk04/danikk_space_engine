@@ -20,7 +20,7 @@ namespace danikk_space_engine
 		const vec3 surface_up = glm::normalize(hit.normal);
 		const PointComponentSlot& camera_slot = world.getCameraSlot();
 		const WorldBody& camera_body = world.world_body_data.getWorldBody(
-			world.chunk_system.getChunk(camera_slot.chunk_id).world_body_id);
+			world.chunks.getChunk(camera_slot.chunk_id).world_body_id);
 		const vec3 camera_right = vec3(camera_body.rotation
 			* glm::dvec3(world.getCameraComponent().getRight()));
 		vec3 tangent = camera_right - surface_up * glm::dot(camera_right, surface_up);

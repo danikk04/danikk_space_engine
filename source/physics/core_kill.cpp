@@ -66,7 +66,7 @@ namespace danikk_space_engine
 	 * before release so pool iteration is not invalidated. Point components in
 	 * inactive chunks are ignored; each point ID is queued at most once.
 	 */
-	void WorldPhysics::destroyEntitiesInsidePlanetCore()
+	void PhysicsSystem::destroyEntitiesInsidePlanetCore()
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
@@ -109,7 +109,7 @@ namespace danikk_space_engine
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 			if(slot.point_id == camera_point_id || !world.point_data.isPointActive(slot.point_id)
-				|| !world.chunk_system.isChunkActive(slot.chunk_id)) continue;
+				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
 			const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
 			if(!isInsideAnyPlanetCore(position, planets)) continue;
 

@@ -38,14 +38,14 @@ namespace danikk_space_engine
 	 * toward the center; samples within 1e-6 world units of a center are skipped to avoid
 	 * division by zero and unstable directions.
 	 */
-	class WorldEnvironment
+	class EnvironmentSystem
 	{
 		/** @brief Owning World whose environmental sources are sampled. */
 		World& world;
 
 	public:
 		/** @brief Binds this environment sampler to its owning World. */
-		explicit WorldEnvironment(World& world) : world(world) {}
+		explicit EnvironmentSystem(World& world) : world(world) {}
 
 		/**
 		 * @brief Samples the temperature field at a world-space position and time.

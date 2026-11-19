@@ -38,7 +38,7 @@ namespace danikk_space_engine
 		/** @brief Reads the point center in planet coordinates without adding profiler scopes. */
 		glm::dvec3 getNpcPosition(const World& world, const PointComponentSlot& slot)
 		{
-			return world.chunk_system.getChunk(slot.chunk_id).position
+			return world.chunks.getChunk(slot.chunk_id).position
 				+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
 		}
 
@@ -55,12 +55,12 @@ namespace danikk_space_engine
 			human.faction_id = faction_id;
 			human.up = vec3(glm::normalize(feet));
 			const glm::dvec3 center = feet + glm::dvec3(human.up) * (human.getHeight() * 0.5);
-			data.getPoint(point_id).position = vec3(center - world.chunk_system.getChunk(chunk_id).position);
+			data.getPoint(point_id).position = vec3(center - world.chunks.getChunk(chunk_id).position);
 
 			const PointComponentSlotId human_id = data.createPointComponentSlot(point_id, PointComponentTypeId::human, &human);
-			world.chunk_system.addPointComponentSlotToChunk(chunk_id, human_id);
+			world.chunks.addPointComponentSlotToChunk(chunk_id, human_id);
 			const PointComponentSlotId health_id = data.createPointComponentSlot(point_id, PointComponentTypeId::damageable);
-			world.chunk_system.addPointComponentSlotToChunk(chunk_id, health_id);
+			world.chunks.addPointComponentSlotToChunk(chunk_id, health_id);
 
 			registerUnitAgent(world, human_id, false);
 			return human_id;
@@ -82,7 +82,7 @@ namespace danikk_space_engine
 				for(int32 y = -1; y <= 1; ++y)
 					for(int32 x = -1; x <= 1; ++x)
 					{
-						Chunk& chunk = world.chunk_system.createChunk(body_id);
+						Chunk& chunk = world.chunks.createChunk(body_id);
 						chunk.grid_coordinate = glm::ivec3(x, y, z);
 						chunk.position = glm::dvec3(chunk.grid_coordinate) * planet_chunk_width;
 						planet.chunk_lookup.setChunk(chunk.grid_coordinate, chunk.chunk_id);
@@ -190,7 +190,7 @@ namespace danikk_space_engine
 			&& walking.grounded == npc_count && walking.moved == npc_count && lost_support;
 		formatLogInfo("NPC diagnostics excavation lost_support=% drop_m=%", lost_support, drop);
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
-		scene.chunk_system.clear();
+		scene.chunks.clear();
 		scene.point_data.release();
 		scene.world_body_data.release();
 		scene.factions.release();

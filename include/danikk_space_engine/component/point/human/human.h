@@ -217,7 +217,7 @@ namespace danikk_space_engine
 		GroundSupportCache ground_support;
 		/** @brief Collision activity owned by the human contact solver. */
 		CollisionActivity collision_activity;
-		/** @brief Temporary marker used by WorldPhysics to restore ground clearance after human collisions. */
+		/** @brief Temporary marker used by PhysicsSystem to restore ground clearance after human collisions. */
 		bool displaced_by_human_collision = false;
 	};
 

@@ -20,8 +20,8 @@ namespace danikk_space_engine
 		 */
 		WorldBodyId getDraggedWorldBodyId(const World& world)
 		{
-			if(!world.controller_system.controls()) return static_cast<WorldBodyId>(-1);
-			return world.controller_system.dragged_world_body_id;
+			if(!world.controller.controls()) return static_cast<WorldBodyId>(-1);
+			return world.controller.dragged_world_body_id;
 		}
 	}
 
@@ -33,7 +33,7 @@ namespace danikk_space_engine
 	 * acceleration and position use semi-implicit Euler integration; rotation is
 	 * advanced from angular velocity using an axis-angle delta and normalized.
 	 */
-	void WorldPhysics::integrateMotion()
+	void PhysicsSystem::integrateMotion()
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.

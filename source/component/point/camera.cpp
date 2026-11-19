@@ -24,7 +24,7 @@ namespace danikk_space_engine
 			if(glm::dot(point.position, point.position)
 				<= camera_local_origin_rebase_distance * camera_local_origin_rebase_distance) return;
 
-			Chunk& chunk = world.chunk_system.getChunk(slot.chunk_id);
+			Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
 			chunk.position += glm::dvec3(point.position);
 			point.position = vec3(0.0f);
 		}
@@ -40,8 +40,8 @@ namespace danikk_space_engine
 		 */
 		void updateCameraSurfaceFrame(CameraComponent& camera, const PointComponentSlot& slot, const World& world)
 		{
-			if(!world.chunk_system.isChunkActive(slot.chunk_id)) return;
-			const Chunk& camera_chunk = world.chunk_system.getChunk(slot.chunk_id);
+			if(!world.chunks.isChunkActive(slot.chunk_id)) return;
+			const Chunk& camera_chunk = world.chunks.getChunk(slot.chunk_id);
 			const WorldBody& body = world.world_body_data.getWorldBody(camera_chunk.world_body_id);
 			const glm::dvec3 radial = world.getCameraWorldPosition() - body.position;
 			const double radial_length = glm::length(radial);
@@ -209,8 +209,8 @@ namespace danikk_space_engine
 		}
 
 		CameraComponent& camera = *static_cast<CameraComponent*>(slot.getData());
-		const bool has_controller = world.controller_system.controls();
-		if(has_controller && world.controller_system.tool_catalog_open) return;
+		const bool has_controller = world.controller.controls();
+		if(has_controller && world.controller.tool_catalog_open) return;
 		updateCameraSurfaceFrame(camera, slot, world);
 
 		const vec2 cursor_delta = getCursorDelta() * getMouseSensivity();
@@ -222,8 +222,8 @@ namespace danikk_space_engine
 		const bool alt_pressed = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
 		const bool drag_rotation_mode = has_controller
-			&& world.controller_system.active_tool == ToolId::drag
-			&& world.controller_system.selected_tool_action == ToolActionId::drag
+			&& world.controller.active_tool == ToolId::drag
+			&& world.controller.selected_tool_action == ToolActionId::drag
 			&& left_mouse_down && alt_pressed;
 		if(!drag_rotation_mode)
 		{
@@ -247,7 +247,7 @@ namespace danikk_space_engine
 			camera.rotation.z += roll_delta;
 		}
 
-		const float speed = (has_controller ? world.controller_system.camera_movement_speed : 1.0f) * frame_delay;
+		const float speed = (has_controller ? world.controller.camera_movement_speed : 1.0f) * frame_delay;
 
 		vec3 direction(0.0f);
 

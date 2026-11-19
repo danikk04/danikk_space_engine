@@ -53,7 +53,7 @@ namespace danikk_space_engine
 	 *
 	 * PointData and WorldBodyData own resource lifetimes. World coordinates chunk membership,
 	 * component callbacks, deferred
-	 * destructive point cleanup until callback traversal finishes, then advances WorldPhysics.
+	 * destructive point cleanup until callback traversal finishes, then advances PhysicsSystem.
 	 * ChunkMeshGenerator performs CPU-side mesh generation asynchronously; completed data is validated
 	 * and accepted by the main thread before mesh creation and drawing.
 	 */
@@ -69,17 +69,17 @@ namespace danikk_space_engine
 		/** @brief Owns WorldBody resources and their component slots. */
 		WorldBodyData world_body_data;
 		/** @brief Owns chunk data, chunk memberships, and chunk meshes. */
-		ChunkSystem chunk_system;
+		ChunkSystem chunks;
 		/** @brief Samples global gravity and other spatial environment fields. */
-		WorldEnvironment environment;
+		EnvironmentSystem environment;
 		/** @brief Integrates body motion and resolves physical contacts after component ticks. */
-		WorldPhysics physics;
+		PhysicsSystem physics;
 		/** @brief Processes local player input and stores its selected point and interaction state. */
-		ControllerSystem controller_system;
+		ControllerSystem controller;
 		/** @brief Dispatches tick and frame callbacks for WorldBody and point components. */
-		ComponentSystem component_system;
+		ComponentSystem components;
 		/** @brief Samples live planet density and material fields. */
-		PlanetTerrainSystem planet_terrain_system;
+		PlanetTerrainSystem planet_terrain;
 		/** @brief Owns this world's faction instances and diplomatic relations. */
 		FactionSystem factions;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
@@ -103,7 +103,7 @@ namespace danikk_space_engine
 		 *
 		 * Component and chunk ID lists are snapshotted where callbacks may mutate ownership lists.
 		 * Deferred point deletion runs after traversal. UnitSystem then executes stored agent orders,
-		 * performs vision/raycast work, and assigns the next orders before WorldPhysics advances.
+		 * performs vision/raycast work, and assigns the next orders before PhysicsSystem advances.
 		 */
 		void tick();
 
