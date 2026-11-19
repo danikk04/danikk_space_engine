@@ -1,5 +1,4 @@
 #include <danikk_space_engine/component/world_body/world_body.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
 
 namespace danikk_space_engine
 {
@@ -8,25 +7,12 @@ namespace danikk_space_engine
 		/**
 		 * @brief Static callback registry indexed by WorldBodyComponentTypeId.
 		 *
-		 * The `none` entry is intentionally empty. The planet entry owns the
-		 * PlanetComponent payload lifecycle, updates during frame dispatch, and
-		 * accepts completed asynchronous chunk-generation results; it currently
-		 * has no per-tick callback.
+			 * The `none` entry is intentionally empty. Planet state now belongs to
+			 * PlanetSystem and is not a world-body component.
 		 */
 		const WorldBodyComponentType world_body_component_types[] =
 		{
-			{}, // none
-			{
-				sizeof(PlanetComponent),
-				alignof(PlanetComponent),
-				false,
-				constructPlanetComponent,
-				movePlanetComponent,
-				destroyPlanetComponent,
-				nullptr,
-				updatePlanetComponent,
-				acceptPlanetGeneratedChunk
-			}
+			{} // none
 		};
 	}
 

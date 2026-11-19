@@ -9,7 +9,6 @@ sources = files(
 	'profiler.cpp',
 	'chunk.cpp',
 	'resource_pool.cpp',
-	'planet_terrain_system.cpp',
 )
 
 subdir('effects')
@@ -30,3 +29,4 @@ subdir('unit_system')
 subdir('component_system')
 subdir('controller_system')
 subdir('environment')
+subdir('planet_system')

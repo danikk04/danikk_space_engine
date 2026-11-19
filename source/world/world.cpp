@@ -13,7 +13,7 @@ namespace danikk_space_engine
 {
 	World::World()
 		: chunks(*this), environment(*this), physics(*this), controller(*this),
-		  components(*this), planet_terrain(*this)
+		  components(*this), planets(*this)
 	{
 	}
 
@@ -164,20 +164,25 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Replaces one component's pending requests and stamps them with the current world generation.
-	 * @param component_slot_id Component whose previous requests should be removed.
-	 * @param requests Latest request snapshot produced by that component.
+	 * @brief Replaces one planet's pending requests and stamps them with the current world generation.
+	 * @param world_body_id Planet body whose previous requests should be removed.
+	 * @param planet_generation_id Planet incarnation that owns the request set.
+	 * @param requests Latest request snapshot produced by that planet.
 	 * Prior requests for this component are removed while preserving unrelated
 	 * request order. New requests receive the current world token and mark the
 	 * worker snapshot dirty for submission during World::frame().
 	 */
 	void World::replaceChunkMeshGenerationRequests(
-		WorldBodyComponentSlotId component_slot_id,
+		WorldBodyId world_body_id,
+		uint64 planet_generation_id,
 		const DynamicArray<ChunkMeshGenerationRequest>& requests)
 	{
 		for(size_t index = 0; index < chunk_generation_requests.size();)
 		{
-			if(chunk_generation_requests[index].component_slot_id != component_slot_id)
+			const ChunkMeshGenerationRequest& queued_request = chunk_generation_requests[index];
+			if(queued_request.source != ChunkMeshSource::planet_terrain
+				|| queued_request.world_body_id != world_body_id
+				|| queued_request.planet_generation_id != planet_generation_id)
 			{
 				index++;
 				continue;
@@ -201,31 +206,7 @@ namespace danikk_space_engine
 	void World::destroyWorldBody(WorldBodyId body_id)
 	{
 		if(!world_body_data.isWorldBodyActive(body_id)) return;
-		DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
-		for(WorldBodyComponentSlotId slot_id : world_body_data.getWorldBody(body_id).component_slot_ids)
-			component_slot_ids.push(slot_id);
-
-		for(WorldBodyComponentSlotId slot_id : component_slot_ids)
-		{
-			if(!world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
-			const uint64 component_generation_id = world_body_data.getWorldBodyComponentSlot(slot_id).generation_id;
-			cancelChunkMeshGenerationRequests(slot_id, component_generation_id);
-			for(size_t index = 0; index < chunk_generation_requests.size();)
-			{
-				const ChunkMeshGenerationRequest& request = chunk_generation_requests[index];
-				if(request.source != ChunkMeshSource::planet_terrain
-					|| request.component_slot_id != slot_id
-					|| request.component_generation_id != component_generation_id)
-				{
-					++index;
-					continue;
-				}
-				for(size_t shift = index + 1; shift < chunk_generation_requests.size(); ++shift)
-					chunk_generation_requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(chunk_generation_requests[shift]);
-				chunk_generation_requests.resize(chunk_generation_requests.size() - 1);
-				chunk_generation_requests_dirty = true;
-			}
-		}
+		planets.destroyPlanet(body_id);
 		WorldBody& body = world_body_data.getWorldBody(body_id);
 		while(body.chunk_ids.size() > 0) destroyChunk(body.chunk_ids[body.chunk_ids.size() - 1]);
 		world_body_data.destroyWorldBody(body_id);
@@ -244,19 +225,22 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Removes the queued request for one component/grid coordinate and marks the worker queue dirty.
-	 * @param component_slot_id Owner component of the request.
+	 * @brief Removes the queued request for one planet/grid coordinate and marks the worker queue dirty.
+	 * @param world_body_id Planet body owning the request.
+	 * @param planet_generation_id Planet incarnation owning the request.
 	 * @param grid_coordinate Planet grid key to remove.
 	 */
 	void World::removeChunkMeshGenerationRequest(
-		WorldBodyComponentSlotId component_slot_id,
+		WorldBodyId world_body_id,
+		uint64 planet_generation_id,
 		const glm::ivec3& grid_coordinate)
 	{
 		for(size_t index = 0; index < chunk_generation_requests.size(); index++)
 		{
 			const ChunkMeshGenerationRequest& request = chunk_generation_requests[index];
 			if(request.source != ChunkMeshSource::planet_terrain
-				|| request.component_slot_id != component_slot_id
+				|| request.world_body_id != world_body_id
+				|| request.planet_generation_id != planet_generation_id
 				|| request.grid_coordinate.x != grid_coordinate.x
 				|| request.grid_coordinate.y != grid_coordinate.y
 				|| request.grid_coordinate.z != grid_coordinate.z) continue;

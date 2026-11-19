@@ -4,7 +4,7 @@
 #include <danikk_space_engine/physics.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/controller_system.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 #include "internal.h"
 
 namespace danikk_space_engine
@@ -47,15 +47,8 @@ namespace danikk_space_engine
 		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
 		{
 			if(body_id == dragged_body_id) continue;
-			bool is_planet = false;
 			WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
-			{
-				if(!world.world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				if(world.world_body_data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
-					is_planet = true;
-			}
-			if(is_planet) continue;
+			if(world.planets.isPlanet(body_id)) continue;
 
 			if(!collision_internal::hasLoadedChunk(world, body)) continue;
 			const glm::dvec3 acceleration = world.environment.sampleGravityAt(body.position);

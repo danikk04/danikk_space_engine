@@ -24,8 +24,8 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Finds the first density sign change on a finite planet-local ray.
-	 * @param world World containing the planet component and its edits.
-	 * @param planet_component_id ID of the planet component slot.
+	 * @param world World containing the registered planet.
+	 * @param planet_body_id ID of the planet's WorldBody.
 	 * @param origin Ray origin relative to the planet center.
 	 * @param direction Ray direction in planet-local coordinates; normalized internally.
 	 * @param max_distance Maximum search distance in metres.
@@ -35,8 +35,12 @@ namespace danikk_space_engine
 	 * Uses half-metre samples and refines a detected transition by bisection. Features
 	 * thinner than the sampling step can be missed when both boundaries lie between samples.
 	 */
-	bool raycastPlanetScalarField(const World& world, WorldBodyComponentSlotId planet_component_id,
+	bool raycastPlanetScalarField(const World& world, WorldBodyId planet_body_id,
 		const glm::dvec3& origin, const glm::dvec3& direction, double max_distance,
 		double& distance, glm::dvec3& normal);
+
+	/** @brief Compatibility wrapper that applies an edit through World::planets. */
+	bool editPlanetGround(World& world, WorldBodyId body_id, const glm::dvec3& position,
+		double radius, bool adds_solid_terrain);
 
 }

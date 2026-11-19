@@ -2,7 +2,7 @@
 #include <danikk_space_engine/physics.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/point.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 #include "internal.h"
 
 namespace danikk_space_engine
@@ -39,24 +39,6 @@ namespace danikk_space_engine
 			return false;
 		}
 
-		/**
-		 * @brief Checks whether any active component slot marks the body as a planet.
-		 * @param world World used to validate component slots.
-		 * @param body Body whose component slots are inspected.
-		 * @return True when an active Planet component is attached.
-		 */
-		bool isPlanetBody(const World& world, const WorldBody& body)
-		{
-			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
-			{
-				if(world.world_body_data.isWorldBodyComponentSlotActive(slot_id)
-					&& world.world_body_data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
-				{
-					return true;
-				}
-			}
-			return false;
-		}
 	}
 
 	/**
@@ -78,7 +60,7 @@ namespace danikk_space_engine
 		{
 			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			if(isPlanetBody(world, body)) planets.push(PlanetCoreTarget{body_id, body.position});
+			if(world.planets.isPlanet(body_id)) planets.push(PlanetCoreTarget{body_id, body.position});
 		}
 		if(planets.size() == 0) return;
 
@@ -87,7 +69,7 @@ namespace danikk_space_engine
 		{
 			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			if(isPlanetBody(world, body) || !collision_internal::hasLoadedChunk(world, body)) continue;
+			if(world.planets.isPlanet(body_id) || !collision_internal::hasLoadedChunk(world, body)) continue;
 			if(isInsideAnyPlanetCore(body.position, planets)) bodies_to_destroy.push(body_id);
 		}
 		for(WorldBodyId body_id : bodies_to_destroy)

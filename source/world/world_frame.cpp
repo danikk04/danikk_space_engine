@@ -18,8 +18,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Accepts generated work, updates chunk/component render state, and draws the world frame.
 	 *
-	 * Completed chunks are accepted only when world, body, slot, component
-	 * generation, and terrain revision still match. Dirty meshes are rebuilt on
+		 * Completed chunks are accepted only when world, body, planet generation,
+		 * and terrain revision still match. Dirty meshes are rebuilt on
 	 * the main thread; rendering uses camera-relative transforms and optional
 	 * debug effects are controlled by Settings.
 	 */
@@ -30,6 +30,7 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		components.renderWorldBodyComponents();
+		planets.frame();
 		queueDirtyBuildPartMeshes();
 		if(chunk_generation_requests_dirty)
 		{
@@ -58,19 +59,9 @@ namespace danikk_space_engine
 		}
 		else if(generated_chunk.source == ChunkMeshSource::planet_terrain
 			&& generated_chunk.generation_id == chunk_mesh_generator_generation_id
-			&& world_body_data.isWorldBodyActive(generated_chunk.world_body_id)
-			&& world_body_data.isWorldBodyComponentSlotActive(generated_chunk.component_slot_id))
+			&& world_body_data.isWorldBodyActive(generated_chunk.world_body_id))
 		{
-			WorldBodyComponentSlot& slot = world_body_data.getWorldBodyComponentSlot(generated_chunk.component_slot_id);
-			if(slot.world_body_id == generated_chunk.world_body_id
-				&& slot.generation_id == generated_chunk.component_generation_id)
-			{
-				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
-				if(type.accept_generated_chunk != nullptr)
-				{
-					type.accept_generated_chunk(slot, *this, generated_chunk);
-				}
-			}
+			planets.acceptGeneratedChunk(generated_chunk);
 		}
 		static_asset_collection.base3d_shader.use();
 		const CameraComponent& camera = getCameraComponent();

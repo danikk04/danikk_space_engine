@@ -1,6 +1,6 @@
 #include <danikk_space_engine/environment.h>
 
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
@@ -47,16 +47,10 @@ namespace danikk_space_engine
 	{
 		glm::dvec3 gravity(0.0);
 
-		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
+		for(const PlanetData& planet : world.planets.getPlanets())
 		{
-			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
-			{
-				if(!world.world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				const WorldBodyComponentSlot& slot = world.world_body_data.getWorldBodyComponentSlot(slot_id);
-				if(slot.type_id != WorldBodyComponentTypeId::planet) continue;
-				const PlanetComponent& planet = *static_cast<const PlanetComponent*>(slot.getData());
-				if(planet.surface_gravity <= 0.0 || planet.radius <= 0.0) continue;
+			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
+			if(planet.surface_gravity <= 0.0 || planet.radius <= 0.0) continue;
 
 				const glm::dvec3 toward_planet = body.position - world_position;
 				const double distance = glm::length(toward_planet);
@@ -65,8 +59,7 @@ namespace danikk_space_engine
 				const double magnitude = distance > planet.radius
 					? planet.surface_gravity * distance_ratio * distance_ratio
 					: planet.surface_gravity * distance_ratio;
-				gravity += toward_planet / distance * magnitude;
-			}
+			gravity += toward_planet / distance * magnitude;
 		}
 		return gravity;
 	}

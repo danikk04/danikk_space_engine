@@ -15,7 +15,7 @@ namespace danikk_space_engine
 	 *
 	 * The global instance aggregates each Watcher by its name and parent scope.
 	 * At each report interval it logs only when at least one frame exceeded 30 ms
-	 * or the observed frame rate was below 20 FPS. Scope times include nested
+	 * or the observed frame rate was below 40 FPS. Scope times include nested
 	 * scopes, so parent and child values are not independent costs.
 	 */
 	class Profiler
@@ -90,7 +90,7 @@ namespace danikk_space_engine
 		 *
 		 * Scope counters are aggregated under a mutex. Once the interval elapses,
 		 * the report is suppressed unless a frame took over 30 ms or average FPS
-		 * was below 20. Interval counters reset even when logging is suppressed.
+		 * was below 40. Interval counters reset even when logging is suppressed.
 		 */
 		void endTick(bool force_report = false);
 

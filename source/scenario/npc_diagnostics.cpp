@@ -6,7 +6,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/scenario/npc_diagnostics.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/unit_system.h>
 #include <danikk_space_engine/world/world.h>
 
@@ -71,7 +71,7 @@ namespace danikk_space_engine
 		 * The hill sits above the surrounding procedural terrain so cave placement and player saves
 		 * cannot affect the initial support. Chunks retain the normal planet grid ownership.
 		 */
-		void createNpcFixture(World& world, WorldBodyId body_id, PlanetComponent& planet,
+		void createNpcFixture(World& world, WorldBodyId body_id, PlanetData& planet,
 			DiagnosticNpc (&npcs)[npc_count])
 		{
 			const glm::dvec3 hill_center(0.0, 0.0, planet.radius + 64.0 - hill_radius);
@@ -155,9 +155,7 @@ namespace danikk_space_engine
 
 		const WorldBodyId body_id = scene.world_body_data.createWorldBody();
 		const auto& settings = getPlanetSettings(planet_settings_ids::earth);
-		const WorldBodyComponentSlotId planet_id = scene.world_body_data.createWorldBodyComponentSlot(
-			body_id, WorldBodyComponentTypeId::planet, &settings);
-		auto& planet = *static_cast<PlanetComponent*>(scene.world_body_data.getWorldBodyComponentSlot(planet_id).getData());
+		PlanetData& planet = scene.planets.createPlanet(body_id, settings);
 		DiagnosticNpc npcs[npc_count]{};
 		createNpcFixture(scene, body_id, planet, npcs);
 

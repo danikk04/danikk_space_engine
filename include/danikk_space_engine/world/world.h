@@ -12,7 +12,7 @@
 #include <danikk_space_engine/component_system.h>
 #include <danikk_space_engine/world_body.h>
 #include <danikk_space_engine/chunk_system.h>
-#include <danikk_space_engine/planet_terrain_system.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/factions.h>
 #include <danikk_framework/dynamic_array.h>
 
@@ -78,8 +78,8 @@ namespace danikk_space_engine
 		ControllerSystem controller;
 		/** @brief Dispatches tick and frame callbacks for WorldBody and point components. */
 		ComponentSystem components;
-		/** @brief Samples live planet density and material fields. */
-		PlanetTerrainSystem planet_terrain;
+		/** @brief Owns planet data, terrain queries, edits, and chunk streaming. */
+		PlanetSystem planets;
 		/** @brief Owns this world's faction instances and diplomatic relations. */
 		FactionSystem factions;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
@@ -125,20 +125,23 @@ namespace danikk_space_engine
 		void queueDirtyBuildPartMeshes();
 
 		/**
-		 * @brief Replaces queued requests for one planet component and marks the worker queue dirty.
-		 * @param component_slot_id Planet component whose previous pending requests are replaced.
-		 * @param requests Current immutable request set for that component.
+		 * @brief Replaces queued requests for one planet and marks the worker queue dirty.
+		 * @param world_body_id Planet body owning the requests.
+		 * @param planet_generation_id Planet incarnation used to reject stale work.
+		 * @param requests Current immutable request set for that planet.
 		 */
 		void replaceChunkMeshGenerationRequests(
-			WorldBodyComponentSlotId component_slot_id,
+			WorldBodyId world_body_id, uint64 planet_generation_id,
 			const DynamicArray<ChunkMeshGenerationRequest>& requests);
 
 		/**
 		 * @brief Removes one queued or pending request matching a component and planet-grid coordinate.
-		 * @param component_slot_id Component that owns the request.
+		 * @param world_body_id Planet body that owns the request.
+		 * @param planet_generation_id Planet incarnation that owns the request.
 		 * @param grid_coordinate Coordinate to cancel or forget.
 		 */
-		void removeChunkMeshGenerationRequest(WorldBodyComponentSlotId component_slot_id, const glm::ivec3& grid_coordinate);
+		void removeChunkMeshGenerationRequest(WorldBodyId world_body_id,
+			uint64 planet_generation_id, const glm::ivec3& grid_coordinate);
 		/** @brief Removes the queued BuildPart mesh job for one chunk. */
 		void removeBuildPartMeshRequest(ChunkId chunk_id);
 

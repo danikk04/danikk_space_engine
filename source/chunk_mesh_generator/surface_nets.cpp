@@ -2,7 +2,7 @@
 #include <cmath>
 
 #include <danikk_space_engine/chunk_mesh_generator.h>
-#include <danikk_space_engine/planet_terrain_system.h>
+#include <danikk_space_engine/planet_system.h>
 
 namespace danikk_space_engine::chunk_mesh_generator_internal
 {
@@ -22,8 +22,7 @@ namespace danikk_space_engine::chunk_mesh_generator_internal
 		GeneratedChunkMesh result;
 		result.generation_id = request.generation_id;
 		result.world_body_id = request.world_body_id;
-		result.component_slot_id = request.component_slot_id;
-		result.component_generation_id = request.component_generation_id;
+		result.planet_generation_id = request.planet_generation_id;
 		result.terrain_revision = request.terrain_revision;
 		result.source_revision = request.source_revision;
 		result.source = request.source;
@@ -57,7 +56,7 @@ namespace danikk_space_engine::chunk_mesh_generator_internal
 		for(int z = -1; z <= static_cast<int>(cells_per_axis) + 1; ++z)
 			for(int y = -1; y <= static_cast<int>(cells_per_axis) + 1; ++y)
 				for(int x = -1; x <= static_cast<int>(cells_per_axis) + 1; ++x)
-					densities[sampleIndex(x, y, z)] = PlanetTerrainSystem::getPlanetDensity(
+					densities[sampleIndex(x, y, z)] = PlanetSystem::getPlanetDensity(
 						*request.planet_terrain, samplePosition(x, y, z));
 
 		constexpr uint8 corner_offsets[8][3]{

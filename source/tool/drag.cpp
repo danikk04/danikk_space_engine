@@ -1,6 +1,6 @@
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/controller_system.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_engine/input.h>
 
@@ -26,15 +26,7 @@ namespace danikk_space_engine
 				return false;
 			}
 
-			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
-			{
-				if(!world.world_body_data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				if(world.world_body_data.getWorldBodyComponentSlot(slot_id).type_id == WorldBodyComponentTypeId::planet)
-				{
-					return false;
-				}
-			}
+			if(world.planets.isPlanet(body_id)) return false;
 			return true;
 		}
 

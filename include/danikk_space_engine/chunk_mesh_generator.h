@@ -38,8 +38,8 @@ namespace danikk_space_engine
 	/** @brief Immutable planet-field data shared by all chunk jobs for one field revision. */
 	struct PlanetTerrainSnapshot
 	{
-		WorldBodyComponentSlotId component_slot_id = static_cast<WorldBodyComponentSlotId>(-1);
-		uint64 component_generation_id = 0;
+		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
+		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
 		double planet_radius = 0.0;
 		double core_radius = 0.0;
@@ -54,8 +54,7 @@ namespace danikk_space_engine
 		uint64 source_revision = 0;
 		WorldBodyId world_body_id = 0;
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
-		WorldBodyComponentSlotId component_slot_id = static_cast<WorldBodyComponentSlotId>(-1);
-		uint64 component_generation_id = 0;
+		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
 		ChunkMeshSource source = ChunkMeshSource::planet_terrain;
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
@@ -74,8 +73,7 @@ namespace danikk_space_engine
 		uint64 source_revision = 0;
 		WorldBodyId world_body_id = 0;
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
-		WorldBodyComponentSlotId component_slot_id = static_cast<WorldBodyComponentSlotId>(-1);
-		uint64 component_generation_id = 0;
+		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
 		ChunkMeshSource source = ChunkMeshSource::planet_terrain;
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
@@ -93,9 +91,8 @@ namespace danikk_space_engine
 	/** @brief Replaces pending work with the latest immutable world request snapshot. */
 	void updateChunkMeshGenerationRequests(uint64 generation_id,
 		const DynamicArray<ChunkMeshGenerationRequest>& requests);
-	/** @brief Removes queued/completed work for one component incarnation and suppresses its active result. */
-	void cancelChunkMeshGenerationRequests(
-		WorldBodyComponentSlotId component_slot_id, uint64 component_generation_id);
+	/** @brief Removes queued/completed work for one planet incarnation and suppresses its active result. */
+	void cancelChunkMeshGenerationRequests(WorldBodyId world_body_id, uint64 planet_generation_id);
 	/** @brief Takes the oldest completed CPU mesh, if one is available. */
 	bool tryTakeGeneratedChunkMesh(GeneratedChunkMesh& result);
 }

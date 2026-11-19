@@ -137,7 +137,7 @@ namespace danikk_space_engine
 			ticks_in_report = report_tick_count;
 			should_log = force_report || report_has_slow_tick
 				|| static_cast<double>(ticks_in_report) * 1000000000.0
-					< static_cast<double>(elapsed_nanoseconds) * 20.0;
+					< static_cast<double>(elapsed_nanoseconds) * 40.0;
 			if(should_log) report_nodes = nodes;
 			for(Node& node : nodes)
 			{

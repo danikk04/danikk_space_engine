@@ -5,7 +5,7 @@
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/item/item.h>
 
 #include "internal.h"
@@ -88,21 +88,12 @@ namespace danikk_space_engine::unit_system_internal
 		DSE_WATCH();
 		if(!world.point_data.isPointActive(human_slot.point_id)) return;
 		Chunk& old_chunk = world.chunks.getChunk(human_slot.chunk_id);
-		WorldBody& body = world.world_body_data.getWorldBody(old_chunk.world_body_id);
 		const PointId point_id = human_slot.point_id;
 		const glm::dvec3 position = old_chunk.position + glm::dvec3(world.point_data.getPoint(point_id).position);
 		const glm::ivec3 coordinate = glm::ivec3(glm::floor(position / planet_chunk_width));
 		ChunkId new_chunk_id = static_cast<ChunkId>(-1);
-		PlanetComponent* planet = nullptr;
-		for(WorldBodyComponentSlotId id : body.component_slot_ids)
-		{
-			if(!world.world_body_data.isWorldBodyComponentSlotActive(id)) continue;
-			WorldBodyComponentSlot& component = world.world_body_data.getWorldBodyComponentSlot(id);
-			if(component.type_id != WorldBodyComponentTypeId::planet) continue;
-			planet = static_cast<PlanetComponent*>(component.getData());
-			planet->chunk_lookup.getChunk(coordinate, new_chunk_id);
-			break;
-		}
+		PlanetData* planet = world.planets.findPlanet(old_chunk.world_body_id);
+		if(planet != nullptr) planet->chunk_lookup.getChunk(coordinate, new_chunk_id);
 		if(planet == nullptr || new_chunk_id == human_slot.chunk_id) return;
 		if(!world.chunks.isChunkActive(new_chunk_id))
 		{

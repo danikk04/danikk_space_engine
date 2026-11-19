@@ -3,7 +3,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/component/point/damageable.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 
 #include "internal.h"
 
@@ -64,15 +64,7 @@ namespace danikk_space_engine::unit_system_internal
 			constexpr double search_radius = 2.5;
 			constexpr double search_radius_squared = search_radius * search_radius;
 			const WorldBody& body = world.world_body_data.getWorldBody(location.body_id);
-			const PlanetComponent* planet = nullptr;
-			for(WorldBodyComponentSlotId id : body.component_slot_ids)
-			{
-				if(!world.world_body_data.isWorldBodyComponentSlotActive(id)) continue;
-				const WorldBodyComponentSlot& component = world.world_body_data.getWorldBodyComponentSlot(id);
-				if(component.type_id != WorldBodyComponentTypeId::planet) continue;
-				planet = static_cast<const PlanetComponent*>(component.getData());
-				break;
-			}
+			const PlanetData* planet = world.planets.findPlanet(location.body_id);
 
 			if(planet == nullptr)
 			{

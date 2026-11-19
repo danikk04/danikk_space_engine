@@ -23,8 +23,7 @@ namespace danikk_space_engine
 			return a.generation_id == b.generation_id
 				&& a.source == b.source
 				&& a.source_revision == b.source_revision
-				&& a.component_slot_id == b.component_slot_id
-				&& a.component_generation_id == b.component_generation_id
+				&& a.planet_generation_id == b.planet_generation_id
 				&& a.terrain_revision == b.terrain_revision
 				&& a.world_body_id == b.world_body_id
 				&& a.chunk_id == b.chunk_id
@@ -42,8 +41,7 @@ namespace danikk_space_engine
 				if(result.generation_id == request.generation_id
 					&& result.source == request.source
 					&& result.source_revision == request.source_revision
-					&& result.component_slot_id == request.component_slot_id
-					&& result.component_generation_id == request.component_generation_id
+					&& result.planet_generation_id == request.planet_generation_id
 					&& result.terrain_revision == request.terrain_revision
 					&& result.world_body_id == request.world_body_id
 					&& result.chunk_id == request.chunk_id
@@ -62,8 +60,7 @@ namespace danikk_space_engine
 				if(result.generation_id == request.generation_id
 					&& result.source == request.source
 					&& result.source_revision == request.source_revision
-					&& result.component_slot_id == request.component_slot_id
-					&& result.component_generation_id == request.component_generation_id
+					&& result.planet_generation_id == request.planet_generation_id
 					&& result.terrain_revision == request.terrain_revision
 					&& result.world_body_id == request.world_body_id
 					&& result.chunk_id == request.chunk_id
@@ -317,15 +314,15 @@ namespace danikk_space_engine
 				return false;
 			}
 
-			void cancel(WorldBodyComponentSlotId component_slot_id, uint64 component_generation_id)
+			void cancel(WorldBodyId world_body_id, uint64 planet_generation_id)
 			{
 				std::lock_guard<std::mutex> guard(mutex);
 				for(size_t index = 0; index < requests.size();)
 				{
 					const ChunkMeshGenerationRequest& request = requests[index];
 					if(request.source != ChunkMeshSource::planet_terrain
-						|| request.component_slot_id != component_slot_id
-						|| request.component_generation_id != component_generation_id)
+						|| request.world_body_id != world_body_id
+						|| request.planet_generation_id != planet_generation_id)
 					{
 						++index;
 						continue;
@@ -338,8 +335,8 @@ namespace danikk_space_engine
 				{
 					const GeneratedChunkMesh& result = completed[index];
 					if(result.source != ChunkMeshSource::planet_terrain
-						|| result.component_slot_id != component_slot_id
-						|| result.component_generation_id != component_generation_id)
+						|| result.world_body_id != world_body_id
+						|| result.planet_generation_id != planet_generation_id)
 					{
 						++index;
 						continue;
@@ -350,8 +347,8 @@ namespace danikk_space_engine
 				}
 				for(ActiveRequest& active : active_requests)
 					if(active.request.source == ChunkMeshSource::planet_terrain
-						&& active.request.component_slot_id == component_slot_id
-						&& active.request.component_generation_id == component_generation_id)
+						&& active.request.world_body_id == world_body_id
+						&& active.request.planet_generation_id == planet_generation_id)
 						active.cancelled = true;
 				request_available.notify_all();
 				result_space_available.notify_all();
@@ -369,10 +366,9 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		generator_service.update(generation_id, requests);
 	}
-	void cancelChunkMeshGenerationRequests(
-		WorldBodyComponentSlotId component_slot_id, uint64 component_generation_id)
+	void cancelChunkMeshGenerationRequests(WorldBodyId world_body_id, uint64 planet_generation_id)
 	{
-		generator_service.cancel(component_slot_id, component_generation_id);
+		generator_service.cancel(world_body_id, planet_generation_id);
 	}
 	bool tryTakeGeneratedChunkMesh(GeneratedChunkMesh& result)
 	{

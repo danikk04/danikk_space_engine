@@ -3,7 +3,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/config.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
@@ -19,7 +19,7 @@ namespace danikk_space_engine
 	 * @param world World whose worker queue receives the replacement request set.
 	 * @param slot Component slot supplying body ID, slot ID, and generation ID for result validation.
 	 */
-	void queuePlanetRequests(PlanetComponent& planet, World& world, const WorldBodyComponentSlot& slot)
+	void PlanetSystem::queuePlanetRequests(PlanetData& planet)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
@@ -27,11 +27,11 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		for(ChunkMeshGenerationRequest& request : planet.pending_requests)
 		{
-			request.world_body_id = slot.world_body_id;
-			request.component_slot_id = slot.slot_id;
-			request.component_generation_id = slot.generation_id;
+			request.world_body_id = planet.world_body_id;
+			request.planet_generation_id = planet.generation_id;
 		}
-		world.replaceChunkMeshGenerationRequests(slot.slot_id, planet.pending_requests);
+		world.replaceChunkMeshGenerationRequests(
+			planet.world_body_id, planet.generation_id, planet.pending_requests);
 	}
 
 	/**
@@ -39,7 +39,7 @@ namespace danikk_space_engine
 	 * @param planet Lookup containing the current desired set and loaded chunk IDs.
 	 * @param world World that coordinates chunk, point, and mesh resources.
 	 */
-	void unloadPlanetChunksOutsideDesiredSet(PlanetComponent& planet, World& world)
+	void PlanetSystem::unloadChunksOutsideDesiredSet(PlanetData& planet)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
@@ -75,11 +75,7 @@ namespace danikk_space_engine
 	 * @param world World used to unload chunks and clear controller selections.
 	 * @param camera_position Camera position relative to the planet center.
 	 */
-	void updatePlanetChunks(
-		PlanetComponent& planet,
-		WorldBodyComponentSlot& slot,
-		World& world,
-		const glm::dvec3& camera_position)
+	void PlanetSystem::updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
@@ -91,16 +87,16 @@ namespace danikk_space_engine
 		planet.chunk_set_initialized = true;
 		planet.chunk_updates_active = true;
 		if(planet.terrain_snapshot == nullptr
-			|| planet.terrain_snapshot->component_slot_id != slot.slot_id
-			|| planet.terrain_snapshot->component_generation_id != slot.generation_id
+			|| planet.terrain_snapshot->world_body_id != planet.world_body_id
+			|| planet.terrain_snapshot->planet_generation_id != planet.generation_id
 			|| planet.terrain_snapshot->terrain_revision != planet.terrain_revision
 			|| planet.terrain_snapshot->planet_radius != planet.radius
 			|| planet.terrain_snapshot->core_radius != planet.core_radius
 			|| planet.terrain_snapshot->noise_seed != planet.noise_seed)
 		{
 			std::shared_ptr<PlanetTerrainSnapshot> snapshot = std::make_shared<PlanetTerrainSnapshot>();
-			snapshot->component_slot_id = slot.slot_id;
-			snapshot->component_generation_id = slot.generation_id;
+			snapshot->world_body_id = planet.world_body_id;
+			snapshot->planet_generation_id = planet.generation_id;
 			snapshot->terrain_revision = planet.terrain_revision;
 			snapshot->planet_radius = planet.radius;
 			snapshot->core_radius = planet.core_radius;
@@ -139,9 +135,8 @@ namespace danikk_space_engine
 
 					ChunkMeshGenerationRequest request;
 					request.source = ChunkMeshSource::planet_terrain;
-					request.world_body_id = slot.world_body_id;
-					request.component_slot_id = slot.slot_id;
-					request.component_generation_id = slot.generation_id;
+					request.world_body_id = planet.world_body_id;
+					request.planet_generation_id = planet.generation_id;
 					request.terrain_revision = planet.terrain_revision;
 					request.chunk_width = chunk_width;
 					request.voxel_size = planet_voxel_size;
@@ -164,7 +159,7 @@ namespace danikk_space_engine
 		});
 
 		planet.pending_requests = static_cast<DynamicArray<ChunkMeshGenerationRequest>&&>(requests);
-		unloadPlanetChunksOutsideDesiredSet(planet, world);
+		unloadChunksOutsideDesiredSet(planet);
 	}
 
 	/**
@@ -174,11 +169,7 @@ namespace danikk_space_engine
 	 * @param center Edit center relative to the planet origin.
 	 * @param radius Radius of the spherical edit stamp.
 	 */
-	void invalidatePlanetChunksAroundEdit(
-		PlanetComponent& planet,
-		World& world,
-		const glm::dvec3& center,
-		double radius)
+	void PlanetSystem::invalidateChunksAroundEdit(PlanetData& planet, const PlanetTerrainEdit& edit)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
@@ -189,9 +180,9 @@ namespace danikk_space_engine
 			if(!entry.has_record) continue;
 			const glm::dvec3 minimum = glm::dvec3(entry.grid_coordinate) * planet_chunk_width;
 			const glm::dvec3 maximum = minimum + glm::dvec3(planet_chunk_width);
-			const glm::dvec3 closest = glm::clamp(center, minimum, maximum);
-			const double invalidation_radius = radius + planet_voxel_size * 2.0;
-			if(glm::dot(center - closest, center - closest) > invalidation_radius * invalidation_radius)
+			const glm::dvec3 closest = glm::clamp(edit.center, minimum, maximum);
+			const double invalidation_radius = edit.radius + planet_voxel_size * 2.0;
+			if(glm::dot(edit.center - closest, edit.center - closest) > invalidation_radius * invalidation_radius)
 			{
 				continue;
 			}

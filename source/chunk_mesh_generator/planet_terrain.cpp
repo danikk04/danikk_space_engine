@@ -3,7 +3,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
-#include <danikk_space_engine/planet_terrain_system.h>
+#include <danikk_space_engine/planet_system.h>
 #include "internal.h"
 #include <danikk_engine/danikk_engine.h>
 
@@ -82,8 +82,7 @@ namespace danikk_space_engine
 			GeneratedChunkMesh result;
 			result.generation_id = request.generation_id;
 			result.world_body_id = request.world_body_id;
-			result.component_slot_id = request.component_slot_id;
-			result.component_generation_id = request.component_generation_id;
+			result.planet_generation_id = request.planet_generation_id;
 			result.terrain_revision = request.terrain_revision;
 			result.source_revision = request.source_revision;
 			result.source = request.source;
@@ -114,7 +113,7 @@ namespace danikk_space_engine
 					for(size_t x = 0; x < points_per_axis; x++)
 					{
 						const size_t point_index = pointId(x, y, z);
-						densities[point_index] = PlanetTerrainSystem::getPlanetDensity(
+						densities[point_index] = PlanetSystem::getPlanetDensity(
 							*request.planet_terrain, pointPosition(x, y, z));
 					}
 				}
@@ -151,14 +150,14 @@ namespace danikk_space_engine
 					std::abs(density_delta) > 1e-12 ? first.density / density_delta : 0.5,
 					0.0, 1.0);
 				glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
-				if(PlanetTerrainSystem::getPlanetDensity(*request.planet_terrain, position) < 0.0)
+				if(PlanetSystem::getPlanetDensity(*request.planet_terrain, position) < 0.0)
 				{
 					glm::dvec3 inside = first.density >= 0.0 ? first.position : second.position;
 					glm::dvec3 outside = position;
 					for(uint8 iteration = 0; iteration < 6; ++iteration)
 					{
 						const glm::dvec3 midpoint = (inside + outside) * 0.5;
-						if(PlanetTerrainSystem::getPlanetDensity(*request.planet_terrain, midpoint) >= 0.0)
+						if(PlanetSystem::getPlanetDensity(*request.planet_terrain, midpoint) >= 0.0)
 							inside = midpoint;
 						else
 							outside = midpoint;
@@ -302,8 +301,8 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		if(request.planet_terrain == nullptr
-			|| request.planet_terrain->component_slot_id != request.component_slot_id
-			|| request.planet_terrain->component_generation_id != request.component_generation_id
+			|| request.planet_terrain->world_body_id != request.world_body_id
+			|| request.planet_terrain->planet_generation_id != request.planet_generation_id
 			|| request.planet_terrain->terrain_revision != request.terrain_revision)
 		{
 			danikk_engine::formatFatalError("Planet chunk request has an invalid terrain snapshot");
@@ -320,7 +319,7 @@ namespace danikk_space_engine
 			const vec3 c = result.point_positions[result.triangle_point_indices[first_index + 2]];
 			const glm::dvec3 center = request.chunk_position
 				+ (glm::dvec3(a) + glm::dvec3(b) + glm::dvec3(c)) / 3.0;
-			result.triangle_material_ids.push(PlanetTerrainSystem::getPlanetMaterial(*request.planet_terrain, center));
+			result.triangle_material_ids.push(PlanetSystem::getPlanetMaterial(*request.planet_terrain, center));
 		}
 		return result;
 	}

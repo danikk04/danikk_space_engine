@@ -9,27 +9,6 @@ namespace danikk_space_engine
 {
 	using namespace collision_internal;
 
-	namespace
-	{
-
-		/**
-		 * @brief Checks whether any active component slot marks the body as a planet.
-		 * @param world World used to validate component slots.
-		 * @param body Body whose component slot IDs are examined.
-		 * @return True on the first active Planet slot; otherwise false.
-		 */
-		bool isPlanetBody(const World& world, const WorldBody& body)
-		{
-			for(WorldBodyComponentSlotId id : body.component_slot_ids)
-			{
-				if(world.world_body_data.isWorldBodyComponentSlotActive(id)
-					&& world.world_body_data.getWorldBodyComponentSlot(id).type_id == WorldBodyComponentTypeId::planet)
-					return true;
-			}
-			return false;
-		}
-	}
-
 	/**
 	 * @brief Builds convex mesh proxies and resolves body pairs in four sequential passes.
 	 * @param world World whose loaded mesh bodies may be moved and have velocities changed.
@@ -51,7 +30,7 @@ namespace danikk_space_engine
 		for(WorldBodyId id : world.world_body_data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = world.world_body_data.getWorldBody(id);
-			if(isPlanetBody(world, body) || !hasLoadedChunk(world, body)) continue;
+			if(world.planets.isPlanet(id) || !hasLoadedChunk(world, body)) continue;
 			BodyCollider collider = createCollider(world, id, dragged_id);
 			if(collider.chunks.size() > 0) colliders.push(static_cast<BodyCollider&&>(collider));
 		}

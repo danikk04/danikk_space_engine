@@ -6,8 +6,7 @@
 
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/math/ray.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
-#include <danikk_space_engine/planet_terrain_system.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
@@ -36,27 +35,6 @@ namespace danikk_space_engine
 			return projection + half_chord >= 0.0f && projection - half_chord <= max_distance;
 		}
 
-		/**
-		 * @brief Finds the body's active PlanetComponent, if present.
-		 * @param data WorldBodyData used to validate component slot IDs.
-		 * @param body Body whose component list is inspected.
-		 * @return Planet payload or null when this body has no planet component.
-		 */
-		const PlanetComponent* getPlanetComponent(const WorldBodyData& data, const WorldBody& body,
-			WorldBodyComponentSlotId& component_slot_id)
-		{
-			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
-			{
-				if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				const WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
-				if(slot.type_id == WorldBodyComponentTypeId::planet)
-				{
-					component_slot_id = slot_id;
-					return static_cast<const PlanetComponent*>(slot.getData());
-				}
-			}
-			return nullptr;
-		}
 	}
 
 	/** @copydoc World::raycast */
@@ -103,8 +81,8 @@ namespace danikk_space_engine
 		{
 			const WorldBodyId body_id = body_ids[body_index];
 			const WorldBody& body = world_body_data.getWorldBody(body_id);
-			WorldBodyComponentSlotId planet_component_slot_id = static_cast<WorldBodyComponentSlotId>(-1);
-			const PlanetComponent* planet = getPlanetComponent(world_body_data, body, planet_component_slot_id);
+			const bool is_planet = planets.isPlanet(body_id);
+			const PlanetData* planet = is_planet ? planets.findPlanet(body_id) : nullptr;
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_origin = inverse_rotation * (origin - body.position);
 			const vec3 local_direction = vec3(inverse_rotation * glm::dvec3(normalized_direction));
@@ -155,7 +133,7 @@ namespace danikk_space_engine
 				}
 			};
 
-		if(planet != nullptr)
+			if(is_planet)
 			{
 				const double broadphase_radius = planet->radius + planet->chunk_load_radius + planet_chunk_width;
 				if(!rayIntersectsSphere(
@@ -211,8 +189,8 @@ namespace danikk_space_engine
 					{
 						double field_distance;
 						glm::dvec3 field_normal;
-		if(segment_end >= distance_along_ray && raycastPlanetScalarField(
-			*this, planet_component_slot_id,
+						if(segment_end >= distance_along_ray && raycastPlanetScalarField(
+							*this, body_id,
 							local_origin + glm::dvec3(local_direction) * distance_along_ray,
 							glm::dvec3(local_direction), segment_end - distance_along_ray,
 							field_distance, field_normal))

@@ -1,13 +1,13 @@
 #include <algorithm>
 
-#include <danikk_space_engine/planet_terrain_system.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/component/world_body/planet/terrain.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
 {
 	/** @copydoc raycastPlanetScalarField */
-	bool raycastPlanetScalarField(const World& world, WorldBodyComponentSlotId planet_component_id,
+	bool raycastPlanetScalarField(const World& world, WorldBodyId planet_body_id,
 		const glm::dvec3& origin, const glm::dvec3& direction, double max_distance,
 		double& distance, glm::dvec3& normal)
 	{
@@ -16,7 +16,7 @@ namespace danikk_space_engine
 		const glm::dvec3 ray_direction = direction / direction_length;
 		const auto densityAt = [&](double offset)
 		{
-			return world.planet_terrain.getPlanetDensity(planet_component_id, origin + ray_direction * offset);
+			return world.planets.getPlanetDensity(planet_body_id, origin + ray_direction * offset);
 		};
 
 		constexpr double step = 0.5;
@@ -46,8 +46,8 @@ namespace danikk_space_engine
 				{
 					glm::dvec3 offset(0.0);
 					offset[axis] = gradient_step;
-					gradient[axis] = world.planet_terrain.getPlanetDensity(planet_component_id, hit_position + offset)
-						- world.planet_terrain.getPlanetDensity(planet_component_id, hit_position - offset);
+					gradient[axis] = world.planets.getPlanetDensity(planet_body_id, hit_position + offset)
+						- world.planets.getPlanetDensity(planet_body_id, hit_position - offset);
 				}
 				const double gradient_length = glm::length(gradient);
 				if(gradient_length <= 1e-12) return false;

@@ -1,10 +1,9 @@
 #include <danikk_space_engine/scenario/base.h>
 
 #include <danikk_space_engine/config.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
 #include <danikk_space_engine/component/world_body/planet/terrain_edit_save.h>
 #include <danikk_space_engine/component/world_body/planet/terrain.h>
-#include <danikk_space_engine/planet_terrain_system.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/world/world.h>
 #include <danikk_space_engine/controller_system.h>
 
@@ -28,7 +27,7 @@ namespace danikk_space_engine
 		 */
 		bool findGroundCameraPosition(
 			WorldBodyId planet_body_id,
-			const PlanetComponentSettings& planet_settings,
+			const PlanetSettings& planet_settings,
 			glm::dvec3& camera_position)
 		{
 			constexpr double surface_margin = planet_voxel_size * 2.0;
@@ -65,7 +64,7 @@ namespace danikk_space_engine
 				glm::max(step, (planet_settings.radius - core_clearance) * 0.25));
 			const auto density_at = [&](const glm::dvec3& position)
 			{
-				return PlanetTerrainSystem::getPlanetDensity(terrain_snapshot, position);
+				return PlanetSystem::getPlanetDensity(terrain_snapshot, position);
 			};
 
 			for(const glm::dvec3& direction : directions)
@@ -112,9 +111,8 @@ namespace danikk_space_engine
 
 		const WorldBodyId planet_body_id = world.world_body_data.createWorldBody();
 		world.world_body_data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
-		const PlanetComponentSettings& planet_settings = getPlanetSettings(planet_settings_ids::earth);
-		world.world_body_data.createWorldBodyComponentSlot(
-			planet_body_id, WorldBodyComponentTypeId::planet, &planet_settings);
+		const PlanetSettings& planet_settings = getPlanetSettings(planet_settings_ids::earth);
+		world.planets.createPlanet(planet_body_id, planet_settings);
 		const PointId camera_point_id = world.point_data.createPoint();
 		Point& camera_point = world.point_data.getPoint(camera_point_id);
 		constexpr float camera_altitude = 30.0f;

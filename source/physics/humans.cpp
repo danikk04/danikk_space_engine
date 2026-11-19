@@ -6,7 +6,7 @@
 #include <danikk_space_engine/physics.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/world/world.h>
 
 namespace danikk_space_engine
@@ -76,23 +76,10 @@ namespace danikk_space_engine
 		{
 			const Chunk* chunk;
 			const WorldBody* body;
-			const PlanetComponent* grid_planet;
+			const PlanetData* grid_planet;
 			glm::dvec3 minimum;
 			glm::dvec3 maximum;
 		};
-
-		/** @brief Finds a planet component attached to a body, or returns null for other body kinds. */
-		const PlanetComponent* getPlanetComponent(const WorldBodyData& data, const WorldBody& body)
-		{
-			for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
-			{
-				if(!data.isWorldBodyComponentSlotActive(slot_id)) continue;
-				const WorldBodyComponentSlot& slot = data.getWorldBodyComponentSlot(slot_id);
-				if(slot.type_id == WorldBodyComponentTypeId::planet)
-					return static_cast<const PlanetComponent*>(slot.getData());
-			}
-			return nullptr;
-		}
 
 		/** @brief Builds one collider on the stack from an active human component slot. */
 		bool getHumanCollider(World& world, PointComponentSlotId slot_id, HumanCollider& result)
@@ -451,7 +438,7 @@ namespace danikk_space_engine
 			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 			updateHumanCollisionActivity(world.point_data, chunk, body);
 			has_active_humans |= chunk.has_active_human_collisions;
-			const PlanetComponent* grid_planet = getPlanetComponent(world.world_body_data, body);
+			const PlanetData* grid_planet = world.planets.findPlanet(chunk.world_body_id);
 			ChunkId indexed_id;
 			if(grid_planet != nullptr && (!grid_planet->chunk_lookup.getChunk(chunk.grid_coordinate, indexed_id)
 				|| indexed_id != chunk_id))

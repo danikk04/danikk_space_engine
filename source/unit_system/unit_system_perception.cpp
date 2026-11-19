@@ -2,7 +2,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world/world.h>
-#include <danikk_space_engine/component/world_body/planet/planet.h>
+#include <danikk_space_engine/planet_system.h>
 
 #include "internal.h"
 
@@ -29,20 +29,9 @@ namespace danikk_space_engine::unit_system_internal
 		agent.enemy_candidates.clear();
 		agent.candidate_index = 0;
 		const Chunk& owner = world.chunks.getChunk(chunk_id);
-		const WorldBody& body = world.world_body_data.getWorldBody(owner.world_body_id);
 		const glm::ivec3 coordinate = glm::ivec3(glm::floor(
 			(owner.position + glm::dvec3(world.point_data.getPoint(point_id).position)) / planet_chunk_width));
-		const PlanetComponent* planet = nullptr;
-		for(WorldBodyComponentSlotId id : body.component_slot_ids)
-		{
-			if(!world.world_body_data.isWorldBodyComponentSlotActive(id)) continue;
-			const WorldBodyComponentSlot& slot = world.world_body_data.getWorldBodyComponentSlot(id);
-			if(slot.type_id == WorldBodyComponentTypeId::planet)
-			{
-				planet = static_cast<const PlanetComponent*>(slot.getData());
-				break;
-			}
-		}
+		const PlanetData* planet = world.planets.findPlanet(owner.world_body_id);
 		auto collect = [&](ChunkId candidate_chunk)
 		{
 			if(!world.chunks.isChunkActive(candidate_chunk)) return;

@@ -17,7 +17,6 @@ namespace danikk_space_engine
 	enum class WorldBodyComponentTypeId : uint32
 	{
 		none = 0, ///< Empty type with no payload callbacks.
-		planet, ///< Procedural terrain parameters, chunk streaming, edits, and gravity source data.
 		count ///< Number of entries in the world-body component type table.
 	};
 
