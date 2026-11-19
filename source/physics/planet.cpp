@@ -3,8 +3,6 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/physics.h>
 #include "internal.h"
-#include <danikk_space_engine/planet_system/planet.h>
-#include <danikk_space_engine/planet_system/terrain.h>
 #include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>

@@ -120,6 +120,18 @@ namespace danikk_space_engine
 		static MaterialId getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
 	};
 
+	/** @brief Applies a terrain edit to a planet registered in `world.planets`. */
+	bool editPlanetGround(World& world, WorldBodyId world_body_id, const glm::dvec3& position,
+		double radius, bool adds_solid_terrain);
+
+	/** @brief Loads saved terrain stamps for a planet body and procedural seed. */
+	bool loadPlanetTerrainEdits(WorldBodyId world_body_id, double planet_radius,
+		uint64 noise_seed, DynamicArray<PlanetTerrainEdit>& edits, uint64& terrain_revision);
+
+	/** @brief Persists the ordered terrain stamps for a planet body. */
+	void savePlanetTerrainEdits(WorldBodyId world_body_id, double planet_radius,
+		uint64 noise_seed, const DynamicArray<PlanetTerrainEdit>& edits, uint64 terrain_revision);
+
 	const PlanetSettings& getPlanetSettings(PlanetSettingsId id);
 	bool raycastPlanetScalarField(const World& world, WorldBodyId planet_body_id,
 		const glm::dvec3& origin, const glm::dvec3& direction, double max_distance,

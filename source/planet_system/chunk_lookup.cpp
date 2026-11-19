@@ -1,4 +1,4 @@
-#include <danikk_space_engine/planet_system/planet.h>
+#include <danikk_space_engine/planet_system.h>
 
 namespace danikk_space_engine
 {

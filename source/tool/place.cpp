@@ -5,7 +5,7 @@
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/point/damageable.h>
-#include <danikk_space_engine/planet_system/planet.h>
+#include <danikk_space_engine/planet_system.h>
 
 #include <cmath>
 

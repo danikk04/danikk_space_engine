@@ -8,7 +8,6 @@
 #include <danikk_space_engine/math/noise.h>
 #include <danikk_space_engine/planet_system.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/planet_system/terrain_edit_save.h>
 
 namespace danikk_space_engine
 {
