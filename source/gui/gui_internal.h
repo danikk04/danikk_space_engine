@@ -5,5 +5,6 @@
 namespace danikk_space_engine
 {
 	/** @brief Draws the miniature associated with one tool-catalog entry. */
-	void drawToolCatalogPreview(ToolCatalogEntryId entry_id, const vec2& cell_position, const vec2& cell_size);
+	void drawToolCatalogPreview(const GUIFrameData& frame_data, ToolCatalogEntryId entry_id,
+		const vec2& cell_position, const vec2& cell_size);
 }

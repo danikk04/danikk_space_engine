@@ -7,6 +7,8 @@
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/world/world.h>
+#include <danikk_space_engine/component/point/damageable.h>
+#include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/localization.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/scenario/npc_diagnostics.h>
@@ -17,6 +19,89 @@
 namespace danikk_engine_game
 {
 	using namespace danikk_space_engine;
+
+	/** @brief Collects the World values required to render the GUI without exposing World to GUI. */
+	GUIFrameData collectGUIFrameData(const World& world)
+	{
+		GUIFrameData data;
+		data.camera_position = world.getCameraWorldPosition();
+		const CameraComponent& camera = world.getCameraComponent();
+		data.preview_camera_front = camera.getFront();
+		data.preview_camera_up = camera.getUp();
+		data.preview_vertical_fov_degrees = camera.vertical_fov_degrees;
+		const ControllerSystem& controller = world.controller;
+		data.camera_speed = controller.camera_movement_speed;
+		data.commander_mode = controller.mode == PlayerMode::commander;
+		data.tool_catalog_open = controller.tool_catalog_open;
+		data.active_tool = controller.active_tool;
+		data.selected_tool_action = controller.selected_tool_action;
+		data.build_part_size = controller.build_part_size;
+		data.build_part_size_axis = controller.build_part_size_axis;
+		data.build_part_rotation_step = controller.build_part_rotation_step;
+		data.selected_hotbar_slot = controller.selected_hotbar_slot;
+		for(uint32 index = 0; index < 36; ++index)
+			data.hotbar_entry_ids[index] = controller.hotbar_entry_ids[index];
+
+		double total_health_percent = 0.0;
+		uint32 health_sample_count = 0;
+		for(const SelectedUnitRef& reference : controller.selected_unit_refs)
+		{
+			if(!world.point_data.isPointComponentSlotActive(reference.slot_id)) continue;
+			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(reference.slot_id);
+			if(slot.generation_id != reference.generation_id
+				|| slot.type_id != PointComponentTypeId::human
+				|| !world.point_data.isPointActive(slot.point_id)
+				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
+			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
+			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
+			++data.selected_unit_count;
+			const DamageableComponent* damageable = nullptr;
+			for(PointComponentSlotId candidate_id : world.chunks.getChunk(slot.chunk_id).point_component_slot_ids)
+			{
+				if(!world.point_data.isPointComponentSlotActive(candidate_id)) continue;
+				const PointComponentSlot& candidate = world.point_data.getPointComponentSlot(candidate_id);
+				if(candidate.point_id != slot.point_id || candidate.type_id != PointComponentTypeId::damageable) continue;
+				damageable = static_cast<const DamageableComponent*>(candidate.getData());
+				break;
+			}
+			if(damageable == nullptr) continue;
+			const float maximum_health = getDamageableDefinition(damageable->definition_id).max_health;
+			if(maximum_health <= 0.0f) continue;
+			total_health_percent += glm::clamp(damageable->getHealth() / maximum_health, 0.0f, 1.0f) * 100.0;
+			++health_sample_count;
+		}
+		if(health_sample_count > 0)
+		{
+			data.selected_unit_health_available = true;
+			data.selected_unit_average_health_percent = static_cast<float>(total_health_percent / health_sample_count);
+		}
+		return data;
+	}
+
+	/** @brief Applies actions emitted by GUI widgets to the owning World's controller. */
+	void applyGUIActions(World& world, GUI& gui)
+	{
+		for(const GUIAction& action : gui.getPendingActions())
+		{
+			switch(action.type)
+			{
+				case GUIActionType::toggle_tool_catalog:
+					world.controller.tool_catalog_open = !world.controller.tool_catalog_open;
+					break;
+				case GUIActionType::close_tool_catalog:
+					world.controller.tool_catalog_open = false;
+					break;
+				case GUIActionType::select_tool_catalog_entry:
+					world.controller.selectToolCatalogEntry(action.catalog_entry_id);
+					world.controller.tool_catalog_open = false;
+					break;
+				case GUIActionType::select_hotbar_slot:
+					world.controller.selectHotbarSlot(action.hotbar_slot);
+					break;
+			}
+		}
+		gui.clearPendingActions();
+	}
 
     /**
      * @brief Runs the opt-in NPC measurements before graphics and asset initialization.
@@ -79,7 +164,8 @@ namespace danikk_engine_game
 			 * @brief Measures the duration of the enclosing profiler scope.
 			 */
 			DSE_WATCH();
-			gui.frame();
+			gui.frame(collectGUIFrameData(world));
+			applyGUIActions(world, gui);
 			if(getKeyboardState(keyboard_buttons::escape) == button_states::press)
 			{
 				exit();

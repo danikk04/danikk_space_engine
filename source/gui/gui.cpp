@@ -1,8 +1,7 @@
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/asset.h>
-#include <danikk_space_engine/world/world.h>
-#include <danikk_space_engine/controller_system.h>
 #include <danikk_framework/glm.h>
+#include <danikk_engine/input.h>
 
 #include "gui_internal.h"
 
@@ -139,7 +138,9 @@ namespace danikk_space_engine
 		catalog_close_label.text_style = &catalog_text_style;
 		catalog_close_button.on_click = [this]()
 		{
-			world.controller.tool_catalog_open = false;
+			queueAction(GUIActionType::close_tool_catalog);
+			catalog_panel.flags.set(GUIElementFlags::visible, false);
+			setCursorCaptured(true);
 		};
 
 		for(uint32 index = 0; index < getToolCategoryCount(); ++index)
@@ -187,16 +188,17 @@ namespace danikk_space_engine
 			button.on_click = [this, index]()
 			{
 				if(index >= getToolCatalogEntryCount(selected_tool_category)) return;
-				ControllerSystem& controller = world.controller;
-				controller.selectToolCatalogEntry(getToolCatalogEntryId(selected_tool_category, index));
-				controller.tool_catalog_open = false;
+				queueAction(GUIActionType::select_tool_catalog_entry,
+					getToolCatalogEntryId(selected_tool_category, index));
+				catalog_panel.flags.set(GUIElementFlags::visible, false);
+				setCursorCaptured(true);
 				refreshToolCatalog();
 			};
 			button.draw_callback = [this, index](vec2 position, vec2 size)
 			{
 				if(index >= getToolCatalogEntryCount(selected_tool_category)) return;
 				drawToolCatalogPreview(
-					getToolCatalogEntryId(selected_tool_category, index), position, size);
+					frame_data, getToolCatalogEntryId(selected_tool_category, index), position, size);
 			};
 		}
 
@@ -238,10 +240,9 @@ namespace danikk_space_engine
 
 				slot.on_click = [this, index]()
 				{
-					ControllerSystem& controller = world.controller;
-					if(controller.tool_catalog_open)
+					if(frame_data.tool_catalog_open)
 					{
-						controller.selectHotbarSlot(index);
+						queueAction(GUIActionType::select_hotbar_slot, no_tool_catalog_entry, index);
 						refreshToolCatalog();
 					}
 				};
@@ -251,6 +252,12 @@ namespace danikk_space_engine
 		{
 			slot.border_draw_style = &hotbar_slot_border_style;
 		}
+	}
+
+	/** @copydoc GUI::queueAction */
+	void GUI::queueAction(GUIActionType type, ToolCatalogEntryId entry_id, uint32 hotbar_slot)
+	{
+		pending_actions.push(GUIAction{type, entry_id, hotbar_slot});
 	}
 
 	/** @copydoc GUI::compose */

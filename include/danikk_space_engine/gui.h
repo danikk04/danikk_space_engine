@@ -8,6 +8,61 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Values needed to display one frame of the game interface. */
+	struct GUIFrameData
+	{
+		/** @brief Camera position in world coordinates. */
+		glm::dvec3 camera_position = glm::dvec3(0.0);
+		/** @brief Camera speed in metres per second. */
+		float camera_speed = 0.0f;
+		/** @brief Camera forward axis used to orient catalog previews. */
+		vec3 preview_camera_front = vec3(0.0f, 0.0f, -1.0f);
+		/** @brief Camera up axis used to orient catalog previews. */
+		vec3 preview_camera_up = vec3(0.0f, 1.0f, 0.0f);
+		/** @brief Vertical field of view used to scale catalog previews. */
+		float preview_vertical_fov_degrees = 90.0f;
+		/** @brief True when the player is in Commander mode. */
+		bool commander_mode = false;
+		/** @brief Whether the tool catalog is open. */
+		bool tool_catalog_open = false;
+		/** @brief Tool assigned to the selected hotbar slot. */
+		ToolId active_tool = ToolId::none;
+		/** @brief Action assigned to the selected hotbar slot. */
+		ToolActionId selected_tool_action = ToolActionId::none;
+		/** @brief BuildPart dimensions shown while placing a body. */
+		vec3 build_part_size = vec3(1.0f);
+		/** @brief BuildPart dimension axis currently adjusted. */
+		uint8 build_part_size_axis = 2;
+		/** @brief Quarter-turn count used for BuildPart placement. */
+		uint8 build_part_rotation_step = 0;
+		/** @brief Selected hotbar index, in row-major order. */
+		uint32 selected_hotbar_slot = 0;
+		/** @brief Catalog entries assigned to the 36 hotbar slots. */
+		ToolCatalogEntryId hotbar_entry_ids[36]{};
+		/** @brief Number of currently selected living allied units. */
+		uint32 selected_unit_count = 0;
+		/** @brief Average health of selected units, as a percentage. */
+		float selected_unit_average_health_percent = 0.0f;
+		/** @brief True when at least one selected unit contributed a health value. */
+		bool selected_unit_health_available = false;
+	};
+
+	/** @brief An input requested by the GUI for the application/controller to apply. */
+	enum class GUIActionType : uint8
+	{
+		toggle_tool_catalog,
+		close_tool_catalog,
+		select_tool_catalog_entry,
+		select_hotbar_slot
+	};
+
+	/** @brief A GUI action and its optional catalog-entry or hotbar-slot value. */
+	struct GUIAction
+	{
+		GUIActionType type = GUIActionType::toggle_tool_catalog;
+		ToolCatalogEntryId catalog_entry_id = no_tool_catalog_entry;
+		uint32 hotbar_slot = 0;
+	};
 
 	/**
 	 * @brief Owns the debug overlay, selected-unit summary, message list, hotbar, and tool catalog.
@@ -90,9 +145,16 @@ namespace danikk_space_engine
 		size_t memory_sample_bytes = 0;
 		/** @brief Elapsed frame time since the previous process-memory sample. */
 		float memory_sample_timer = 1.0f;
+		/** @brief Latest app-provided values used to draw the GUI and catalog previews. */
+		GUIFrameData frame_data;
+		/** @brief GUI input requests waiting for the app/controller to process. */
+		DynamicArray<GUIAction> pending_actions;
 
 		/** @brief Refreshes visible commands and category highlighting in the tool menu. */
 		void refreshToolCatalog();
+		/** @brief Adds an application-facing action to the pending queue. */
+		void queueAction(GUIActionType type, ToolCatalogEntryId entry_id = no_tool_catalog_entry,
+			uint32 hotbar_slot = 0);
 		/** @brief Ages messages, removes expired entries, and refreshes the visible list. */
 		void updateMessages(float dt);
 	public:
@@ -119,11 +181,17 @@ namespace danikk_space_engine
 		 * Samples process memory when the accumulated target-frame delay reaches one second, then
 		 * builds one multiline string containing FPS, RAM in MiB, relevant BuildPart controls,
 		 * camera speed in m/s, and camera position truncated to hundredths. A zero memory sample is
-		 * shown as unavailable. Pressing G toggles the modal tool catalog; selected slot borders are
-		 * updated from controller state. The selected-unit panel shows the living selected-unit count
-		 * and mean health percentage. Rendering is driven by the surrounding engine frame loop.
+		 * shown as unavailable. The supplied frame snapshot controls the hotbar, catalog visibility,
+		 * player mode, placement readout, and selected-unit summary. GUI input is queued as actions for
+		 * the application to apply to the controller.
+		 * @param data Values collected by the application for this GUI frame.
 		 */
-		void frame();
+		void frame(const GUIFrameData& data);
+
+		/** @brief Returns queued actions for the app/controller to process. */
+		const DynamicArray<GUIAction>& getPendingActions() const { return pending_actions; }
+		/** @brief Removes all actions already processed by the app/controller. */
+		void clearPendingActions() { pending_actions.clear(); }
 
 		/**
 		 * @brief Adds a player-facing message at the top of the on-screen list.

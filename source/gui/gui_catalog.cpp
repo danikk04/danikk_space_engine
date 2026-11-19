@@ -1,9 +1,6 @@
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/asset.h>
 #include <danikk_space_engine/item/item.h>
-#include <danikk_space_engine/component/point/camera.h>
-#include <danikk_space_engine/world/world.h>
-#include <danikk_space_engine/controller_system.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
 #include <danikk_framework/glm.h>
@@ -62,18 +59,18 @@ namespace danikk_space_engine
 	 * the projection or view uniforms used for the next world frame. BuildPart meshes
 	 * use shared primitive geometry; the weapon thumbnail draws the catalogued MG-42 mesh.
 	 */
-	void drawToolCatalogPreview(ToolCatalogEntryId entry_id, const vec2& cell_position, const vec2& cell_size)
+	void drawToolCatalogPreview(const GUIFrameData& frame_data, ToolCatalogEntryId entry_id,
+		const vec2& cell_position, const vec2& cell_size)
 	{
 		const ToolCatalogEntry& entry = getToolCatalogEntry(entry_id);
-		const CameraComponent& camera = world.getCameraComponent();
 		const float depth = 1.0f;
-		const float half_height = tan(glm::radians(camera.vertical_fov_degrees) * 0.5f) * depth;
+		const float half_height = tan(glm::radians(frame_data.preview_vertical_fov_degrees) * 0.5f) * depth;
 		const float half_width = half_height * screen_ratio_gz;
 		const vec3 view_center(
 			(2.0f * (cell_position.x + cell_size.x * 0.5f) - 1.0f) * half_width,
 			(2.0f * (cell_position.y + cell_size.y * 0.5f) - 1.0f) * half_height,
 			-depth);
-		const mat4 view = glm::lookAt(vec3(0.0f), camera.getFront(), camera.getUp());
+		const mat4 view = glm::lookAt(vec3(0.0f), frame_data.preview_camera_front, frame_data.preview_camera_up);
 		const mat4 camera_world = glm::inverse(view);
 		const mat4 cell_transform = camera_world * glm::translate(mat4(1.0f), view_center);
 		static_asset_collection.base3d_shader.use();
@@ -146,8 +143,8 @@ namespace danikk_space_engine
 					? &catalog_selected_button_style : &catalog_button_style;
 		}
 		const uint32 item_count = getToolCatalogEntryCount(selected_tool_category);
-		const ControllerSystem& controller = world.controller;
-		const ToolCatalogEntryId selected_entry_id = controller.hotbar_entry_ids[controller.selected_hotbar_slot];
+		const ToolCatalogEntryId selected_entry_id =
+			frame_data.hotbar_entry_ids[frame_data.selected_hotbar_slot];
 		for(uint32 index = 0; index < catalog_item_buttons.size(); ++index)
 		{
 			const bool has_item = index < item_count;
