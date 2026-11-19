@@ -9,6 +9,7 @@
 #include <danikk_space_engine/world/chunk.h>
 #include <danikk_space_engine/chunk_mesh_generator.h>
 #include <danikk_space_engine/controller_system.h>
+#include <danikk_space_engine/component_tick_system.h>
 #include <danikk_space_engine/world/data.h>
 #include <danikk_space_engine/chunk_system.h>
 #include <danikk_framework/dynamic_array.h>
@@ -70,6 +71,8 @@ namespace danikk_space_engine
 		WorldPhysics physics;
 		/** @brief Processes local player input and stores its selected point and interaction state. */
 		ControllerSystem controller_system;
+		/** @brief Dispatches tick and frame callbacks for WorldBody and point components. */
+		ComponentSystem component_system;
 		/** @brief Point IDs waiting until component/chunk iteration ends before destruction. */
 		DynamicArray<PointId> pending_point_destruction_ids;
 		/** @brief Slot ID of the active camera point component. */

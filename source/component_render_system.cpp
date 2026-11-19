@@ -4,8 +4,8 @@
 
 namespace danikk_space_engine
 {
-	/** @copydoc renderWorldBodyComponents */
-	void renderWorldBodyComponents(World& world)
+	/** @copydoc ComponentSystem::renderWorldBodyComponents */
+	void ComponentSystem::renderWorldBodyComponents(World& world)
 	{
 		DSE_WATCH();
 		const DynamicArray<WorldBodyId> world_body_ids(world.data.getUsedWorldBodyIds());
@@ -27,8 +27,8 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @copydoc renderChunkComponents */
-	void renderChunkComponents(World& world)
+	/** @copydoc ComponentSystem::renderChunkComponents */
+	void ComponentSystem::renderChunkComponents(World& world)
 	{
 		DSE_WATCH();
 		const DynamicArray<WorldBodyId> world_body_ids(world.data.getUsedWorldBodyIds());

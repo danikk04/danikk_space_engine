@@ -4,8 +4,8 @@
 
 namespace danikk_space_engine
 {
-	/** @copydoc tickChunkComponents */
-	void tickChunkComponents(World& world, ChunkId chunk_id)
+	/** @copydoc ComponentSystem::tickChunkComponents */
+	void ComponentSystem::tickChunkComponents(World& world, ChunkId chunk_id)
 	{
 		DSE_WATCH();
 		if(!world.chunk_system.isChunkActive(chunk_id)) return;
@@ -32,8 +32,8 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @copydoc tickWorldBodyComponents */
-	void tickWorldBodyComponents(World& world)
+	/** @copydoc ComponentSystem::tickWorldBodyComponents */
+	void ComponentSystem::tickWorldBodyComponents(World& world)
 	{
 		DSE_WATCH();
 		const DynamicArray<WorldBodyId> world_body_ids(world.data.getUsedWorldBodyIds());
