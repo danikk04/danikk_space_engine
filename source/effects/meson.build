@@ -3,4 +3,5 @@ sources += files(
 	'world_body_preview.cpp',
 	'chunk_boundaries.cpp',
 	'unit_selection.cpp',
+	'unit_order_indicators.cpp',
 )
