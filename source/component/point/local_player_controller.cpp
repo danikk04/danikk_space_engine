@@ -1,6 +1,9 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
 #include <danikk_space_engine/component/point/machinegun.h>
+#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/factions.h>
+#include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/world/world.h>
 
 #include <cmath>
@@ -59,6 +62,92 @@ namespace danikk_space_engine
 			const PointComponentSlotId slot_id = world.data.createPointComponentSlot(
 				point_id, PointComponentTypeId::machine_gun, &machinegun);
 			world.data.addPointComponentSlotToChunk(chunk_id, slot_id);
+		}
+
+		/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
+		void validateSelectedUnits(LocalPlayerControllerComponent& controller, World& world)
+		{
+			size_t write_index = 0;
+			for(size_t read_index = 0; read_index < controller.selected_unit_refs.size(); ++read_index)
+			{
+				const SelectedUnitRef reference = controller.selected_unit_refs[read_index];
+				if(!world.data.isPointComponentSlotActive(reference.slot_id)) continue;
+				const PointComponentSlot& slot = world.data.getPointComponentSlot(reference.slot_id);
+				if(slot.generation_id != reference.generation_id
+					|| slot.type_id != PointComponentTypeId::human
+					|| !world.data.isPointActive(slot.point_id)
+					|| !world.data.isChunkActive(slot.chunk_id)) continue;
+				const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
+				if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
+				controller.selected_unit_refs[write_index++] = reference;
+			}
+			controller.selected_unit_refs.resize(write_index);
+		}
+
+		/**
+		 * @brief Selects the nearest visible player-faction human intersected by the camera ray.
+		 * @param controller Selection array modified by the click.
+		 * @param world World providing human capsules, factions, and camera transform.
+		 * @param surface_hit Nearest terrain or BuildPart hit used to reject units behind solid geometry.
+		 * @param shift_pressed Keeps the current group and toggles the hit unit; otherwise replaces it.
+		 * Scans active human slots, rejects corpses and non-player factions, and tests each
+		 * capsule against the camera ray. Only the closest capsule before the surface hit
+		 * can be selected. A normal click also clears the group when no unit is hit.
+		 */
+		bool selectOwnHumanUnderCursor(
+			LocalPlayerControllerComponent& controller, World& world,
+			const RaycastHit& surface_hit, bool shift_pressed)
+		{
+			const glm::dvec3 ray_origin = world.getCameraWorldPosition();
+			const glm::dvec3 ray_direction = glm::normalize(
+				glm::dvec3(world.getCameraComponent().getFront()));
+			double closest_distance = surface_hit.hit ? surface_hit.distance : 10000.0;
+			PointComponentSlotId closest_slot_id = static_cast<PointComponentSlotId>(-1);
+
+			for(PointComponentSlotId slot_id : world.data.getUsedPointComponentSlotIds())
+			{
+				if(!world.data.isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = world.data.getPointComponentSlot(slot_id);
+				if(slot.type_id != PointComponentTypeId::human
+					|| !world.data.isPointActive(slot.point_id)
+					|| !world.data.isChunkActive(slot.chunk_id)) continue;
+				const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
+				if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
+
+				const Chunk& chunk = world.data.getChunk(slot.chunk_id);
+				const WorldBody& body = world.data.getWorldBody(chunk.world_body_id);
+				const glm::dvec3 center = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
+				glm::dvec3 up = body.rotation * glm::dvec3(human.up);
+				const double up_length = glm::length(up);
+				if(up_length <= 1e-9) up = glm::dvec3(0.0, 0.0, 1.0);
+				else up /= up_length;
+				double distance = 0.0;
+				const double height = human.getHeight();
+				if(intersectRayCapsule(ray_origin, ray_direction, center, up,
+					height, height * 0.14, distance) && distance < closest_distance)
+				{
+					closest_distance = distance;
+					closest_slot_id = slot_id;
+				}
+			}
+
+			if(!shift_pressed) controller.selected_unit_refs.clear();
+			if(closest_slot_id == static_cast<PointComponentSlotId>(-1)) return false;
+			const PointComponentSlot& slot = world.data.getPointComponentSlot(closest_slot_id);
+			for(size_t index = 0; index < controller.selected_unit_refs.size(); ++index)
+			{
+				if(controller.selected_unit_refs[index].slot_id != closest_slot_id
+					|| controller.selected_unit_refs[index].generation_id != slot.generation_id) continue;
+				if(shift_pressed)
+				{
+					for(size_t move_index = index + 1; move_index < controller.selected_unit_refs.size(); ++move_index)
+						controller.selected_unit_refs[move_index - 1] = controller.selected_unit_refs[move_index];
+					controller.selected_unit_refs.resize(controller.selected_unit_refs.size() - 1);
+				}
+				return true;
+			}
+			controller.selected_unit_refs.pushCtor(SelectedUnitRef{closest_slot_id, slot.generation_id});
+			return true;
 		}
 	}
 
@@ -175,6 +264,7 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		if(tool_catalog_open) return;
+		validateSelectedUnits(*this, world);
 		if(getKeyboardState(keyboard_buttons::slash) == button_states::press)
 		{
 			mode = mode == PlayerMode::god ? PlayerMode::commander : PlayerMode::god;
@@ -276,7 +366,7 @@ namespace danikk_space_engine
 			? 0.0f : mouse_scroll_delta;
 		const bool drag_tool_selected = active_tool == ToolId::drag
 			&& selected_tool_action == ToolActionId::drag;
-		const bool drag_tool_down = drag_tool_selected && left_mouse_down;
+		const bool drag_tool_down = mode == PlayerMode::god && drag_tool_selected && left_mouse_down;
 		if(control_pressed)
 		{
 			if(mouse_scroll_delta != 0.0f)
@@ -293,6 +383,9 @@ namespace danikk_space_engine
 		}
 
 		RaycastHit hit = world.raycastFromCamera();
+		const bool unit_selection_click = left_mouse_state == button_states::press
+			&& !(mode == PlayerMode::god && drag_tool_selected)
+			&& selectOwnHumanUnderCursor(*this, world, hit, shift_pressed);
 		if(drag_tool_down)
 		{
 			tickHumanDragTool(world, *this, hit, true, left_mouse_state,
@@ -307,7 +400,8 @@ namespace danikk_space_engine
 		{
 			tickDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false, vec2(0.0f));
 			tickHumanDragTool(world, *this, hit, false, left_mouse_state, 0.0f, false);
-			if(active_tool != ToolId::none && active_tool != ToolId::drag
+			if(mode == PlayerMode::god && !unit_selection_click
+				&& active_tool != ToolId::none && active_tool != ToolId::drag
 				&& left_mouse_state == button_states::press)
 			{
 				applyTool(

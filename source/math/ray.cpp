@@ -67,4 +67,45 @@ namespace danikk_space_engine
 		result.normal = glm::normalize(glm::cross(edge_a, edge_b));
 		return result;
 	}
+
+	/** @copydoc intersectRayCapsule */
+	bool intersectRayCapsule(
+		const glm::dvec3& origin, const glm::dvec3& input_direction,
+		const glm::dvec3& center, const glm::dvec3& up,
+		double height, double radius, double& ray_distance)
+	{
+		const double direction_length = glm::length(input_direction);
+		if(direction_length <= 1e-12 || height <= 0.0 || radius <= 0.0) return false;
+		const glm::dvec3 direction = input_direction / direction_length;
+		const glm::dvec3 axis_start = center - up * (height * 0.5 - radius);
+		const glm::dvec3 axis = up * (height - radius * 2.0);
+		const glm::dvec3 relative = origin - axis_start;
+		const double axis_length_squared = glm::dot(axis, axis);
+		const double axis_projection = glm::dot(direction, axis);
+		const double ray_offset = glm::dot(direction, relative);
+		double axis_parameter = 0.0;
+		if(axis_length_squared > 1e-12)
+		{
+			const double denominator = axis_length_squared - axis_projection * axis_projection;
+			if(denominator > 1e-12)
+			{
+				axis_parameter = glm::clamp(
+					(glm::dot(axis, relative) - axis_projection * ray_offset) / denominator,
+					0.0, 1.0);
+			}
+		}
+
+		glm::dvec3 closest_axis_point = axis_start + axis * axis_parameter;
+		ray_distance = glm::max(glm::dot(closest_axis_point - origin, direction), 0.0);
+		const glm::dvec3 ray_point = origin + direction * ray_distance;
+		if(axis_length_squared > 1e-12)
+		{
+			axis_parameter = glm::clamp(
+				glm::dot(ray_point - axis_start, axis) / axis_length_squared, 0.0, 1.0);
+			closest_axis_point = axis_start + axis * axis_parameter;
+			ray_distance = glm::max(glm::dot(closest_axis_point - origin, direction), 0.0);
+		}
+		const glm::dvec3 separation = origin + direction * ray_distance - closest_axis_point;
+		return glm::dot(separation, separation) <= radius * radius;
+	}
 }

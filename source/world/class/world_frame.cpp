@@ -4,6 +4,7 @@
 #include <danikk_space_engine/effects/world_body_preview.h>
 #include <danikk_space_engine/effects/event_spawn_preview.h>
 #include <danikk_space_engine/effects/chunk_boundaries.h>
+#include <danikk_space_engine/effects/unit_selection.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/asset.h>
@@ -84,6 +85,7 @@ namespace danikk_space_engine
 			}
 		}
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
+		drawUnitSelectionIndicators(*this);
 		const LocalPlayerControllerComponent& controller = getLocalPlayerControllerComponent();
 		const bool show_build_part_preview = controller.active_tool == ToolId::place
 			&& (controller.selected_tool_action == ToolActionId::create_body

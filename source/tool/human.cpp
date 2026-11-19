@@ -6,6 +6,7 @@
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/human/npc_controller.h>
 #include <danikk_space_engine/component/point/local_player_controller.h>
+#include <danikk_space_engine/math/ray.h>
 
 namespace danikk_space_engine
 {
@@ -14,53 +15,6 @@ namespace danikk_space_engine
 		constexpr PointId no_dragged_human = static_cast<PointId>(-1);
 		constexpr ChunkId no_human_chunk = static_cast<ChunkId>(-1);
 		constexpr PointComponentSlotId no_human_slot = static_cast<PointComponentSlotId>(-1);
-
-		/**
-		 * @brief Finds the closest forward ray point to a finite capsule axis and tests its radius.
-		 * @param origin Ray origin in world coordinates.
-		 * @param direction Normalized ray direction.
-		 * @param center Capsule center.
-		 * @param up Unit capsule axis direction.
-		 * @param height Total capsule height including hemispherical ends.
-		 * @param radius Capsule radius.
-		 * @param ray_distance Receives the non-negative distance to the candidate ray point.
-		 * @return True when the closest ray/axis separation is no greater than radius.
-		 */
-		bool rayIntersectsHumanCapsule(const glm::dvec3& origin, const glm::dvec3& direction,
-			const glm::dvec3& center, const glm::dvec3& up, double height, double radius,
-			double& ray_distance)
-		{
-			const glm::dvec3 axis_start = center - up * (height * 0.5 - radius);
-			const glm::dvec3 axis = up * (height - radius * 2.0);
-			const glm::dvec3 relative = origin - axis_start;
-			const double axis_length_squared = glm::dot(axis, axis);
-			const double axis_projection = glm::dot(direction, axis);
-			const double ray_offset = glm::dot(direction, relative);
-			double axis_parameter = 0.0;
-			if(axis_length_squared > 1e-12)
-			{
-				const double denominator = axis_length_squared - axis_projection * axis_projection;
-				if(denominator > 1e-12)
-				{
-					axis_parameter = glm::clamp(
-						(glm::dot(axis, relative) - axis_projection * ray_offset) / denominator,
-						0.0, 1.0);
-				}
-			}
-
-			glm::dvec3 closest_axis_point = axis_start + axis * axis_parameter;
-			ray_distance = glm::max(glm::dot(closest_axis_point - origin, direction), 0.0);
-			const glm::dvec3 ray_point = origin + direction * ray_distance;
-			if(axis_length_squared > 1e-12)
-			{
-				axis_parameter = glm::clamp(
-					glm::dot(ray_point - axis_start, axis) / axis_length_squared, 0.0, 1.0);
-				closest_axis_point = axis_start + axis * axis_parameter;
-				ray_distance = glm::max(glm::dot(closest_axis_point - origin, direction), 0.0);
-			}
-			const glm::dvec3 separation = origin + direction * ray_distance - closest_axis_point;
-			return glm::dot(separation, separation) <= radius * radius;
-		}
 
 		/**
 		 * @brief Restores the captured human's ground-follow setting and clears drag state.
@@ -180,7 +134,7 @@ namespace danikk_space_engine
 				const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(human.up));
 				double distance = 0.0;
 				const double radius = static_cast<double>(human.getHeight()) * 0.14;
-				if(rayIntersectsHumanCapsule(ray_origin, ray_direction, center, up,
+				if(intersectRayCapsule(ray_origin, ray_direction, center, up,
 					human.getHeight(), radius, distance) && distance < closest_distance)
 				{
 					closest_distance = distance;

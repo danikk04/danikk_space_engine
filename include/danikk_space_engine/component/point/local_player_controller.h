@@ -16,6 +16,13 @@ namespace danikk_space_engine
 		commander ///< Commander mode for directing units.
 	};
 
+	/** @brief Identifies one selected human incarnation, protecting selection from slot reuse. */
+	struct SelectedUnitRef
+	{
+		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1); ///< Human component slot.
+		uint64 generation_id = 0; ///< Slot generation captured when selected.
+	};
+
 	/**
 	 * @brief Processes player input, hotbar selection, face selection, and active tool actions.
 	 */
@@ -44,6 +51,8 @@ namespace danikk_space_engine
 		float build_part_rotation_scroll_accumulator = 0.0f;
 		/** @brief Action dispatched for the command assigned to the selected hotbar slot. */
 		ToolActionId selected_tool_action = ToolActionId::none;
+		/** @brief Player-faction human components selected in Commander mode. */
+		DynamicArray<SelectedUnitRef> selected_unit_refs;
 		/** @brief Camera travel speed in world units per second, adjustable with Ctrl plus wheel. */
 		float camera_movement_speed = 1.0f;
 		/** @brief World body currently held by the body drag action, or invalid ID when idle. */

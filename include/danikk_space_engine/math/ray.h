@@ -49,4 +49,20 @@ namespace danikk_space_engine
 		const vec3& a,
 		const vec3& b,
 		const vec3& c);
+
+	/**
+	 * @brief Tests a forward ray against a capsule and reports the closest-axis ray distance.
+	 * @param origin Ray origin in world coordinates.
+	 * @param direction Ray direction; need not be normalized.
+	 * @param center Capsule center.
+	 * @param up Unit capsule-axis direction.
+	 * @param height Total capsule height including hemispherical ends.
+	 * @param radius Capsule radius.
+	 * @param ray_distance Receives the non-negative distance to the closest point on the capsule axis.
+	 * @return True when the closest ray-to-axis distance is no greater than the capsule radius.
+	 */
+	bool intersectRayCapsule(
+		const glm::dvec3& origin, const glm::dvec3& direction,
+		const glm::dvec3& center, const glm::dvec3& up,
+		double height, double radius, double& ray_distance);
 }
