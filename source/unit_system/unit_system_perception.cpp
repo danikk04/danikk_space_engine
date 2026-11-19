@@ -10,7 +10,7 @@ namespace danikk_space_engine::unit_system_internal
 {
 	namespace
 	{
-		void markVisibilityChecked(UnitSystem& system, const UnitTarget& target)
+		void markVisibilityChecked(UnitGroup& system, const UnitTarget& target)
 		{
 			for(UnitSighting& sighting : system.known_sightings)
 			{
@@ -54,7 +54,7 @@ namespace danikk_space_engine::unit_system_internal
 				}
 	}
 	/** @brief Ages and prunes faction intelligence, then performs the scheduled NPC visibility raycasts. */
-	void updatePerception(World& world, UnitSystem& system)
+	void updatePerception(World& world, UnitGroup& system)
 	{
 		DSE_WATCH();
 		system.enemy_seen_this_tick = false;

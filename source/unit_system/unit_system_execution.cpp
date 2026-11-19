@@ -125,7 +125,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Executes current unit orders and then updates each unit's chunk ownership. */
-	void executeUnitOrders(World& world, UnitSystem& system)
+	void executeUnitOrders(World& world, UnitGroup& system)
 	{
 		DSE_WATCH();
 		for(UnitAgentState& agent : system.agents)

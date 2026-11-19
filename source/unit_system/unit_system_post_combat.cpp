@@ -17,7 +17,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Spreads out the group and scans its surroundings during the reconnaissance phase. */
-	void assignPostCombatOrders(World& world, UnitSystem& system)
+	void assignPostCombatOrders(World& world, UnitGroup& system)
 	{
 		DSE_WATCH();
 		DynamicArray<UnitPostCombatAssignment>& assignments = system.post_combat_assignments;

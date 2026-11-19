@@ -12,7 +12,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		/** @brief Holds one independent tactical state object for each faction index. */
-		DynamicArray<UnitSystem> unit_systems;
+		DynamicArray<UnitGroup> unit_systems;
 
 		/** @brief Makes sure the faction state array contains every configured faction. */
 		void ensureUnitSystemCount(size_t faction_count)
@@ -21,14 +21,14 @@ namespace danikk_space_engine
 				unit_systems.resize(unit_systems.size() - 1);
 			while(unit_systems.size() < faction_count)
 			{
-				UnitSystem system;
+				UnitGroup system;
 				system.faction_id = static_cast<FactionId>(unit_systems.size());
-				unit_systems.push(static_cast<UnitSystem&&>(system));
+				unit_systems.push(static_cast<UnitGroup&&>(system));
 			}
 		}
 
 		/** @brief Removes agent entries whose pooled human slot was destroyed or reused. */
-		void pruneUnitAgents(World& world, UnitSystem& system)
+		void pruneUnitAgents(World& world, UnitGroup& system)
 		{
 			for(size_t i = 0; i < system.agents.size();)
 			{
@@ -81,7 +81,7 @@ namespace danikk_space_engine
 			return;
 
 		ensureUnitSystemCount(world.factions.size());
-		UnitSystem& system = unit_systems[victim.faction_id];
+		UnitGroup& system = unit_systems[victim.faction_id];
 		const uint32 now = danikk_engine::getMsTimestamp();
 		const Chunk& attacker_chunk = world.chunks.getChunk(attacker_slot->chunk_id);
 		const glm::dvec3 attacker_position = world.getPointWorldPosition(attacker_slot->chunk_id, attacker_point_id);
@@ -123,7 +123,7 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		ensureUnitSystemCount(world.factions.size());
-		for(UnitSystem& system : unit_systems)
+		for(UnitGroup& system : unit_systems)
 		{
 			pruneUnitAgents(world, system);
 			unit_system_internal::executeUnitOrders(world, system);
@@ -145,7 +145,7 @@ namespace danikk_space_engine
 		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
 		if(human.faction_id >= world.factions.size()) return;
 		ensureUnitSystemCount(world.factions.size());
-		UnitSystem& system = unit_systems[human.faction_id];
+		UnitGroup& system = unit_systems[human.faction_id];
 		for(UnitAgentState& agent : system.agents)
 			if(agent.human_slot_id == human_slot_id && agent.human_generation_id == slot.generation_id)
 			{
@@ -164,7 +164,7 @@ namespace danikk_space_engine
 		uint64 generation_id, glm::dvec3& target_world)
 	{
 		DSE_WATCH();
-		for(UnitSystem& system : unit_systems)
+		for(UnitGroup& system : unit_systems)
 			for(UnitAgentState& agent : system.agents)
 				if(agent.enabled && agent.human_slot_id == human_slot_id
 					&& agent.human_generation_id == generation_id && agent.order.has_move_target)
@@ -180,7 +180,7 @@ namespace danikk_space_engine
 		UnitGlobalState& global_state, UnitSubstate& substate)
 	{
 		DSE_WATCH();
-		for(const UnitSystem& system : unit_systems)
+		for(const UnitGroup& system : unit_systems)
 			for(const UnitAgentState& agent : system.agents)
 				if(agent.enabled && agent.human_slot_id == human_slot_id
 					&& agent.human_generation_id == generation_id)

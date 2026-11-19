@@ -18,7 +18,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 		/** @brief Checks corpses in one nearby chunk and defers destruction of visible eligible bodies. */
-		void inspectChunkCorpses(World& world, const UnitSystem& system,
+		void inspectChunkCorpses(World& world, const UnitGroup& system,
 			const glm::dvec3& search_position,
 			const glm::dvec3& eye_position, double search_radius_squared, ChunkId chunk_id)
 	{
@@ -54,7 +54,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 		/** @brief Deletes visible allied or hostile corpses close to an inspected search location. */
-		void removeCorpsesAtSearchLocation(World& world, const UnitSystem& system,
+		void removeCorpsesAtSearchLocation(World& world, const UnitGroup& system,
 			const PointComponentSlot& inspector_slot, const HumanComponent& inspector,
 			const UnitSearchLocation& location, const glm::dvec3& search_position)
 		{
@@ -90,7 +90,7 @@ namespace danikk_space_engine::unit_system_internal
 		}
 
 	/** @brief Sends units to investigate lost contacts during war or collect corpses afterward. */
-	void assignSearchOrders(World& world, UnitSystem& system)
+	void assignSearchOrders(World& world, UnitGroup& system)
 	{
 		DSE_WATCH();
 		if(!system.has_had_enemy_contact || (system.war_active && system.enemy_seen_this_tick)) return;

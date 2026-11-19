@@ -171,7 +171,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Fills one unit's attack, movement, look, and equipment commands from faction intel. */
-	void assignOrder(World& world, UnitSystem& system, PointComponentSlot& human_slot,
+	void assignOrder(World& world, UnitGroup& system, PointComponentSlot& human_slot,
 		UnitAgentState& agent, HumanComponent& human,
 		DynamicArray<TargetAllocation>& allocations)
 	{
@@ -280,7 +280,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Assigns commands to every active NPC using the latest faction intelligence. */
-	void assignOrders(World& world, UnitSystem& system)
+	void assignOrders(World& world, UnitGroup& system)
 	{
 		DSE_WATCH();
 		DynamicArray<TargetAllocation> allocations;

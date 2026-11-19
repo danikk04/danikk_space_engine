@@ -97,7 +97,7 @@ namespace danikk_space_engine
 	 * @brief Stores a human character’s state, orientation, pose, and appearance.
 	 *
 	 * The owning Point is at the vertical center of the character. `forward`, `up`, and the
-	 * one-tick `desired_velocity` are in the owning Chunk's local axes. UnitSystem or player control
+	 * one-tick `desired_velocity` are in the owning Chunk's local axes. UnitGroup or player control
 	 * writes the velocity command; this component consumes and clears it during its tick, updates
 	 * gravity/support state, and advances the visual walking pose from actual tangential travel.
 	 */

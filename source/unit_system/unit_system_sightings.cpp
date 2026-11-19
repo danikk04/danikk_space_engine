@@ -10,7 +10,7 @@ namespace danikk_space_engine::unit_system_internal
 	static constexpr uint32 sighting_timeout_ms = 8000;
 
 		/** @brief Adds or refreshes the investigation location associated with a lost target. */
-		void rememberSearchLocation(UnitSystem& system, const UnitSighting& sighting, bool is_corpse = false)
+		void rememberSearchLocation(UnitGroup& system, const UnitSighting& sighting, bool is_corpse = false)
 		{
 			for(UnitSearchLocation& location : system.search_locations)
 			{
@@ -30,7 +30,7 @@ namespace danikk_space_engine::unit_system_internal
 			system.search_locations.push(location);
 		}
 		/** @brief Adds known dead faction members to the same post-combat inspection queue as lost contacts. */
-		void rememberFriendlyCorpseLocations(World& world, UnitSystem& system)
+		void rememberFriendlyCorpseLocations(World& world, UnitGroup& system)
 		{
 			for(PointComponentSlotId id : world.point_data.getUsedPointComponentSlotIds())
 			{
@@ -95,7 +95,7 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Refreshes an existing faction contact or appends a newly observed target. */
-	void rememberSighting(World& world, UnitSystem& system, FactionId faction_id,
+	void rememberSighting(World& world, UnitGroup& system, FactionId faction_id,
 		const UnitTarget& target, const glm::dvec3& position)
 	{
 		if(!world.point_data.isPointComponentSlotActive(target.slot_id)) return;
@@ -141,7 +141,7 @@ namespace danikk_space_engine::unit_system_internal
 		sightings.resize(sightings.size() - 1);
 	}
 	/** @brief Updates the group-wide combat timer and records lost contacts for reconnaissance. */
-	void finishPerception(World& world, UnitSystem& system, float dt)
+	void finishPerception(World& world, UnitGroup& system, float dt)
 	{
 		DSE_WATCH();
 		const bool war_was_active = system.war_active;

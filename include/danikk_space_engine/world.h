@@ -69,10 +69,10 @@ namespace danikk_space_engine
 		World& operator=(const World&) = delete;
 
 		/**
-		 * @brief Executes current unit orders, updates UnitSystem decisions, then runs world physics.
+		 * @brief Executes current unit orders, updates UnitGroup decisions, then runs world physics.
 		 *
 		 * Component and chunk ID lists are snapshotted where callbacks may mutate ownership lists.
-		 * Deferred point deletion runs after traversal. UnitSystem then executes stored agent orders,
+		 * Deferred point deletion runs after traversal. UnitGroup then executes stored agent orders,
 		 * performs vision/raycast work, and assigns the next orders before PhysicsSystem advances.
 		 */
 		void tick();

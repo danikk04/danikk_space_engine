@@ -13,7 +13,7 @@ namespace danikk_space_engine
 		uint64 generation_id = 0;
 	};
 
-	/** @brief Current action values assigned by UnitSystem to one unit. */
+	/** @brief Current action values assigned by UnitGroup to one unit. */
 	struct UnitOrder
 	{
 		bool has_move_target = false;
@@ -111,7 +111,7 @@ namespace danikk_space_engine
 	};
 
 	/** @brief Per-faction tactical memory and processing state. */
-	struct UnitSystem
+	struct UnitGroup
 	{
 		FactionId faction_id = static_cast<FactionId>(-1);
 		DynamicArray<UnitSighting> known_sightings;
@@ -142,21 +142,21 @@ namespace danikk_space_engine
 		/** @brief Reports whether the last observation is no older than the contact timeout. */
 		bool isRecentSighting(const UnitSighting&);
 		/** @brief Refreshes a faction contact or appends a newly observed target. */
-		void rememberSighting(World&, UnitSystem&, FactionId, const UnitTarget&, const glm::dvec3&);
+		void rememberSighting(World&, UnitGroup&, FactionId, const UnitTarget&, const glm::dvec3&);
 		/** @brief Records contacts that transitioned from visible to lost and updates combat inactivity. */
-		void finishPerception(World&, UnitSystem&, float);
+		void finishPerception(World&, UnitGroup&, float);
 		/** @brief Resolves a registered live human and its point slot. */
 		bool getActiveUnit(World&, UnitAgentState&, PointComponentSlot*&, HumanComponent*&);
 		/** @brief Updates faction contacts by scanning candidates and raycasting visible targets. */
-		void updatePerception(World&, UnitSystem&);
+		void updatePerception(World&, UnitGroup&);
 		/** @brief Assigns orders to all active agents in a faction. */
-		void assignOrders(World&, UnitSystem&);
+		void assignOrders(World&, UnitGroup&);
 		/** @brief Assigns idle units to inspect lost-contact locations after combat ends. */
-		void assignSearchOrders(World&, UnitSystem&);
+		void assignSearchOrders(World&, UnitGroup&);
 		/** @brief Disperses idle units and periodically changes their look direction after combat. */
-		void assignPostCombatOrders(World&, UnitSystem&);
+		void assignPostCombatOrders(World&, UnitGroup&);
 		/** @brief Executes stored orders and migrates units after component traversal. */
-		void executeUnitOrders(World&, UnitSystem&);
+		void executeUnitOrders(World&, UnitGroup&);
 		/** @brief Moves a unit point and all attached slots into its newly occupied loaded chunk. */
 		void updateUnitChunk(World&, PointComponentSlot&);
 	}
