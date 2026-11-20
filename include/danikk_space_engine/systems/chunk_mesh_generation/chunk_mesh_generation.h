@@ -1,13 +1,6 @@
 #pragma once
 
-#ifdef swap
-#pragma push_macro("swap")
-#undef swap
 #include <memory>
-#pragma pop_macro("swap")
-#else
-#include <memory>
-#endif
 
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/config.h>

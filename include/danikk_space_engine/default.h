@@ -10,7 +10,4 @@ namespace danikk_space_engine
 {
 	using namespace danikk_engine;
 	using namespace danikk_framework;
-
-#define swap NONE
-//#define new NONE
 }
