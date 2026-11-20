@@ -65,18 +65,7 @@ namespace danikk_space_engine
 			double surface_radius = samplePlanetSurfaceRadius(
 				direction, radius, noise_seed, minimum_wavelength);
 			for(const PlanetTerrainEdit& edit : edits)
-			{
-				const double along_ray = glm::dot(edit.center, direction);
-				const double perpendicular_squared = glm::max(
-					0.0, glm::dot(edit.center, edit.center) - along_ray * along_ray);
-				if(perpendicular_squared >= edit.radius * edit.radius) continue;
-				const double half_chord = std::sqrt(edit.radius * edit.radius - perpendicular_squared);
-				const double outer_radius = along_ray + half_chord;
-				const double inner_radius = glm::max(0.0, along_ray - half_chord);
-				if(edit.adds_solid_terrain) surface_radius = glm::max(surface_radius, outer_radius);
-				else if(surface_radius >= inner_radius && surface_radius <= outer_radius)
-					surface_radius = inner_radius;
-			}
+				surface_radius = edit.applyToSurfaceRadius(direction, surface_radius);
 			return surface_radius;
 		}
 
@@ -135,11 +124,7 @@ namespace danikk_space_engine
 			density = std::min(density, cave_density);
 
 			for(const PlanetTerrainEdit& edit : edits)
-			{
-				const double distance = glm::length(position - edit.center);
-				if(edit.adds_solid_terrain) density = std::max(density, edit.radius - distance);
-				else density = std::min(density, distance - edit.radius);
-			}
+				density = edit.applyToScalarField(position, density);
 			return std::max(density,
 				samplePlanetCoreDensity(position, distance_from_center, noise_seed, core_radius));
 		}

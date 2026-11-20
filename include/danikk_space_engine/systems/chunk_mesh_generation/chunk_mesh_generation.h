@@ -14,24 +14,11 @@
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/geometry/build_part.h>
+#include <danikk_space_engine/systems/planet/edit.h>
 
 namespace danikk_space_engine
 {
 	namespace chunk_mesh_generation_internal { class Worker; }
-
-	/**
-	 * @brief One persistent spherical stamp that adds or removes solid terrain.
-	 * Shared by planet storage and immutable worker snapshots for mesh generation.
-	 */
-	struct PlanetTerrainEdit
-	{
-		/** @brief Stamp center in coordinates relative to the planet center. */
-		glm::dvec3 center = glm::dvec3(0.0);
-		/** @brief Stamp radius in world units. */
-		double radius = 0.0;
-		/** @brief True adds solid terrain; false subtracts a spherical region. */
-		bool adds_solid_terrain = false;
-	};
 
 	/** @brief Selects which world data source is converted into a chunk mesh. */
 	enum class ChunkMeshSource : uint8

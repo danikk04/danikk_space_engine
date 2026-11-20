@@ -76,16 +76,7 @@ namespace danikk_space_engine
 		DynamicArray<PlanetTerrainEdit> loaded_edits;
 		loaded_edits.resize(header.edit_count);
 		for(PlanetTerrainEdit& edit : loaded_edits)
-		{
-			uint8 adds_solid_terrain = 0;
-			input.read(reinterpret_cast<char*>(&edit.center.x), sizeof(double));
-			input.read(reinterpret_cast<char*>(&edit.center.y), sizeof(double));
-			input.read(reinterpret_cast<char*>(&edit.center.z), sizeof(double));
-			input.read(reinterpret_cast<char*>(&edit.radius), sizeof(double));
-			input.read(reinterpret_cast<char*>(&adds_solid_terrain), sizeof(adds_solid_terrain));
-			if(!input || !std::isfinite(edit.radius) || edit.radius <= 0.0 || adds_solid_terrain > 1) return false;
-			edit.adds_solid_terrain = adds_solid_terrain != 0;
-		}
+			if(!edit.read(input)) return false;
 		edits = static_cast<DynamicArray<PlanetTerrainEdit>&&>(loaded_edits);
 		terrain_revision = header.terrain_revision;
 		if(loaded_legacy_file)
@@ -126,14 +117,7 @@ namespace danikk_space_engine
 			terrain_revision, static_cast<uint32>(edits.size())};
 		output.write(reinterpret_cast<const char*>(&header), sizeof(header));
 		for(const PlanetTerrainEdit& edit : edits)
-		{
-			const uint8 adds_solid_terrain = edit.adds_solid_terrain ? 1 : 0;
-			output.write(reinterpret_cast<const char*>(&edit.center.x), sizeof(double));
-			output.write(reinterpret_cast<const char*>(&edit.center.y), sizeof(double));
-			output.write(reinterpret_cast<const char*>(&edit.center.z), sizeof(double));
-			output.write(reinterpret_cast<const char*>(&edit.radius), sizeof(double));
-			output.write(reinterpret_cast<const char*>(&adds_solid_terrain), sizeof(adds_solid_terrain));
-		}
+			edit.write(output);
 		output.close();
 		if(!output) formatLogError("Unable to write terrain edits save: %", file_path.string().c_str());
 	}

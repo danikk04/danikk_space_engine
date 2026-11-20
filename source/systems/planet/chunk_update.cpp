@@ -242,9 +242,7 @@ namespace danikk_space_engine
 			if(!entry.has_record) continue;
 			const glm::dvec3 minimum = glm::dvec3(entry.grid_coordinate) * planet_chunk_width;
 			const glm::dvec3 maximum = minimum + glm::dvec3(planet_chunk_width);
-			const glm::dvec3 closest = glm::clamp(edit.center, minimum, maximum);
-			const double invalidation_radius = edit.radius + planet_voxel_size * 2.0;
-			if(glm::dot(edit.center - closest, edit.center - closest) > invalidation_radius * invalidation_radius)
+			if(!edit.intersectsAabb(minimum, maximum, planet_voxel_size * 2.0))
 			{
 				continue;
 			}
