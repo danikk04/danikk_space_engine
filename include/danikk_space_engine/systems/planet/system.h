@@ -15,7 +15,8 @@ namespace danikk_space_engine
 		void updatePlanet(PlanetData& planet);
 		PlanetChunkRenderData& getOrCreatePlanetChunkRenderData(const PlanetData& planet);
 		void destroyPlanetLodMeshes(PlanetChunkRenderData& planet);
-		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position);
+		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position,
+			const glm::dvec3& chunk_center_position);
 		void queuePlanetRequests(PlanetData& planet);
 		void unloadChunksOutsideDesiredSet(PlanetData& planet);
 		void invalidateChunksAroundEdit(PlanetData& planet, const PlanetTerrainEdit& edit);
@@ -42,8 +43,8 @@ namespace danikk_space_engine
 		void updateLod();
 		/** @brief Accepts a worker-generated LOD tile and uploads a complete level when ready. */
 		void acceptGeneratedLodMesh(const GeneratedChunkMesh& generated_mesh);
-		/** @brief Draws the single selected global surface LOD level per planet. */
-		void drawLodFar() const;
+		/** @brief Draws global LODs and optionally the selected local LOD in the far depth pass. */
+		void drawLodFar(bool include_local_levels = false) const;
 		/** @brief Draws the selected camera-local surface LOD tile per planet. */
 		void drawLodNear() const;
 		/** @brief Returns whether volume terrain chunks are the selected surface representation. */

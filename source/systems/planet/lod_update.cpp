@@ -247,8 +247,12 @@ namespace danikk_space_engine
 						if(level_index == 1)
 						{
 							const double chunk_width = planet_chunk_width * 8.0;
+							glm::dvec3 center_position = local_camera_position;
+							const double camera_distance = glm::length(local_camera_position);
+							if(height >= 0.0 && camera_distance > 1e-9)
+								center_position -= local_camera_position / camera_distance * height;
 							const glm::ivec3 center = glm::ivec3(glm::floor(
-								local_camera_position / chunk_width));
+								center_position / chunk_width));
 							if(!level.grid_center_set || level.grid_center != center)
 							{
 								level.grid_center = center;

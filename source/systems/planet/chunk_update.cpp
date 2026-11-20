@@ -85,7 +85,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Maintains the camera-centered 5x5x5 volume chunk set and queues missing meshes.
+	 * @brief Maintains the 5x5x5 volume chunk set around its selected center and queues missing meshes.
 	 *
 	 * When the camera crosses one chunk boundary, retains the overlapping chunk records and pending
 	 * requests, then generates only the newly entered 5x5 face. Larger jumps or terrain/generator
@@ -93,16 +93,18 @@ namespace danikk_space_engine
 	 * @param planet Mutable lookup and chunk-set state for the planet.
 	 * @param slot Planet component slot used to stamp requests with owner identity.
 	 * @param world World used to unload chunks and clear controller selections.
-	 * @param camera_position Camera position relative to the planet center.
+	 * @param camera_position Camera position relative to the planet center, used to prioritize generation.
+	 * @param chunk_center_position Position relative to the planet center used to center the loaded chunk volume.
 	 */
-	void PlanetSystem::updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position)
+	void PlanetSystem::updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position,
+		const glm::dvec3& chunk_center_position)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
 		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
-		const glm::ivec3 center_key = getPlanetChunkGridCoordinate(camera_position);
+		const glm::ivec3 center_key = getPlanetChunkGridCoordinate(chunk_center_position);
 		const glm::ivec3 previous_center_key = planet.last_chunk_update_grid_coordinate;
 		const glm::ivec3 center_delta = center_key - previous_center_key;
 		const int32 moved_axis_count = static_cast<int32>(center_delta.x != 0)

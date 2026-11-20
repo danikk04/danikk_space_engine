@@ -353,9 +353,15 @@ namespace danikk_space_engine
 			planet.processed_edit_count = planet.terrain_edits.size();
 		}
 		const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
-		const glm::dvec3 camera_position = world.camera.getWorldPosition() - body.position;
+		const glm::dvec3 camera_position = glm::conjugate(body.rotation)
+			* (world.camera.getWorldPosition() - body.position);
 		const double distance_from_center = glm::length(camera_position);
 		const double surface_height = getPlanetHeightAboveSurface(planet.world_body_id, camera_position);
+		glm::dvec3 chunk_center_position = camera_position;
+		uint8 lod_level = 0;
+		getCurrentLodLevel(planet.world_body_id, lod_level);
+		if(surface_height >= 0.0 && lod_level == 0 && distance_from_center > 1e-9)
+			chunk_center_position -= camera_position / distance_from_center * surface_height;
 		const double chunk_streaming_limit = planet_chunk_width
 			* (planet_volume_chunk_half_width + 2.0);
 		const bool in_chunk_range = surface_height <= chunk_streaming_limit;
@@ -381,17 +387,17 @@ namespace danikk_space_engine
 				planet.world_body_id, surface_height, distance_from_center);
 		while(planet.processed_edit_count < planet.terrain_edits.size())
 			invalidateChunksAroundEdit(planet, planet.terrain_edits[planet.processed_edit_count++]);
-		const glm::ivec3 camera_grid_coordinate(
-			static_cast<int>(std::floor(camera_position.x / planet_chunk_width)),
-			static_cast<int>(std::floor(camera_position.y / planet_chunk_width)),
-			static_cast<int>(std::floor(camera_position.z / planet_chunk_width)));
+		const glm::ivec3 chunk_center_grid_coordinate(
+			static_cast<int>(std::floor(chunk_center_position.x / planet_chunk_width)),
+			static_cast<int>(std::floor(chunk_center_position.y / planet_chunk_width)),
+			static_cast<int>(std::floor(chunk_center_position.z / planet_chunk_width)));
 		const bool update_chunks = !planet.chunk_set_initialized
-			|| !glm::all(glm::equal(camera_grid_coordinate, planet.last_chunk_update_grid_coordinate))
+			|| !glm::all(glm::equal(chunk_center_grid_coordinate, planet.last_chunk_update_grid_coordinate))
 			|| planet.last_chunk_update_revision != planet.terrain_revision
 			|| planet.last_chunk_update_mesh_generator != settings.planet_mesh_generator;
 		if(update_chunks)
 		{
-			updatePlanetChunks(planet, camera_position);
+			updatePlanetChunks(planet, camera_position, chunk_center_position);
 			queuePlanetRequests(planet);
 		}
 	}

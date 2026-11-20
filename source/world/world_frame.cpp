@@ -139,7 +139,7 @@ namespace danikk_space_engine
 			setProjectionMatrix(glm::perspective(glm::radians(camera.vertical_fov_degrees),
 				screen_ratio_gz, far_near_clip, far_clip));
 			setDepthRange(0.5f, 1.0f);
-			planets.drawLodFar();
+			planets.drawLodFar(true);
 			drawChunkMeshes();
 
 			camera.frame();
