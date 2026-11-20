@@ -66,36 +66,6 @@ namespace danikk_space_engine
 		bool getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const;
 	};
 
-	/** @brief All runtime state for one planet, indexed by its owning WorldBodyId. */
-	struct PlanetData
-	{
-		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
-		PlanetSettingsId settings_id = planet_settings_ids::earth;
-		uint64 generation_id = 0;
-		glm::ivec3 last_chunk_update_grid_coordinate = glm::ivec3(0);
-		uint64 terrain_revision = 0;
-		uint64 last_chunk_update_revision = 0;
-		PlanetMeshGenerator last_chunk_update_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
-		size_t processed_edit_count = 0;
-		bool terrain_edits_loaded = false;
-		bool chunk_set_initialized = false;
-		bool chunk_updates_active = false;
-		std::shared_ptr<PlanetTerrainEditPool> terrain_edit_pool =
-			std::make_shared<PlanetTerrainEditPool>("PlanetTerrainEdit");
-		DynamicArray<PlanetTerrainEditId> terrain_edit_ids;
-		PlanetChunkLookup chunk_lookup;
-		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
-
-		/** @brief Adds one edit to this planet's pool and appends its handle in application order. */
-		PlanetTerrainEditId appendTerrainEdit(const PlanetTerrainEdit& edit)
-		{
-			const PlanetTerrainEditId edit_id = terrain_edit_pool->create();
-			(*terrain_edit_pool)[edit_id] = edit;
-			terrain_edit_ids.push(edit_id);
-			return edit_id;
-		}
-	};
-
 	inline constexpr uint8 planet_lod_level_count = 5;
 	inline constexpr uint8 planet_chunk_level_count = planet_lod_level_count + 1;
 	inline constexpr uint8 planet_lod_face_count = 6;
@@ -160,15 +130,38 @@ namespace danikk_space_engine
 		bool initialized = false;
 	};
 
-	/** @brief Unified per-planet render-level selection and storage. */
-	struct PlanetChunkRenderData
+	/** @brief Terrain, streaming, and render state owned by one planet. */
+	struct PlanetData
 	{
 		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
-		uint64 planet_generation_id = 0;
+		PlanetSettingsId settings_id = planet_settings_ids::earth;
+		uint64 generation_id = 0;
+		glm::ivec3 last_chunk_update_grid_coordinate = glm::ivec3(0);
 		uint64 terrain_revision = 0;
+		uint64 lod_terrain_revision = 0;
+		uint64 last_chunk_update_revision = 0;
+		PlanetMeshGenerator last_chunk_update_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
+		size_t processed_edit_count = 0;
+		bool terrain_edits_loaded = false;
+		bool chunk_set_initialized = false;
+		bool chunk_updates_active = false;
+		std::shared_ptr<PlanetTerrainEditPool> terrain_edit_pool =
+			std::make_shared<PlanetTerrainEditPool>("PlanetTerrainEdit");
+		DynamicArray<PlanetTerrainEditId> terrain_edit_ids;
+		PlanetChunkLookup chunk_lookup;
+		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
 		/** @brief Current representation: zero uses ordinary chunks, positive values select one LOD. */
 		uint8 lod_level = 0;
-		bool enabled = false;
+		bool lod_enabled = false;
 		DynamicArray<PlanetChunkLevel> levels;
+
+		/** @brief Adds one edit to this planet's pool and appends its handle in application order. */
+		PlanetTerrainEditId appendTerrainEdit(const PlanetTerrainEdit& edit)
+		{
+			const PlanetTerrainEditId edit_id = terrain_edit_pool->create();
+			(*terrain_edit_pool)[edit_id] = edit;
+			terrain_edit_ids.push(edit_id);
+			return edit_id;
+		}
 	};
 }

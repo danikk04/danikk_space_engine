@@ -4,17 +4,25 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Planet LOD rendering phase selected by World for the current depth pass. */
+	enum class PlanetRenderPass : uint8
+	{
+		all,
+		far_depth,
+		near_depth
+	};
+
 	/** @brief Owns planet state and provides terrain queries, editing, streaming, and result acceptance. */
 	class PlanetSystem
 	{
 		World& world;
 		DynamicArray<PlanetData> planets;
-		DynamicArray<PlanetChunkRenderData> chunk_render_data;
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
-		PlanetChunkRenderData& getOrCreatePlanetChunkRenderData(const PlanetData& planet);
-		void destroyPlanetLodMeshes(PlanetChunkRenderData& planet);
+		void updateLod();
+		void initializePlanetLodLevels(PlanetData& planet);
+		void destroyPlanetLodMeshes(PlanetData& planet);
 		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position,
 			const glm::dvec3& chunk_center_position);
 		void queuePlanetRequests(PlanetData& planet);
@@ -38,15 +46,12 @@ namespace danikk_space_engine
 		const PlanetData& getPlanet(WorldBodyId world_body_id) const;
 		const DynamicArray<PlanetData>& getPlanets() const { return planets; }
 
-		void frame();
-		/** @brief Updates LOD selection and queues missing surface meshes for each planet. */
-		void updateLod();
+		/** @brief Updates planet streaming and LOD selection once for the current world frame. */
+		void update();
+		/** @brief Draws the selected planet LODs for the specified World depth pass. */
+		void frame(PlanetRenderPass pass) const;
 		/** @brief Accepts a worker-generated LOD tile and uploads a complete level when ready. */
 		void acceptGeneratedLodMesh(const GeneratedChunkMesh& generated_mesh);
-		/** @brief Draws global LODs and optionally the selected local LOD in the far depth pass. */
-		void drawLodFar(bool include_local_levels = false) const;
-		/** @brief Draws the selected camera-local surface LOD tile per planet. */
-		void drawLodNear() const;
 		/** @brief Returns whether volume terrain chunks are the selected surface representation. */
 		bool shouldDrawPlanetChunks(WorldBodyId world_body_id) const;
 		/** @brief Gets the selected render level for a planet, returning false if it has no render state yet. */

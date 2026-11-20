@@ -50,21 +50,12 @@ namespace danikk_space_engine
 	void PlanetSystem::destroyPlanet(WorldBodyId world_body_id)
 	{
 		DynamicArray<ChunkMeshGenerationRequest> no_lod_requests;
-		for(size_t index = 0; index < chunk_render_data.size(); ++index)
-		{
-			if(chunk_render_data[index].world_body_id != world_body_id) continue;
-			world.chunk_mesh_generation.replacePlanetLodRequests(
-				world_body_id, chunk_render_data[index].planet_generation_id, no_lod_requests);
-			destroyPlanetLodMeshes(chunk_render_data[index]);
-			for(size_t shift = index + 1; shift < chunk_render_data.size(); shift++)
-				chunk_render_data[shift - 1] = static_cast<PlanetChunkRenderData&&>(chunk_render_data[shift]);
-			chunk_render_data.resize(chunk_render_data.size() - 1);
-			break;
-		}
-
 		for(size_t index = 0; index < planets.size(); ++index)
 		{
 			if(planets[index].world_body_id != world_body_id) continue;
+			world.chunk_mesh_generation.replacePlanetLodRequests(
+				world_body_id, planets[index].generation_id, no_lod_requests);
+			destroyPlanetLodMeshes(planets[index]);
 			removeQueuedRequests(planets[index]);
 			for(size_t shift = index + 1; shift < planets.size(); ++shift)
 				planets[shift - 1] = static_cast<PlanetData&&>(planets[shift]);
@@ -136,10 +127,11 @@ namespace danikk_space_engine
 		return nearest_settings->atmosphere_color * static_cast<float>(atmosphere_factor);
 	}
 
-	void PlanetSystem::frame()
+	void PlanetSystem::update()
 	{
 		DSE_WATCH();
 		for(PlanetData& planet : planets) updatePlanet(planet);
+		updateLod();
 	}
 
 	void PlanetSystem::updatePlanet(PlanetData& planet)

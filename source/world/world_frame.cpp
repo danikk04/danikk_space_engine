@@ -37,8 +37,7 @@ namespace danikk_space_engine
 		setClearColor(camera.isActive()
 			? planets.getAtmosphereBackgroundColor(camera.getWorldPosition()) : glm::vec3(0.0f));
 		components.renderWorldBodyComponents();
-		planets.frame();
-		planets.updateLod();
+		planets.update();
 		chunk_mesh_generation.frame();
 		static_asset_collection.base3d_shader.use();
 		camera.frame();
@@ -139,19 +138,18 @@ namespace danikk_space_engine
 			setProjectionMatrix(glm::perspective(glm::radians(camera.vertical_fov_degrees),
 				screen_ratio_gz, far_near_clip, far_clip));
 			setDepthRange(0.5f, 1.0f);
-			planets.drawLodFar(true);
+			planets.frame(PlanetRenderPass::far_depth);
 			drawChunkMeshes();
 
 			camera.frame();
 			setDepthRange(0.0f, 0.5f);
-			planets.drawLodNear();
+			planets.frame(PlanetRenderPass::near_depth);
 			drawChunkMeshes();
 		}
 		else
 		{
 			setDepthRange(0.0f, 1.0f);
-			planets.drawLodFar();
-			planets.drawLodNear();
+			planets.frame(PlanetRenderPass::all);
 			drawChunkMeshes();
 		}
 		// Draw dynamic chunk components after the world meshes so transparent overlays

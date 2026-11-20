@@ -42,48 +42,22 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 		}
 	}
 
-	/** @copydoc PlanetSystem::drawLodFar */
-	void PlanetSystem::drawLodFar(bool include_local_levels) const
+	/** @copydoc PlanetSystem::frame */
+	void PlanetSystem::frame(PlanetRenderPass pass) const
 	{
 		DSE_WATCH();
 		if(!world.camera.isActive()) return;
-		for(const PlanetChunkRenderData& planet : chunk_render_data)
+		for(const PlanetData& planet : planets)
 		{
 			if(planet.lod_level == 0
-				|| (planet.lod_level < first_global_level && !include_local_levels)) continue;
+				|| (pass == PlanetRenderPass::near_depth && planet.lod_level >= first_global_level)) continue;
 			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			const uint8 level_index = planet.lod_level;
-			if(level_index >= planet_chunk_level_count
+			if(level_index >= planet.levels.size()
 				|| !isLevelReady(planet.levels[level_index])) continue;
 			const PlanetChunkLevel& level = planet.levels[level_index];
 			if(level.mesh == nullptr) continue;
-			setWorldMatrix(createPlanetTransform(world, body,
-				level.camera_local ? level.mesh_origin : glm::dvec3(0.0)));
-			for(const PlanetLodMaterialRange& range : level.material_ranges)
-			{
-				if(range.index_count == 0) continue;
-				MaterialDefinition& material = getMaterial(range.material_id);
-				if(material.texture.isNull()) white_texture.bind();
-				else material.texture.bind();
-				setDrawColor(vec4(material.color, 1.0f));
-				level.mesh->drawRange(range.first_index, range.index_count);
-			}
-		}
-	}
-
-	/** @copydoc PlanetSystem::drawLodNear */
-	void PlanetSystem::drawLodNear() const
-	{
-		DSE_WATCH();
-		if(!world.camera.isActive()) return;
-		for(const PlanetChunkRenderData& planet : chunk_render_data)
-		{
-			if(planet.lod_level == 0 || planet.lod_level >= first_global_level
-				|| !world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
-			const PlanetChunkLevel& level = planet.levels[planet.lod_level];
-			if(!level.initialized || level.mesh == nullptr) continue;
-			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			setWorldMatrix(createPlanetTransform(world, body,
 				level.camera_local ? level.mesh_origin : glm::dvec3(0.0)));
 			for(const PlanetLodMaterialRange& range : level.material_ranges)
@@ -102,7 +76,7 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 	bool PlanetSystem::shouldDrawPlanetChunks(WorldBodyId world_body_id) const
 	{
 		DSE_WATCH();
-		for(const PlanetChunkRenderData& planet : chunk_render_data)
+		for(const PlanetData& planet : planets)
 		{
 			if(planet.world_body_id != world_body_id) continue;
 			return planet.lod_level == 0;
@@ -114,7 +88,7 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 	bool PlanetSystem::getCurrentLodLevel(WorldBodyId world_body_id, uint8& lod_level) const
 	{
 		DSE_WATCH();
-		for(const PlanetChunkRenderData& planet : chunk_render_data)
+		for(const PlanetData& planet : planets)
 		{
 			if(planet.world_body_id != world_body_id) continue;
 			lod_level = planet.lod_level;
@@ -127,7 +101,7 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 	const DynamicArray<ChunkId>* PlanetSystem::getRegularChunkIds(WorldBodyId world_body_id) const
 	{
 		DSE_WATCH();
-		for(const PlanetChunkRenderData& planet : chunk_render_data)
+		for(const PlanetData& planet : planets)
 			if(planet.world_body_id == world_body_id && planet.levels.size() > 0)
 				return &planet.levels[0].chunk_ids;
 		return nullptr;
