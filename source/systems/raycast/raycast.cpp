@@ -39,6 +39,24 @@ namespace danikk_space_engine
 			return projection + half_chord >= 0.0f && projection - half_chord <= max_distance;
 		}
 
+		bool raySphereInterval(const glm::dvec3& center_from_origin, double radius,
+			const glm::dvec3& direction, double max_distance, double& interval_start, double& interval_end)
+		{
+			const double projection = glm::dot(center_from_origin, direction);
+			const double perpendicular_squared = glm::dot(center_from_origin, center_from_origin)
+				- projection * projection;
+			const double radius_squared = radius * radius;
+			if(perpendicular_squared > radius_squared) return false;
+
+			const double half_chord = std::sqrt(glm::max(0.0, radius_squared - perpendicular_squared));
+			const double entry = projection - half_chord;
+			const double exit = projection + half_chord;
+			if(exit < 0.0 || entry > max_distance) return false;
+			interval_start = glm::max(0.0, entry);
+			interval_end = glm::min(max_distance, exit);
+			return interval_start <= interval_end;
+		}
+
 	}
 
 	RaycastHit RaycastSystem::cast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
@@ -71,9 +89,31 @@ namespace danikk_space_engine
 				origin + ray_direction * offset, mode);
 		};
 
+		const auto normalAt = [&](const glm::dvec3& position, glm::dvec3& result_normal)
+		{
+			constexpr double gradient_step = 0.05;
+			glm::dvec3 gradient(0.0);
+			for(uint8 axis = 0; axis < 3; ++axis)
+			{
+				glm::dvec3 offset(0.0);
+				offset[axis] = gradient_step;
+				gradient[axis] = world.planets.getPlanetDensity(planet_body_id,
+					position + offset, mode) - world.planets.getPlanetDensity(
+						planet_body_id, position - offset, mode);
+			}
+			const double gradient_length = glm::length(gradient);
+			if(gradient_length <= 1e-12) return false;
+			result_normal = -gradient / gradient_length;
+			return true;
+		};
 		constexpr double step = 0.5;
 		double previous_distance = 0.0;
 		double previous_density = densityAt(0.0);
+		if(previous_density > 0.0)
+		{
+			distance = 0.0;
+			return normalAt(origin, normal);
+		}
 		while(previous_distance < max_distance)
 		{
 			const double next_distance = std::min(previous_distance + step, max_distance);
@@ -92,20 +132,8 @@ namespace danikk_space_engine
 				}
 				const double hit_distance = (lower + upper) * 0.5;
 				const glm::dvec3 hit_position = origin + ray_direction * hit_distance;
-				constexpr double gradient_step = 0.05;
-				glm::dvec3 gradient(0.0);
-				for(uint8 axis = 0; axis < 3; ++axis)
-				{
-					glm::dvec3 offset(0.0);
-					offset[axis] = gradient_step;
-					gradient[axis] = world.planets.getPlanetDensity(
-						planet_body_id, hit_position + offset, mode)
-						- world.planets.getPlanetDensity(planet_body_id, hit_position - offset, mode);
-				}
-				const double gradient_length = glm::length(gradient);
-				if(gradient_length <= 1e-12) return false;
+				if(!normalAt(hit_position, normal)) return false;
 				distance = hit_distance;
-				normal = -gradient / gradient_length;
 				return true;
 			}
 			previous_distance = next_distance;
@@ -205,13 +233,41 @@ namespace danikk_space_engine
 			if(is_planet)
 			{
 				const PlanetSettings& planet_settings = planets.getPlanetSettings(planet->settings_id);
-				const double broadphase_radius = planet_settings.radius
-					+ planet_settings.chunk_load_radius + planet_chunk_width;
-				if(!rayIntersectsSphere(
-					vec3(body.position - origin),
-					static_cast<float>(broadphase_radius),
-					normalized_direction,
-					nearest_distance)) continue;
+				// Bound the full procedural height range and any additive terrain edits.
+				// Terrain queries must not depend on whether a render chunk is currently loaded.
+				double broadphase_radius = planet_settings.radius + 11000.0;
+				for(PlanetTerrainEditId edit_id : planet->terrain_edit_ids)
+					broadphase_radius = glm::max(broadphase_radius,
+						(*planet->terrain_edit_pool)[edit_id].getMaximumRadiusFromOrigin(1.0));
+				double terrain_interval_start = 0.0;
+				double terrain_interval_end = 0.0;
+				if(raySphereInterval(body.position - origin, broadphase_radius,
+					glm::dvec3(normalized_direction), nearest_distance,
+					terrain_interval_start, terrain_interval_end))
+				{
+					double field_distance = 0.0;
+					glm::dvec3 field_normal;
+					const glm::dvec3 terrain_ray_origin = origin
+						+ glm::dvec3(normalized_direction) * terrain_interval_start;
+					if(raycastPlanetScalarField(body_id,
+						inverse_rotation * (terrain_ray_origin - body.position),
+						glm::dvec3(local_direction), terrain_interval_end - terrain_interval_start,
+						PlanetTerrainMode::cave_field_with_edits, field_distance, field_normal))
+					{
+						const double hit_distance = terrain_interval_start + field_distance;
+						nearest_distance = static_cast<float>(hit_distance);
+						result = RaycastHit{};
+						result.hit = true;
+						result.hit_terrain = true;
+						result.distance = nearest_distance;
+						result.position = origin + glm::dvec3(normalized_direction) * hit_distance;
+						result.normal = vec3(body.rotation * field_normal);
+						result.body_id = body_id;
+						const glm::ivec3 hit_cell = glm::ivec3(glm::floor(
+							(inverse_rotation * (result.position - body.position)) / planet_chunk_width));
+						planet->chunk_lookup.getChunk(hit_cell, result.chunk_id);
+					}
+				}
 
 				const glm::dvec3 grid_origin = local_origin / planet_chunk_width;
 				const glm::dvec3 grid_direction = glm::dvec3(local_direction);
@@ -255,29 +311,8 @@ namespace danikk_space_engine
 					uint8 next_axis = 0;
 					if(next_boundary.y < next_boundary.x) next_axis = 1;
 					if(next_boundary.z < next_boundary[next_axis]) next_axis = 2;
-					const double segment_end = std::min(static_cast<double>(nearest_distance), next_boundary[next_axis]);
 					if(planet->chunk_lookup.getChunk(cell, chunk_id) && chunks.isChunkActive(chunk_id))
 					{
-						double field_distance;
-						glm::dvec3 field_normal;
-						if(segment_end >= distance_along_ray && raycastPlanetScalarField(
-							body_id,
-							local_origin + glm::dvec3(local_direction) * distance_along_ray,
-							glm::dvec3(local_direction), segment_end - distance_along_ray,
-							PlanetTerrainMode::cave_field_with_edits,
-							field_distance, field_normal))
-						{
-							const double hit_distance = distance_along_ray + field_distance;
-							nearest_distance = static_cast<float>(hit_distance);
-							result = RaycastHit{};
-							result.hit = true;
-							result.hit_terrain = true;
-							result.distance = nearest_distance;
-							result.position = origin + glm::dvec3(normalized_direction) * hit_distance;
-							result.normal = vec3(body.rotation * field_normal);
-							result.body_id = body_id;
-							result.chunk_id = chunk_id;
-						}
 						test_chunk(chunk_id);
 					}
 					distance_along_ray = next_boundary[next_axis];
