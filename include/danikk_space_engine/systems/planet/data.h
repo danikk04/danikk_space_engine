@@ -25,7 +25,7 @@ namespace danikk_space_engine
 	inline constexpr double planet_chunk_load_radius = 150.0;
 	inline constexpr double planet_chunk_width = 32.0;
 	inline constexpr double planet_voxel_size = 2.0;
-	inline constexpr int32 planet_volume_chunk_half_width = 2;
+	inline constexpr int32 planet_volume_chunk_half_width = 6;
 
 	/** @brief Immutable settings used when registering a planet for a WorldBody. */
 	struct PlanetSettings
@@ -170,13 +170,13 @@ namespace danikk_space_engine
 	inline constexpr uint8 planet_lod_level_count = 5;
 	inline constexpr uint8 planet_chunk_level_count = planet_lod_level_count + 1;
 	inline constexpr uint8 planet_lod_face_count = 6;
-	inline constexpr uint8 planet_coarse_chunk_half_width = 2;
-	inline constexpr uint8 planet_coarse_chunk_side = planet_coarse_chunk_half_width * 2 + 1;
-	inline constexpr uint8 planet_coarse_chunk_count = planet_coarse_chunk_side
+	inline constexpr uint16 planet_coarse_chunk_half_width = 6;
+	inline constexpr uint16 planet_coarse_chunk_side = planet_coarse_chunk_half_width * 2 + 1;
+	inline constexpr uint16 planet_coarse_chunk_count = planet_coarse_chunk_side
 		* planet_coarse_chunk_side * planet_coarse_chunk_side;
-	inline constexpr uint8 planet_local_heightmap_tile_radius = 2;
-	inline constexpr uint8 planet_local_heightmap_tile_side = planet_local_heightmap_tile_radius * 2 + 1;
-	inline constexpr uint8 planet_local_heightmap_tile_count =
+	inline constexpr uint16 planet_local_heightmap_tile_radius = 6;
+	inline constexpr uint16 planet_local_heightmap_tile_side = planet_local_heightmap_tile_radius * 2 + 1;
+	inline constexpr uint16 planet_local_heightmap_tile_count =
 		planet_local_heightmap_tile_side * planet_local_heightmap_tile_side;
 
 	/** @brief Geometry source represented by a planet render level. */
@@ -228,6 +228,8 @@ namespace danikk_space_engine
 		glm::dvec3 heightmap_forward = glm::dvec3(0.0, 1.0, 0.0);
 		glm::dvec3 heightmap_plane_origin = glm::dvec3(0.0);
 		glm::dvec3 mesh_origin = glm::dvec3(0.0);
+		/** @brief Origin used by the currently uploaded mesh while a replacement is generated. */
+		glm::dvec3 render_mesh_origin = glm::dvec3(0.0);
 		bool initialized = false;
 	};
 

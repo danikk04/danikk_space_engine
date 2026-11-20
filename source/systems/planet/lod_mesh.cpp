@@ -127,6 +127,7 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 				vertices.size() * sizeof(DefaultVertex) / sizeof(float), indices.data(), indices.size());
 			DefaultVertex::setAttributes();
 			if(!level.camera_local) level.mesh_origin = glm::dvec3(0.0);
+			level.render_mesh_origin = level.mesh_origin;
 		}
 	}
 
@@ -140,6 +141,7 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 			level.grid_center_set = false;
 			level.grid_center = glm::ivec3(0);
 			level.mesh_origin = glm::dvec3(0.0);
+			level.render_mesh_origin = glm::dvec3(0.0);
 			for(PlanetLodPatch& patch : level.patches)
 			{
 				patch.positions = DynamicArray<vec3>();
@@ -183,6 +185,7 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 			{
 				uploadLevelMesh(level);
 				level.initialized = true;
+				if(generated_mesh.lod_level != 1)
 				for(PlanetLodPatch& face_patch : level.patches)
 				{
 					face_patch.positions = DynamicArray<vec3>();

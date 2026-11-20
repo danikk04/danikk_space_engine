@@ -39,7 +39,7 @@ namespace danikk_space_engine
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
 		/** @brief Grid resolution along a local tile or cube-sphere face. */
 		uint32 lod_resolution = 0;
-		uint8 lod_face = 0;
+		uint16 lod_face = 0;
 		uint8 lod_level = 0;
 		double chunk_width = 32.0;
 		double voxel_size = 4.0;
@@ -64,7 +64,7 @@ namespace danikk_space_engine
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
 		/** @brief Grid resolution along a local tile or cube-sphere face. */
 		uint32 lod_resolution = 0;
-		uint8 lod_face = 0;
+		uint16 lod_face = 0;
 		uint8 lod_level = 0;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 chunk_position = glm::dvec3(0.0);

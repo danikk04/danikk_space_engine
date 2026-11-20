@@ -19,16 +19,6 @@ namespace danikk_space_engine
 	{
 		constexpr uint8 first_global_level = 4;
 
-bool isLevelReady(const PlanetChunkLevel& level)
-		{
-			if(!level.initialized || level.mesh == nullptr
-				|| level.expected_patch_count == 0
-				|| level.patches.size() != level.expected_patch_count) return false;
-			for(const PlanetLodPatch& patch : level.patches)
-				if(!patch.ready) return false;
-			return true;
-		}
-
 mat4 createPlanetTransform(const World& world, const WorldBody& body,
 			const glm::dvec3& local_origin = glm::dvec3(0.0))
 		{
@@ -54,12 +44,11 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			const uint8 level_index = planet.lod_level;
-			if(level_index >= planet.levels.size()
-				|| !isLevelReady(planet.levels[level_index])) continue;
+			if(level_index >= planet.levels.size()) continue;
 			const PlanetChunkLevel& level = planet.levels[level_index];
 			if(level.mesh == nullptr) continue;
 			setWorldMatrix(createPlanetTransform(world, body,
-				level.camera_local ? level.mesh_origin : glm::dvec3(0.0)));
+				level.camera_local ? level.render_mesh_origin : glm::dvec3(0.0)));
 			for(const PlanetLodMaterialRange& range : level.material_ranges)
 			{
 				if(range.index_count == 0) continue;

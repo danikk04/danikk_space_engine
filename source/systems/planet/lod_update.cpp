@@ -20,12 +20,12 @@ namespace danikk_space_engine
 		constexpr uint32 coarse_chunk_resolution = 16;
 		constexpr uint32 local_heightmap_resolution = 64;
 		constexpr uint32 global_heightmap_resolutions[2] = {29, 9};
-		constexpr uint8 local_tile_radius = planet_local_heightmap_tile_radius;
-		constexpr uint8 local_tile_side = planet_local_heightmap_tile_side;
+		constexpr uint16 local_tile_radius = planet_local_heightmap_tile_radius;
+		constexpr uint16 local_tile_side = planet_local_heightmap_tile_side;
 		constexpr uint32 local_tile_count = planet_local_heightmap_tile_count;
 		constexpr double lod_activation_height = 100.0;
 		constexpr double lod_deactivation_height = 70.0;
-		constexpr uint8 first_local_heightmap_level = 2;
+		constexpr uint8 first_local_heightmap_level = 1;
 		constexpr uint8 last_local_heightmap_level = 3;
 		constexpr uint8 first_global_heightmap_level = 4;
 		constexpr uint8 last_lod_level = planet_chunk_level_count - 1;
@@ -49,7 +49,7 @@ namespace danikk_space_engine
 
 		void setRequestIdentity(ChunkMeshGenerationRequest& request, const PlanetData& planet,
 			const PlanetChunkLevel& level,
-			uint8 level_index, uint8 patch_index)
+			uint8 level_index, uint16 patch_index)
 		{
 			request.source = ChunkMeshSource::planet_surface_lod;
 			request.source_revision = planet.terrain_revision;
@@ -73,11 +73,11 @@ namespace danikk_space_engine
 			PlanetChunkLevel& level = planet.levels[level_index];
 			if(level_index == 1)
 			{
-				level.geometry = PlanetChunkLevelGeometry::coarse_volume_chunks;
+				level.geometry = PlanetChunkLevelGeometry::local_heightmap;
 				level.resolution = coarse_chunk_resolution;
-				level.expected_patch_count = planet_coarse_chunk_count;
+				level.expected_patch_count = local_tile_count;
 				level.camera_local = true;
-				level.patches.resize(planet_coarse_chunk_count);
+				level.patches.resize(local_tile_count);
 			}
 			else if(level_index <= last_local_heightmap_level)
 			{
@@ -193,52 +193,6 @@ namespace danikk_space_engine
 					const auto queue_level_requests = [&](uint8 level_index)
 					{
 						PlanetChunkLevel& level = source.levels[level_index];
-						if(level_index == 1)
-						{
-							const double chunk_width = planet_chunk_width * 8.0;
-							glm::dvec3 center_position = local_camera_position;
-							const double camera_distance = glm::length(local_camera_position);
-							if(height >= 0.0 && camera_distance > 1e-9)
-								center_position -= local_camera_position / camera_distance * height;
-							const glm::ivec3 center = glm::ivec3(glm::floor(
-								center_position / chunk_width));
-							if(!level.grid_center_set || level.grid_center != center)
-							{
-								level.grid_center = center;
-								level.grid_center_set = true;
-								level.mesh_origin = (glm::dvec3(center) + glm::dvec3(0.5)) * chunk_width;
-								level.initialized = false;
-								for(PlanetLodPatch& patch : level.patches) clearPatchGeometry(patch);
-							}
-							for(int32 z = -planet_coarse_chunk_half_width; z <= planet_coarse_chunk_half_width; z++)
-							{
-								for(int32 y = -planet_coarse_chunk_half_width; y <= planet_coarse_chunk_half_width; y++)
-								{
-									for(int32 x = -planet_coarse_chunk_half_width; x <= planet_coarse_chunk_half_width; x++)
-									{
-										const uint8 patch_index = static_cast<uint8>(
-											((z + planet_coarse_chunk_half_width) * planet_coarse_chunk_side
-											+ (y + planet_coarse_chunk_half_width)) * planet_coarse_chunk_side
-											+ x + planet_coarse_chunk_half_width);
-										PlanetLodPatch& patch = level.patches[patch_index];
-										const glm::ivec3 coordinate = center + glm::ivec3(x, y, z);
-										if(patch.grid_coordinate != coordinate) clearPatchGeometry(patch);
-										patch.grid_coordinate = coordinate;
-										if(patch.ready) continue;
-										patch.origin = glm::dvec3(coordinate) * chunk_width;
-										ChunkMeshGenerationRequest request;
-										setRequestIdentity(request, source, level, level_index, patch_index);
-										request.chunk_width = chunk_width;
-										request.voxel_size = planet_voxel_size * 8.0;
-										request.grid_coordinate = coordinate;
-										request.chunk_position = patch.origin;
-										requests.pushMove(request);
-									}
-								}
-							}
-							return;
-						}
-
 						if(level_index >= first_local_heightmap_level
 							&& level_index <= last_local_heightmap_level)
 						{
@@ -308,20 +262,32 @@ namespace danikk_space_engine
 								level.mesh_origin = frame_plane_origin
 									+ frame_right * (static_cast<double>(center_x) * tile_width)
 									+ frame_forward * (static_cast<double>(center_y) * tile_width);
-								level.initialized = false;
-								for(PlanetLodPatch& patch : level.patches) clearPatchGeometry(patch);
+											level.initialized = false;
+											if(level_index != 1)
+												for(PlanetLodPatch& patch : level.patches) clearPatchGeometry(patch);
 							}
 							for(int32 y_offset = -local_tile_radius; y_offset <= local_tile_radius; y_offset++)
 							{
 								for(int32 x_offset = -local_tile_radius; x_offset <= local_tile_radius; x_offset++)
 								{
-									const uint8 patch_index = static_cast<uint8>(
-										(y_offset + local_tile_radius) * local_tile_side
+								const auto wrap_tile_coordinate = [](int32 coordinate)
+								{
+								const int32 wrapped = coordinate % local_tile_side;
+								return wrapped < 0 ? wrapped + local_tile_side : wrapped;
+								};
+								const glm::ivec3 coordinate = center
+									+ glm::ivec3(x_offset, y_offset, 0);
+								const uint16 patch_index = level_index == 1
+									? static_cast<uint16>(wrap_tile_coordinate(coordinate.y) * local_tile_side
+										+ wrap_tile_coordinate(coordinate.x))
+									: static_cast<uint16>((y_offset + local_tile_radius) * local_tile_side
 										+ x_offset + local_tile_radius);
 									PlanetLodPatch& patch = level.patches[patch_index];
-									const glm::ivec3 coordinate = center
-										+ glm::ivec3(x_offset, y_offset, 0);
-									if(patch.grid_coordinate != coordinate) clearPatchGeometry(patch);
+								if(patch.grid_coordinate != coordinate)
+								{
+									clearPatchGeometry(patch);
+									level.initialized = false;
+								}
 									patch.grid_coordinate = coordinate;
 									if(patch.ready) continue;
 									patch.origin = level.heightmap_plane_origin
@@ -363,7 +329,12 @@ namespace danikk_space_engine
 						selected_level = target_level;
 					else
 					{
-						if(target_level != first_global_heightmap_level
+						if(previous_lod_level > 0 && previous_lod_level < source.levels.size()
+							&& source.levels[previous_lod_level].mesh != nullptr)
+							selected_level = previous_lod_level;
+						else if(source.levels[target_level].mesh != nullptr)
+							selected_level = target_level;
+						else if(target_level != first_global_heightmap_level
 							&& isLevelReady(source.levels[first_global_heightmap_level]))
 							selected_level = first_global_heightmap_level;
 					}

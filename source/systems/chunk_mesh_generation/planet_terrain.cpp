@@ -85,34 +85,7 @@ namespace danikk_space_engine
 			|| request.lod_resolution == 0)
 			danikk_engine::formatFatalError("Planet surface LOD request has invalid data");
 
-		if(request.lod_level == 1)
-		{
-			if(request.lod_face >= planet_coarse_chunk_count)
-				danikk_engine::formatFatalError("Coarse planet chunk request has invalid patch index");
-			GeneratedChunkMesh result = generatePlanetChunkGeometry(world, request);
-			result.lod_resolution = request.lod_resolution;
-			result.lod_face = request.lod_face;
-			result.lod_level = request.lod_level;
-			result.chunk_position = request.chunk_position;
-			const size_t triangle_count = result.triangle_point_indices.size() / 3;
-			result.triangle_material_ids.reserve(triangle_count);
-			for(size_t triangle = 0; triangle < triangle_count; triangle++)
-			{
-				const size_t first_index = triangle * 3;
-				const uint32 a = result.triangle_point_indices[first_index];
-				const uint32 b = result.triangle_point_indices[first_index + 1];
-				const uint32 c = result.triangle_point_indices[first_index + 2];
-				const glm::dvec3 center = request.chunk_position
-					+ (glm::dvec3(result.point_positions[a]) + glm::dvec3(result.point_positions[b])
-						+ glm::dvec3(result.point_positions[c])) / 3.0;
-				result.triangle_material_ids.push(
-					world.planets.getPlanetMaterial(request.world_body_id, center,
-						PlanetTerrainMode::cave_field_with_edits));
-			}
-			return result;
-		}
-
-		const bool local_heightmap = request.lod_level == 2 || request.lod_level == 3;
+		const bool local_heightmap = request.lod_level >= 1 && request.lod_level <= 3;
 		if(local_heightmap && (!request.has_heightmap_basis
 			|| request.lod_face >= planet_local_heightmap_tile_count))
 			danikk_engine::formatFatalError("Planet local heightmap request has invalid patch data");
