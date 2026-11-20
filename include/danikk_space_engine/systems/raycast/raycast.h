@@ -5,6 +5,7 @@
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
+#include <danikk_space_engine/systems/planet/data.h>
 
 namespace danikk_space_engine
 {
@@ -45,6 +46,7 @@ namespace danikk_space_engine
 		/** @brief Finds a ray crossing of a planet's scalar-density surface. */
 		bool raycastPlanetScalarField(WorldBodyId planet_body_id,
 			const glm::dvec3& origin, const glm::dvec3& direction, double max_distance,
+			PlanetTerrainMode mode,
 			double& distance, glm::dvec3& normal) const;
 
 	public:

@@ -64,7 +64,8 @@ namespace danikk_space_engine
 			point_contacts.reserve(moving_chunk.point_ids.size() + moving_chunk.point_component_slot_ids.size() * 8);
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
-				return world.planets.getPlanetDensity(target.body_id, position);
+				return world.planets.getPlanetDensity(target.body_id, position,
+					PlanetTerrainMode::cave_field_with_edits);
 			};
 			constexpr double gradient_step = planet_voxel_size * 0.25;
 			DynamicArray<glm::dvec3> local_points;
@@ -195,7 +196,8 @@ namespace danikk_space_engine
 		{
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
-				return world.planets.getPlanetDensity(planet_body_id, position);
+				return world.planets.getPlanetDensity(planet_body_id, position,
+					PlanetTerrainMode::cave_field_with_edits);
 			};
 			penetration = sample_field(field_position) + collider_radius;
 			if(penetration <= 0.0) return false;

@@ -60,7 +60,8 @@ namespace danikk_space_engine
 			const vec3 c = result.point_positions[result.triangle_point_indices[first_index + 2]];
 			const glm::dvec3 center = request.chunk_position
 				+ (glm::dvec3(a) + glm::dvec3(b) + glm::dvec3(c)) / 3.0;
-			result.triangle_material_ids.push(world.planets.getPlanetMaterial(request.world_body_id, center));
+			result.triangle_material_ids.push(world.planets.getPlanetMaterial(request.world_body_id,
+				center, PlanetTerrainMode::cave_field_with_edits));
 		}
 		return result;
 	}
@@ -105,7 +106,8 @@ namespace danikk_space_engine
 					+ (glm::dvec3(result.point_positions[a]) + glm::dvec3(result.point_positions[b])
 						+ glm::dvec3(result.point_positions[c])) / 3.0;
 				result.triangle_material_ids.push(
-					world.planets.getPlanetMaterial(request.world_body_id, center));
+					world.planets.getPlanetMaterial(request.world_body_id, center,
+						PlanetTerrainMode::cave_field_with_edits));
 			}
 			return result;
 		}
@@ -150,7 +152,8 @@ namespace danikk_space_engine
 						+ request.heightmap_right * u + request.heightmap_forward * v;
 					const glm::dvec3 direction = glm::normalize(tangent_position);
 					const double radius = world.planets.getPlanetSurfaceRadius(
-						request.world_body_id, direction, minimum_terrain_wavelength);
+						request.world_body_id, direction, PlanetTerrainMode::heightmap_with_edits,
+						minimum_terrain_wavelength);
 					result.point_positions.push(vec3(direction * radius - request.chunk_position));
 				}
 			}
@@ -175,7 +178,8 @@ namespace danikk_space_engine
 					}
 					const glm::dvec3 direction = glm::normalize(cube_direction);
 					const double radius = world.planets.getPlanetSurfaceRadius(
-						request.world_body_id, direction, minimum_terrain_wavelength);
+						request.world_body_id, direction, PlanetTerrainMode::heightmap_with_edits,
+						minimum_terrain_wavelength);
 					result.point_positions.push(vec3(direction * radius));
 				}
 			}
@@ -203,9 +207,11 @@ namespace danikk_space_engine
 			const glm::dvec3 direction = glm::normalize(center);
 			const glm::dvec3 surface_position = direction
 				* world.planets.getPlanetSurfaceRadius(
-					request.world_body_id, direction, minimum_terrain_wavelength);
+					request.world_body_id, direction, PlanetTerrainMode::heightmap_with_edits,
+					minimum_terrain_wavelength);
 			result.triangle_material_ids.push(
-				world.planets.getPlanetMaterial(request.world_body_id, surface_position));
+				world.planets.getPlanetMaterial(request.world_body_id, surface_position,
+					PlanetTerrainMode::heightmap_with_edits));
 		};
 		result.triangle_point_indices.reserve(resolution * resolution * 6);
 		result.triangle_material_ids.reserve(resolution * resolution * 2);

@@ -74,14 +74,17 @@ namespace danikk_space_engine
 		/** @brief Returns immutable settings from the planet settings catalog. */
 		const PlanetSettings& getPlanetSettings(PlanetSettingsId id) const;
 
-		double getPlanetDensity(WorldBodyId world_body_id, const glm::dvec3& position) const;
-		MaterialId getPlanetMaterial(WorldBodyId world_body_id, const glm::dvec3& position) const;
+		double getPlanetDensity(WorldBodyId world_body_id, const glm::dvec3& position,
+			PlanetTerrainMode mode) const;
+		MaterialId getPlanetMaterial(WorldBodyId world_body_id, const glm::dvec3& position,
+			PlanetTerrainMode mode) const;
 		double getPlanetHeightAboveSurface(WorldBodyId world_body_id, const glm::dvec3& position) const;
 		/** @brief Blends the nearest planet's atmosphere color into black space by altitude. */
 		glm::vec3 getAtmosphereBackgroundColor(const glm::dvec3& world_position) const;
 		/** @brief Samples the cave-free surface from current planet data, optionally omitting fine noise layers. */
 		double getPlanetSurfaceRadius(WorldBodyId world_body_id,
-			const glm::dvec3& direction, double minimum_wavelength = 0.0) const;
+			const glm::dvec3& direction,
+			PlanetTerrainMode mode, double minimum_wavelength = 0.0) const;
 	};
 
 }

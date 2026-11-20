@@ -52,7 +52,8 @@ namespace danikk_space_engine
 				glm::max(step, (planet_settings.radius - core_clearance) * 0.25));
 			const auto density_at = [&](const glm::dvec3& position)
 			{
-				return world.planets.getPlanetDensity(planet_body_id, position);
+				return world.planets.getPlanetDensity(planet_body_id, position,
+					PlanetTerrainMode::cave_field_with_edits);
 			};
 
 			for(const glm::dvec3& direction : directions)
@@ -107,7 +108,8 @@ namespace danikk_space_engine
 		camera_point.position = vec3(0.0f);
 		const glm::dvec3 camera_direction(0.0, 0.0, 1.0);
 		glm::dvec3 camera_chunk_position = camera_direction
-			* (world.planets.getPlanetSurfaceRadius(planet_body_id, camera_direction) + camera_altitude);
+			* (world.planets.getPlanetSurfaceRadius(planet_body_id, camera_direction,
+				PlanetTerrainMode::heightmap_with_edits) + camera_altitude);
 		if(settings.default_camera_position == DefaultCameraPosition::ground
 			&& !findGroundCameraPosition(world, planet_body_id, planet_settings, camera_chunk_position))
 		{

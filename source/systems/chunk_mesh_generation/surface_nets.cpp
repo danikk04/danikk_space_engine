@@ -58,7 +58,8 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			for(int y = -1; y <= static_cast<int>(cells_per_axis) + 1; ++y)
 				for(int x = -1; x <= static_cast<int>(cells_per_axis) + 1; ++x)
 					densities[sampleIndex(x, y, z)] = world.planets.getPlanetDensity(
-						request.world_body_id, samplePosition(x, y, z));
+						request.world_body_id, samplePosition(x, y, z),
+						PlanetTerrainMode::cave_field_with_edits);
 
 		constexpr uint8 corner_offsets[8][3]{
 			{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},

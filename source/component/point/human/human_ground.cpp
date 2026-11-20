@@ -43,7 +43,8 @@ namespace danikk_space_engine::human_internal
 			const auto densityAtOffset = [&](double offset)
 			{
 				return world.planets.getPlanetDensity(planet_body_id,
-					bottom_center + glm::dvec3(up) * offset);
+					bottom_center + glm::dvec3(up) * offset,
+					PlanetTerrainMode::cave_field_with_edits);
 			};
 			double upper = step_height;
 			double lower = -maximum_drop;
@@ -70,8 +71,10 @@ namespace danikk_space_engine::human_internal
 			{
 				glm::dvec3 offset(0.0);
 				offset[axis] = gradient_step;
-				gradient[axis] = (world.planets.getPlanetDensity(planet_body_id, contact_position + offset)
-					- world.planets.getPlanetDensity(planet_body_id, contact_position - offset))
+				gradient[axis] = (world.planets.getPlanetDensity(planet_body_id,
+					contact_position + offset, PlanetTerrainMode::cave_field_with_edits)
+					- world.planets.getPlanetDensity(planet_body_id,
+						contact_position - offset, PlanetTerrainMode::cave_field_with_edits))
 					/ (2.0 * gradient_step);
 			}
 			const double gradient_length = glm::length(gradient);

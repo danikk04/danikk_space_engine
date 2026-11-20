@@ -39,6 +39,15 @@ namespace danikk_space_engine
 		uint64 noise_seed = 0;
 	};
 
+	/** @brief Controls which generated and edited terrain fields a planet query samples. */
+	enum class PlanetTerrainMode : uint8
+	{
+		heightmap, ///< Procedural surface only; excludes caves and terrain edits.
+		heightmap_with_edits, ///< Procedural surface plus terrain edits; excludes caves.
+		cave_field, ///< Procedural terrain with caves; excludes terrain edits.
+		cave_field_with_edits ///< Full volumetric terrain with caves and terrain edits.
+	};
+
 	struct PlanetChunkLookupEntry
 	{
 		glm::ivec3 grid_coordinate = glm::ivec3(0);

@@ -59,7 +59,7 @@ namespace danikk_space_engine
 	/** @brief Finds a sign change in the planet density field and estimates its surface normal. */
 	bool RaycastSystem::raycastPlanetScalarField(WorldBodyId planet_body_id,
 		const glm::dvec3& origin, const glm::dvec3& direction, double max_distance,
-		double& distance, glm::dvec3& normal) const
+		PlanetTerrainMode mode, double& distance, glm::dvec3& normal) const
 	{
 		DSE_WATCH();
 		const double direction_length = glm::length(direction);
@@ -67,7 +67,8 @@ namespace danikk_space_engine
 		const glm::dvec3 ray_direction = direction / direction_length;
 		const auto densityAt = [&](double offset)
 		{
-			return world.planets.getPlanetDensity(planet_body_id, origin + ray_direction * offset);
+			return world.planets.getPlanetDensity(planet_body_id,
+				origin + ray_direction * offset, mode);
 		};
 
 		constexpr double step = 0.5;
@@ -97,8 +98,9 @@ namespace danikk_space_engine
 				{
 					glm::dvec3 offset(0.0);
 					offset[axis] = gradient_step;
-					gradient[axis] = world.planets.getPlanetDensity(planet_body_id, hit_position + offset)
-						- world.planets.getPlanetDensity(planet_body_id, hit_position - offset);
+					gradient[axis] = world.planets.getPlanetDensity(
+						planet_body_id, hit_position + offset, mode)
+						- world.planets.getPlanetDensity(planet_body_id, hit_position - offset, mode);
 				}
 				const double gradient_length = glm::length(gradient);
 				if(gradient_length <= 1e-12) return false;
@@ -262,6 +264,7 @@ namespace danikk_space_engine
 							body_id,
 							local_origin + glm::dvec3(local_direction) * distance_along_ray,
 							glm::dvec3(local_direction), segment_end - distance_along_ray,
+							PlanetTerrainMode::cave_field_with_edits,
 							field_distance, field_normal))
 						{
 							const double hit_distance = distance_along_ray + field_distance;

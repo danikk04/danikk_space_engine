@@ -245,7 +245,8 @@ namespace danikk_space_engine
 							const double tile_width = level_widths[level_index];
 							const glm::dvec3 camera_direction = glm::length(local_camera_position) > 1e-9
 								? glm::normalize(local_camera_position) : glm::dvec3(0.0, 0.0, 1.0);
-							const double surface_radius = getPlanetSurfaceRadius(source.world_body_id, camera_direction);
+							const double surface_radius = getPlanetSurfaceRadius(source.world_body_id,
+								camera_direction, PlanetTerrainMode::heightmap_with_edits);
 							const glm::dvec3 camera_surface_position = camera_direction * surface_radius;
 							const int32 face_axis = glm::abs(camera_direction.x) >= glm::abs(camera_direction.y)
 								&& glm::abs(camera_direction.x) >= glm::abs(camera_direction.z)
@@ -290,7 +291,8 @@ namespace danikk_space_engine
 									break;
 							}
 							const glm::dvec3 frame_plane_origin = frame_up
-								* getPlanetSurfaceRadius(source.world_body_id, frame_up);
+								* getPlanetSurfaceRadius(source.world_body_id, frame_up,
+									PlanetTerrainMode::heightmap_with_edits);
 							const int32 center_x = static_cast<int32>(std::floor(
 								glm::dot(camera_surface_position - frame_plane_origin, frame_right) / tile_width + 0.5));
 							const int32 center_y = static_cast<int32>(std::floor(

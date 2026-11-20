@@ -119,7 +119,8 @@ namespace danikk_space_engine
 					{
 						const size_t point_index = pointId(x, y, z);
 						densities[point_index] = world.planets.getPlanetDensity(
-							request.world_body_id, pointPosition(x, y, z));
+							request.world_body_id, pointPosition(x, y, z),
+							PlanetTerrainMode::cave_field_with_edits);
 					}
 				}
 			}
@@ -155,14 +156,16 @@ namespace danikk_space_engine
 					std::abs(density_delta) > 1e-12 ? first.density / density_delta : 0.5,
 					0.0, 1.0);
 				glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
-				if(world.planets.getPlanetDensity(request.world_body_id, position) < 0.0)
+				if(world.planets.getPlanetDensity(request.world_body_id, position,
+					PlanetTerrainMode::cave_field_with_edits) < 0.0)
 				{
 					glm::dvec3 inside = first.density >= 0.0 ? first.position : second.position;
 					glm::dvec3 outside = position;
 					for(uint8 iteration = 0; iteration < 6; ++iteration)
 					{
 						const glm::dvec3 midpoint = (inside + outside) * 0.5;
-						if(world.planets.getPlanetDensity(request.world_body_id, midpoint) >= 0.0)
+						if(world.planets.getPlanetDensity(request.world_body_id, midpoint,
+							PlanetTerrainMode::cave_field_with_edits) >= 0.0)
 							inside = midpoint;
 						else
 							outside = midpoint;
