@@ -35,10 +35,10 @@ namespace danikk_space_engine
 		switch(action)
 		{
 			case ToolActionId::extrude:
-				world.planets.editGround(hit.body_id, hit.position, 6.0, true);
+				world.planets.editPlanetGround(hit.body_id, hit.position, 6.0, true);
 				break;
 			case ToolActionId::erase:
-				world.planets.editGround(hit.body_id, hit.position, 6.0, false);
+				world.planets.editPlanetGround(hit.body_id, hit.position, 6.0, false);
 				break;
 			default:
 				break;

@@ -99,16 +99,8 @@ namespace danikk_space_engine
 
 		const WorldBodyId planet_body_id = world.world_body_data.createWorldBody();
 		world.world_body_data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
-		const PlanetSettings& planet_settings = getPlanetSettings(planet_settings_ids::earth);
+		const PlanetSettings& planet_settings = world.planets.getPlanetSettings(planet_settings_ids::earth);
 		world.planets.createPlanet(planet_body_id, planet_settings_ids::earth);
-		PlanetData& planet = world.planets.getPlanet(planet_body_id);
-		uint64 terrain_revision = 0;
-		loadPlanetTerrainEdits(planet_body_id, planet_settings.radius,
-			planet_settings.noise_seed, *planet.terrain_edit_pool,
-			planet.terrain_edit_ids, terrain_revision);
-		planet.terrain_revision = terrain_revision;
-		planet.processed_edit_count = planet.terrain_edit_ids.size();
-		planet.terrain_edits_loaded = true;
 		const PointId camera_point_id = world.point_data.createPoint();
 		Point& camera_point = world.point_data.getPoint(camera_point_id);
 		constexpr double camera_altitude = 10.0;

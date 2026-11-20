@@ -20,7 +20,7 @@ namespace danikk_space_engine
 
 	}
 
-	const PlanetSettings& getPlanetSettings(PlanetSettingsId id)
+	const PlanetSettings& PlanetSystem::getPlanetSettings(PlanetSettingsId id) const
 	{
 		if(id >= planet_settings_ids::count)
 			danikk_engine::formatFatalError("Invalid planet settings ID %", id);
@@ -39,6 +39,7 @@ namespace danikk_space_engine
 		planet.generation_id = next_generation_id++;
 		if(next_generation_id == 0) next_generation_id = 1;
 		planets.pushMove(planet);
+		loadPlanetTerrainEdits(planets[planets.size() - 1]);
 		return planets[planets.size() - 1];
 	}
 
@@ -137,16 +138,8 @@ namespace danikk_space_engine
 	void PlanetSystem::updatePlanet(PlanetData& planet)
 	{
 		DSE_WATCH();
-		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
 		if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)
 			|| !world.camera.isActive()) return;
-		if(!planet.terrain_edits_loaded)
-		{
-			loadPlanetTerrainEdits(planet.world_body_id, planet_settings.radius, planet_settings.noise_seed,
-				*planet.terrain_edit_pool, planet.terrain_edit_ids, planet.terrain_revision);
-			planet.terrain_edits_loaded = true;
-			planet.processed_edit_count = planet.terrain_edit_ids.size();
-		}
 		const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 		const glm::dvec3 camera_position = glm::conjugate(body.rotation)
 			* (world.camera.getWorldPosition() - body.position);
@@ -198,20 +191,18 @@ namespace danikk_space_engine
 		}
 	}
 
-	bool PlanetSystem::editGround(WorldBodyId world_body_id, const glm::dvec3& position,
+	bool PlanetSystem::editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,
 		double radius, bool adds_solid_terrain)
 	{
 		if(!world.world_body_data.isWorldBodyActive(world_body_id) || radius <= 0.0) return false;
 		PlanetData* planet = findPlanet(world_body_id);
 		if(planet == nullptr) return false;
-		const PlanetSettings& planet_settings = getPlanetSettings(planet->settings_id);
 		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
 		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
 		planet->appendTerrainEdit(PlanetTerrainEdit{center, radius, adds_solid_terrain});
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
-		savePlanetTerrainEdits(world_body_id, planet_settings.radius, planet_settings.noise_seed,
-			*planet->terrain_edit_pool, planet->terrain_edit_ids, planet->terrain_revision);
+		savePlanetTerrainEdits(*planet);
 		return true;
 	}
 

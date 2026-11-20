@@ -52,7 +52,7 @@ namespace danikk_space_engine
 
 		for(const PlanetData& planet : world.planets.getPlanets())
 		{
-			const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
+			const PlanetSettings& settings = world.planets.getPlanetSettings(planet.settings_id);
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			if(settings.surface_gravity <= 0.0 || settings.radius <= 0.0) continue;
 

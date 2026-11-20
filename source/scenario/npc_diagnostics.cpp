@@ -74,7 +74,7 @@ namespace danikk_space_engine
 		void createNpcFixture(World& world, WorldBodyId body_id, PlanetData& planet,
 			DiagnosticNpc (&npcs)[npc_count])
 		{
-			const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
+			const PlanetSettings& planet_settings = world.planets.getPlanetSettings(planet.settings_id);
 			const glm::dvec3 hill_center(0.0, 0.0, planet_settings.radius + 64.0 - hill_radius);
 			planet.appendTerrainEdit(PlanetTerrainEdit{hill_center, hill_radius, true});
 			++planet.terrain_revision;

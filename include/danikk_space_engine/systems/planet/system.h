@@ -29,6 +29,10 @@ namespace danikk_space_engine
 		void unloadChunksOutsideDesiredSet(PlanetData& planet);
 		void invalidateChunksAroundEdit(PlanetData& planet, const PlanetTerrainEdit& edit);
 		void removeQueuedRequests(const PlanetData& planet);
+		/** @brief Loads saved edit stamps and revision into the planet's owned data. */
+		bool loadPlanetTerrainEdits(PlanetData& planet);
+		/** @brief Persists the ordered edit stamps and revision owned by a planet. */
+		void savePlanetTerrainEdits(const PlanetData& planet);
 
 	public:
 		explicit PlanetSystem(World& world) : world(world) {}
@@ -61,8 +65,11 @@ namespace danikk_space_engine
 		/** @brief Cancels pending LOD work and releases all planet surface meshes. */
 		void clearLod();
 		void acceptGeneratedChunk(const GeneratedChunkMesh& generated_chunk);
-		bool editGround(WorldBodyId world_body_id, const glm::dvec3& position,
+		/** @brief Applies and persists a terrain edit on a registered planet. */
+		bool editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,
 			double radius, bool adds_solid_terrain);
+		/** @brief Returns immutable settings from the planet settings catalog. */
+		const PlanetSettings& getPlanetSettings(PlanetSettingsId id) const;
 
 		double getPlanetDensity(WorldBodyId world_body_id, const glm::dvec3& position) const;
 		MaterialId getPlanetMaterial(WorldBodyId world_body_id, const glm::dvec3& position) const;
@@ -74,22 +81,4 @@ namespace danikk_space_engine
 			const glm::dvec3& direction, double minimum_wavelength = 0.0) const;
 	};
 
-	/** @brief Applies a terrain edit to a planet registered in `world.planets`. */
-	bool editPlanetGround(World& world, WorldBodyId world_body_id, const glm::dvec3& position,
-		double radius, bool adds_solid_terrain);
-
-	/** @brief Loads saved terrain stamps for a planet body and procedural seed. */
-	bool loadPlanetTerrainEdits(WorldBodyId world_body_id, double planet_radius,
-		uint64 noise_seed, PlanetTerrainEditPool& edit_pool,
-		DynamicArray<PlanetTerrainEditId>& edit_ids, uint64& terrain_revision);
-
-	/** @brief Persists the ordered terrain stamps for a planet body. */
-	void savePlanetTerrainEdits(WorldBodyId world_body_id, double planet_radius,
-		uint64 noise_seed, const PlanetTerrainEditPool& edit_pool,
-		const DynamicArray<PlanetTerrainEditId>& edit_ids, uint64 terrain_revision);
-
-	const PlanetSettings& getPlanetSettings(PlanetSettingsId id);
-	bool raycastPlanetScalarField(const World& world, WorldBodyId planet_body_id,
-		const glm::dvec3& origin, const glm::dvec3& direction, double max_distance,
-		double& distance, glm::dvec3& normal);
 }

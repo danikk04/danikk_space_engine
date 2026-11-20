@@ -42,6 +42,10 @@ namespace danikk_space_engine
 		World& world;
 		RaycastHit castBodies(const WorldBodyId* body_ids, size_t body_count,
 			const glm::dvec3& origin, const vec3& direction, float max_distance) const;
+		/** @brief Finds a ray crossing of a planet's scalar-density surface. */
+		bool raycastPlanetScalarField(WorldBodyId planet_body_id,
+			const glm::dvec3& origin, const glm::dvec3& direction, double max_distance,
+			double& distance, glm::dvec3& normal) const;
 
 	public:
 		/** @brief Binds ray queries to the owning World. */

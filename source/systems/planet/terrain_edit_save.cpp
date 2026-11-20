@@ -47,15 +47,13 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @brief Loads and validates the body's ordered terrain stamps and revision counter. */
-	bool loadPlanetTerrainEdits(
-		WorldBodyId world_body_id,
-		double planet_radius,
-		uint64 noise_seed,
-		PlanetTerrainEditPool& edit_pool,
-		DynamicArray<PlanetTerrainEditId>& edit_ids,
-		uint64& terrain_revision)
+	/** @brief Loads and validates a planet's ordered terrain stamps and revision counter. */
+	bool PlanetSystem::loadPlanetTerrainEdits(PlanetData& planet)
 	{
+		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
+		const WorldBodyId world_body_id = planet.world_body_id;
+		const double planet_radius = settings.radius;
+		const uint64 noise_seed = settings.noise_seed;
 		const std::filesystem::path new_file_path = terrainEditsFilePath(world_body_id, noise_seed);
 		const std::filesystem::path legacy_file_path = legacyTerrainEditsFilePath(world_body_id, noise_seed);
 		std::ifstream input(new_file_path, std::ios::binary);
@@ -66,48 +64,62 @@ namespace danikk_space_engine
 			input.open(legacy_file_path, std::ios::binary);
 			loaded_legacy_file = static_cast<bool>(input);
 		}
-		if(!input) return false;
+		if(!input)
+		{
+			planet.terrain_edits_loaded = true;
+			planet.processed_edit_count = planet.terrain_edit_ids.size();
+			return false;
+		}
 
 		TerrainEditsHeader header{};
 		input.read(reinterpret_cast<char*>(&header), sizeof(header));
 		if(!input || header.magic != terrain_edits_magic || header.version != terrain_edits_version
 			|| header.planet_radius != planet_radius || header.noise_seed != noise_seed
-			|| header.edit_count > 1000000) return false;
+			|| header.edit_count > 1000000)
+		{
+			planet.terrain_edits_loaded = true;
+			planet.processed_edit_count = planet.terrain_edit_ids.size();
+			return false;
+		}
 
 		DynamicArray<PlanetTerrainEditId> loaded_edit_ids;
 		loaded_edit_ids.reserve(header.edit_count);
 		for(uint32 index = 0; index < header.edit_count; index++)
 		{
 			PlanetTerrainEdit edit;
-			if(!edit.read(input)) return false;
-			const PlanetTerrainEditId edit_id = edit_pool.create();
-			edit_pool[edit_id] = edit;
+			if(!edit.read(input))
+			{
+				planet.terrain_edits_loaded = true;
+				planet.processed_edit_count = planet.terrain_edit_ids.size();
+				return false;
+			}
+			const PlanetTerrainEditId edit_id = planet.terrain_edit_pool->create();
+			(*planet.terrain_edit_pool)[edit_id] = edit;
 			loaded_edit_ids.push(edit_id);
 		}
-		edit_ids = static_cast<DynamicArray<PlanetTerrainEditId>&&>(loaded_edit_ids);
-		terrain_revision = header.terrain_revision;
+		planet.terrain_edit_ids = static_cast<DynamicArray<PlanetTerrainEditId>&&>(loaded_edit_ids);
+		planet.terrain_revision = header.terrain_revision;
 		if(loaded_legacy_file)
 		{
 			input.close();
-			savePlanetTerrainEdits(world_body_id, planet_radius, noise_seed,
-				edit_pool, edit_ids, terrain_revision);
+			savePlanetTerrainEdits(planet);
 			std::error_code error;
 			if(std::filesystem::exists(new_file_path, error) && !error)
 				std::filesystem::remove(legacy_file_path, error);
 		}
+		planet.terrain_edits_loaded = true;
+		planet.processed_edit_count = planet.terrain_edit_ids.size();
 		return true;
 	}
 
 	/** @brief Writes terrain-edit stamps field by field and logs path or write failures. */
-	void savePlanetTerrainEdits(
-		WorldBodyId world_body_id,
-		double planet_radius,
-		uint64 noise_seed,
-		const PlanetTerrainEditPool& edit_pool,
-		const DynamicArray<PlanetTerrainEditId>& edit_ids,
-		uint64 terrain_revision)
+	void PlanetSystem::savePlanetTerrainEdits(const PlanetData& planet)
 	{
 		std::error_code error;
+		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
+		const WorldBodyId world_body_id = planet.world_body_id;
+		const double planet_radius = settings.radius;
+		const uint64 noise_seed = settings.noise_seed;
 		const std::filesystem::path file_path = terrainEditsFilePath(world_body_id, noise_seed);
 		std::filesystem::create_directories(file_path.parent_path(), error);
 		if(error)
@@ -123,10 +135,10 @@ namespace danikk_space_engine
 		}
 		const TerrainEditsHeader header{
 			terrain_edits_magic, terrain_edits_version, planet_radius, noise_seed,
-			terrain_revision, static_cast<uint32>(edit_ids.size())};
+			planet.terrain_revision, static_cast<uint32>(planet.terrain_edit_ids.size())};
 		output.write(reinterpret_cast<const char*>(&header), sizeof(header));
-		for(PlanetTerrainEditId edit_id : edit_ids)
-			edit_pool[edit_id].write(output);
+		for(PlanetTerrainEditId edit_id : planet.terrain_edit_ids)
+			(*planet.terrain_edit_pool)[edit_id].write(output);
 		output.close();
 		if(!output) formatLogError("Unable to write terrain edits save: %", file_path.string().c_str());
 	}
