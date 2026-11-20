@@ -28,6 +28,15 @@ namespace danikk_space_engine::math
 	double valueNoise3D(const glm::dvec3& position);
 
 	/**
+	 * @brief Samples deterministic 3D simplex gradient noise.
+	 * @param position Position in noise space.
+	 * @return Smooth gradient noise, approximately in [-1, 1].
+	 * The simplex lattice uses skewed tetrahedral cells and a seed-independent
+	 * integer hash to select one of twelve edge gradients at each corner.
+	 */
+	double simplexNoise3D(const glm::dvec3& position);
+
+	/**
 	 * @brief Combines progressively finer value-noise samples and normalizes by total amplitude.
 	 * @param position Base coordinate in noise space.
 	 * @param octave_count Number of samples to accumulate; zero returns 0.
@@ -41,4 +50,18 @@ namespace danikk_space_engine::math
 		const glm::dvec3& position,
 		uint8 octave_count = 3,
 		double persistence = 0.5);
+
+	/**
+	 * @brief Accumulates simplex-noise octaves as normalized fractal Brownian motion.
+	 * @param position Base coordinate in noise space.
+	 * @param octave_count Number of samples to accumulate; zero returns 0.
+	 * @param persistence Amplitude multiplier applied after each octave.
+	 * @param lacunarity Frequency multiplier applied after each octave.
+	 * @return Sum of progressively finer simplex samples divided by total amplitude.
+	 */
+	double fractalSimplexNoise3D(
+		const glm::dvec3& position,
+		uint8 octave_count = 3,
+		double persistence = 0.5,
+		double lacunarity = 2.0);
 }

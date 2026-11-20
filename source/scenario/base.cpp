@@ -24,30 +24,20 @@ namespace danikk_space_engine
 		 * wall. Terrain edit stamps are loaded before evaluating the field.
 		 */
 		bool findGroundCameraPosition(
-			WorldBodyId planet_body_id,
 			const PlanetSettings& planet_settings,
+			const PlanetTerrainSnapshot& terrain_snapshot,
 			glm::dvec3& camera_position)
 		{
 			constexpr double surface_margin = planet_voxel_size * 2.0;
 			const double core_clearance = planet_settings.core_radius + surface_margin;
 			if(planet_settings.radius <= core_clearance + planet_voxel_size) return false;
 
-			DynamicArray<PlanetTerrainEdit> terrain_edits;
-			uint64 terrain_revision = 0;
-			loadPlanetTerrainEdits(planet_body_id, planet_settings.radius,
-				planet_settings.noise_seed, terrain_edits, terrain_revision);
 			double outer_radius = planet_settings.radius + 64.0;
-			for(const PlanetTerrainEdit& edit : terrain_edits)
+			for(const PlanetTerrainEdit& edit : terrain_snapshot.terrain_edits)
 			{
 				if(!edit.adds_solid_terrain) continue;
 				outer_radius = glm::max(outer_radius, glm::length(edit.center) + edit.radius + surface_margin);
 			}
-			PlanetTerrainSnapshot terrain_snapshot;
-			terrain_snapshot.planet_radius = planet_settings.radius;
-			terrain_snapshot.core_radius = planet_settings.core_radius;
-			terrain_snapshot.noise_seed = planet_settings.noise_seed;
-			terrain_snapshot.terrain_edits = static_cast<DynamicArray<PlanetTerrainEdit>&&>(terrain_edits);
-
 			const glm::dvec3 directions[] = {
 				glm::dvec3(0.0, 0.0, 1.0), glm::dvec3(0.0, 0.0, -1.0),
 				glm::dvec3(1.0, 0.0, 0.0), glm::dvec3(-1.0, 0.0, 0.0),
@@ -111,13 +101,22 @@ namespace danikk_space_engine
 		world.world_body_data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
 		const PlanetSettings& planet_settings = getPlanetSettings(planet_settings_ids::earth);
 		world.planets.createPlanet(planet_body_id, planet_settings);
+		PlanetTerrainSnapshot terrain_snapshot;
+		terrain_snapshot.planet_radius = planet_settings.radius;
+		terrain_snapshot.core_radius = planet_settings.core_radius;
+		terrain_snapshot.noise_seed = planet_settings.noise_seed;
+		uint64 terrain_revision = 0;
+		loadPlanetTerrainEdits(planet_body_id, planet_settings.radius,
+			planet_settings.noise_seed, terrain_snapshot.terrain_edits, terrain_revision);
 		const PointId camera_point_id = world.point_data.createPoint();
 		Point& camera_point = world.point_data.getPoint(camera_point_id);
-		constexpr float camera_altitude = 30.0f;
+		constexpr double camera_altitude = 10.0;
 		camera_point.position = vec3(0.0f);
-		glm::dvec3 camera_chunk_position(0.0, 0.0, planet_settings.radius + camera_altitude);
+		const glm::dvec3 camera_direction(0.0, 0.0, 1.0);
+		glm::dvec3 camera_chunk_position = camera_direction
+			* (PlanetSystem::getPlanetSurfaceRadius(terrain_snapshot, camera_direction) + camera_altitude);
 		if(settings.default_camera_position == DefaultCameraPosition::ground
-			&& !findGroundCameraPosition(planet_body_id, planet_settings, camera_chunk_position))
+			&& !findGroundCameraPosition(planet_settings, terrain_snapshot, camera_chunk_position))
 		{
 			danikk_framework::formatLogWarning(
 				"Unable to find solid underground camera position; spawning above the planet");

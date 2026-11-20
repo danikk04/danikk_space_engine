@@ -133,12 +133,14 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Draws each non-empty material range using the owning chunk's transform. */
-	void ChunkSystem::draw(const Chunk& chunk)
+	ChunkDrawResult ChunkSystem::draw(const Chunk& chunk)
 	{
 		DSE_WATCH();
 		const ChunkRenderRecord* record = findRenderRecord(chunk.chunk_id);
-		if(record == nullptr || record->mesh == nullptr || record->material_ranges.size() == 0) return;
+		if(record == nullptr || record->mesh == nullptr) return ChunkDrawResult::missing_mesh;
+		if(record->material_ranges.size() == 0) return ChunkDrawResult::empty_mesh;
 		setWorldMatrix(chunk.createWorldMatrix(world));
+		bool drew_range = false;
 		for(const ChunkMaterialRange& range : record->material_ranges)
 		{
 			if(range.index_count == 0) continue;
@@ -147,7 +149,9 @@ namespace danikk_space_engine
 			else material.texture.bind();
 			setDrawColor(vec4(material.color, 1.0f));
 			record->mesh->drawRange(range.first_index, range.index_count);
+			drew_range = true;
 		}
+		return drew_range ? ChunkDrawResult::drawn : ChunkDrawResult::empty_mesh;
 	}
 
 	/** @copydoc ChunkSystem::destroyRenderData */

@@ -12,6 +12,7 @@
 #include <danikk_space_engine/assets/collection.h>
 
 #include <danikk_engine/texture_methods.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
@@ -242,12 +243,26 @@ namespace danikk_space_engine
 				const double height = world.planets.getPlanetHeightAboveSurface(
 					source.world_body_id, local_camera_position);
 				const double lod_activation_height = source.chunk_load_radius * 2.0;
-				const double lod_deactivation_height = source.chunk_load_radius;
+				const double lod_deactivation_height = -source.chunk_load_radius;
+				const bool was_enabled = planet.enabled;
 				if(planet.enabled)
 				{
+					// Keep the global surface visible through the surface-crossing transition;
+					// nearby terrain chunks then cover it where the cave or terrain occludes it.
 					if(height < lod_deactivation_height) planet.enabled = false;
 				}
 				else if(height >= lod_activation_height) planet.enabled = true;
+				if(planet.enabled != was_enabled)
+				{
+					if(planet.enabled)
+						danikk_framework::formatLogInfo(
+							"Planet LOD enabled: body=% height_above_surface=% m activation_threshold=% m",
+							source.world_body_id, height, lod_activation_height);
+					else
+						danikk_framework::formatLogInfo(
+							"Planet LOD disabled: body=% height_above_surface=% m deactivation_threshold=% m reason=below surface coverage range",
+							source.world_body_id, height, lod_deactivation_height);
+				}
 
 				if(planet.enabled)
 				{
@@ -263,6 +278,8 @@ namespace danikk_space_engine
 								thresholds[threshold_index], thresholds[threshold_index - 1] * 1.5);
 					}
 
+					const bool had_desired_level = planet.has_desired_level;
+					const uint8 previous_desired_level = planet.desired_level;
 					if(!planet.has_desired_level)
 					{
 						planet.desired_level = 0;
@@ -279,6 +296,10 @@ namespace danikk_space_engine
 							&& height < thresholds[planet.desired_level - 1] * 0.9)
 							planet.desired_level--;
 					}
+					if(!had_desired_level || previous_desired_level != planet.desired_level)
+						danikk_framework::formatLogInfo(
+							"Planet LOD desired level changed: body=% level=% height_above_surface=% m",
+							source.world_body_id, planet.desired_level, height);
 
 					planet.show_local_patch = height < thresholds[0] * 1.1;
 
@@ -355,6 +376,8 @@ namespace danikk_space_engine
 					if(planet.desired_level == local_patch_index)
 						queue_level_requests(1);
 
+					const bool had_active_level = planet.has_active_level;
+					const uint8 previous_active_level = planet.active_level;
 					PlanetLodLevel& desired_level = planet.levels[planet.desired_level];
 					if(isLevelReady(desired_level))
 					{
@@ -371,6 +394,11 @@ namespace danikk_space_engine
 							break;
 						}
 					}
+					if(planet.has_active_level
+						&& (!had_active_level || previous_active_level != planet.active_level))
+						danikk_framework::formatLogInfo(
+							"Planet LOD mesh selected: body=% level=% desired_level=%",
+							source.world_body_id, planet.active_level, planet.desired_level);
 				}
 			}
 			world.chunk_mesh_generation.replacePlanetLodRequests(

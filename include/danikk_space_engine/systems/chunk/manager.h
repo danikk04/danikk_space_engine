@@ -24,6 +24,14 @@ namespace danikk_space_engine
 		bool has_build_part_mesh = false;
 	};
 
+	/** @brief Outcome of attempting to draw one active chunk's cached mesh. */
+	enum class ChunkDrawResult : uint8
+	{
+		missing_mesh,
+		empty_mesh,
+		drawn
+	};
+
 	/**
 	 * @brief Owns chunk data, chunk-to-world membership, and chunk GPU meshes.
 	 *
@@ -80,8 +88,8 @@ namespace danikk_space_engine
 			const uint32* triangle_indices, size_t index_count,
 			const MaterialId* triangle_material_ids, size_t material_count,
 			bool is_planet_terrain = true, bool is_build_part_mesh = false);
-		/** @brief Draws the chunk's material ranges with its camera-relative transform. */
-		void draw(const Chunk& chunk);
+		/** @brief Draws the chunk's material ranges and reports why drawing did not occur. */
+		ChunkDrawResult draw(const Chunk& chunk);
 		/** @brief Releases one chunk's GPU mesh and clears its bounds and render metadata. */
 		void destroyRenderData(Chunk& chunk);
 		/** @brief Releases all GPU mesh resources while the graphics context is active. */

@@ -6,6 +6,8 @@
 #include <danikk_space_engine/systems/planet/planet.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_framework/log.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -56,6 +58,10 @@ namespace danikk_space_engine
 			}
 			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.chunks.isChunkActive(entry.chunk_id))
 			{
+				danikk_framework::formatLogInfo(
+					"Planet chunk unloaded: body=% grid=(%,%,%) reason=outside desired load sphere",
+					planet.world_body_id, entry.grid_coordinate.x,
+					entry.grid_coordinate.y, entry.grid_coordinate.z);
 				world.chunks.destroyChunk(entry.chunk_id);
 			}
 			planet.chunk_lookup.remove(entry.grid_coordinate);

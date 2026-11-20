@@ -12,7 +12,9 @@
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/systems/controller/controller.h>
+#include <danikk_engine/danikk_engine.h>
 #include <danikk_engine/texture_methods.h>
+#include <danikk_framework/log.h>
 
 #include <limits>
 
@@ -45,8 +47,14 @@ namespace danikk_space_engine
 		setViewMatrix(view);
 
 		const glm::dvec3 camera_position = camera.getWorldPosition();
+		static uint32 chunk_render_report_timestamp = 0;
+		static uint64 chunk_render_candidates = 0;
+		static uint64 chunk_render_drawn = 0;
+		static uint64 chunk_render_missing_mesh = 0;
+		static uint64 chunk_render_empty_mesh = 0;
+		static uint64 chunk_render_inactive = 0;
 		double far_render_distance = camera.far_clip_distance;
-		double closest_planet_surface_height = std::numeric_limits<double>::max();
+		double closest_planet_surface_distance = std::numeric_limits<double>::max();
 		for(const PlanetData& planet : planets.getPlanets())
 		{
 			if(!world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
@@ -55,8 +63,8 @@ namespace danikk_space_engine
 				* (camera_position - body.position);
 			const double surface_height = planets.getPlanetHeightAboveSurface(
 				planet.world_body_id, local_camera_position);
-			if(surface_height >= 0.0)
-				closest_planet_surface_height = glm::min(closest_planet_surface_height, surface_height);
+			closest_planet_surface_distance = glm::min(
+				closest_planet_surface_distance, std::abs(surface_height));
 			far_render_distance = glm::max(far_render_distance,
 				glm::length(body.position - camera_position) + planet.radius);
 		}
@@ -82,9 +90,19 @@ namespace danikk_space_engine
 				const WorldBody& body = world_body_data.getWorldBody(body_id);
 				for(ChunkId chunk_id : body.chunk_ids)
 				{
-					if(!chunks.isChunkActive(chunk_id)) continue;
+					chunk_render_candidates++;
+					if(!chunks.isChunkActive(chunk_id))
+					{
+						chunk_render_inactive++;
+						continue;
+					}
 					Chunk& chunk = chunks.getChunk(chunk_id);
-					chunks.draw(chunk);
+					switch(chunks.draw(chunk))
+					{
+						case ChunkDrawResult::missing_mesh: chunk_render_missing_mesh++; break;
+						case ChunkDrawResult::empty_mesh: chunk_render_empty_mesh++; break;
+						case ChunkDrawResult::drawn: chunk_render_drawn++; break;
+					}
 				}
 			}
 		};
@@ -93,9 +111,9 @@ namespace danikk_space_engine
 		if(far_render_distance > near_far_distance * 1.05)
 		{
 			float far_near_clip = camera.far_clip_distance * 0.95f;
-			if(closest_planet_surface_height < std::numeric_limits<double>::max())
+			if(closest_planet_surface_distance < std::numeric_limits<double>::max())
 				far_near_clip = glm::min(far_near_clip, static_cast<float>(glm::max(
-					static_cast<double>(camera.near_clip_distance), closest_planet_surface_height * 0.5)));
+					static_cast<double>(camera.near_clip_distance), closest_planet_surface_distance * 0.5)));
 			const float far_clip = static_cast<float>(glm::min(
 				far_render_distance * 1.02, static_cast<double>(std::numeric_limits<float>::max() / 2.0f)));
 			setProjectionMatrix(glm::perspective(glm::radians(camera.vertical_fov_degrees),
@@ -143,6 +161,21 @@ namespace danikk_space_engine
 			else drawEventSpawnPreview(*this, hit, player_controller.selected_tool_action);
 		}
 		drawUnitActivityLabels(*this);
+		const uint32 now = danikk_engine::getMsTimestamp();
+		if(chunk_render_report_timestamp == 0) chunk_render_report_timestamp = now;
+		if(now - chunk_render_report_timestamp >= 1000)
+		{
+			danikk_framework::formatLogInfo(
+				"Chunk rendering (last 1 s): references=% drawn=% missing_mesh=% empty_mesh=% inactive_ids=%",
+				chunk_render_candidates, chunk_render_drawn, chunk_render_missing_mesh,
+				chunk_render_empty_mesh, chunk_render_inactive);
+			chunk_render_report_timestamp = now;
+			chunk_render_candidates = 0;
+			chunk_render_drawn = 0;
+			chunk_render_missing_mesh = 0;
+			chunk_render_empty_mesh = 0;
+			chunk_render_inactive = 0;
+		}
 		setDepthRange(0.0f, 1.0f);
 	}
 }

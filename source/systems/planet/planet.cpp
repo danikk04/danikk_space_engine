@@ -28,9 +28,31 @@ namespace danikk_space_engine
 			return glm::dvec3(first % 10000u, second % 10000u, third % 10000u) * 0.01;
 		}
 
+		struct PlanetTerrainNoiseLayer
+		{
+			double frequency;
+			double amplitude;
+			uint64 seed_offset;
+		};
+
+		constexpr PlanetTerrainNoiseLayer planet_terrain_noise_layers[] = {
+			{1.0 / 10000000.0, 6000.0, 0x243F6A8885A308D3ull},
+			{1.0 / 1250000.0, 2750.0, 0x13198A2E03707344ull},
+			{1.0 / 125000.0, 1000.0, 0xA4093822299F31D0ull},
+			{1.0 / 12500.0, 300.0, 0x082EFA98EC4E6C89ull},
+			{1.0 / 1250.0, 60.0, 0x452821E638D01377ull},
+			{1.0 / 125.0, 8.5, 0xBE5466CF34E90C6Cull}};
+
 		double samplePlanetTerrainHeight(const glm::dvec3& position, uint64 noise_seed)
 		{
-			return math::fractalNoise3D(position * 0.02 + planetNoiseSeedOffset(noise_seed), 3, 0.5) * 16.0;
+			double height = 0.0;
+			for(const PlanetTerrainNoiseLayer& layer : planet_terrain_noise_layers)
+			{
+				const glm::dvec3 noise_position = position * layer.frequency
+					+ planetNoiseSeedOffset(noise_seed ^ layer.seed_offset);
+				height += math::simplexNoise3D(noise_position) * layer.amplitude;
+			}
+			return height;
 		}
 
 		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed)
@@ -38,6 +60,26 @@ namespace danikk_space_engine
 			double surface_radius = radius;
 			for(uint8 iteration = 0; iteration < 2; iteration++)
 				surface_radius = radius + samplePlanetTerrainHeight(direction * surface_radius, noise_seed);
+			return surface_radius;
+		}
+
+		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed,
+			const DynamicArray<PlanetTerrainEdit>& edits)
+		{
+			double surface_radius = samplePlanetSurfaceRadius(direction, radius, noise_seed);
+			for(const PlanetTerrainEdit& edit : edits)
+			{
+				const double along_ray = glm::dot(edit.center, direction);
+				const double perpendicular_squared = glm::max(
+					0.0, glm::dot(edit.center, edit.center) - along_ray * along_ray);
+				if(perpendicular_squared >= edit.radius * edit.radius) continue;
+				const double half_chord = std::sqrt(edit.radius * edit.radius - perpendicular_squared);
+				const double outer_radius = along_ray + half_chord;
+				const double inner_radius = glm::max(0.0, along_ray - half_chord);
+				if(edit.adds_solid_terrain) surface_radius = glm::max(surface_radius, outer_radius);
+				else if(surface_radius >= inner_radius && surface_radius <= outer_radius)
+					surface_radius = inner_radius;
+			}
 			return surface_radius;
 		}
 
@@ -212,20 +254,7 @@ namespace danikk_space_engine
 		if(direction_length <= 1e-12) return 0.0;
 		const glm::dvec3 radial_direction = direction / direction_length;
 		double surface_radius = samplePlanetSurfaceRadius(
-			radial_direction, snapshot.planet_radius, snapshot.noise_seed);
-		for(const PlanetTerrainEdit& edit : snapshot.terrain_edits)
-		{
-			const double along_ray = glm::dot(edit.center, radial_direction);
-			const double perpendicular_squared = glm::max(
-				0.0, glm::dot(edit.center, edit.center) - along_ray * along_ray);
-			if(perpendicular_squared >= edit.radius * edit.radius) continue;
-			const double half_chord = std::sqrt(edit.radius * edit.radius - perpendicular_squared);
-			const double outer_radius = along_ray + half_chord;
-			const double inner_radius = glm::max(0.0, along_ray - half_chord);
-			if(edit.adds_solid_terrain) surface_radius = glm::max(surface_radius, outer_radius);
-			else if(surface_radius >= inner_radius && surface_radius <= outer_radius)
-				surface_radius = inner_radius;
-		}
+			radial_direction, snapshot.planet_radius, snapshot.noise_seed, snapshot.terrain_edits);
 		return surface_radius;
 	}
 
@@ -253,7 +282,8 @@ namespace danikk_space_engine
 		const double distance_from_center = glm::length(position);
 		if(distance_from_center <= 1e-9) return -planet.radius;
 		const glm::dvec3 direction = position / distance_from_center;
-		return distance_from_center - samplePlanetSurfaceRadius(direction, planet.radius, planet.noise_seed);
+		return distance_from_center - samplePlanetSurfaceRadius(
+			direction, planet.radius, planet.noise_seed, planet.terrain_edits);
 	}
 
 	glm::vec3 PlanetSystem::getAtmosphereBackgroundColor(const glm::dvec3& world_position) const
@@ -303,12 +333,16 @@ namespace danikk_space_engine
 		const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 		const glm::dvec3 camera_position = world.camera.getWorldPosition() - body.position;
 		const double distance_from_center = glm::length(camera_position);
-		const bool in_chunk_range = distance_from_center
-			<= planet.radius + planet.chunk_load_radius + planet_chunk_width;
+		const double surface_height = getPlanetHeightAboveSurface(planet.world_body_id, camera_position);
+		const double chunk_streaming_limit = planet.chunk_load_radius + planet_chunk_width;
+		const bool in_chunk_range = surface_height <= chunk_streaming_limit;
 		if(!in_chunk_range)
 		{
 			if(planet.chunk_updates_active)
 			{
+				danikk_framework::formatLogInfo(
+					"Planet chunk streaming stopped: body=% height_above_surface=% m limit=% m reason=outside surface range",
+					planet.world_body_id, surface_height, chunk_streaming_limit);
 				planet.chunk_lookup.clearDesired();
 				planet.pending_requests.clear();
 				unloadChunksOutsideDesiredSet(planet);
@@ -318,6 +352,10 @@ namespace danikk_space_engine
 			}
 			return;
 		}
+		if(!planet.chunk_updates_active)
+			danikk_framework::formatLogInfo(
+				"Planet chunk streaming started: body=% height_above_surface=% m center_distance=% m",
+				planet.world_body_id, surface_height, distance_from_center);
 		while(planet.processed_edit_count < planet.terrain_edits.size())
 			invalidateChunksAroundEdit(planet, planet.terrain_edits[planet.processed_edit_count++]);
 		const double moved_distance = glm::length(camera_position - planet.last_chunk_update_position);
