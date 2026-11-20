@@ -12,7 +12,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr uint32 terrain_edits_magic = 0x44504544u;
-		constexpr uint32 terrain_edits_version = 1;
+		constexpr uint32 terrain_edits_version = 2;
 
 		/** @brief Stores the signature and version used to validate a terrain-edit file. */
 		struct TerrainEditsHeader
@@ -73,7 +73,8 @@ namespace danikk_space_engine
 
 		TerrainEditsHeader header{};
 		input.read(reinterpret_cast<char*>(&header), sizeof(header));
-		if(!input || header.magic != terrain_edits_magic || header.version != terrain_edits_version
+		if(!input || header.magic != terrain_edits_magic
+			|| (header.version != 1 && header.version != terrain_edits_version)
 			|| header.planet_radius != planet_radius || header.noise_seed != noise_seed
 			|| header.edit_count > 1000000)
 		{
@@ -87,7 +88,7 @@ namespace danikk_space_engine
 		for(uint32 index = 0; index < header.edit_count; index++)
 		{
 			PlanetTerrainEdit edit;
-			if(!edit.read(input))
+			if(!edit.read(input, header.version))
 			{
 				planet.terrain_edits_loaded = true;
 				planet.processed_edit_count = planet.terrain_edit_ids.size();
@@ -99,12 +100,12 @@ namespace danikk_space_engine
 		}
 		planet.terrain_edit_ids = static_cast<DynamicArray<PlanetTerrainEditId>&&>(loaded_edit_ids);
 		planet.terrain_revision = header.terrain_revision;
-		if(loaded_legacy_file)
+		if(loaded_legacy_file || header.version != terrain_edits_version)
 		{
 			input.close();
 			savePlanetTerrainEdits(planet);
 			std::error_code error;
-			if(std::filesystem::exists(new_file_path, error) && !error)
+			if(loaded_legacy_file && std::filesystem::exists(new_file_path, error) && !error)
 				std::filesystem::remove(legacy_file_path, error);
 		}
 		planet.terrain_edits_loaded = true;

@@ -3,14 +3,15 @@
 #include <istream>
 #include <ostream>
 
+#include <danikk_space_engine/material.h>
 #include <danikk_space_engine/systems/planet/system.h>
 
 namespace danikk_space_engine
 {
 	/** @copydoc PlanetTerrainEdit::PlanetTerrainEdit */
 	PlanetTerrainEdit::PlanetTerrainEdit(
-		const glm::dvec3& center, double radius, bool adds_solid_terrain)
-		: center(center), radius(radius), adds_solid_terrain(adds_solid_terrain)
+		const glm::dvec3& center, double radius, MaterialId material_id)
+		: center(center), radius(radius), material_id(material_id)
 	{
 	}
 
@@ -18,9 +19,9 @@ namespace danikk_space_engine
 	double PlanetTerrainEdit::applyToScalarField(const glm::dvec3& position, double density) const
 	{
 		const double distance = glm::length(position - center);
-		return adds_solid_terrain
-			? std::max(density, radius - distance)
-			: std::min(density, distance - radius);
+		return material_id == default_materials::void_material
+			? std::min(density, distance - radius)
+			: std::max(density, radius - distance);
 	}
 
 	/** @copydoc PlanetTerrainEdit::applyToSurfaceRadius */
@@ -33,15 +34,24 @@ namespace danikk_space_engine
 		const double half_chord = std::sqrt(radius * radius - perpendicular_squared);
 		const double outer_radius = along_ray + half_chord;
 		const double inner_radius = glm::max(0.0, along_ray - half_chord);
-		if(adds_solid_terrain) return glm::max(surface_radius, outer_radius);
+		if(material_id != default_materials::void_material) return glm::max(surface_radius, outer_radius);
 		if(surface_radius >= inner_radius && surface_radius <= outer_radius) return inner_radius;
 		return surface_radius;
+	}
+
+	/** @copydoc PlanetTerrainEdit::applyToMaterial */
+	MaterialId PlanetTerrainEdit::applyToMaterial(
+		const glm::dvec3& position, MaterialId current_material) const
+	{
+		if(material_id == default_materials::void_material) return current_material;
+		return glm::length(position - center) <= radius ? material_id : current_material;
 	}
 
 	/** @copydoc PlanetTerrainEdit::getMaximumRadiusFromOrigin */
 	double PlanetTerrainEdit::getMaximumRadiusFromOrigin(double margin) const
 	{
-		return adds_solid_terrain ? glm::length(center) + radius + margin : 0.0;
+		return material_id != default_materials::void_material
+			? glm::length(center) + radius + margin : 0.0;
 	}
 
 	/** @copydoc PlanetTerrainEdit::intersectsAabb */
@@ -54,34 +64,44 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc PlanetTerrainEdit::read */
-	bool PlanetTerrainEdit::read(std::istream& input)
+	bool PlanetTerrainEdit::read(std::istream& input, uint32 format_version)
 	{
 		glm::dvec3 loaded_center;
 		double loaded_radius = 0.0;
-		uint8 loaded_adds_solid_terrain = 0;
+		MaterialId loaded_material_id = default_materials::void_material;
 		input.read(reinterpret_cast<char*>(&loaded_center.x), sizeof(double));
 		input.read(reinterpret_cast<char*>(&loaded_center.y), sizeof(double));
 		input.read(reinterpret_cast<char*>(&loaded_center.z), sizeof(double));
 		input.read(reinterpret_cast<char*>(&loaded_radius), sizeof(double));
-		input.read(reinterpret_cast<char*>(&loaded_adds_solid_terrain), sizeof(loaded_adds_solid_terrain));
-		if(!input || !std::isfinite(loaded_radius) || loaded_radius <= 0.0 || loaded_adds_solid_terrain > 1
+		if(format_version == 1)
+		{
+			uint8 loaded_adds_solid_terrain = 0;
+			input.read(reinterpret_cast<char*>(&loaded_adds_solid_terrain), sizeof(loaded_adds_solid_terrain));
+			if(loaded_adds_solid_terrain > 1) return false;
+			loaded_material_id = loaded_adds_solid_terrain
+				? default_materials::stone : default_materials::void_material;
+		}
+		else if(format_version == 2)
+			input.read(reinterpret_cast<char*>(&loaded_material_id), sizeof(loaded_material_id));
+		else return false;
+		if(!input || !std::isfinite(loaded_radius) || loaded_radius <= 0.0
+			|| (loaded_material_id != default_materials::void_material
+				&& loaded_material_id >= getMaterialCount())
 			|| !std::isfinite(loaded_center.x) || !std::isfinite(loaded_center.y)
 			|| !std::isfinite(loaded_center.z)) return false;
 		center = loaded_center;
 		radius = loaded_radius;
-		adds_solid_terrain = loaded_adds_solid_terrain != 0;
+		material_id = loaded_material_id;
 		return true;
 	}
 
 	/** @copydoc PlanetTerrainEdit::write */
 	void PlanetTerrainEdit::write(std::ostream& output) const
 	{
-		const uint8 serialized_adds_solid_terrain = adds_solid_terrain ? 1 : 0;
 		output.write(reinterpret_cast<const char*>(&center.x), sizeof(double));
 		output.write(reinterpret_cast<const char*>(&center.y), sizeof(double));
 		output.write(reinterpret_cast<const char*>(&center.z), sizeof(double));
 		output.write(reinterpret_cast<const char*>(&radius), sizeof(double));
-		output.write(reinterpret_cast<const char*>(&serialized_adds_solid_terrain),
-			sizeof(serialized_adds_solid_terrain));
+		output.write(reinterpret_cast<const char*>(&material_id), sizeof(material_id));
 	}
 }

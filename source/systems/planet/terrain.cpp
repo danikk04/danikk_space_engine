@@ -131,17 +131,23 @@ namespace danikk_space_engine
 				samplePlanetCoreDensity(position, distance_from_center, noise_seed, core_radius));
 		}
 
-		MaterialId samplePlanetMaterial(const glm::dvec3& position, double radius, uint64 noise_seed)
+		MaterialId samplePlanetMaterial(const glm::dvec3& position, double radius, uint64 noise_seed,
+			const PlanetTerrainEditPool& edit_pool, const DynamicArray<PlanetTerrainEditId>& edit_ids)
 		{
 			constexpr double grass_layer_depth = 1.0;
 			constexpr double dirt_layer_depth = 5.0;
 			const double distance_from_center = glm::length(position);
-			if(distance_from_center < 0.000001) return default_materials::stone;
-			const glm::dvec3 direction = position / distance_from_center;
-			const double surface_depth = samplePlanetSurfaceRadius(direction, radius, noise_seed) - distance_from_center;
-			if(surface_depth <= grass_layer_depth) return default_materials::grass;
-			if(surface_depth <= dirt_layer_depth) return default_materials::dirt;
-			return default_materials::stone;
+			MaterialId material_id = default_materials::stone;
+			if(distance_from_center >= 0.000001)
+			{
+				const glm::dvec3 direction = position / distance_from_center;
+				const double surface_depth = samplePlanetSurfaceRadius(direction, radius, noise_seed) - distance_from_center;
+				if(surface_depth <= grass_layer_depth) material_id = default_materials::grass;
+				else if(surface_depth <= dirt_layer_depth) material_id = default_materials::dirt;
+			}
+			for(PlanetTerrainEditId edit_id : edit_ids)
+				material_id = edit_pool[edit_id].applyToMaterial(position, material_id);
+			return material_id;
 		}
 	}
 
@@ -157,7 +163,8 @@ namespace danikk_space_engine
 	{
 		const PlanetData& planet = getPlanet(world_body_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
-		return samplePlanetMaterial(position, settings.radius, settings.noise_seed);
+		return samplePlanetMaterial(position, settings.radius, settings.noise_seed,
+			*planet.terrain_edit_pool, planet.terrain_edit_ids);
 	}
 
 	double PlanetSystem::getPlanetSurfaceRadius(WorldBodyId world_body_id,

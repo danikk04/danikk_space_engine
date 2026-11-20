@@ -3,6 +3,7 @@
 #include <optional>
 
 #include <danikk_framework/log.h>
+#include <danikk_space_engine/material.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/systems/planet/system.h>
@@ -192,14 +193,15 @@ namespace danikk_space_engine
 	}
 
 	bool PlanetSystem::editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,
-		double radius, bool adds_solid_terrain)
+		double radius, MaterialId material_id)
 	{
-		if(!world.world_body_data.isWorldBodyActive(world_body_id) || radius <= 0.0) return false;
+		if(!world.world_body_data.isWorldBodyActive(world_body_id) || radius <= 0.0
+			|| (material_id != default_materials::void_material && material_id >= getMaterialCount())) return false;
 		PlanetData* planet = findPlanet(world_body_id);
 		if(planet == nullptr) return false;
 		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
 		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
-		planet->appendTerrainEdit(PlanetTerrainEdit{center, radius, adds_solid_terrain});
+		planet->appendTerrainEdit(PlanetTerrainEdit{center, radius, material_id});
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
 		savePlanetTerrainEdits(*planet);

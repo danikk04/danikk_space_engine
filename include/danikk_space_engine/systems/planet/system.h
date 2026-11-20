@@ -65,9 +65,16 @@ namespace danikk_space_engine
 		/** @brief Cancels pending LOD work and releases all planet surface meshes. */
 		void clearLod();
 		void acceptGeneratedChunk(const GeneratedChunkMesh& generated_chunk);
-		/** @brief Applies and persists a terrain edit on a registered planet. */
+		/**
+		 * @brief Applies and persists a spherical terrain edit on a registered planet.
+		 * @param world_body_id Registered planet body to modify.
+		 * @param position World-space center of the edit sphere.
+		 * @param radius Edit sphere radius in metres; nonpositive values are rejected.
+		 * @param material_id Fill material, or material ID zero to remove terrain.
+		 * @return True when the planet was found and the edit was added.
+		 */
 		bool editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,
-			double radius, bool adds_solid_terrain);
+			double radius, MaterialId material_id);
 		/** @brief Returns immutable settings from the planet settings catalog. */
 		const PlanetSettings& getPlanetSettings(PlanetSettingsId id) const;
 
