@@ -33,6 +33,10 @@ namespace danikk_space_engine
 		MaterialId applyToMaterial(const glm::dvec3& position, MaterialId current_material) const;
 		/** @brief Returns the farthest radial extent contributed by this stamp. */
 		double getMaximumRadiusFromOrigin(double margin) const;
+		/** @brief Returns whether this stamp is small enough for neighbor-bucket lookup. */
+		bool isLargeForChunkIndex(double chunk_width) const;
+		/** @brief Returns the logical chunk containing this stamp's center. */
+		glm::ivec3 getCenterGridCoordinate(double chunk_width) const;
 		/** @brief Tests whether this stamp intersects an expanded axis-aligned chunk box. */
 		bool intersectsAabb(const glm::dvec3& minimum, const glm::dvec3& maximum,
 			double expansion) const;

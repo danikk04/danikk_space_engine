@@ -8,6 +8,173 @@
 
 namespace danikk_space_engine
 {
+	namespace
+	{
+		constexpr uint8 empty_edit_bucket = 0;
+		constexpr uint8 occupied_edit_bucket = 1;
+		constexpr uint8 deleted_edit_bucket = 2;
+
+		bool sameEditGridCoordinate(const glm::ivec3& left, const glm::ivec3& right)
+		{
+			return left.x == right.x && left.y == right.y && left.z == right.z;
+		}
+
+		uint64 hashEditGridCoordinate(const glm::ivec3& coordinate)
+		{
+			uint64 hash = 1469598103934665603ull;
+			for(int32 value : {coordinate.x, coordinate.y, coordinate.z})
+			{
+				hash ^= static_cast<uint32>(value);
+				hash *= 1099511628211ull;
+			}
+			hash ^= hash >> 30;
+			hash *= 0xbf58476d1ce4e5b9ull;
+			hash ^= hash >> 27;
+			hash *= 0x94d049bb133111ebull;
+			return hash ^ (hash >> 31);
+		}
+
+		size_t findEditBucketForInsert(
+			const DynamicArray<PlanetTerrainEditBucket>& buckets, const glm::ivec3& coordinate)
+		{
+			if(buckets.size() == 0) return static_cast<size_t>(-1);
+			const size_t mask = buckets.size() - 1;
+			size_t index = static_cast<size_t>(hashEditGridCoordinate(coordinate)) & mask;
+			size_t first_deleted = static_cast<size_t>(-1);
+			for(size_t checked = 0; checked < buckets.size(); ++checked)
+			{
+				const PlanetTerrainEditBucket& bucket = buckets[index];
+				if(bucket.state == empty_edit_bucket)
+					return first_deleted == static_cast<size_t>(-1) ? index : first_deleted;
+				if(bucket.state == occupied_edit_bucket
+					&& sameEditGridCoordinate(bucket.grid_coordinate, coordinate)) return index;
+				if(bucket.state == deleted_edit_bucket && first_deleted == static_cast<size_t>(-1))
+					first_deleted = index;
+				index = (index + 1) & mask;
+			}
+			return first_deleted;
+		}
+
+		void growEditIndex(PlanetTerrainEditIndex& index)
+		{
+			if(index.buckets.size() != 0
+				&& (index.used_bucket_count + 1) * 10 < index.buckets.size() * 7) return;
+			const size_t new_capacity = index.buckets.size() == 0 ? 16 : index.buckets.size() * 2;
+			DynamicArray<PlanetTerrainEditBucket> new_buckets;
+			new_buckets.resize(new_capacity);
+			for(PlanetTerrainEditBucket& old_bucket : index.buckets)
+			{
+				if(old_bucket.state != occupied_edit_bucket) continue;
+				size_t bucket_index = static_cast<size_t>(hashEditGridCoordinate(old_bucket.grid_coordinate))
+					& (new_capacity - 1);
+				while(new_buckets[bucket_index].state == occupied_edit_bucket)
+					bucket_index = (bucket_index + 1) & (new_capacity - 1);
+				new_buckets[bucket_index] = static_cast<PlanetTerrainEditBucket&&>(old_bucket);
+			}
+			index.buckets = static_cast<DynamicArray<PlanetTerrainEditBucket>&&>(new_buckets);
+			index.used_bucket_count = index.bucket_count;
+		}
+	}
+
+	/** @copydoc PlanetTerrainEdit::isLargeForChunkIndex */
+	bool PlanetTerrainEdit::isLargeForChunkIndex(double chunk_width) const
+	{
+		return radius > chunk_width * 0.5;
+	}
+
+	/** @copydoc PlanetTerrainEdit::getCenterGridCoordinate */
+	glm::ivec3 PlanetTerrainEdit::getCenterGridCoordinate(double chunk_width) const
+	{
+		return glm::ivec3(
+			static_cast<int32>(std::floor(center.x / chunk_width)),
+			static_cast<int32>(std::floor(center.y / chunk_width)),
+			static_cast<int32>(std::floor(center.z / chunk_width)));
+	}
+
+	/** @brief Returns the occupied hash-bucket index for a key, or an invalid sentinel. */
+	size_t PlanetTerrainEditIndex::findBucket(const glm::ivec3& coordinate) const
+	{
+		if(buckets.size() == 0) return static_cast<size_t>(-1);
+		const size_t mask = buckets.size() - 1;
+		size_t index = static_cast<size_t>(hashEditGridCoordinate(coordinate)) & mask;
+		for(size_t checked = 0; checked < buckets.size(); ++checked)
+		{
+			const PlanetTerrainEditBucket& bucket = buckets[index];
+			if(bucket.state == empty_edit_bucket) return static_cast<size_t>(-1);
+			if(bucket.state == occupied_edit_bucket
+				&& sameEditGridCoordinate(bucket.grid_coordinate, coordinate)) return index;
+			index = (index + 1) & mask;
+		}
+		return static_cast<size_t>(-1);
+	}
+
+	/** @brief Adds an edit to its center bucket or the separate large-edit list. */
+	void PlanetTerrainEditIndex::insert(
+		PlanetTerrainEditId edit_id, const PlanetTerrainEdit& edit, double chunk_width)
+	{
+		const PlanetTerrainEditReference reference{edit_id, next_order++};
+		if(edit.isLargeForChunkIndex(chunk_width))
+		{
+			large_edits.push(reference);
+			return;
+		}
+		growEditIndex(*this);
+		const glm::ivec3 coordinate = edit.getCenterGridCoordinate(chunk_width);
+		const size_t bucket_index = findEditBucketForInsert(buckets, coordinate);
+		PlanetTerrainEditBucket& bucket = buckets[bucket_index];
+		if(bucket.state != occupied_edit_bucket)
+		{
+			if(bucket.state == empty_edit_bucket) used_bucket_count++;
+			bucket.grid_coordinate = coordinate;
+			bucket.state = occupied_edit_bucket;
+			bucket_count++;
+		}
+		bucket.edits.push(reference);
+	}
+
+	/** @brief Removes one edit while preserving the chronological order of its bucket. */
+	bool PlanetTerrainEditIndex::remove(
+		PlanetTerrainEditId edit_id, const PlanetTerrainEdit& edit, double chunk_width)
+	{
+		DynamicArray<PlanetTerrainEditReference>* references = &large_edits;
+		size_t bucket_index = static_cast<size_t>(-1);
+		if(!edit.isLargeForChunkIndex(chunk_width))
+		{
+			bucket_index = findBucket(edit.getCenterGridCoordinate(chunk_width));
+			if(bucket_index == static_cast<size_t>(-1)) return false;
+			references = &buckets[bucket_index].edits;
+		}
+		for(size_t index = 0; index < references->size(); ++index)
+		{
+			if((*references)[index].edit_id != edit_id) continue;
+			for(size_t shift = index + 1; shift < references->size(); ++shift)
+				(*references)[shift - 1] = (*references)[shift];
+			references->resize(references->size() - 1);
+			if(bucket_index != static_cast<size_t>(-1) && references->size() == 0)
+			{
+				buckets[bucket_index].state = deleted_edit_bucket;
+				bucket_count--;
+				if(bucket_count == 0)
+				{
+					buckets.clear();
+					used_bucket_count = 0;
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/** @brief Clears all edit references and resets the chronological counter. */
+	void PlanetTerrainEditIndex::clear()
+	{
+		buckets.clear();
+		large_edits.clear();
+		bucket_count = 0;
+		used_bucket_count = 0;
+		next_order = 0;
+	}
+
 	/** @copydoc PlanetTerrainEdit::PlanetTerrainEdit */
 	PlanetTerrainEdit::PlanetTerrainEdit(
 		const glm::dvec3& center, double radius, MaterialId material_id)

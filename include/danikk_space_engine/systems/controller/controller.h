@@ -29,6 +29,18 @@ namespace danikk_space_engine
 	 */
 	class ControllerSystem
 	{
+		/** @brief Input values sampled once and shared by the controller's tick stages. */
+		struct InputState
+		{
+			int left_mouse_state = 0;
+			bool alt_pressed = false;
+			bool control_pressed = false;
+			bool shift_pressed = false;
+			bool left_mouse_down = false;
+			bool adjusting_build_part_size = false;
+			float mouse_scroll_delta = 0.0f;
+		};
+
 		/** @brief Owning World whose input and controlled point this system manages. */
 		World& world;
 		/** @brief Creates a machinegun point copy using the owning world's component pools. */
@@ -38,6 +50,25 @@ namespace danikk_space_engine
 		void validateSelectedUnits();
 		/** @brief Selects the nearest visible player-faction human intersected by the camera ray. */
 		bool selectOwnHumanUnderCursor(const RaycastHit& surface_hit, bool shift_pressed);
+		/** @brief Checks that the controlled point still matches the active camera. */
+		void validateControllerBinding() const;
+		/** @brief Handles the modal tool catalog and reports whether it consumed this tick. */
+		bool handleToolCatalogInput(bool spawn_machinegun,
+			const Point& source_point, ChunkId owner_chunk_id);
+		/** @brief Captures the debug machinegun request and source point before world interaction. */
+		bool captureDebugSpawn(Point& source_point, ChunkId& owner_chunk_id) const;
+		/** @brief Toggles the player interaction mode when the slash key is pressed. */
+		void handleModeInput();
+		/** @brief Samples keyboard modifiers and mouse values for the current tick. */
+		InputState readInputState() const;
+		/** @brief Processes BuildPart axis, size, and rotation controls. */
+		void handleBuildPartInput(InputState& input);
+		/** @brief Selects the hotbar command matching a pressed number key. */
+		void handleHotbarInput(const InputState& input);
+		/** @brief Adjusts camera movement speed from Ctrl plus the mouse wheel. */
+		void handleCameraInput(const InputState& input);
+		/** @brief Performs raycast selection, drag handling, and active tool execution. */
+		void handleWorldInteraction(const InputState& input);
 
 	public:
 		/** @brief Logs initialization of the controller subsystem. */

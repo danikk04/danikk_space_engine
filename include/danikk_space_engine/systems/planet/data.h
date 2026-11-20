@@ -1,6 +1,9 @@
 #pragma once
 
+#include <array>
+#include <cmath>
 #include <memory>
+#include <limits>
 
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_engine/mesh.h>
@@ -73,6 +76,95 @@ namespace danikk_space_engine
 		bool isDesired(const glm::ivec3& grid_coordinate) const;
 		bool isGenerated(const glm::ivec3& grid_coordinate, PlanetMeshGenerator mesh_generator) const;
 		bool getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const;
+	};
+
+	/** @brief Edit handle and stable application order stored in a spatial bucket. */
+	struct PlanetTerrainEditReference
+	{
+		PlanetTerrainEditId edit_id = 0;
+		uint64 order = 0;
+	};
+
+	/** @brief Hash bucket of edits whose centers occupy one logical planet chunk. */
+	struct PlanetTerrainEditBucket
+	{
+		glm::ivec3 grid_coordinate = glm::ivec3(0);
+		DynamicArray<PlanetTerrainEditReference> edits;
+		uint8 state = 0;
+	};
+
+	/** @brief Spatial index for local edits and a separate list of planet-scale edits. */
+	struct PlanetTerrainEditIndex
+	{
+		DynamicArray<PlanetTerrainEditBucket> buckets;
+		DynamicArray<PlanetTerrainEditReference> large_edits;
+		size_t bucket_count = 0;
+		size_t used_bucket_count = 0;
+		uint64 next_order = 0;
+
+		void insert(PlanetTerrainEditId edit_id, const PlanetTerrainEdit& edit, double chunk_width);
+		bool remove(PlanetTerrainEditId edit_id, const PlanetTerrainEdit& edit, double chunk_width);
+		void clear();
+		size_t findBucket(const glm::ivec3& coordinate) const;
+
+		/** @brief Visits nearby local edits and large edits in original application order. */
+		template<typename callback_t>
+		void forEachCandidate(const glm::dvec3& position, double chunk_width, callback_t&& callback) const
+		{
+			if(chunk_width <= 0.0) return;
+			const glm::ivec3 center(
+				static_cast<int32>(std::floor(position.x / chunk_width)),
+				static_cast<int32>(std::floor(position.y / chunk_width)),
+				static_cast<int32>(std::floor(position.z / chunk_width)));
+			std::array<const DynamicArray<PlanetTerrainEditReference>*, 28> sources{};
+			size_t source_count = 0;
+			for(int32 z = -1; z <= 1; ++z)
+				for(int32 y = -1; y <= 1; ++y)
+					for(int32 x = -1; x <= 1; ++x)
+					{
+						const size_t index = findBucket(center + glm::ivec3(x, y, z));
+						if(index != static_cast<size_t>(-1) && buckets[index].edits.size() > 0)
+							sources[source_count++] = &buckets[index].edits;
+					}
+			if(large_edits.size() > 0) sources[source_count++] = &large_edits;
+			std::array<size_t, 28> cursors{};
+			while(true)
+			{
+				size_t best_source = source_count;
+				uint64 best_order = std::numeric_limits<uint64>::max();
+				for(size_t source = 0; source < source_count; ++source)
+				{
+					const auto& edits = *sources[source];
+					if(cursors[source] >= edits.size()) continue;
+					if(edits[cursors[source]].order < best_order)
+					{
+						best_order = edits[cursors[source]].order;
+						best_source = source;
+					}
+				}
+				if(best_source == source_count) break;
+				callback((*sources[best_source])[cursors[best_source]++].edit_id);
+			}
+		}
+	};
+
+	/** @brief Owns a planet's terrain edits and their chronological and spatial indexes. */
+	struct PlanetTerrainEdits
+	{
+		std::shared_ptr<PlanetTerrainEditPool> pool =
+			std::make_shared<PlanetTerrainEditPool>("PlanetTerrainEdit");
+		DynamicArray<PlanetTerrainEditId> ids;
+		PlanetTerrainEditIndex index;
+
+		/** @brief Adds an edit to storage and both indexes in application order. */
+		PlanetTerrainEditId append(const PlanetTerrainEdit& edit, double chunk_width)
+		{
+			const PlanetTerrainEditId edit_id = pool->create();
+			(*pool)[edit_id] = edit;
+			ids.push(edit_id);
+			index.insert(edit_id, edit, chunk_width);
+			return edit_id;
+		}
 	};
 
 	inline constexpr uint8 planet_lod_level_count = 5;
@@ -154,9 +246,7 @@ namespace danikk_space_engine
 		bool terrain_edits_loaded = false;
 		bool chunk_set_initialized = false;
 		bool chunk_updates_active = false;
-		std::shared_ptr<PlanetTerrainEditPool> terrain_edit_pool =
-			std::make_shared<PlanetTerrainEditPool>("PlanetTerrainEdit");
-		DynamicArray<PlanetTerrainEditId> terrain_edit_ids;
+		PlanetTerrainEdits terrain_edits;
 		PlanetChunkLookup chunk_lookup;
 		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
 		/** @brief Current representation: zero uses ordinary chunks, positive values select one LOD. */
@@ -164,13 +254,5 @@ namespace danikk_space_engine
 		bool lod_enabled = false;
 		DynamicArray<PlanetChunkLevel> levels;
 
-		/** @brief Adds one edit to this planet's pool and appends its handle in application order. */
-		PlanetTerrainEditId appendTerrainEdit(const PlanetTerrainEdit& edit)
-		{
-			const PlanetTerrainEditId edit_id = terrain_edit_pool->create();
-			(*terrain_edit_pool)[edit_id] = edit;
-			terrain_edit_ids.push(edit_id);
-			return edit_id;
-		}
 	};
 }

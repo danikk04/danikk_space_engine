@@ -174,9 +174,9 @@ namespace danikk_space_engine
 			danikk_framework::formatLogInfo(
 				"Planet chunk streaming started: body=% height_above_surface=% m center_distance=% m",
 				planet.world_body_id, surface_height, distance_from_center);
-		while(planet.processed_edit_count < planet.terrain_edit_ids.size())
+		while(planet.processed_edit_count < planet.terrain_edits.ids.size())
 			invalidateChunksAroundEdit(planet,
-				(*planet.terrain_edit_pool)[planet.terrain_edit_ids[planet.processed_edit_count++]]);
+				(*planet.terrain_edits.pool)[planet.terrain_edits.ids[planet.processed_edit_count++]]);
 		const glm::ivec3 chunk_center_grid_coordinate(
 			static_cast<int>(std::floor(chunk_center_position.x / planet_chunk_width)),
 			static_cast<int>(std::floor(chunk_center_position.y / planet_chunk_width)),
@@ -201,7 +201,7 @@ namespace danikk_space_engine
 		if(planet == nullptr) return false;
 		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
 		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
-		planet->appendTerrainEdit(PlanetTerrainEdit{center, radius, material_id});
+		planet->terrain_edits.append(PlanetTerrainEdit{center, radius, material_id}, planet_chunk_width);
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
 		world.saves.savePlanetTerrainEdits(world_body_id);

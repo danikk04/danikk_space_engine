@@ -77,7 +77,8 @@ namespace danikk_space_engine
 		{
 			const PlanetSettings& planet_settings = world.planets.getPlanetSettings(planet.settings_id);
 			const glm::dvec3 hill_center(0.0, 0.0, planet_settings.radius + 64.0 - hill_radius);
-			planet.appendTerrainEdit(PlanetTerrainEdit{hill_center, hill_radius, default_materials::stone});
+			planet.terrain_edits.append(
+				PlanetTerrainEdit{hill_center, hill_radius, default_materials::stone}, planet_chunk_width);
 			++planet.terrain_revision;
 			const int32 top_chunk_z = static_cast<int32>(std::floor((hill_center.z + hill_radius) / planet_chunk_width));
 			for(int32 z = top_chunk_z - 1; z <= top_chunk_z + 1; ++z)
@@ -172,7 +173,8 @@ namespace danikk_space_engine
 		{
 			const auto& before = scene.point_data.getPointComponentSlot(npcs[0].slot_id);
 			const glm::dvec3 center = getNpcPosition(scene, before);
-			planet.appendTerrainEdit(PlanetTerrainEdit{center, 2.0, default_materials::void_material});
+			planet.terrain_edits.append(
+				PlanetTerrainEdit{center, 2.0, default_materials::void_material}, planet_chunk_width);
 			++planet.terrain_revision;
 			measureNpcPhase(scene, npcs, "excavation", 1, vec3(0.0f));
 

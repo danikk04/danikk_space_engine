@@ -72,14 +72,14 @@ namespace danikk_space_engine
 		}
 
 		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed,
-			const PlanetTerrainEditPool& edit_pool, const DynamicArray<PlanetTerrainEditId>& edit_ids,
+			const PlanetTerrainEdits& edits,
 			double minimum_wavelength, PlanetTerrainMode mode)
 		{
 			double surface_radius = samplePlanetSurfaceRadius(
 				direction, radius, noise_seed, minimum_wavelength);
 			if(includesEdits(mode))
-				for(PlanetTerrainEditId edit_id : edit_ids)
-					surface_radius = edit_pool[edit_id].applyToSurfaceRadius(direction, surface_radius);
+				for(PlanetTerrainEditId edit_id : edits.ids)
+					surface_radius = (*edits.pool)[edit_id].applyToSurfaceRadius(direction, surface_radius);
 			return surface_radius;
 		}
 
@@ -122,7 +122,7 @@ namespace danikk_space_engine
 		}
 
 		double samplePlanetDensity(const glm::dvec3& position, double radius, uint64 noise_seed,
-			const PlanetTerrainEditPool& edit_pool, const DynamicArray<PlanetTerrainEditId>& edit_ids,
+			const PlanetTerrainEdits& edits,
 			double core_radius, PlanetTerrainMode mode)
 		{
 			const double distance_from_center = glm::length(position);
@@ -142,14 +142,16 @@ namespace danikk_space_engine
 			}
 
 			if(includesEdits(mode))
-				for(PlanetTerrainEditId edit_id : edit_ids)
-					density = edit_pool[edit_id].applyToScalarField(position, density);
+				edits.index.forEachCandidate(position, planet_chunk_width, [&](PlanetTerrainEditId edit_id)
+				{
+					density = (*edits.pool)[edit_id].applyToScalarField(position, density);
+				});
 			return std::max(density,
 				samplePlanetCoreDensity(position, distance_from_center, noise_seed, core_radius));
 		}
 
 		MaterialId samplePlanetMaterial(const glm::dvec3& position, double radius, uint64 noise_seed,
-			const PlanetTerrainEditPool& edit_pool, const DynamicArray<PlanetTerrainEditId>& edit_ids,
+			const PlanetTerrainEdits& edits,
 			PlanetTerrainMode mode)
 		{
 			constexpr double grass_layer_depth = 1.0;
@@ -164,8 +166,10 @@ namespace danikk_space_engine
 				else if(surface_depth <= dirt_layer_depth) material_id = default_materials::dirt;
 			}
 			if(includesEdits(mode))
-				for(PlanetTerrainEditId edit_id : edit_ids)
-					material_id = edit_pool[edit_id].applyToMaterial(position, material_id);
+				edits.index.forEachCandidate(position, planet_chunk_width, [&](PlanetTerrainEditId edit_id)
+				{
+					material_id = (*edits.pool)[edit_id].applyToMaterial(position, material_id);
+				});
 			return material_id;
 		}
 	}
@@ -176,7 +180,7 @@ namespace danikk_space_engine
 		const PlanetData& planet = getPlanet(world_body_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		return samplePlanetDensity(position, settings.radius, settings.noise_seed,
-			*planet.terrain_edit_pool, planet.terrain_edit_ids, settings.core_radius, mode);
+			planet.terrain_edits, settings.core_radius, mode);
 	}
 
 	MaterialId PlanetSystem::getPlanetMaterial(
@@ -185,7 +189,7 @@ namespace danikk_space_engine
 		const PlanetData& planet = getPlanet(world_body_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		return samplePlanetMaterial(position, settings.radius, settings.noise_seed,
-			*planet.terrain_edit_pool, planet.terrain_edit_ids, mode);
+			planet.terrain_edits, mode);
 	}
 
 	double PlanetSystem::getPlanetSurfaceRadius(WorldBodyId world_body_id,
@@ -196,7 +200,7 @@ namespace danikk_space_engine
 		const PlanetData& planet = getPlanet(world_body_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		return samplePlanetSurfaceRadius(direction / direction_length, settings.radius, settings.noise_seed,
-			*planet.terrain_edit_pool, planet.terrain_edit_ids, minimum_wavelength, mode);
+			planet.terrain_edits, minimum_wavelength, mode);
 	}
 
 	double PlanetSystem::getPlanetHeightAboveSurface(WorldBodyId world_body_id, const glm::dvec3& position) const
@@ -208,7 +212,7 @@ namespace danikk_space_engine
 		const glm::dvec3 direction = position / distance_from_center;
 		return distance_from_center - samplePlanetSurfaceRadius(
 			direction, settings.radius, settings.noise_seed,
-			*planet.terrain_edit_pool, planet.terrain_edit_ids, 0.0,
+			planet.terrain_edits, 0.0,
 			PlanetTerrainMode::heightmap_with_edits);
 	}
 }

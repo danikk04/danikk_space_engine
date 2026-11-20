@@ -236,9 +236,9 @@ namespace danikk_space_engine
 				// Bound the full procedural height range and any additive terrain edits.
 				// Terrain queries must not depend on whether a render chunk is currently loaded.
 				double broadphase_radius = planet_settings.radius + 11000.0;
-				for(PlanetTerrainEditId edit_id : planet->terrain_edit_ids)
+				for(PlanetTerrainEditId edit_id : planet->terrain_edits.ids)
 					broadphase_radius = glm::max(broadphase_radius,
-						(*planet->terrain_edit_pool)[edit_id].getMaximumRadiusFromOrigin(1.0));
+						(*planet->terrain_edits.pool)[edit_id].getMaximumRadiusFromOrigin(1.0));
 				double terrain_interval_start = 0.0;
 				double terrain_interval_end = 0.0;
 				if(raySphereInterval(body.position - origin, broadphase_radius,

@@ -233,3 +233,5 @@ namespace danikk_space_engine
 		DSE_WATCH_SIGNATURE, __func__); \
 	[[maybe_unused]] const auto dse_watcher = ::danikk_space_engine::Watcher::create(dse_watcher_name.text)
 
+#define DSE_PROFILE_CONTROLLER()
+
