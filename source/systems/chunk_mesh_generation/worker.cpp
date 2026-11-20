@@ -26,8 +26,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				&& a.planet_mesh_generator == b.planet_mesh_generator
 				&& a.lod_resolution == b.lod_resolution
 				&& a.lod_face == b.lod_face
-				&& a.lod_level == b.lod_level
-				&& a.planet_terrain == b.planet_terrain;
+				&& a.lod_level == b.lod_level;
 		}
 
 		bool requestHasCompletedResult(const ChunkMeshGenerationRequest& request,
@@ -72,16 +71,16 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			return false;
 		}
 
-		GeneratedChunkMesh generateChunkMesh(const ChunkMeshGenerationRequest& request)
+		GeneratedChunkMesh generateChunkMesh(World& world, const ChunkMeshGenerationRequest& request)
 		{
 			switch(request.source)
 			{
 				case ChunkMeshSource::planet_terrain:
-					return generatePlanetTerrainChunkMesh(request);
+					return generatePlanetTerrainChunkMesh(world, request);
 				case ChunkMeshSource::planet_surface_lod:
-					return generatePlanetSurfaceLodMesh(request);
+					return generatePlanetSurfaceLodMesh(world, request);
 				case ChunkMeshSource::build_parts:
-					return generateBuildPartChunkMesh(request);
+					return generateBuildPartChunkMesh(world, request);
 			}
 			danikk_engine::formatFatalError("Unsupported chunk mesh source %", static_cast<uint32>(request.source));
 			return {};
@@ -124,7 +123,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			}
 
 			const auto generation_start_time = std::chrono::steady_clock::now();
-			GeneratedChunkMesh result = generateChunkMesh(request);
+			GeneratedChunkMesh result = generateChunkMesh(world, request);
 			const uint64 generation_nanoseconds = static_cast<uint64>(std::chrono::duration_cast<std::chrono::nanoseconds>(
 				std::chrono::steady_clock::now() - generation_start_time).count());
 			bool report_generation_sample = false;

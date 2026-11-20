@@ -24,8 +24,9 @@ namespace danikk_space_engine
 		 * wall. Terrain edit stamps are loaded before evaluating the field.
 		 */
 		bool findGroundCameraPosition(
+			const World& world,
+			WorldBodyId planet_body_id,
 			const PlanetSettings& planet_settings,
-			const PlanetTerrainSnapshot& terrain_snapshot,
 			glm::dvec3& camera_position)
 		{
 			constexpr double surface_margin = planet_voxel_size * 2.0;
@@ -33,9 +34,10 @@ namespace danikk_space_engine
 			if(planet_settings.radius <= core_clearance + planet_voxel_size) return false;
 
 			double outer_radius = planet_settings.radius + 64.0;
-			for(PlanetTerrainEditId edit_id : terrain_snapshot.terrain_edit_ids)
+			const PlanetData& planet = world.planets.getPlanet(planet_body_id);
+			for(PlanetTerrainEditId edit_id : planet.terrain_edit_ids)
 				outer_radius = glm::max(outer_radius,
-					(*terrain_snapshot.terrain_edit_pool)[edit_id].getMaximumRadiusFromOrigin(surface_margin));
+					(*planet.terrain_edit_pool)[edit_id].getMaximumRadiusFromOrigin(surface_margin));
 			const glm::dvec3 directions[] = {
 				glm::dvec3(0.0, 0.0, 1.0), glm::dvec3(0.0, 0.0, -1.0),
 				glm::dvec3(1.0, 0.0, 0.0), glm::dvec3(-1.0, 0.0, 0.0),
@@ -50,7 +52,7 @@ namespace danikk_space_engine
 				glm::max(step, (planet_settings.radius - core_clearance) * 0.25));
 			const auto density_at = [&](const glm::dvec3& position)
 			{
-				return PlanetSystem::getPlanetDensity(terrain_snapshot, position);
+				return world.planets.getPlanetDensity(planet_body_id, position);
 			};
 
 			for(const glm::dvec3& direction : directions)
@@ -99,24 +101,23 @@ namespace danikk_space_engine
 		world.world_body_data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
 		const PlanetSettings& planet_settings = getPlanetSettings(planet_settings_ids::earth);
 		world.planets.createPlanet(planet_body_id, planet_settings_ids::earth);
-		PlanetTerrainSnapshot terrain_snapshot;
-		terrain_snapshot.planet_radius = planet_settings.radius;
-		terrain_snapshot.core_radius = planet_settings.core_radius;
-		terrain_snapshot.noise_seed = planet_settings.noise_seed;
+		PlanetData& planet = world.planets.getPlanet(planet_body_id);
 		uint64 terrain_revision = 0;
 		loadPlanetTerrainEdits(planet_body_id, planet_settings.radius,
-			planet_settings.noise_seed, *world.planets.getPlanet(planet_body_id).terrain_edit_pool,
-			terrain_snapshot.terrain_edit_ids, terrain_revision);
-		terrain_snapshot.terrain_edit_pool = world.planets.getPlanet(planet_body_id).terrain_edit_pool;
+			planet_settings.noise_seed, *planet.terrain_edit_pool,
+			planet.terrain_edit_ids, terrain_revision);
+		planet.terrain_revision = terrain_revision;
+		planet.processed_edit_count = planet.terrain_edit_ids.size();
+		planet.terrain_edits_loaded = true;
 		const PointId camera_point_id = world.point_data.createPoint();
 		Point& camera_point = world.point_data.getPoint(camera_point_id);
 		constexpr double camera_altitude = 10.0;
 		camera_point.position = vec3(0.0f);
 		const glm::dvec3 camera_direction(0.0, 0.0, 1.0);
 		glm::dvec3 camera_chunk_position = camera_direction
-			* (PlanetSystem::getPlanetSurfaceRadius(terrain_snapshot, camera_direction) + camera_altitude);
+			* (world.planets.getPlanetSurfaceRadius(planet_body_id, camera_direction) + camera_altitude);
 		if(settings.default_camera_position == DefaultCameraPosition::ground
-			&& !findGroundCameraPosition(planet_settings, terrain_snapshot, camera_chunk_position))
+			&& !findGroundCameraPosition(world, planet_body_id, planet_settings, camera_chunk_position))
 		{
 			danikk_framework::formatLogWarning(
 				"Unable to find solid underground camera position; spawning above the planet");

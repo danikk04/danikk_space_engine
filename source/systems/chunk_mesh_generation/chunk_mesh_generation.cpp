@@ -10,7 +10,7 @@
 namespace danikk_space_engine
 {
 	ChunkMeshGenerationSystem::ChunkMeshGenerationSystem(World& world)
-		: world(world), worker(std::make_unique<chunk_mesh_generation_internal::Worker>()) {}
+		: world(world), worker(std::make_unique<chunk_mesh_generation_internal::Worker>(world)) {}
 
 	ChunkMeshGenerationSystem::~ChunkMeshGenerationSystem() { shutdown(); }
 
@@ -175,17 +175,6 @@ namespace danikk_space_engine
 			request.world_body_id = chunk.world_body_id;
 			request.chunk_id = chunk_id;
 			request.chunk_position = chunk.position;
-			for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
-			{
-				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-				if(slot.type_id != PointComponentTypeId::build_part
-					|| !world.point_data.isPointActive(slot.point_id)) continue;
-				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
-				request.build_parts.push({part.shape, world.point_data.getPoint(slot.point_id).position,
-					part.rotation, part.size});
-			}
-
 			for(size_t index = 0; index < requests.size();)
 			{
 				const ChunkMeshGenerationRequest& queued = requests[index];

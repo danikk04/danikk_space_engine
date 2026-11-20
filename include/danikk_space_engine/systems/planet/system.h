@@ -64,11 +64,9 @@ namespace danikk_space_engine
 		double getPlanetHeightAboveSurface(WorldBodyId world_body_id, const glm::dvec3& position) const;
 		/** @brief Blends the nearest planet's atmosphere color into black space by altitude. */
 		glm::vec3 getAtmosphereBackgroundColor(const glm::dvec3& world_position) const;
-		static double getPlanetDensity(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
-		static MaterialId getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
-		/** @brief Samples the cave-free surface, optionally omitting noise layers finer than the LOD grid can represent. */
-		static double getPlanetSurfaceRadius(const PlanetTerrainSnapshot& snapshot,
-			const glm::dvec3& direction, double minimum_wavelength = 0.0);
+		/** @brief Samples the cave-free surface from current planet data, optionally omitting fine noise layers. */
+		double getPlanetSurfaceRadius(WorldBodyId world_body_id,
+			const glm::dvec3& direction, double minimum_wavelength = 0.0) const;
 	};
 
 	/** @brief Applies a terrain edit to a planet registered in `world.planets`. */

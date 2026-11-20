@@ -7,7 +7,6 @@
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/geometry/build_part.h>
-#include <danikk_space_engine/systems/planet/edit.h>
 
 namespace danikk_space_engine
 {
@@ -24,29 +23,7 @@ namespace danikk_space_engine
 		build_parts
 	};
 
-	/** @brief One BuildPart snapshot in chunk-local coordinates, safe to read on the worker. */
-	struct BuildPartMeshInstance
-	{
-		BuildPartShape shape = BuildPartShape::cube;
-		glm::vec3 position = glm::vec3(0.0f);
-		glm::mat4 rotation = glm::mat4(1.0f);
-		glm::vec3 size = glm::vec3(1.0f);
-	};
-
-	/** @brief Immutable planet-field data shared by chunk jobs for one field revision. */
-	struct PlanetTerrainSnapshot
-	{
-		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
-		uint64 planet_generation_id = 0;
-		uint64 terrain_revision = 0;
-		double planet_radius = 0.0;
-		double core_radius = 0.0;
-		uint64 noise_seed = 0;
-		std::shared_ptr<const PlanetTerrainEditPool> terrain_edit_pool;
-		DynamicArray<PlanetTerrainEditId> terrain_edit_ids;
-	};
-
-	/** @brief Immutable CPU-only input copied into the worker queue. */
+	/** @brief CPU-only identifiers and generation metadata consumed by a chunk-mesh worker. */
 	struct ChunkMeshGenerationRequest
 	{
 		uint64 generation_id = 0;
@@ -69,8 +46,6 @@ namespace danikk_space_engine
 		glm::dvec3 heightmap_right = glm::dvec3(1.0, 0.0, 0.0);
 		glm::dvec3 heightmap_forward = glm::dvec3(0.0, 1.0, 0.0);
 		bool has_heightmap_basis = false;
-		std::shared_ptr<const PlanetTerrainSnapshot> planet_terrain;
-		DynamicArray<BuildPartMeshInstance> build_parts;
 	};
 
 	/** @brief CPU mesh payload returned to the main thread for validation and GPU upload. */
@@ -98,8 +73,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Owns asynchronous chunk-mesh requests and accepts generated CPU meshes.
 	 *
-	 * ChunkSystem retains chunk and GPU-mesh ownership. This system manages request
-	 * snapshots, generator lifecycle, stale-result rejection, and main-thread uploads.
+	 * ChunkSystem retains chunk and GPU-mesh ownership. This system manages requests,
+	 * generator lifecycle, stale-result rejection, and main-thread uploads.
 	 */
 	class ChunkMeshGenerationSystem
 	{
@@ -113,7 +88,7 @@ namespace danikk_space_engine
 		uint64 generation_id = 0;
 		/** @brief Latest desired generation requests waiting for worker submission. */
 		DynamicArray<ChunkMeshGenerationRequest> requests;
-		/** @brief True when the request snapshot differs from the worker's submitted snapshot. */
+		/** @brief True when queued request metadata differs from the worker's submitted queue. */
 		bool requests_dirty = false;
 		/** @brief True while the worker has been started for the current World lifecycle. */
 		bool initialized = false;

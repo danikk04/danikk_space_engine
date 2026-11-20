@@ -8,15 +8,16 @@
 
 namespace danikk_space_engine::chunk_mesh_generation_internal
 {
-	GeneratedChunkMesh generatePlanetTerrainChunkMesh(const ChunkMeshGenerationRequest& request);
-	GeneratedChunkMesh generatePlanetChunkMarchingTetrahedra(const ChunkMeshGenerationRequest& request);
-	GeneratedChunkMesh generatePlanetSurfaceLodMesh(const ChunkMeshGenerationRequest& request);
-	GeneratedChunkMesh generatePlanetTerrainChunkMeshSurfaceNets(const ChunkMeshGenerationRequest& request);
-	GeneratedChunkMesh generateBuildPartChunkMesh(const ChunkMeshGenerationRequest& request);
+	GeneratedChunkMesh generatePlanetTerrainChunkMesh(World& world, const ChunkMeshGenerationRequest& request);
+	GeneratedChunkMesh generatePlanetChunkMarchingTetrahedra(World& world, const ChunkMeshGenerationRequest& request);
+	GeneratedChunkMesh generatePlanetSurfaceLodMesh(World& world, const ChunkMeshGenerationRequest& request);
+	GeneratedChunkMesh generatePlanetTerrainChunkMeshSurfaceNets(World& world, const ChunkMeshGenerationRequest& request);
+	GeneratedChunkMesh generateBuildPartChunkMesh(World& world, const ChunkMeshGenerationRequest& request);
 
 	/** @brief CPU worker queue owned by one ChunkMeshGenerationSystem instance. */
 	class Worker
 	{
+		World& world;
 		struct ActiveRequest
 		{
 			ChunkMeshGenerationRequest request;
@@ -43,6 +44,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		void run();
 
 	public:
+		explicit Worker(World& world) : world(world) {}
 		~Worker();
 		void start();
 		void stop();

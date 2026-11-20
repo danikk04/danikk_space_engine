@@ -103,7 +103,6 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
 		const glm::ivec3 center_key = getPlanetChunkGridCoordinate(chunk_center_position);
 		const glm::ivec3 previous_center_key = planet.last_chunk_update_grid_coordinate;
 		const glm::ivec3 center_delta = center_key - previous_center_key;
@@ -120,25 +119,6 @@ namespace danikk_space_engine
 		planet.last_chunk_update_mesh_generator = settings.planet_mesh_generator;
 		planet.chunk_set_initialized = true;
 		planet.chunk_updates_active = true;
-		if(planet.terrain_snapshot == nullptr
-			|| planet.terrain_snapshot->world_body_id != planet.world_body_id
-			|| planet.terrain_snapshot->planet_generation_id != planet.generation_id
-			|| planet.terrain_snapshot->terrain_revision != planet.terrain_revision
-			|| planet.terrain_snapshot->planet_radius != planet_settings.radius
-			|| planet.terrain_snapshot->core_radius != planet_settings.core_radius
-			|| planet.terrain_snapshot->noise_seed != planet_settings.noise_seed)
-		{
-			std::shared_ptr<PlanetTerrainSnapshot> snapshot = std::make_shared<PlanetTerrainSnapshot>();
-			snapshot->world_body_id = planet.world_body_id;
-			snapshot->planet_generation_id = planet.generation_id;
-			snapshot->terrain_revision = planet.terrain_revision;
-			snapshot->planet_radius = planet_settings.radius;
-			snapshot->core_radius = planet_settings.core_radius;
-			snapshot->noise_seed = planet_settings.noise_seed;
-			snapshot->terrain_edit_pool = planet.terrain_edit_pool;
-			snapshot->terrain_edit_ids = planet.terrain_edit_ids;
-		planet.terrain_snapshot = static_cast<std::shared_ptr<const PlanetTerrainSnapshot>&&>(snapshot);
-		}
 		const double chunk_width = planet_chunk_width;
 		const glm::ivec3 minimum_key = center_key - planet_volume_chunk_half_width;
 		const glm::ivec3 maximum_key = center_key + planet_volume_chunk_half_width;
@@ -161,7 +141,6 @@ namespace danikk_space_engine
 			request.planet_mesh_generator = settings.planet_mesh_generator;
 			request.grid_coordinate = key;
 			request.chunk_position = glm::dvec3(key) * chunk_width;
-			request.planet_terrain = planet.terrain_snapshot;
 			requests.pushMove(request);
 		};
 

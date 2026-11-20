@@ -83,7 +83,6 @@ namespace danikk_space_engine
 		std::shared_ptr<PlanetTerrainEditPool> terrain_edit_pool =
 			std::make_shared<PlanetTerrainEditPool>("PlanetTerrainEdit");
 		DynamicArray<PlanetTerrainEditId> terrain_edit_ids;
-		std::shared_ptr<const PlanetTerrainSnapshot> terrain_snapshot;
 		PlanetChunkLookup chunk_lookup;
 		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
 
@@ -170,7 +169,6 @@ namespace danikk_space_engine
 		/** @brief Current representation: zero uses ordinary chunks, positive values select one LOD. */
 		uint8 lod_level = 0;
 		bool enabled = false;
-		std::shared_ptr<const PlanetTerrainSnapshot> terrain_snapshot;
 		DynamicArray<PlanetChunkLevel> levels;
 	};
 }

@@ -30,21 +30,6 @@ namespace danikk_space_engine
 		constexpr uint8 first_global_heightmap_level = 4;
 		constexpr uint8 last_lod_level = planet_chunk_level_count - 1;
 
-		std::shared_ptr<const PlanetTerrainSnapshot> createLodSnapshot(const PlanetData& planet)
-		{
-			const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
-			std::shared_ptr<PlanetTerrainSnapshot> snapshot = std::make_shared<PlanetTerrainSnapshot>();
-			snapshot->world_body_id = planet.world_body_id;
-			snapshot->planet_generation_id = planet.generation_id;
-			snapshot->terrain_revision = planet.terrain_revision;
-			snapshot->planet_radius = settings.radius;
-			snapshot->core_radius = settings.core_radius;
-			snapshot->noise_seed = settings.noise_seed;
-			snapshot->terrain_edit_pool = planet.terrain_edit_pool;
-			snapshot->terrain_edit_ids = planet.terrain_edit_ids;
-			return snapshot;
-		}
-
 		bool isLevelReady(const PlanetChunkLevel& level)
 		{
 			if(!level.initialized || level.mesh == nullptr || level.expected_patch_count == 0
@@ -63,7 +48,7 @@ namespace danikk_space_engine
 		}
 
 		void setRequestIdentity(ChunkMeshGenerationRequest& request, const PlanetData& planet,
-			const PlanetChunkRenderData& render_data, const PlanetChunkLevel& level,
+			const PlanetChunkLevel& level,
 			uint8 level_index, uint8 patch_index)
 		{
 			request.source = ChunkMeshSource::planet_surface_lod;
@@ -75,7 +60,6 @@ namespace danikk_space_engine
 			request.lod_face = patch_index;
 			request.lod_level = level_index;
 			request.planet_mesh_generator = planet.last_chunk_update_mesh_generator;
-			request.planet_terrain = render_data.terrain_snapshot;
 		}
 	}
 
@@ -174,9 +158,6 @@ namespace danikk_space_engine
 				destroyPlanetLodMeshes(planet);
 				planet.terrain_revision = source.terrain_revision;
 			}
-			if(planet.terrain_snapshot == nullptr)
-				planet.terrain_snapshot = createLodSnapshot(source);
-
 			DynamicArray<ChunkMeshGenerationRequest> requests;
 			if(!world.camera.isActive())
 			{
@@ -279,7 +260,7 @@ namespace danikk_space_engine
 										if(patch.ready) continue;
 										patch.origin = glm::dvec3(coordinate) * chunk_width;
 										ChunkMeshGenerationRequest request;
-										setRequestIdentity(request, source, planet, level, level_index, patch_index);
+										setRequestIdentity(request, source, level, level_index, patch_index);
 										request.chunk_width = chunk_width;
 										request.voxel_size = planet_voxel_size * 8.0;
 										request.grid_coordinate = coordinate;
@@ -297,8 +278,7 @@ namespace danikk_space_engine
 							const double tile_width = level_widths[level_index];
 							const glm::dvec3 camera_direction = glm::length(local_camera_position) > 1e-9
 								? glm::normalize(local_camera_position) : glm::dvec3(0.0, 0.0, 1.0);
-							const double surface_radius = PlanetSystem::getPlanetSurfaceRadius(
-								*planet.terrain_snapshot, camera_direction);
+							const double surface_radius = getPlanetSurfaceRadius(source.world_body_id, camera_direction);
 							const glm::dvec3 camera_surface_position = camera_direction * surface_radius;
 							const int32 face_axis = glm::abs(camera_direction.x) >= glm::abs(camera_direction.y)
 								&& glm::abs(camera_direction.x) >= glm::abs(camera_direction.z)
@@ -343,7 +323,7 @@ namespace danikk_space_engine
 									break;
 							}
 							const glm::dvec3 frame_plane_origin = frame_up
-								* PlanetSystem::getPlanetSurfaceRadius(*planet.terrain_snapshot, frame_up);
+								* getPlanetSurfaceRadius(source.world_body_id, frame_up);
 							const int32 center_x = static_cast<int32>(std::floor(
 								glm::dot(camera_surface_position - frame_plane_origin, frame_right) / tile_width + 0.5));
 							const int32 center_y = static_cast<int32>(std::floor(
@@ -379,7 +359,7 @@ namespace danikk_space_engine
 										+ level.heightmap_right * (static_cast<double>(coordinate.x) * tile_width)
 										+ level.heightmap_forward * (static_cast<double>(coordinate.y) * tile_width);
 									ChunkMeshGenerationRequest request;
-									setRequestIdentity(request, source, planet, level, level_index, patch_index);
+									setRequestIdentity(request, source, level, level_index, patch_index);
 									request.chunk_width = tile_width;
 									request.voxel_size = tile_width / level.resolution;
 									request.grid_coordinate = coordinate;
@@ -399,7 +379,7 @@ namespace danikk_space_engine
 							patch.grid_coordinate = glm::ivec3(face, level_index, 0);
 							if(patch.ready) continue;
 							ChunkMeshGenerationRequest request;
-							setRequestIdentity(request, source, planet, level, level_index, face);
+							setRequestIdentity(request, source, level, level_index, face);
 							request.grid_coordinate = glm::ivec3(face, level_index, 0);
 							request.voxel_size = 1.57079632679489661923
 								* source_settings.radius / level.resolution;

@@ -151,7 +151,6 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 			}
 		}
 		planet.lod_level = 0;
-		planet.terrain_snapshot.reset();
 	}
 
 	/** @copydoc PlanetSystem::acceptGeneratedLodMesh */

@@ -1,14 +1,15 @@
 #include <algorithm>
 #include <cmath>
 
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
-#include <danikk_space_engine/systems/planet/system.h>
 
 namespace danikk_space_engine::chunk_mesh_generation_internal
 {
 	/**
 	 * @brief Extracts a planet isosurface with the Surface Nets algorithm.
-	 * @param request Immutable field snapshot, chunk coordinate, and generator settings.
+	 * @param world World providing live planet terrain data.
+	 * @param request Chunk coordinate and generator settings.
 	 * @return Chunk-local vertices and triangle indices, including halo-cell vertices needed
 	 *         to connect faces across chunk boundaries.
 	 * The scalar field is sampled on a regular lattice expanded by one cell around the
@@ -17,7 +18,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 	 * cell vertices into a quad, split along its shorter diagonal. Edge ownership uses
 	 * the half-open chunk lattice range, so neighboring chunks emit each quad once.
 	 */
-	GeneratedChunkMesh generatePlanetTerrainChunkMeshSurfaceNets(const ChunkMeshGenerationRequest& request)
+	GeneratedChunkMesh generatePlanetTerrainChunkMeshSurfaceNets(World& world, const ChunkMeshGenerationRequest& request)
 	{
 		GeneratedChunkMesh result;
 		result.generation_id = request.generation_id;
@@ -56,8 +57,8 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		for(int z = -1; z <= static_cast<int>(cells_per_axis) + 1; ++z)
 			for(int y = -1; y <= static_cast<int>(cells_per_axis) + 1; ++y)
 				for(int x = -1; x <= static_cast<int>(cells_per_axis) + 1; ++x)
-					densities[sampleIndex(x, y, z)] = PlanetSystem::getPlanetDensity(
-						*request.planet_terrain, samplePosition(x, y, z));
+					densities[sampleIndex(x, y, z)] = world.planets.getPlanetDensity(
+						request.world_body_id, samplePosition(x, y, z));
 
 		constexpr uint8 corner_offsets[8][3]{
 			{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},

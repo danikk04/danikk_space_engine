@@ -21,9 +21,6 @@ namespace danikk_space_engine
 	/** @brief Owns chunk lifetimes, memberships, and render resources. */
 	class ChunkSystem;
 
-	/** @brief Immutable planet-field data captured for background chunk generation. */
-	struct PlanetTerrainSnapshot;
-
 	/** @brief Runtime configuration and streaming state for one planet. */
 	struct PlanetData;
 

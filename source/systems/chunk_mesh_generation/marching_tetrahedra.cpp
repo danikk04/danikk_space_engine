@@ -2,8 +2,8 @@
 #include <cmath>
 
 #include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
-#include <danikk_space_engine/systems/planet/system.h>
 #include "internal.h"
 
 #include <danikk_engine/danikk_engine.h>
@@ -71,18 +71,18 @@ namespace danikk_space_engine
 	{
 		/**
 		 * @brief Samples and polygonizes one regular 3D chunk of the planetary scalar field.
-		 * @param request Immutable planet parameters, terrain edits, grid coordinate,
-		 *                and chunk origin captured when the worker job was submitted.
+		 * @param world World providing live planet terrain data.
+		 * @param request Chunk coordinate, origin, and generator settings.
 		 * @return Request identity plus chunk-local surface vertices and triangle indices.
 		 * The field is sampled at every lattice corner. Each lattice cube is split
 		 * into six tetrahedra; sign-changing tetrahedron edges are refined against
 		 * the original scalar field by bisection and cached by an unordered endpoint key so adjacent
 		 * tetrahedra share vertices. Tetrahedron cases explicitly connect their
 		 * three- or four-vertex intersections, and triangles are wound from solid
-		 * toward air. This helper
-		 * reads no mutable World data and creates no GPU resources.
+		 * toward air. Terrain samples are read directly from World; this helper creates
+		 * no GPU resources.
 		 */
-		GeneratedChunkMesh generatePlanetChunkMarchingTetrahedra(const ChunkMeshGenerationRequest& request)
+		GeneratedChunkMesh generatePlanetChunkMarchingTetrahedra(World& world, const ChunkMeshGenerationRequest& request)
 		{
 			GeneratedChunkMesh result;
 			result.generation_id = request.generation_id;
@@ -118,8 +118,8 @@ namespace danikk_space_engine
 					for(size_t x = 0; x < points_per_axis; x++)
 					{
 						const size_t point_index = pointId(x, y, z);
-						densities[point_index] = PlanetSystem::getPlanetDensity(
-							*request.planet_terrain, pointPosition(x, y, z));
+						densities[point_index] = world.planets.getPlanetDensity(
+							request.world_body_id, pointPosition(x, y, z));
 					}
 				}
 			}
@@ -155,14 +155,14 @@ namespace danikk_space_engine
 					std::abs(density_delta) > 1e-12 ? first.density / density_delta : 0.5,
 					0.0, 1.0);
 				glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
-				if(PlanetSystem::getPlanetDensity(*request.planet_terrain, position) < 0.0)
+				if(world.planets.getPlanetDensity(request.world_body_id, position) < 0.0)
 				{
 					glm::dvec3 inside = first.density >= 0.0 ? first.position : second.position;
 					glm::dvec3 outside = position;
 					for(uint8 iteration = 0; iteration < 6; ++iteration)
 					{
 						const glm::dvec3 midpoint = (inside + outside) * 0.5;
-						if(PlanetSystem::getPlanetDensity(*request.planet_terrain, midpoint) >= 0.0)
+						if(world.planets.getPlanetDensity(request.world_body_id, midpoint) >= 0.0)
 							inside = midpoint;
 						else
 							outside = midpoint;
