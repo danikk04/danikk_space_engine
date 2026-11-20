@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine

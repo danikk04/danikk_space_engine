@@ -7,7 +7,7 @@
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
 #include <danikk_space_engine/math/ray.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>
 #include <danikk_framework/log.h>

@@ -1,0 +1,87 @@
+#pragma once
+
+#include <danikk_space_engine/systems/planet/data.h>
+
+namespace danikk_space_engine
+{
+	/** @brief Owns planet state and provides terrain queries, editing, streaming, and result acceptance. */
+	class PlanetSystem
+	{
+		World& world;
+		DynamicArray<PlanetData> planets;
+		DynamicArray<PlanetChunkRenderData> chunk_render_data;
+		uint64 next_generation_id = 1;
+
+		void updatePlanet(PlanetData& planet);
+		PlanetChunkRenderData& getOrCreatePlanetChunkRenderData(const PlanetData& planet);
+		void destroyPlanetLodMeshes(PlanetChunkRenderData& planet);
+		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position);
+		void queuePlanetRequests(PlanetData& planet);
+		void unloadChunksOutsideDesiredSet(PlanetData& planet);
+		void invalidateChunksAroundEdit(PlanetData& planet, const PlanetTerrainEdit& edit);
+		void removeQueuedRequests(const PlanetData& planet);
+
+	public:
+		explicit PlanetSystem(World& world) : world(world) {}
+		/** @brief Clears cached LOD meshes and logs subsystem initialization. */
+		void init();
+		/** @brief Cancels LOD work, clears cached meshes, and logs shutdown. */
+		void shutdown();
+
+		PlanetData& createPlanet(WorldBodyId world_body_id, PlanetSettingsId settings_id);
+		void destroyPlanet(WorldBodyId world_body_id);
+		bool isPlanet(WorldBodyId world_body_id) const;
+		PlanetData* findPlanet(WorldBodyId world_body_id);
+		const PlanetData* findPlanet(WorldBodyId world_body_id) const;
+		PlanetData& getPlanet(WorldBodyId world_body_id);
+		const PlanetData& getPlanet(WorldBodyId world_body_id) const;
+		const DynamicArray<PlanetData>& getPlanets() const { return planets; }
+
+		void frame();
+		/** @brief Updates LOD selection and queues missing surface meshes for each planet. */
+		void updateLod();
+		/** @brief Accepts a worker-generated LOD tile and uploads a complete level when ready. */
+		void acceptGeneratedLodMesh(const GeneratedChunkMesh& generated_mesh);
+		/** @brief Draws the single selected global surface LOD level per planet. */
+		void drawLodFar() const;
+		/** @brief Draws the selected camera-local surface LOD tile per planet. */
+		void drawLodNear() const;
+		/** @brief Returns whether volume terrain chunks are the selected surface representation. */
+		bool shouldDrawPlanetChunks(WorldBodyId world_body_id) const;
+		/** @brief Returns the regular chunk IDs stored at render level zero, or null if unavailable. */
+		const DynamicArray<ChunkId>* getRegularChunkIds(WorldBodyId world_body_id) const;
+		/** @brief Cancels pending LOD work and releases all planet surface meshes. */
+		void clearLod();
+		void acceptGeneratedChunk(const GeneratedChunkMesh& generated_chunk);
+		bool editGround(WorldBodyId world_body_id, const glm::dvec3& position,
+			double radius, bool adds_solid_terrain);
+
+		double getPlanetDensity(WorldBodyId world_body_id, const glm::dvec3& position) const;
+		MaterialId getPlanetMaterial(WorldBodyId world_body_id, const glm::dvec3& position) const;
+		double getPlanetHeightAboveSurface(WorldBodyId world_body_id, const glm::dvec3& position) const;
+		/** @brief Blends the nearest planet's atmosphere color into black space by altitude. */
+		glm::vec3 getAtmosphereBackgroundColor(const glm::dvec3& world_position) const;
+		static double getPlanetDensity(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
+		static MaterialId getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
+		/** @brief Samples the cave-free surface, optionally omitting noise layers finer than the LOD grid can represent. */
+		static double getPlanetSurfaceRadius(const PlanetTerrainSnapshot& snapshot,
+			const glm::dvec3& direction, double minimum_wavelength = 0.0);
+	};
+
+	/** @brief Applies a terrain edit to a planet registered in `world.planets`. */
+	bool editPlanetGround(World& world, WorldBodyId world_body_id, const glm::dvec3& position,
+		double radius, bool adds_solid_terrain);
+
+	/** @brief Loads saved terrain stamps for a planet body and procedural seed. */
+	bool loadPlanetTerrainEdits(WorldBodyId world_body_id, double planet_radius,
+		uint64 noise_seed, DynamicArray<PlanetTerrainEdit>& edits, uint64& terrain_revision);
+
+	/** @brief Persists the ordered terrain stamps for a planet body. */
+	void savePlanetTerrainEdits(WorldBodyId world_body_id, double planet_radius,
+		uint64 noise_seed, const DynamicArray<PlanetTerrainEdit>& edits, uint64 terrain_revision);
+
+	const PlanetSettings& getPlanetSettings(PlanetSettingsId id);
+	bool raycastPlanetScalarField(const World& world, WorldBodyId planet_body_id,
+		const glm::dvec3& origin, const glm::dvec3& direction, double max_distance,
+		double& distance, glm::dvec3& normal);
+}

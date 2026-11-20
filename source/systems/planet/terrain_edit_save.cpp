@@ -5,7 +5,7 @@
 
 #include <danikk_framework/path_buffer.h>
 #include <danikk_framework/log.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 
 namespace danikk_space_engine
 {

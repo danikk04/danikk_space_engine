@@ -1,7 +1,7 @@
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/human/human.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 
 namespace danikk_space_engine
 {

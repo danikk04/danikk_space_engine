@@ -3,7 +3,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/damageable.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 
 #include <danikk_space_engine/systems/unit/internal/orders.h>
 #include <danikk_space_engine/systems/unit/internal/perception.h>

@@ -7,7 +7,7 @@
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/systems/unit/internal/orders.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/item/item.h>
 
 namespace danikk_space_engine::unit_system_internal

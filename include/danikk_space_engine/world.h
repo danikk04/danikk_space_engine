@@ -12,7 +12,7 @@
 #include <danikk_space_engine/world_body.h>
 #include <danikk_space_engine/systems/chunk/manager.h>
 #include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
 #include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/systems/unit/unit.h>

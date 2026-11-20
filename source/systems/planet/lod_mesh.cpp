@@ -5,7 +5,7 @@
 #include <new>
 
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/assets/collection.h>

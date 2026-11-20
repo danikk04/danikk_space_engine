@@ -1,7 +1,7 @@
 #include <danikk_space_engine/scenario/base.h>
 
 #include <danikk_space_engine/config.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/controller/controller.h>
 

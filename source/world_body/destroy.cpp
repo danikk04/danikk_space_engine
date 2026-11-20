@@ -1,7 +1,7 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world_body.h>
 #include <danikk_space_engine/systems/chunk/manager.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 
 #include <cstdlib>
 

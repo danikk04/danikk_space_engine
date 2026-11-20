@@ -4,7 +4,7 @@
 #include <danikk_space_engine/systems/physics/physics.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/controller/controller.h>
-#include <danikk_space_engine/systems/planet/planet.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include "internal.h"
 
 namespace danikk_space_engine
