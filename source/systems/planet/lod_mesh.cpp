@@ -15,6 +15,16 @@
 
 namespace danikk_space_engine
 {
+	void PlanetSystem::init()
+	{
+		danikk_framework::formatLogInfo("Init PlanetSystem");
+		clearLod();
+	}
+	void PlanetSystem::shutdown()
+	{
+		danikk_framework::formatLogInfo("Shutdown PlanetSystem");
+		clearLod();
+	}
 	namespace
 	{
 vec2 projectLocalPositionToUv(const vec3& position, const vec3& normal)

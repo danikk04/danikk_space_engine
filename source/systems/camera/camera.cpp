@@ -5,9 +5,20 @@
 
 #include <danikk_engine/input.h>
 #include <danikk_engine/danikk_engine.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
+	void CameraSystem::init()
+	{
+		danikk_framework::formatLogInfo("Init CameraSystem");
+		unbind();
+	}
+	void CameraSystem::shutdown()
+	{
+		danikk_framework::formatLogInfo("Shutdown CameraSystem");
+		unbind();
+	}
 	namespace
 	{
 		constexpr float camera_local_origin_rebase_distance = 128.0f;

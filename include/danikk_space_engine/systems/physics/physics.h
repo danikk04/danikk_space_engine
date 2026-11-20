@@ -72,6 +72,10 @@ namespace danikk_space_engine
 		void resolveHumanCollisions();
 
 	public:
+		/** @brief Logs initialization of the physics subsystem. */
+		void init();
+		/** @brief Logs shutdown of the physics subsystem. */
+		void shutdown();
 		/** @brief Binds physics to its owning World. */
 		explicit PhysicsSystem(World& world) : world(world) {}
 

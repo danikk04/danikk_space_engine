@@ -46,6 +46,10 @@ namespace danikk_space_engine
 	public:
 		/** @brief Binds ray queries to the owning World. */
 		explicit RaycastSystem(World& world) : world(world) {}
+		/** @brief Logs initialization of the raycast subsystem. */
+		void init();
+		/** @brief Logs shutdown of the raycast subsystem. */
+		void shutdown();
 
 		/** @brief Casts against all active WorldBodies and returns the nearest hit. */
 		RaycastHit cast(const glm::dvec3& origin, const vec3& direction,

@@ -61,6 +61,10 @@ namespace danikk_space_engine
 	{
 		DynamicArray<Faction> factions;
 	public:
+		/** @brief Clears faction state and logs subsystem initialization. */
+		void init();
+		/** @brief Releases faction state and logs subsystem shutdown. */
+		void shutdown();
 		/** @brief Creates a faction from a template and returns its index. */
 		FactionId create(FactionDefinitionId definition_id);
 		/** @brief Returns the number of world factions. */

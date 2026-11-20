@@ -1,10 +1,13 @@
 #include <danikk_space_engine/systems/environment/environment.h>
+#include <danikk_framework/log.h>
 
 #include <danikk_space_engine/systems/planet/planet.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {
+	void EnvironmentSystem::init() { danikk_framework::formatLogInfo("Init EnvironmentSystem"); }
+	void EnvironmentSystem::shutdown() { danikk_framework::formatLogInfo("Shutdown EnvironmentSystem"); }
 	/**
 	 * @brief Returns unavailable until a temperature provider is registered.
 	 * @param world_position Unused sample position.

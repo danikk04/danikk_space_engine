@@ -56,6 +56,10 @@ namespace danikk_space_engine
 	public:
 		/** @brief Binds this chunk system to its owning World. */
 		explicit ChunkSystem(World& world) : world(world) {}
+		/** @brief Logs initialization of the chunk subsystem. */
+		void init();
+		/** @brief Releases chunk resources and logs subsystem shutdown. */
+		void shutdown();
 
 		/** @brief Creates an empty chunk and registers it with its owning WorldBody. */
 		Chunk& createChunk(WorldBodyId world_body_id);

@@ -45,6 +45,10 @@ namespace danikk_space_engine
 		Impl* impl = nullptr;
 
 	public:
+		/** @brief Resets unit groups and logs subsystem initialization. */
+		void init();
+		/** @brief Resets unit groups and logs subsystem shutdown. */
+		void shutdown();
 		explicit UnitSystem(World& world);
 		~UnitSystem();
 		UnitSystem(const UnitSystem&) = delete;

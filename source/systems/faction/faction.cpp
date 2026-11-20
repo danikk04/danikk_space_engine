@@ -1,7 +1,18 @@
 #include <danikk_space_engine/systems/faction/faction.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
+	void FactionSystem::init()
+	{
+		danikk_framework::formatLogInfo("Init FactionSystem");
+		clear();
+	}
+	void FactionSystem::shutdown()
+	{
+		danikk_framework::formatLogInfo("Shutdown FactionSystem");
+		release();
+	}
 	namespace
 	{
 		const FactionDefinition definitions[] = {

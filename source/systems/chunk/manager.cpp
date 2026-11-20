@@ -5,9 +5,20 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
+	void ChunkSystem::init()
+	{
+		danikk_framework::formatLogInfo("Init ChunkSystem");
+		clear();
+	}
+	void ChunkSystem::shutdown()
+	{
+		danikk_framework::formatLogInfo("Shutdown ChunkSystem");
+		clear();
+	}
 	/** @brief Returns a mutable chunk after validating its stable ID. */
 	Chunk& ChunkSystem::getChunk(ChunkId id)
 	{

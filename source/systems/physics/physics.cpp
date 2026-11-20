@@ -1,8 +1,11 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/systems/physics/physics.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
+	void PhysicsSystem::init() { danikk_framework::formatLogInfo("Init PhysicsSystem"); }
+	void PhysicsSystem::shutdown() { danikk_framework::formatLogInfo("Shutdown PhysicsSystem"); }
 
 	/**
 	 * @brief Executes the physics stages in their fixed per-tick order.

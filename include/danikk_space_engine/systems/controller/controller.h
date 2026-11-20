@@ -40,6 +40,10 @@ namespace danikk_space_engine
 		bool selectOwnHumanUnderCursor(const RaycastHit& surface_hit, bool shift_pressed);
 
 	public:
+		/** @brief Logs initialization of the controller subsystem. */
+		void init();
+		/** @brief Clears controller bindings and logs subsystem shutdown. */
+		void shutdown();
 		/** @brief Point currently controlled by this system, or invalid when unbound. */
 		PointId controlled_point_id = static_cast<PointId>(-1);
 		/** @brief Current interaction mode. */

@@ -21,6 +21,10 @@ namespace danikk_space_engine
 		DynamicArray<PointId> deferred_point_destruction_ids;
 
 	public:
+		/** @brief Clears deferred removals and logs subsystem initialization. */
+		void init();
+		/** @brief Clears deferred removals and logs subsystem shutdown. */
+		void shutdown();
 		/** @brief Binds this component system to its owning World. */
 		explicit ComponentSystem(World& world) : world(world) {}
 

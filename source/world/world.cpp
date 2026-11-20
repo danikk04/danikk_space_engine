@@ -50,18 +50,22 @@ namespace danikk_space_engine
 	 */
 	void World::init()
 	{
-		camera.unbind();
-		planets.clearLod();
-		chunks.clear();
+		camera.init();
+		planets.init();
+		chunks.init();
 		while(world_body_data.getUsedWorldBodyIds().size() > 0)
 		{
 			const DynamicArray<WorldBodyId>& body_ids = world_body_data.getUsedWorldBodyIds();
 			world_body_data.destroyWorldBody(body_ids[body_ids.size() - 1], chunks, planets);
 		}
 		chunk_mesh_generation.init();
-		components.clearDeferredPointDestruction();
-		unit_system.reset();
-		factions.clear();
+		components.init();
+		unit_system.init();
+		factions.init();
+		environment.init();
+		physics.init();
+		controller.init();
+		raycasts.init();
 		startBaseScenario(*this);
 	}
 
@@ -71,12 +75,15 @@ namespace danikk_space_engine
 	 */
 	void World::shutdown()
 	{
-		camera.unbind();
-		controller.unbind();
-		planets.clearLod();
+		camera.shutdown();
+		controller.shutdown();
+		planets.shutdown();
 		chunk_mesh_generation.shutdown();
+		environment.shutdown();
+		physics.shutdown();
+		raycasts.shutdown();
 		clearBuildPartMeshCache();
-		chunks.clear();
+		chunks.shutdown();
 		while(world_body_data.getUsedWorldBodyIds().size() > 0)
 		{
 			const DynamicArray<WorldBodyId>& body_ids = world_body_data.getUsedWorldBodyIds();
@@ -84,8 +91,8 @@ namespace danikk_space_engine
 		}
 		point_data.release();
 		world_body_data.release();
-		factions.release();
-		components.clearDeferredPointDestruction();
-		unit_system.reset();
+		factions.shutdown();
+		components.shutdown();
+		unit_system.shutdown();
 	}
 }

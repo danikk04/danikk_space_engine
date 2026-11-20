@@ -24,6 +24,10 @@ namespace danikk_space_engine
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 
 	public:
+		/** @brief Clears the camera binding and logs subsystem initialization. */
+		void init();
+		/** @brief Clears the camera binding and logs subsystem shutdown. */
+		void shutdown();
 		/** @brief Local radial-up direction used to keep the camera upright relative to its body. */
 		vec3 surface_up = vec3(0.0f, 0.0f, 1.0f);
 		/** @brief Tangent-plane heading used as the zero-yaw reference. */

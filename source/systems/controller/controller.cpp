@@ -1,8 +1,15 @@
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/world.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
+	void ControllerSystem::init() { danikk_framework::formatLogInfo("Init ControllerSystem"); }
+	void ControllerSystem::shutdown()
+	{
+		danikk_framework::formatLogInfo("Shutdown ControllerSystem");
+		unbind();
+	}
 	/** @brief Resets controller state and binds it to the supplied point in the supplied world. */
 	void ControllerSystem::reset(PointId point_id)
 	{

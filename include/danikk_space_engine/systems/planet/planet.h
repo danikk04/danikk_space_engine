@@ -169,6 +169,10 @@ namespace danikk_space_engine
 
 	public:
 		explicit PlanetSystem(World& world) : world(world) {}
+		/** @brief Clears cached LOD meshes and logs subsystem initialization. */
+		void init();
+		/** @brief Cancels LOD work, clears cached meshes, and logs shutdown. */
+		void shutdown();
 
 		PlanetData& createPlanet(WorldBodyId world_body_id, const PlanetSettings& settings);
 		void destroyPlanet(WorldBodyId world_body_id);

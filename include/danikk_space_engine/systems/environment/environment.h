@@ -46,6 +46,10 @@ namespace danikk_space_engine
 	public:
 		/** @brief Binds this environment sampler to its owning World. */
 		explicit EnvironmentSystem(World& world) : world(world) {}
+		/** @brief Logs initialization of the environment subsystem. */
+		void init();
+		/** @brief Logs shutdown of the environment subsystem. */
+		void shutdown();
 
 		/**
 		 * @brief Samples the temperature field at a world-space position and time.

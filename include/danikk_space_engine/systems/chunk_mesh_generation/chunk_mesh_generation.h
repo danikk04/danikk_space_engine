@@ -130,6 +130,8 @@ namespace danikk_space_engine
 		DynamicArray<ChunkMeshGenerationRequest> requests;
 		/** @brief True when the request snapshot differs from the worker's submitted snapshot. */
 		bool requests_dirty = false;
+		/** @brief True while the worker has been started for the current World lifecycle. */
+		bool initialized = false;
 
 		/** @brief Adds or replaces dirty BuildPart mesh requests from loaded chunks. */
 		void queueDirtyBuildPartMeshes();

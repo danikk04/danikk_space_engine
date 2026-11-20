@@ -11,9 +11,20 @@
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/damageable.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
+	void UnitSystem::init()
+	{
+		danikk_framework::formatLogInfo("Init UnitSystem");
+		reset();
+	}
+	void UnitSystem::shutdown()
+	{
+		danikk_framework::formatLogInfo("Shutdown UnitSystem");
+		reset();
+	}
 	using unit_system_internal::UnitAgentState;
 	using unit_system_internal::UnitGroup;
 	using unit_system_internal::UnitSighting;

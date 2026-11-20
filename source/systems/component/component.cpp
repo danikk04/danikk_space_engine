@@ -1,9 +1,20 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/component/component.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
+	void ComponentSystem::init()
+	{
+		danikk_framework::formatLogInfo("Init ComponentSystem");
+		clearDeferredPointDestruction();
+	}
+	void ComponentSystem::shutdown()
+	{
+		danikk_framework::formatLogInfo("Shutdown ComponentSystem");
+		clearDeferredPointDestruction();
+	}
 	/** @copydoc ComponentSystem::deferPointDestruction */
 	void ComponentSystem::deferPointDestruction(PointId point_id)
 	{

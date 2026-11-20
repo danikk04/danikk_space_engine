@@ -10,9 +10,12 @@
 #include <danikk_space_engine/systems/planet/planet.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
+	void RaycastSystem::init() { danikk_framework::formatLogInfo("Init RaycastSystem"); }
+	void RaycastSystem::shutdown() { danikk_framework::formatLogInfo("Shutdown RaycastSystem"); }
 	namespace
 	{
 

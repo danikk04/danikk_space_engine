@@ -3,6 +3,7 @@
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
+#include <danikk_framework/log.h>
 
 #include "internal.h"
 
@@ -17,7 +18,10 @@ namespace danikk_space_engine
 	void ChunkMeshGenerationSystem::init()
 	{
 		DSE_WATCH();
+		if(initialized) return;
+		danikk_framework::formatLogInfo("Init ChunkMeshGenerationSystem");
 		worker->start();
+		initialized = true;
 		generation_id++;
 		if(generation_id == 0) generation_id++;
 		requests.clear();
@@ -29,7 +33,10 @@ namespace danikk_space_engine
 	void ChunkMeshGenerationSystem::shutdown()
 	{
 		DSE_WATCH();
+		if(!initialized) return;
+		danikk_framework::formatLogInfo("Shutdown ChunkMeshGenerationSystem");
 		worker->stop();
+		initialized = false;
 		generation_id++;
 		requests.clear();
 		requests_dirty = false;
