@@ -10,6 +10,9 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Enables the periodic log of average, minimum, and maximum chunk-mesh generation times. */
+	inline constexpr bool log_chunk_mesh_generation_statistics = false;
+
 	namespace chunk_mesh_generation_internal { class Worker; }
 
 	/** @brief Selects which world data source is converted into a chunk mesh. */
@@ -121,5 +124,7 @@ namespace danikk_space_engine
 			const glm::ivec3& grid_coordinate);
 		/** @brief Cancels all queued and worker-side requests for one planet incarnation. */
 		void cancelPlanetRequests(WorldBodyId world_body_id, uint64 planet_generation_id);
+		/** @brief Reads the latest average generation time over 50 completed mesh jobs. */
+		bool getAverageGenerationTimeMilliseconds(float& average_time) const;
 	};
 }

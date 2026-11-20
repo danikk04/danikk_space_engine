@@ -14,6 +14,11 @@ namespace danikk_space_engine
 
 	ChunkMeshGenerationSystem::~ChunkMeshGenerationSystem() { shutdown(); }
 
+	bool ChunkMeshGenerationSystem::getAverageGenerationTimeMilliseconds(float& average_time) const
+	{
+		return worker != nullptr && worker->getAverageGenerationTimeMilliseconds(average_time);
+	}
+
 	/** @copydoc ChunkMeshGenerationSystem::init */
 	void ChunkMeshGenerationSystem::init()
 	{

@@ -143,6 +143,8 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 					constexpr float nanoseconds_per_millisecond = 1000000.0f;
 					average_generation_milliseconds = static_cast<float>(generation_sample_total_nanoseconds)
 						/ 50.0f / nanoseconds_per_millisecond;
+					this->average_generation_milliseconds.store(
+						average_generation_milliseconds, std::memory_order_relaxed);
 					minimum_generation_milliseconds = static_cast<float>(generation_sample_minimum_nanoseconds)
 						/ nanoseconds_per_millisecond;
 					maximum_generation_milliseconds = static_cast<float>(generation_sample_maximum_nanoseconds)
@@ -166,12 +168,15 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				if(!stopping && !cancelled && request.generation_id == current_generation_id)
 					completed.pushMove(result);
 			}
-			if(report_generation_sample)
-				danikk_framework::formatLogInfo(
-					"Chunk mesh generation (last 50): avg % ms, min % ms, max % ms",
-					average_generation_milliseconds,
-					minimum_generation_milliseconds,
-					maximum_generation_milliseconds);
+			if constexpr(log_chunk_mesh_generation_statistics)
+			{
+				if(report_generation_sample)
+					danikk_framework::formatLogInfo(
+						"Chunk mesh generation (last 50): avg % ms, min % ms, max % ms",
+						average_generation_milliseconds,
+						minimum_generation_milliseconds,
+						maximum_generation_milliseconds);
+			}
 		}
 	}
 
@@ -181,6 +186,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 	{
 		std::lock_guard<std::mutex> guard(mutex);
 		if(!workers.empty()) return;
+		average_generation_milliseconds.store(0.0f, std::memory_order_relaxed);
 		for(uint8 index = 0; index < static_cast<uint8>(BuildPartShape::count); ++index)
 			getBuildPartGeometry(static_cast<BuildPartShape>(index));
 		stopping = false;
@@ -189,6 +195,12 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			? 1 : std::min(available_threads - 1, max_worker_count);
 		for(size_t index = 0; index < worker_count; ++index)
 			workers.pushMove(std::thread(&Worker::run, this));
+	}
+
+	bool Worker::getAverageGenerationTimeMilliseconds(float& average_time) const
+	{
+		average_time = average_generation_milliseconds.load(std::memory_order_relaxed);
+		return average_time > 0.0f;
 	}
 
 	void Worker::stop()

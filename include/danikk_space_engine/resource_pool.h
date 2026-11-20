@@ -4,6 +4,8 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Enables Resource Pool backing-array capacity-change logs at compile time. */
+	inline constexpr bool log_resource_pool_capacity_changes = false;
 
 	/**
 	 * @brief Searches a compact resource-ID list and returns the matching index.
@@ -93,14 +95,17 @@ namespace danikk_space_engine
 				  free_ids_capacity(pool.free_ids.capacity()) {}
 			~CapacityWatcher()
 			{
-
-				logWorldResourceCapacityChange(pool.resource_name, "slots", slots_capacity, pool.slots.capacity());
-
-				logWorldResourceCapacityChange(pool.resource_name, "active_ids", active_ids_capacity, pool.active_ids.capacity());
-
-				logWorldResourceCapacityChange(pool.resource_name, "active_indices", active_indices_capacity, pool.active_indices.capacity());
-
-				logWorldResourceCapacityChange(pool.resource_name, "free_ids", free_ids_capacity, pool.free_ids.capacity());
+				if constexpr(log_resource_pool_capacity_changes)
+				{
+					logWorldResourceCapacityChange(
+						pool.resource_name, "slots", slots_capacity, pool.slots.capacity());
+					logWorldResourceCapacityChange(
+						pool.resource_name, "active_ids", active_ids_capacity, pool.active_ids.capacity());
+					logWorldResourceCapacityChange(
+						pool.resource_name, "active_indices", active_indices_capacity, pool.active_indices.capacity());
+					logWorldResourceCapacityChange(
+						pool.resource_name, "free_ids", free_ids_capacity, pool.free_ids.capacity());
+				}
 			}
 		};
 

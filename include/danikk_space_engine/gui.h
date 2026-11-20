@@ -23,6 +23,10 @@ namespace danikk_space_engine
 		uint8 earth_lod_level = 0;
 		/** @brief Whether Earth's current LOD level is available. */
 		bool earth_lod_level_available = false;
+		/** @brief Average time in milliseconds for the most recent group of 50 generated meshes. */
+		float average_chunk_generation_time_ms = 0.0f;
+		/** @brief Whether at least one complete group of 50 mesh-generation samples is available. */
+		bool average_chunk_generation_time_available = false;
 		/** @brief Camera forward axis used to orient catalog previews. */
 		vec3 preview_camera_front = vec3(0.0f, 0.0f, -1.0f);
 		/** @brief Camera up axis used to orient catalog previews. */

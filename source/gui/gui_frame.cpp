@@ -103,6 +103,13 @@ namespace danikk_space_engine
 			if(hundredths_of_mebibyte < 10) text << '0';
 			formatAppend(text, "% MiB\n", hundredths_of_mebibyte);
 		}
+		text << "CHUNK MESH AVG (50):";
+		if(data.average_chunk_generation_time_available)
+		{
+			appendGuiNumber(text, data.average_chunk_generation_time_ms);
+			text << " ms\n";
+		}
+		else text << " collecting\n";
 
 		if(data.active_tool == ToolId::place
 			&& (data.selected_tool_action == ToolActionId::create_body

@@ -7,6 +7,9 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Enables per-chunk generation, unload, and render diagnostic logs at compile time. */
+	inline constexpr bool log_chunk_diagnostics = false;
+
 	/** @brief Selects the default camera spawn location relative to the configured planet. */
 	enum class DefaultCameraPosition : uint8
 	{

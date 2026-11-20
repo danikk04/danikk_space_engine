@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -35,6 +36,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		uint64 generation_sample_total_nanoseconds = 0;
 		uint64 generation_sample_minimum_nanoseconds = 0;
 		uint64 generation_sample_maximum_nanoseconds = 0;
+		std::atomic<float> average_generation_milliseconds = 0.0f;
 		bool stopping = false;
 		uint64 current_generation_id = 0;
 
@@ -50,6 +52,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		void stop();
 		void update(uint64 generation_id, const DynamicArray<ChunkMeshGenerationRequest>& requests);
 		bool tryTake(GeneratedChunkMesh& result);
+		bool getAverageGenerationTimeMilliseconds(float& average_time) const;
 		void cancel(WorldBodyId world_body_id, uint64 planet_generation_id);
 	};
 }

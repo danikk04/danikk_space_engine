@@ -50,12 +50,15 @@ namespace danikk_space_engine
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		planet->chunk_lookup.getChunk(generated_chunk.grid_coordinate, chunk_id);
 		const bool has_geometry = generated_chunk.triangle_point_indices.size() > 0;
-		danikk_framework::formatLogInfo(
-			"Planet chunk generated: body=% grid=(%,%,%) triangles=% result=%",
-			generated_chunk.world_body_id, generated_chunk.grid_coordinate.x,
-			generated_chunk.grid_coordinate.y, generated_chunk.grid_coordinate.z,
-			generated_chunk.triangle_point_indices.size() / 3,
-			has_geometry ? "mesh accepted" : "empty result; no render mesh allocated");
+		if constexpr(log_chunk_diagnostics)
+		{
+			danikk_framework::formatLogInfo(
+				"Planet chunk generated: body=% grid=(%,%,%) triangles=% result=%",
+				generated_chunk.world_body_id, generated_chunk.grid_coordinate.x,
+				generated_chunk.grid_coordinate.y, generated_chunk.grid_coordinate.z,
+				generated_chunk.triangle_point_indices.size() / 3,
+				has_geometry ? "mesh accepted" : "empty result; no render mesh allocated");
+		}
 		if(world.chunks.isChunkActive(chunk_id) || has_geometry)
 		{
 			if(!world.chunks.isChunkActive(chunk_id))

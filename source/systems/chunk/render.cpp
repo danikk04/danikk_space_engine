@@ -265,9 +265,12 @@ namespace danikk_space_engine
 		if(render_report_timestamp == 0) render_report_timestamp = now;
 		if(now - render_report_timestamp >= 1000)
 		{
-			danikk_framework::formatLogInfo(
-				"Chunk rendering (last 1 s): references=% drawn=% missing_mesh=% empty_mesh=% inactive_ids=%",
-				render_candidates, render_drawn, render_missing_mesh, render_empty_mesh, render_inactive);
+			if constexpr(log_chunk_diagnostics)
+			{
+				danikk_framework::formatLogInfo(
+					"Chunk rendering (last 1 s): references=% drawn=% missing_mesh=% empty_mesh=% inactive_ids=%",
+					render_candidates, render_drawn, render_missing_mesh, render_empty_mesh, render_inactive);
+			}
 			render_report_timestamp = now;
 			render_candidates = 0;
 			render_drawn = 0;

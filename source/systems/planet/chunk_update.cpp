@@ -74,10 +74,13 @@ namespace danikk_space_engine
 			}
 			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.chunks.isChunkActive(entry.chunk_id))
 			{
-				danikk_framework::formatLogInfo(
-					"Planet chunk unloaded: body=% grid=(%,%,%) reason=outside desired load sphere",
-					planet.world_body_id, entry.grid_coordinate.x,
-					entry.grid_coordinate.y, entry.grid_coordinate.z);
+				if constexpr(log_chunk_diagnostics)
+				{
+					danikk_framework::formatLogInfo(
+						"Planet chunk unloaded: body=% grid=(%,%,%) reason=outside desired load sphere",
+						planet.world_body_id, entry.grid_coordinate.x,
+						entry.grid_coordinate.y, entry.grid_coordinate.z);
+				}
 				world.chunks.destroyChunk(entry.chunk_id);
 			}
 			planet.chunk_lookup.remove(entry.grid_coordinate);

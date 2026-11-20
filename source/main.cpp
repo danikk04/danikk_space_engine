@@ -32,6 +32,9 @@ namespace danikk_engine_game
 	{
 		GUIFrameData data;
 		data.camera_position = world.camera.getWorldPosition();
+		data.average_chunk_generation_time_available =
+			world.chunk_mesh_generation.getAverageGenerationTimeMilliseconds(
+				data.average_chunk_generation_time_ms);
 		double nearest_surface_distance = std::numeric_limits<double>::max();
 		for(const PlanetData& planet : world.planets.getPlanets())
 		{
