@@ -175,23 +175,17 @@ namespace danikk_space_engine
 		return planet_settings[id];
 	}
 
-	PlanetData& PlanetSystem::createPlanet(WorldBodyId world_body_id, const PlanetSettings& settings)
+	PlanetData& PlanetSystem::createPlanet(WorldBodyId world_body_id, PlanetSettingsId settings_id)
 	{
 		if(!world.world_body_data.isWorldBodyActive(world_body_id))
 			danikk_engine::formatFatalError("Cannot register a planet for inactive WorldBody %", world_body_id);
+		getPlanetSettings(settings_id);
 		if(PlanetData* existing = findPlanet(world_body_id)) return *existing;
 		PlanetData planet;
 		planet.world_body_id = world_body_id;
+		planet.settings_id = settings_id;
 		planet.generation_id = next_generation_id++;
 		if(next_generation_id == 0) next_generation_id = 1;
-		planet.name = settings.name;
-		planet.radius = settings.radius;
-		planet.core_radius = settings.core_radius;
-		planet.chunk_load_radius = settings.chunk_load_radius;
-		planet.surface_gravity = settings.surface_gravity;
-		planet.atmosphere_color = settings.atmosphere_color;
-		planet.atmosphere_height = settings.atmosphere_height;
-		planet.noise_seed = settings.noise_seed;
 		planets.pushMove(planet);
 		return planets[planets.size() - 1];
 	}
@@ -286,24 +280,27 @@ namespace danikk_space_engine
 	double PlanetSystem::getPlanetDensity(WorldBodyId world_body_id, const glm::dvec3& position) const
 	{
 		const PlanetData& planet = getPlanet(world_body_id);
-		return samplePlanetDensity(position, planet.radius, planet.noise_seed,
-			planet.terrain_edits, planet.core_radius);
+		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
+		return samplePlanetDensity(position, settings.radius, settings.noise_seed,
+			planet.terrain_edits, settings.core_radius);
 	}
 
 	MaterialId PlanetSystem::getPlanetMaterial(WorldBodyId world_body_id, const glm::dvec3& position) const
 	{
 		const PlanetData& planet = getPlanet(world_body_id);
-		return samplePlanetMaterial(position, planet.radius, planet.noise_seed);
+		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
+		return samplePlanetMaterial(position, settings.radius, settings.noise_seed);
 	}
 
 	double PlanetSystem::getPlanetHeightAboveSurface(WorldBodyId world_body_id, const glm::dvec3& position) const
 	{
 		const PlanetData& planet = getPlanet(world_body_id);
+		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		const double distance_from_center = glm::length(position);
-		if(distance_from_center <= 1e-9) return -planet.radius;
+		if(distance_from_center <= 1e-9) return -settings.radius;
 		const glm::dvec3 direction = position / distance_from_center;
 		return distance_from_center - samplePlanetSurfaceRadius(
-			direction, planet.radius, planet.noise_seed, planet.terrain_edits);
+			direction, settings.radius, settings.noise_seed, planet.terrain_edits);
 	}
 
 	glm::vec3 PlanetSystem::getAtmosphereBackgroundColor(const glm::dvec3& world_position) const
@@ -311,10 +308,12 @@ namespace danikk_space_engine
 		const PlanetData* nearest_planet = nullptr;
 		double nearest_surface_distance = std::numeric_limits<double>::max();
 		double nearest_surface_height = 0.0;
+		const PlanetSettings* nearest_settings = nullptr;
 		for(const PlanetData& planet : planets)
 		{
+			const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)
-				|| planet.atmosphere_height <= 0.0) continue;
+				|| settings.atmosphere_height <= 0.0) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			const glm::dvec3 planet_position = glm::conjugate(body.rotation)
 				* (world_position - body.position);
@@ -324,12 +323,14 @@ namespace danikk_space_engine
 			nearest_surface_distance = surface_distance;
 			nearest_surface_height = surface_height;
 			nearest_planet = &planet;
+			nearest_settings = &settings;
 		}
-		if(nearest_planet == nullptr || nearest_surface_height < 0.0) return glm::vec3(0.0f);
+		if(nearest_planet == nullptr || nearest_settings == nullptr || nearest_surface_height < 0.0)
+			return glm::vec3(0.0f);
 
 		const double atmosphere_factor = 1.0 - glm::smoothstep(
-			0.0, nearest_planet->atmosphere_height, nearest_surface_height);
-		return nearest_planet->atmosphere_color * static_cast<float>(atmosphere_factor);
+			0.0, nearest_settings->atmosphere_height, nearest_surface_height);
+		return nearest_settings->atmosphere_color * static_cast<float>(atmosphere_factor);
 	}
 
 	void PlanetSystem::frame()
@@ -341,11 +342,12 @@ namespace danikk_space_engine
 	void PlanetSystem::updatePlanet(PlanetData& planet)
 	{
 		DSE_WATCH();
+		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
 		if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)
 			|| !world.camera.isActive()) return;
 		if(!planet.terrain_edits_loaded)
 		{
-			loadPlanetTerrainEdits(planet.world_body_id, planet.radius, planet.noise_seed,
+			loadPlanetTerrainEdits(planet.world_body_id, planet_settings.radius, planet_settings.noise_seed,
 				planet.terrain_edits, planet.terrain_revision);
 			planet.terrain_edits_loaded = true;
 			planet.processed_edit_count = planet.terrain_edits.size();
@@ -400,12 +402,13 @@ namespace danikk_space_engine
 		if(!world.world_body_data.isWorldBodyActive(world_body_id) || radius <= 0.0) return false;
 		PlanetData* planet = findPlanet(world_body_id);
 		if(planet == nullptr) return false;
+		const PlanetSettings& planet_settings = getPlanetSettings(planet->settings_id);
 		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
 		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
 		planet->terrain_edits.pushMove(PlanetTerrainEdit{center, radius, adds_solid_terrain});
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
-		savePlanetTerrainEdits(world_body_id, planet->radius, planet->noise_seed,
+		savePlanetTerrainEdits(world_body_id, planet_settings.radius, planet_settings.noise_seed,
 			planet->terrain_edits, planet->terrain_revision);
 		return true;
 	}

@@ -67,15 +67,8 @@ namespace danikk_space_engine
 	struct PlanetData
 	{
 		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
+		PlanetSettingsId settings_id = planet_settings_ids::earth;
 		uint64 generation_id = 0;
-		const char* name = "Earth";
-		double radius = default_planet_radius;
-		double core_radius = default_planet_core_radius;
-		double chunk_load_radius = planet_chunk_load_radius;
-		double surface_gravity = 9.8;
-		glm::vec3 atmosphere_color = glm::vec3(0.2f, 0.4f, 0.8f);
-		double atmosphere_height = 100000.0;
-		uint64 noise_seed = 0;
 		glm::ivec3 last_chunk_update_grid_coordinate = glm::ivec3(0);
 		uint64 terrain_revision = 0;
 		uint64 last_chunk_update_revision = 0;
@@ -196,7 +189,7 @@ namespace danikk_space_engine
 		/** @brief Cancels LOD work, clears cached meshes, and logs shutdown. */
 		void shutdown();
 
-		PlanetData& createPlanet(WorldBodyId world_body_id, const PlanetSettings& settings);
+		PlanetData& createPlanet(WorldBodyId world_body_id, PlanetSettingsId settings_id);
 		void destroyPlanet(WorldBodyId world_body_id);
 		bool isPlanet(WorldBodyId world_body_id) const;
 		PlanetData* findPlanet(WorldBodyId world_body_id);

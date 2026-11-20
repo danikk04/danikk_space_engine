@@ -100,7 +100,7 @@ namespace danikk_space_engine
 		const WorldBodyId planet_body_id = world.world_body_data.createWorldBody();
 		world.world_body_data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
 		const PlanetSettings& planet_settings = getPlanetSettings(planet_settings_ids::earth);
-		world.planets.createPlanet(planet_body_id, planet_settings);
+		world.planets.createPlanet(planet_body_id, planet_settings_ids::earth);
 		PlanetTerrainSnapshot terrain_snapshot;
 		terrain_snapshot.planet_radius = planet_settings.radius;
 		terrain_snapshot.core_radius = planet_settings.core_radius;

@@ -52,16 +52,17 @@ namespace danikk_space_engine
 
 		for(const PlanetData& planet : world.planets.getPlanets())
 		{
+			const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
-			if(planet.surface_gravity <= 0.0 || planet.radius <= 0.0) continue;
+			if(settings.surface_gravity <= 0.0 || settings.radius <= 0.0) continue;
 
 				const glm::dvec3 toward_planet = body.position - world_position;
 				const double distance = glm::length(toward_planet);
 				if(distance <= 0.000001) continue;
-				const double distance_ratio = planet.radius / distance;
-				const double magnitude = distance > planet.radius
-					? planet.surface_gravity * distance_ratio * distance_ratio
-					: planet.surface_gravity * distance_ratio;
+				const double distance_ratio = settings.radius / distance;
+				const double magnitude = distance > settings.radius
+					? settings.surface_gravity * distance_ratio * distance_ratio
+					: settings.surface_gravity * distance_ratio;
 			gravity += toward_planet / distance * magnitude;
 		}
 		return gravity;

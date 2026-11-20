@@ -74,7 +74,8 @@ namespace danikk_space_engine
 		void createNpcFixture(World& world, WorldBodyId body_id, PlanetData& planet,
 			DiagnosticNpc (&npcs)[npc_count])
 		{
-			const glm::dvec3 hill_center(0.0, 0.0, planet.radius + 64.0 - hill_radius);
+			const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
+			const glm::dvec3 hill_center(0.0, 0.0, planet_settings.radius + 64.0 - hill_radius);
 			planet.terrain_edits.push({hill_center, hill_radius, true});
 			++planet.terrain_revision;
 			const int32 top_chunk_z = static_cast<int32>(std::floor((hill_center.z + hill_radius) / planet_chunk_width));
@@ -154,8 +155,7 @@ namespace danikk_space_engine
 		scene.factions.create(faction_definition_ids::pirates);
 
 		const WorldBodyId body_id = scene.world_body_data.createWorldBody();
-		const auto& settings = getPlanetSettings(planet_settings_ids::earth);
-		PlanetData& planet = scene.planets.createPlanet(body_id, settings);
+		PlanetData& planet = scene.planets.createPlanet(body_id, planet_settings_ids::earth);
 		DiagnosticNpc npcs[npc_count]{};
 		createNpcFixture(scene, body_id, planet, npcs);
 

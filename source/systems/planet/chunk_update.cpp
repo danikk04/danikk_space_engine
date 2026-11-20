@@ -101,6 +101,7 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
+		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
 		const glm::ivec3 center_key = getPlanetChunkGridCoordinate(camera_position);
 		const glm::ivec3 previous_center_key = planet.last_chunk_update_grid_coordinate;
 		const glm::ivec3 center_delta = center_key - previous_center_key;
@@ -121,17 +122,17 @@ namespace danikk_space_engine
 			|| planet.terrain_snapshot->world_body_id != planet.world_body_id
 			|| planet.terrain_snapshot->planet_generation_id != planet.generation_id
 			|| planet.terrain_snapshot->terrain_revision != planet.terrain_revision
-			|| planet.terrain_snapshot->planet_radius != planet.radius
-			|| planet.terrain_snapshot->core_radius != planet.core_radius
-			|| planet.terrain_snapshot->noise_seed != planet.noise_seed)
+			|| planet.terrain_snapshot->planet_radius != planet_settings.radius
+			|| planet.terrain_snapshot->core_radius != planet_settings.core_radius
+			|| planet.terrain_snapshot->noise_seed != planet_settings.noise_seed)
 		{
 			std::shared_ptr<PlanetTerrainSnapshot> snapshot = std::make_shared<PlanetTerrainSnapshot>();
 			snapshot->world_body_id = planet.world_body_id;
 			snapshot->planet_generation_id = planet.generation_id;
 			snapshot->terrain_revision = planet.terrain_revision;
-			snapshot->planet_radius = planet.radius;
-			snapshot->core_radius = planet.core_radius;
-			snapshot->noise_seed = planet.noise_seed;
+			snapshot->planet_radius = planet_settings.radius;
+			snapshot->core_radius = planet_settings.core_radius;
+			snapshot->noise_seed = planet_settings.noise_seed;
 			snapshot->terrain_edits = planet.terrain_edits;
 			planet.terrain_snapshot = static_cast<std::shared_ptr<const PlanetTerrainSnapshot>&&>(snapshot);
 		}

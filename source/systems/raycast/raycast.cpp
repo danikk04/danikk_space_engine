@@ -146,7 +146,9 @@ namespace danikk_space_engine
 
 			if(is_planet)
 			{
-				const double broadphase_radius = planet->radius + planet->chunk_load_radius + planet_chunk_width;
+				const PlanetSettings& planet_settings = getPlanetSettings(planet->settings_id);
+				const double broadphase_radius = planet_settings.radius
+					+ planet_settings.chunk_load_radius + planet_chunk_width;
 				if(!rayIntersectsSphere(
 					vec3(body.position - origin),
 					static_cast<float>(broadphase_radius),

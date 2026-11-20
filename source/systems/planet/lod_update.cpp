@@ -32,13 +32,14 @@ namespace danikk_space_engine
 
 		std::shared_ptr<const PlanetTerrainSnapshot> createLodSnapshot(const PlanetData& planet)
 		{
+			const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 			std::shared_ptr<PlanetTerrainSnapshot> snapshot = std::make_shared<PlanetTerrainSnapshot>();
 			snapshot->world_body_id = planet.world_body_id;
 			snapshot->planet_generation_id = planet.generation_id;
 			snapshot->terrain_revision = planet.terrain_revision;
-			snapshot->planet_radius = planet.radius;
-			snapshot->core_radius = planet.core_radius;
-			snapshot->noise_seed = planet.noise_seed;
+			snapshot->planet_radius = settings.radius;
+			snapshot->core_radius = settings.core_radius;
+			snapshot->noise_seed = settings.noise_seed;
 			snapshot->terrain_edits = planet.terrain_edits;
 			return snapshot;
 		}
@@ -161,6 +162,7 @@ namespace danikk_space_engine
 		for(const PlanetData& source : planets)
 		{
 			if(!world.world_body_data.isWorldBodyActive(source.world_body_id)) continue;
+			const PlanetSettings& source_settings = getPlanetSettings(source.settings_id);
 			PlanetChunkRenderData& planet = getOrCreatePlanetChunkRenderData(source);
 			PlanetChunkLevel& regular_level = planet.levels[0];
 			regular_level.chunk_ids.clear();
@@ -213,10 +215,10 @@ namespace danikk_space_engine
 						planet_chunk_width * 64.0, planet_chunk_width * 1024.0,
 						0.0, 0.0};
 					const double thresholds[planet_chunk_level_count - 2] = {
-						glm::max(source.chunk_load_radius * 4.0, level_widths[1] * 2.5),
-						glm::max(source.radius * 0.003, level_widths[2] * 2.0),
-						glm::max(source.radius * 0.05, level_widths[3] * 2.0),
-						source.radius * 0.75};
+						glm::max(source_settings.chunk_load_radius * 4.0, level_widths[1] * 2.5),
+						glm::max(source_settings.radius * 0.003, level_widths[2] * 2.0),
+						glm::max(source_settings.radius * 0.05, level_widths[3] * 2.0),
+						source_settings.radius * 0.75};
 
 					const bool had_desired_level = planet.has_desired_level;
 					const uint8 previous_desired_level = planet.desired_level;
@@ -401,7 +403,7 @@ namespace danikk_space_engine
 							setRequestIdentity(request, source, planet, level, level_index, face);
 							request.grid_coordinate = glm::ivec3(face, level_index, 0);
 							request.voxel_size = 1.57079632679489661923
-								* source.radius / level.resolution;
+								* source_settings.radius / level.resolution;
 							requests.pushMove(request);
 						}
 					};

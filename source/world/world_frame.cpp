@@ -58,6 +58,7 @@ namespace danikk_space_engine
 		for(const PlanetData& planet : planets.getPlanets())
 		{
 			if(!world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
+			const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
 			const WorldBody& body = world_body_data.getWorldBody(planet.world_body_id);
 			const glm::dvec3 local_camera_position = glm::conjugate(body.rotation)
 				* (camera_position - body.position);
@@ -66,7 +67,7 @@ namespace danikk_space_engine
 			closest_planet_surface_distance = glm::min(
 				closest_planet_surface_distance, std::abs(surface_height));
 			far_render_distance = glm::max(far_render_distance,
-				glm::length(body.position - camera_position) + planet.radius);
+				glm::length(body.position - camera_position) + planet_settings.radius);
 		}
 		for(WorldBodyId body_id : world_body_data.getUsedWorldBodyIds())
 		{
