@@ -47,6 +47,14 @@ namespace danikk_space_engine
 		WorldResourcePool<Chunk, ChunkId> chunks{"Chunk"};
 		/** @brief GPU resources and material ranges indexed by stable ChunkId. */
 		DynamicArray<ChunkRenderRecord> render_records;
+		/** @brief Last timestamp used to report chunk draw statistics. */
+		uint32 render_report_timestamp = 0;
+		/** @brief Chunk draw outcomes accumulated since the last statistics report. */
+		uint64 render_candidates = 0;
+		uint64 render_drawn = 0;
+		uint64 render_missing_mesh = 0;
+		uint64 render_empty_mesh = 0;
+		uint64 render_inactive = 0;
 
 		/** @brief Returns the GPU record for a chunk, expanding the indexed array if needed. */
 		ChunkRenderRecord& getRenderRecord(ChunkId chunk_id);
@@ -94,6 +102,8 @@ namespace danikk_space_engine
 			bool is_planet_terrain = true, bool is_build_part_mesh = false);
 		/** @brief Draws the chunk's material ranges and reports why drawing did not occur. */
 		ChunkDrawResult draw(const Chunk& chunk);
+		/** @brief Draws planet LODs and chunk meshes using the world's one- or two-depth-pass setup. */
+		void renderWorld();
 		/** @brief Releases one chunk's GPU mesh and clears its bounds and render metadata. */
 		void destroyRenderData(Chunk& chunk);
 		/** @brief Releases all GPU mesh resources while the graphics context is active. */

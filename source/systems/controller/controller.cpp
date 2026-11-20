@@ -1,5 +1,9 @@
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/world.h>
+#include <danikk_space_engine/config.h>
+#include <danikk_space_engine/effects/world_body_preview.h>
+#include <danikk_space_engine/effects/event_spawn_preview.h>
+#include <danikk_space_engine/profiler.h>
 #include <danikk_framework/log.h>
 
 namespace danikk_space_engine
@@ -53,5 +57,29 @@ namespace danikk_space_engine
 		dragged_human_point_id = static_cast<PointId>(-1);
 		dragged_human_chunk_id = static_cast<ChunkId>(-1);
 		dragged_human_slot_id = static_cast<PointComponentSlotId>(-1);
+	}
+
+	/** @copydoc ControllerSystem::renderPreview */
+	void ControllerSystem::renderPreview() const
+	{
+		DSE_WATCH();
+		if(!settings.show_world_body_preview) return;
+		const bool show_build_part_preview = active_tool == ToolId::place
+			&& (selected_tool_action == ToolActionId::create_body
+				|| selected_tool_action == ToolActionId::create_slope);
+		const bool show_event_spawn_preview = active_tool == ToolId::event
+			&& (selected_tool_action == ToolActionId::spawn_5_allies
+				|| selected_tool_action == ToolActionId::spawn_5_pirates);
+		if(!show_build_part_preview && !show_event_spawn_preview) return;
+
+		const RaycastHit hit = world.raycasts.castFromCamera();
+		if(show_build_part_preview)
+		{
+			const BuildPartShape shape = selected_tool_action == ToolActionId::create_slope
+				? BuildPartShape::slope : BuildPartShape::cube;
+			drawWorldBodyPlacementPreview(
+				world, hit, shape, build_part_size, build_part_size_axis, build_part_rotation_step);
+		}
+		else drawEventSpawnPreview(world, hit, selected_tool_action);
 	}
 }

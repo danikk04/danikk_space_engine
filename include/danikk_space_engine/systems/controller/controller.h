@@ -97,6 +97,8 @@ namespace danikk_space_engine
 		void unbind();
 		/** @brief Processes local input and applies the selected command to the controlled point. */
 		void tick();
+		/** @brief Draws the placement or unit-spawn preview selected by the active tool. */
+		void renderPreview() const;
 
 		/** @brief Binds this controller to its owning World. */
 		explicit ControllerSystem(World& world) : world(world) {}
