@@ -99,11 +99,6 @@ namespace danikk_space_engine
 		void shutdown();
 
 		/**
-		 * @brief Transforms the chunk origin through its owning world body into world-space coordinates.
-		 */
-		glm::dvec3 getChunkWorldPosition(ChunkId chunk_id) const;
-
-		/**
 		 * @brief Transforms a point’s chunk-local position through the chunk and body transforms.
 		 */
 		glm::dvec3 getPointWorldPosition(ChunkId chunk_id, PointId point_id) const;

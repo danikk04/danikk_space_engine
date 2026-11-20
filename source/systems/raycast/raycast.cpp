@@ -77,9 +77,9 @@ namespace danikk_space_engine
 		const PlanetSystem& planets = owner.planets;
 		const ChunkSystem& chunks = owner.chunks;
 		const PointData& point_data = owner.point_data;
-		const auto getChunkWorldPosition = [&owner](ChunkId chunk_id)
+		const auto getChunkWorldPosition = [&chunks](ChunkId chunk_id)
 		{
-			return owner.getChunkWorldPosition(chunk_id);
+			return chunks.getChunkWorldPosition(chunk_id);
 		};
 		RaycastHit result;
 		const float direction_length = glm::length(direction);

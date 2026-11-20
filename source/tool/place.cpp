@@ -105,7 +105,7 @@ namespace danikk_space_engine
 			const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
 			point.position = vec3(inverse_body_rotation
 				* (hit.position + glm::dvec3(hit.normal * 0.03f)
-				- world.getChunkWorldPosition(hit.chunk_id)));
+				- world.chunks.getChunkWorldPosition(hit.chunk_id)));
 
 			MachinegunComponent machinegun;
 			machinegun.forward = vec3(inverse_body_rotation * glm::dvec3(world.camera.getFront()));

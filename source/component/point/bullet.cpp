@@ -179,7 +179,8 @@ namespace danikk_space_engine
 						if(health->getHealth() <= 0.0f) world.components.deferPointDestruction(part.point_id);
 					}
 				}
-				point.position = vec3(glm::conjugate(body_rotation) * (hit.position - world.getChunkWorldPosition(slot.chunk_id)));
+				point.position = vec3(glm::conjugate(body_rotation)
+					* (hit.position - world.chunks.getChunkWorldPosition(slot.chunk_id)));
 				bullet.destruction_queued = true;
 				world.components.deferPointDestruction(slot.point_id);
 				return;

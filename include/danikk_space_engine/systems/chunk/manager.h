@@ -81,6 +81,8 @@ namespace danikk_space_engine
 		Chunk& getChunk(ChunkId id);
 		/** @brief Returns a checked read-only reference to an active chunk. */
 		const Chunk& getChunk(ChunkId id) const;
+		/** @brief Transforms a chunk's body-local origin into world-space coordinates. */
+		glm::dvec3 getChunkWorldPosition(ChunkId chunk_id) const;
 
 		/** @brief Adds a point reference to a chunk and increments its distinct-owner count once. */
 		void addPointReferenceToChunk(ChunkId chunk_id, PointId point_id);

@@ -6,6 +6,7 @@ sources = files(
 	'material.cpp',
 	'profiler.cpp',
 	'resource_pool.cpp',
+	'world.cpp',
 )
 
 subdir('effects')
@@ -18,6 +19,5 @@ subdir('component')
 subdir('scenario')
 subdir('point')
 subdir('world_body')
-subdir('world')
 subdir('tool')
 subdir('systems')

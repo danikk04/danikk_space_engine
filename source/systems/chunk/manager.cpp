@@ -33,6 +33,14 @@ namespace danikk_space_engine
 		return chunks[id];
 	}
 
+	/** @copydoc ChunkSystem::getChunkWorldPosition */
+	glm::dvec3 ChunkSystem::getChunkWorldPosition(ChunkId chunk_id) const
+	{
+		const Chunk& chunk = getChunk(chunk_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
+		return body.position + body.rotation * chunk.position;
+	}
+
 	/** @brief Reports whether a chunk ID currently refers to an active pool entry. */
 	bool ChunkSystem::isChunkActive(ChunkId id) const { return chunks.isActive(id); }
 	/** @brief Returns active chunk IDs for iteration; mutations invalidate the reference. */
