@@ -247,7 +247,7 @@ namespace danikk_space_engine
 		else if(generated.source == ChunkMeshSource::planet_surface_lod
 			&& world.world_body_data.isWorldBodyActive(generated.world_body_id))
 		{
-			world.planet_lod.acceptGeneratedMesh(generated);
+			world.planets.acceptGeneratedLodMesh(generated);
 		}
 	}
 }

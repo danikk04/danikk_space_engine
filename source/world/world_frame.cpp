@@ -38,7 +38,7 @@ namespace danikk_space_engine
 			? planets.getAtmosphereBackgroundColor(camera.getWorldPosition()) : glm::vec3(0.0f));
 		components.renderWorldBodyComponents();
 		planets.frame();
-		planet_lod.update();
+		planets.updateLod();
 		chunk_mesh_generation.frame();
 		static_asset_collection.base3d_shader.use();
 		camera.frame();
@@ -88,6 +88,8 @@ namespace danikk_space_engine
 			for(WorldBodyId body_id : world_body_data.getUsedWorldBodyIds())
 			{
 				const WorldBody& body = world_body_data.getWorldBody(body_id);
+				const bool draw_planet_chunks = planets.isPlanet(body_id)
+					&& planets.shouldDrawPlanetChunks(body_id);
 				for(ChunkId chunk_id : body.chunk_ids)
 				{
 					chunk_render_candidates++;
@@ -97,6 +99,7 @@ namespace danikk_space_engine
 						continue;
 					}
 					Chunk& chunk = chunks.getChunk(chunk_id);
+					if(chunk.isPlanetTerrain() && !draw_planet_chunks) continue;
 					switch(chunks.draw(chunk))
 					{
 						case ChunkDrawResult::missing_mesh: chunk_render_missing_mesh++; break;
@@ -119,19 +122,19 @@ namespace danikk_space_engine
 			setProjectionMatrix(glm::perspective(glm::radians(camera.vertical_fov_degrees),
 				screen_ratio_gz, far_near_clip, far_clip));
 			setDepthRange(0.5f, 1.0f);
-			planet_lod.drawFar();
+			planets.drawLodFar();
 			drawChunkMeshes();
 
 			camera.frame();
 			setDepthRange(0.0f, 0.5f);
-			planet_lod.drawNear();
+			planets.drawLodNear();
 			drawChunkMeshes();
 		}
 		else
 		{
 			setDepthRange(0.0f, 1.0f);
-			planet_lod.drawFar();
-			planet_lod.drawNear();
+			planets.drawLodFar();
+			planets.drawLodNear();
 			drawChunkMeshes();
 		}
 		// Draw dynamic chunk components after the world meshes so transparent overlays

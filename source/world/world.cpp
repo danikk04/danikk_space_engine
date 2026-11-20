@@ -11,7 +11,7 @@ namespace danikk_space_engine
 {
 	World::World()
 		: chunks(*this), chunk_mesh_generation(*this), environment(*this), physics(*this), controller(*this), camera(*this),
-		  components(*this), planets(*this), planet_lod(*this), raycasts(*this), factions(), unit_system(*this)
+		  components(*this), planets(*this), raycasts(*this), factions(), unit_system(*this)
 	{
 	}
 
@@ -51,7 +51,7 @@ namespace danikk_space_engine
 	void World::init()
 	{
 		camera.unbind();
-		planet_lod.clear();
+		planets.clearLod();
 		chunks.clear();
 		while(world_body_data.getUsedWorldBodyIds().size() > 0)
 		{
@@ -73,7 +73,7 @@ namespace danikk_space_engine
 	{
 		camera.unbind();
 		controller.unbind();
-		planet_lod.clear();
+		planets.clearLod();
 		chunk_mesh_generation.shutdown();
 		clearBuildPartMeshCache();
 		chunks.clear();

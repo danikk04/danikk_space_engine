@@ -12,7 +12,23 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		constexpr double chunk_update_distance = planet_voxel_size * 2.0;
+		/** @brief Maps a planet-local point to its containing chunk-grid cell. */
+		glm::ivec3 getPlanetChunkGridCoordinate(const glm::dvec3& position)
+		{
+			return glm::ivec3(
+				static_cast<int>(std::floor(position.x / planet_chunk_width)),
+				static_cast<int>(std::floor(position.y / planet_chunk_width)),
+				static_cast<int>(std::floor(position.z / planet_chunk_width)));
+		}
+
+		/** @brief Tests whether a chunk key belongs to an inclusive local streaming box. */
+		bool isChunkGridCoordinateInBox(const glm::ivec3& key,
+			const glm::ivec3& minimum, const glm::ivec3& maximum)
+		{
+			return key.x >= minimum.x && key.x <= maximum.x
+				&& key.y >= minimum.y && key.y <= maximum.y
+				&& key.z >= minimum.z && key.z <= maximum.z;
+		}
 	}
 
 	/**
@@ -69,13 +85,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Rebuilds desired chunk coordinates and queues only coordinates without generation records.
+	 * @brief Maintains the camera-centered 5x5x5 volume chunk set and queues missing meshes.
 	 *
-	 * Enumerates the camera-centered bounding cube, filters cells by closest-point distance to the
-	 * load-radius sphere, snapshots planet parameters and terrain edits into requests, then unloads
-	 * loaded chunks outside the new set and clears face references invalidated by that replacement.
-	 * Coordinates with a completed empty result remain marked generated and are not queued again;
-	 * pending requests carry the terrain revision and component incarnation used to validate results.
+	 * When the camera crosses one chunk boundary, retains the overlapping chunk records and pending
+	 * requests, then generates only the newly entered 5x5 face. Larger jumps or terrain/generator
+	 * revisions rebuild the complete local set. Empty results remain recorded to avoid regeneration.
 	 * @param planet Mutable lookup and chunk-set state for the planet.
 	 * @param slot Planet component slot used to stamp requests with owner identity.
 	 * @param world World used to unload chunks and clear controller selections.
@@ -87,7 +101,18 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		planet.last_chunk_update_position = camera_position;
+		const glm::ivec3 center_key = getPlanetChunkGridCoordinate(camera_position);
+		const glm::ivec3 previous_center_key = planet.last_chunk_update_grid_coordinate;
+		const glm::ivec3 center_delta = center_key - previous_center_key;
+		const int32 moved_axis_count = static_cast<int32>(center_delta.x != 0)
+			+ static_cast<int32>(center_delta.y != 0) + static_cast<int32>(center_delta.z != 0);
+		const int32 moved_distance_in_cells = std::abs(center_delta.x)
+			+ std::abs(center_delta.y) + std::abs(center_delta.z);
+		const bool can_update_one_entering_slab = planet.chunk_set_initialized
+			&& planet.last_chunk_update_revision == planet.terrain_revision
+			&& planet.last_chunk_update_mesh_generator == settings.planet_mesh_generator
+			&& moved_axis_count == 1 && moved_distance_in_cells == 1;
+		planet.last_chunk_update_grid_coordinate = center_key;
 		planet.last_chunk_update_revision = planet.terrain_revision;
 		planet.last_chunk_update_mesh_generator = settings.planet_mesh_generator;
 		planet.chunk_set_initialized = true;
@@ -111,48 +136,76 @@ namespace danikk_space_engine
 			planet.terrain_snapshot = static_cast<std::shared_ptr<const PlanetTerrainSnapshot>&&>(snapshot);
 		}
 		const double chunk_width = planet_chunk_width;
-		const glm::dvec3 range(planet.chunk_load_radius);
-		const glm::ivec3 minimum_key(
-			static_cast<int>(std::floor((camera_position.x - range.x) / chunk_width)),
-			static_cast<int>(std::floor((camera_position.y - range.y) / chunk_width)),
-			static_cast<int>(std::floor((camera_position.z - range.z) / chunk_width)));
-		const glm::ivec3 maximum_key(
-			static_cast<int>(std::floor((camera_position.x + range.x) / chunk_width)),
-			static_cast<int>(std::floor((camera_position.y + range.y) / chunk_width)),
-			static_cast<int>(std::floor((camera_position.z + range.z) / chunk_width)));
-		const double radius_squared = planet.chunk_load_radius * planet.chunk_load_radius;
+		const glm::ivec3 minimum_key = center_key - planet_volume_chunk_half_width;
+		const glm::ivec3 maximum_key = center_key + planet_volume_chunk_half_width;
 		DynamicArray<ChunkMeshGenerationRequest> requests;
+		DynamicArray<ChunkMeshGenerationRequest> previous_requests =
+			static_cast<DynamicArray<ChunkMeshGenerationRequest>&&>(planet.pending_requests);
 		planet.chunk_lookup.clearDesired();
-
-		for(int z = minimum_key.z; z <= maximum_key.z; z++)
+		const auto queue_chunk_request = [&](const glm::ivec3& key)
 		{
-			for(int y = minimum_key.y; y <= maximum_key.y; y++)
+			planet.chunk_lookup.markDesired(key);
+			if(planet.chunk_lookup.isGenerated(key, settings.planet_mesh_generator)) return;
+
+			ChunkMeshGenerationRequest request;
+			request.source = ChunkMeshSource::planet_terrain;
+			request.world_body_id = planet.world_body_id;
+			request.planet_generation_id = planet.generation_id;
+			request.terrain_revision = planet.terrain_revision;
+			request.chunk_width = chunk_width;
+			request.voxel_size = planet_voxel_size;
+			request.planet_mesh_generator = settings.planet_mesh_generator;
+			request.grid_coordinate = key;
+			request.chunk_position = glm::dvec3(key) * chunk_width;
+			request.planet_terrain = planet.terrain_snapshot;
+			requests.pushMove(request);
+		};
+
+		if(can_update_one_entering_slab)
+		{
+			DynamicArray<glm::ivec3> retained_record_keys;
+			for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 			{
-				for(int x = minimum_key.x; x <= maximum_key.x; x++)
-				{
-					const glm::ivec3 key(x, y, z);
-					const glm::dvec3 chunk_minimum = glm::dvec3(key) * chunk_width;
-					const glm::dvec3 chunk_maximum = chunk_minimum + glm::dvec3(chunk_width);
-					const glm::dvec3 closest = glm::clamp(camera_position, chunk_minimum, chunk_maximum);
-					if(glm::dot(camera_position - closest, camera_position - closest) > radius_squared) continue;
-
-					planet.chunk_lookup.markDesired(key);
-					if(planet.chunk_lookup.isGenerated(key, settings.planet_mesh_generator)) continue;
-
-					ChunkMeshGenerationRequest request;
-					request.source = ChunkMeshSource::planet_terrain;
-					request.world_body_id = planet.world_body_id;
-					request.planet_generation_id = planet.generation_id;
-					request.terrain_revision = planet.terrain_revision;
-					request.chunk_width = chunk_width;
-					request.voxel_size = planet_voxel_size;
-					request.planet_mesh_generator = settings.planet_mesh_generator;
-					request.grid_coordinate = key;
-					request.chunk_position = chunk_minimum;
-					request.planet_terrain = planet.terrain_snapshot;
-					requests.push(request);
-				}
+				if(!entry.has_record
+					|| !isChunkGridCoordinateInBox(entry.grid_coordinate, minimum_key, maximum_key)) continue;
+				retained_record_keys.push(entry.grid_coordinate);
 			}
+			for(const glm::ivec3& key : retained_record_keys) planet.chunk_lookup.markDesired(key);
+			for(ChunkMeshGenerationRequest& request : previous_requests)
+			{
+				if(!isChunkGridCoordinateInBox(request.grid_coordinate, minimum_key, maximum_key)) continue;
+				planet.chunk_lookup.markDesired(request.grid_coordinate);
+				requests.pushMove(request);
+			}
+
+			if(center_delta.x != 0)
+			{
+				const int x = center_delta.x > 0 ? maximum_key.x : minimum_key.x;
+				for(int z = minimum_key.z; z <= maximum_key.z; z++)
+					for(int y = minimum_key.y; y <= maximum_key.y; y++)
+						queue_chunk_request(glm::ivec3(x, y, z));
+			}
+			else if(center_delta.y != 0)
+			{
+				const int y = center_delta.y > 0 ? maximum_key.y : minimum_key.y;
+				for(int z = minimum_key.z; z <= maximum_key.z; z++)
+					for(int x = minimum_key.x; x <= maximum_key.x; x++)
+						queue_chunk_request(glm::ivec3(x, y, z));
+			}
+			else
+			{
+				const int z = center_delta.z > 0 ? maximum_key.z : minimum_key.z;
+				for(int y = minimum_key.y; y <= maximum_key.y; y++)
+					for(int x = minimum_key.x; x <= maximum_key.x; x++)
+						queue_chunk_request(glm::ivec3(x, y, z));
+			}
+		}
+		else
+		{
+			for(int z = minimum_key.z; z <= maximum_key.z; z++)
+				for(int y = minimum_key.y; y <= maximum_key.y; y++)
+					for(int x = minimum_key.x; x <= maximum_key.x; x++)
+						queue_chunk_request(glm::ivec3(x, y, z));
 		}
 
 		std::sort(requests.begin(), requests.end(), [&camera_position, chunk_width](

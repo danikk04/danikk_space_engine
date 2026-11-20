@@ -203,6 +203,19 @@ namespace danikk_space_engine
 
 	void PlanetSystem::destroyPlanet(WorldBodyId world_body_id)
 	{
+		DynamicArray<ChunkMeshGenerationRequest> no_lod_requests;
+		for(size_t index = 0; index < lod_data.size(); ++index)
+		{
+			if(lod_data[index].world_body_id != world_body_id) continue;
+			world.chunk_mesh_generation.replacePlanetLodRequests(
+				world_body_id, lod_data[index].planet_generation_id, no_lod_requests);
+			destroyPlanetLodMeshes(lod_data[index]);
+			for(size_t shift = index + 1; shift < lod_data.size(); shift++)
+				lod_data[shift - 1] = static_cast<PlanetLodData&&>(lod_data[shift]);
+			lod_data.resize(lod_data.size() - 1);
+			break;
+		}
+
 		for(size_t index = 0; index < planets.size(); ++index)
 		{
 			if(planets[index].world_body_id != world_body_id) continue;
@@ -341,7 +354,8 @@ namespace danikk_space_engine
 		const glm::dvec3 camera_position = world.camera.getWorldPosition() - body.position;
 		const double distance_from_center = glm::length(camera_position);
 		const double surface_height = getPlanetHeightAboveSurface(planet.world_body_id, camera_position);
-		const double chunk_streaming_limit = planet.chunk_load_radius + planet_chunk_width;
+		const double chunk_streaming_limit = planet_chunk_width
+			* (planet_volume_chunk_half_width + 2.0);
 		const bool in_chunk_range = surface_height <= chunk_streaming_limit;
 		if(!in_chunk_range)
 		{
@@ -365,9 +379,12 @@ namespace danikk_space_engine
 				planet.world_body_id, surface_height, distance_from_center);
 		while(planet.processed_edit_count < planet.terrain_edits.size())
 			invalidateChunksAroundEdit(planet, planet.terrain_edits[planet.processed_edit_count++]);
-		const double moved_distance = glm::length(camera_position - planet.last_chunk_update_position);
+		const glm::ivec3 camera_grid_coordinate(
+			static_cast<int>(std::floor(camera_position.x / planet_chunk_width)),
+			static_cast<int>(std::floor(camera_position.y / planet_chunk_width)),
+			static_cast<int>(std::floor(camera_position.z / planet_chunk_width)));
 		const bool update_chunks = !planet.chunk_set_initialized
-			|| moved_distance > planet_voxel_size * 2.0
+			|| !glm::all(glm::equal(camera_grid_coordinate, planet.last_chunk_update_grid_coordinate))
 			|| planet.last_chunk_update_revision != planet.terrain_revision
 			|| planet.last_chunk_update_mesh_generator != settings.planet_mesh_generator;
 		if(update_chunks)

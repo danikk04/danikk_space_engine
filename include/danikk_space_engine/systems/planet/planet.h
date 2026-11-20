@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_framework/dynamic_array.h>
+#include <danikk_engine/mesh.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
@@ -18,6 +19,7 @@ namespace danikk_space_engine
 	inline constexpr double planet_chunk_load_radius = 150.0;
 	inline constexpr double planet_chunk_width = 32.0;
 	inline constexpr double planet_voxel_size = 2.0;
+	inline constexpr int32 planet_volume_chunk_half_width = 2;
 
 	/** @brief Immutable settings used when registering a planet for a WorldBody. */
 	struct PlanetSettings
@@ -74,7 +76,7 @@ namespace danikk_space_engine
 		glm::vec3 atmosphere_color = glm::vec3(0.2f, 0.4f, 0.8f);
 		double atmosphere_height = 100000.0;
 		uint64 noise_seed = 0;
-		glm::dvec3 last_chunk_update_position = glm::dvec3(0.0);
+		glm::ivec3 last_chunk_update_grid_coordinate = glm::ivec3(0);
 		uint64 terrain_revision = 0;
 		uint64 last_chunk_update_revision = 0;
 		PlanetMeshGenerator last_chunk_update_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
@@ -88,14 +90,77 @@ namespace danikk_space_engine
 		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
 	};
 
+	inline constexpr uint8 planet_lod_level_count = 6;
+	inline constexpr uint8 planet_lod_face_count = 6;
+
+	/** @brief Mutually exclusive render source selected for one planet. */
+	enum class PlanetSurfaceRenderMode : uint8
+	{
+		volume_chunks,
+		local_surface_lod,
+		global_surface_lod
+	};
+
+	/** @brief Material range in one planetary LOD mesh. */
+	struct PlanetLodMaterialRange
+	{
+		MaterialId material_id = 0;
+		uint32 first_index = 0;
+		uint32 index_count = 0;
+	};
+
+	/** @brief Generated CPU-side tile payload for a planet LOD level. */
+	struct PlanetLodPatch
+	{
+		DynamicArray<vec3> positions;
+		DynamicArray<uint32> triangle_indices;
+		DynamicArray<MaterialId> triangle_material_ids;
+		glm::dvec3 origin = glm::dvec3(0.0);
+		glm::ivec3 grid_coordinate = glm::ivec3(0);
+		bool ready = false;
+	};
+
+	/** @brief GPU mesh and pending tile data for one surface resolution. */
+	struct PlanetLodLevel
+	{
+		Mesh* mesh = nullptr;
+		DynamicArray<PlanetLodMaterialRange> material_ranges;
+		DynamicArray<PlanetLodPatch> patches;
+		uint32 resolution = 0;
+		bool camera_local = false;
+		glm::dvec3 mesh_origin = glm::dvec3(0.0);
+		bool initialized = false;
+	};
+
+	/** @brief Per-planet LOD state owned and updated by PlanetSystem. */
+	struct PlanetLodData
+	{
+		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
+		uint64 planet_generation_id = 0;
+		uint64 terrain_revision = 0;
+		uint8 desired_level = 0;
+		uint8 active_level = 0;
+		bool has_desired_level = false;
+		bool has_active_level = false;
+		bool enabled = false;
+		bool show_local_patch = false;
+		PlanetSurfaceRenderMode render_mode = PlanetSurfaceRenderMode::volume_chunks;
+		uint8 render_level = 1;
+		std::shared_ptr<const PlanetTerrainSnapshot> terrain_snapshot;
+		DynamicArray<PlanetLodLevel> levels;
+	};
+
 	/** @brief Owns planet state and provides terrain queries, editing, streaming, and result acceptance. */
 	class PlanetSystem
 	{
 		World& world;
 		DynamicArray<PlanetData> planets;
+		DynamicArray<PlanetLodData> lod_data;
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
+		PlanetLodData& getOrCreatePlanetLodData(const PlanetData& planet);
+		void destroyPlanetLodMeshes(PlanetLodData& planet);
 		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position);
 		void queuePlanetRequests(PlanetData& planet);
 		void unloadChunksOutsideDesiredSet(PlanetData& planet);
@@ -115,6 +180,18 @@ namespace danikk_space_engine
 		const DynamicArray<PlanetData>& getPlanets() const { return planets; }
 
 		void frame();
+		/** @brief Updates LOD selection and queues missing surface meshes for each planet. */
+		void updateLod();
+		/** @brief Accepts a worker-generated LOD tile and uploads a complete level when ready. */
+		void acceptGeneratedLodMesh(const GeneratedChunkMesh& generated_mesh);
+		/** @brief Draws the single selected global surface LOD level per planet. */
+		void drawLodFar() const;
+		/** @brief Draws the selected camera-local surface LOD tile per planet. */
+		void drawLodNear() const;
+		/** @brief Returns whether volume terrain chunks are the selected surface representation. */
+		bool shouldDrawPlanetChunks(WorldBodyId world_body_id) const;
+		/** @brief Cancels pending LOD work and releases all planet surface meshes. */
+		void clearLod();
 		void acceptGeneratedChunk(const GeneratedChunkMesh& generated_chunk);
 		bool editGround(WorldBodyId world_body_id, const glm::dvec3& position,
 			double radius, bool adds_solid_terrain);
