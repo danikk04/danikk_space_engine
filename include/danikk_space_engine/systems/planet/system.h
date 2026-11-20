@@ -21,7 +21,22 @@ namespace danikk_space_engine
 
 		void updatePlanet(PlanetData& planet);
 		void updateLod();
+		void updatePlanetLod(PlanetData& planet);
 		void initializePlanetLodLevels(PlanetData& planet);
+		uint8 selectPlanetLodTargetLevel(PlanetData& planet, double height,
+			const PlanetSettings& settings);
+		uint8 selectPlanetLodRenderLevel(const PlanetData& planet, uint8 target_level) const;
+		void queuePlanetLodRequests(PlanetData& planet, uint8 level_index,
+			const glm::dvec3& local_camera_position,
+			const PlanetSettings& settings, DynamicArray<ChunkMeshGenerationRequest>& requests);
+		void queuePlanetLocalLodRequests(PlanetData& planet, uint8 level_index,
+			const glm::dvec3& local_camera_position,
+			DynamicArray<ChunkMeshGenerationRequest>& requests);
+		void queuePlanetGlobalLodRequests(PlanetData& planet, uint8 level_index,
+			const PlanetSettings& settings, DynamicArray<ChunkMeshGenerationRequest>& requests);
+		void setPlanetLodRequestIdentity(ChunkMeshGenerationRequest& request,
+			const PlanetData& planet, const PlanetChunkLevel& level,
+			uint8 level_index, uint16 patch_index);
 		void destroyPlanetLodMeshes(PlanetData& planet);
 		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position,
 			const glm::dvec3& chunk_center_position);
