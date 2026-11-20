@@ -44,5 +44,6 @@ namespace danikk_space_engine
 		drawUnitOrderIndicators(*this);
 		controller.renderPreview();
 		drawUnitActivityLabels(*this);
+		setDepthRange(0.0f, 1.0f);
 	}
 }

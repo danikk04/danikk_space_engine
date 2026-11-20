@@ -275,7 +275,6 @@ namespace danikk_space_engine
 			render_empty_mesh = 0;
 			render_inactive = 0;
 		}
-		setDepthRange(0.0f, 1.0f);
 	}
 
 	/** @copydoc ChunkSystem::destroyRenderData */

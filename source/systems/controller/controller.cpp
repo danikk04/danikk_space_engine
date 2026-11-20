@@ -1,9 +1,13 @@
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/config.h>
+#include <danikk_space_engine/assets/human_skin.h>
+#include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/effects/world_body_preview.h>
 #include <danikk_space_engine/effects/event_spawn_preview.h>
+#include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/profiler.h>
+#include <danikk_engine/texture_methods.h>
 #include <danikk_framework/log.h>
 
 namespace danikk_space_engine
@@ -70,8 +74,17 @@ namespace danikk_space_engine
 		const bool show_event_spawn_preview = active_tool == ToolId::event
 			&& (selected_tool_action == ToolActionId::spawn_5_allies
 				|| selected_tool_action == ToolActionId::spawn_5_pirates);
-		if(!show_build_part_preview && !show_event_spawn_preview) return;
+		const bool show_human_preview = active_tool == ToolId::human
+			&& (selected_tool_action == ToolActionId::create_human
+				|| selected_tool_action == ToolActionId::create_reimu
+				|| selected_tool_action == ToolActionId::create_marisa
+				|| selected_tool_action == ToolActionId::create_tsumi_bukuro);
+		if(!show_build_part_preview && !show_event_spawn_preview && !show_human_preview) return;
 
+		static_asset_collection.base3d_shader.use(true);
+		setViewMatrix(glm::lookAt(vec3(0.0f), world.camera.getFront(), world.camera.getUp()));
+		setProjectionMatrix(glm::perspective(glm::radians(world.camera.vertical_fov_degrees),
+			screen_ratio_gz, world.camera.near_clip_distance, world.camera.far_clip_distance));
 		const RaycastHit hit = world.raycasts.castFromCamera();
 		if(show_build_part_preview)
 		{
@@ -80,6 +93,64 @@ namespace danikk_space_engine
 			drawWorldBodyPlacementPreview(
 				world, hit, shape, build_part_size, build_part_size_axis, build_part_rotation_step);
 		}
-		else drawEventSpawnPreview(world, hit, selected_tool_action);
+		else if(show_event_spawn_preview) drawEventSpawnPreview(world, hit, selected_tool_action);
+		else if(hit.hit && world.world_body_data.isWorldBodyActive(hit.body_id)
+			&& world.chunks.isChunkActive(hit.chunk_id))
+		{
+			const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
+			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
+			const glm::dvec3 local_position = inverse_rotation * (hit.position - body.position);
+			vec3 up = vec3(inverse_rotation * glm::dvec3(hit.normal));
+			if(world.planets.isPlanet(hit.body_id))
+			{
+				if(glm::length(local_position) <= 1e-6) return;
+				up = vec3(glm::normalize(local_position));
+			}
+			if(glm::length(up) <= 1e-6f) return;
+			up = glm::normalize(up);
+			const vec3 local_normal = vec3(inverse_rotation * glm::dvec3(hit.normal));
+			if(glm::dot(up, local_normal) < 0.5f) return;
+			const vec3 forward = vec3(inverse_rotation
+				* (world.camera.getWorldPosition() - hit.position));
+
+			HumanComponent preview_human;
+			preview_human.up = up;
+			preview_human.setInitialForward(forward);
+			switch(selected_tool_action)
+			{
+				case ToolActionId::create_reimu:
+					preview_human.appearance.skin_id = human_skin_ids::reimu_hakurei;
+					break;
+				case ToolActionId::create_marisa:
+					preview_human.appearance.skin_id = human_skin_ids::marisa_kirisame;
+					break;
+				case ToolActionId::create_tsumi_bukuro:
+					preview_human.appearance.skin_id = human_skin_ids::tsumi_bukuro;
+					break;
+				default:
+					preview_human.appearance.skin_id = human_skin_ids::usmc_marpat_woodland;
+					break;
+			}
+			const float height = preview_human.getHeight();
+			const glm::dvec3 feet_position = local_position + glm::dvec3(up * 0.02f);
+			const glm::dvec3 center_world = body.position
+				+ body.rotation * (feet_position + glm::dvec3(up * (height * 0.5f)));
+			glm::dvec3 world_up = body.rotation * glm::dvec3(up);
+			glm::dvec3 world_forward = body.rotation * glm::dvec3(preview_human.getForward());
+			world_forward -= world_up * glm::dot(world_forward, world_up);
+			if(glm::length(world_forward) <= 1e-6) return;
+			world_forward = glm::normalize(world_forward);
+			const glm::dvec3 world_right = glm::normalize(glm::cross(world_forward, world_up));
+			glm::mat4 orientation(1.0f);
+			orientation[0] = glm::vec4(world_right, 0.0);
+			orientation[1] = glm::vec4(world_forward, 0.0);
+			orientation[2] = glm::vec4(world_up, 0.0);
+			const mat4 body_matrix = glm::translate(mat4(1.0f),
+				vec3(center_world - world.camera.getWorldPosition())) * orientation;
+			const mat4 feet_matrix = body_matrix
+				* glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, -0.5f))
+				* glm::scale(mat4(1.0f), vec3(height));
+			drawHumanAppearance(preview_human, feet_matrix, vec4(0.08f, 0.35f, 1.0f, 0.55f));
+		}
 	}
 }

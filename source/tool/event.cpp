@@ -10,7 +10,8 @@ namespace danikk_space_engine
 		World& world, const RaycastHit& hit, ToolActionId action, EventSpawnPlacement (&placements)[5])
 	{
 		if((action != ToolActionId::spawn_5_allies && action != ToolActionId::spawn_5_pirates)
-			|| !hit.hit || !world.world_body_data.isWorldBodyActive(hit.body_id))
+			|| !hit.hit || !world.world_body_data.isWorldBodyActive(hit.body_id)
+			|| !world.chunks.isChunkActive(hit.chunk_id))
 			return 0;
 		const WorldBodyId body_id = hit.body_id;
 		const WorldBody& body = world.world_body_data.getWorldBody(body_id);
@@ -18,10 +19,7 @@ namespace danikk_space_engine
 		const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 		if(glm::length(hit.normal) <= 1e-6f) return 0;
 		const vec3 surface_up = glm::normalize(hit.normal);
-		const WorldBody& camera_body = world.world_body_data.getWorldBody(
-			world.chunks.getChunk(world.camera.getChunkId()).world_body_id);
-		const vec3 camera_right = vec3(camera_body.rotation
-			* glm::dvec3(world.camera.getRight()));
+		const vec3 camera_right = world.camera.getRight();
 		vec3 tangent = camera_right - surface_up * glm::dot(camera_right, surface_up);
 		if(glm::length(tangent) <= 1e-6f)
 		{
@@ -31,25 +29,20 @@ namespace danikk_space_engine
 		}
 		tangent = glm::normalize(tangent);
 		constexpr float column_spacing = 1.5f;
-		uint8 placement_count = 0;
 		for(uint8 index = 0; index < 5; ++index)
 		{
-			const glm::dvec3 origin = hit.position
-				+ glm::dvec3(tangent * ((static_cast<float>(index) - 2.0f) * column_spacing)
-					+ surface_up * 3.0f);
-			const RaycastHit ground = world.raycasts.cast(origin, -surface_up, 6.0f);
-			if(!ground.hit || ground.body_id != body_id || glm::dot(ground.normal, surface_up) < 0.5f) continue;
-			const glm::dvec3 local_position = inverse_rotation * (ground.position - body_position);
-			const vec3 local_surface_up = glm::normalize(vec3(inverse_rotation * glm::dvec3(ground.normal)));
-			const glm::dvec3 gravity = world.environment.sampleGravityAt(ground.position);
+			const float tangent_offset = (static_cast<float>(index) - 2.0f) * column_spacing;
+			const glm::dvec3 spawn_world_position = hit.position
+				+ glm::dvec3(tangent * tangent_offset + surface_up * 0.02f);
+			const glm::dvec3 local_position = inverse_rotation * (spawn_world_position - body_position);
+			const glm::dvec3 gravity = world.environment.sampleGravityAt(spawn_world_position);
 			const glm::dvec3 world_up = glm::length(gravity) > 1e-8
-				? -glm::normalize(gravity) : glm::normalize(glm::dvec3(ground.normal));
+				? -glm::normalize(gravity) : glm::normalize(glm::dvec3(surface_up));
 			const vec3 local_up = vec3(inverse_rotation * world_up);
-			const vec3 forward = vec3(inverse_rotation * (world.camera.getWorldPosition() - ground.position));
-			placements[placement_count++] = {
-				ground.chunk_id, local_position + glm::dvec3(local_surface_up * 0.02f), local_up, forward};
+			const vec3 forward = vec3(inverse_rotation * (world.camera.getWorldPosition() - spawn_world_position));
+			placements[index] = {hit.chunk_id, local_position, local_up, forward};
 		}
-		return placement_count;
+		return 5;
 	}
 
 	/** @brief Spawns five allied or pirate soldiers in the resolved column positions. */
