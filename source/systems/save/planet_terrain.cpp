@@ -5,7 +5,9 @@
 
 #include <danikk_framework/path_buffer.h>
 #include <danikk_framework/log.h>
+#include <danikk_space_engine/systems/save/system.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {
@@ -48,10 +50,13 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Loads and validates a planet's ordered terrain stamps and revision counter. */
-	bool PlanetSystem::loadPlanetTerrainEdits(PlanetData& planet)
+	bool SaveSystem::loadPlanetTerrainEdits(WorldBodyId world_body_id)
 	{
-		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
-		const WorldBodyId world_body_id = planet.world_body_id;
+		PlanetData* planet_data = world.planets.findPlanet(world_body_id);
+		if(planet_data == nullptr) return false;
+		PlanetData& planet = *planet_data;
+		if(planet.terrain_edits_loaded) return true;
+		const PlanetSettings& settings = world.planets.getPlanetSettings(planet.settings_id);
 		const double planet_radius = settings.radius;
 		const uint64 noise_seed = settings.noise_seed;
 		const std::filesystem::path new_file_path = terrainEditsFilePath(world_body_id, noise_seed);
@@ -103,7 +108,7 @@ namespace danikk_space_engine
 		if(loaded_legacy_file || header.version != terrain_edits_version)
 		{
 			input.close();
-			savePlanetTerrainEdits(planet);
+			savePlanetTerrainEdits(world_body_id);
 			std::error_code error;
 			if(loaded_legacy_file && std::filesystem::exists(new_file_path, error) && !error)
 				std::filesystem::remove(legacy_file_path, error);
@@ -114,11 +119,13 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Writes terrain-edit stamps field by field and logs path or write failures. */
-	void PlanetSystem::savePlanetTerrainEdits(const PlanetData& planet)
+	void SaveSystem::savePlanetTerrainEdits(WorldBodyId world_body_id)
 	{
+		const PlanetData* planet_data = world.planets.findPlanet(world_body_id);
+		if(planet_data == nullptr) return;
+		const PlanetData& planet = *planet_data;
 		std::error_code error;
-		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
-		const WorldBodyId world_body_id = planet.world_body_id;
+		const PlanetSettings& settings = world.planets.getPlanetSettings(planet.settings_id);
 		const double planet_radius = settings.radius;
 		const uint64 noise_seed = settings.noise_seed;
 		const std::filesystem::path file_path = terrainEditsFilePath(world_body_id, noise_seed);

@@ -14,6 +14,7 @@
 #include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
+#include <danikk_space_engine/systems/save/system.h>
 #include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/systems/unit/unit.h>
 
@@ -54,6 +55,8 @@ namespace danikk_space_engine
 		PlanetSystem planets;
 		/** @brief Performs terrain and BuildPart ray queries. */
 		RaycastSystem raycasts;
+		/** @brief Owns world-save paths, formats, and persistent data serialization. */
+		SaveSystem saves;
 		/** @brief Owns this world's faction instances and diplomatic relations. */
 		FactionSystem factions;
 		/** @brief Owns per-faction unit groups, tactical memory, and orders. */

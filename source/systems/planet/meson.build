@@ -8,5 +8,4 @@ sources += files(
 	'chunk_update.cpp',
 	'edit.cpp',
 	'terrain.cpp',
-	'terrain_edit_save.cpp',
 )

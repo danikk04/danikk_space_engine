@@ -40,7 +40,7 @@ namespace danikk_space_engine
 		planet.generation_id = next_generation_id++;
 		if(next_generation_id == 0) next_generation_id = 1;
 		planets.pushMove(planet);
-		loadPlanetTerrainEdits(planets[planets.size() - 1]);
+		world.saves.loadPlanetTerrainEdits(world_body_id);
 		return planets[planets.size() - 1];
 	}
 
@@ -204,7 +204,7 @@ namespace danikk_space_engine
 		planet->appendTerrainEdit(PlanetTerrainEdit{center, radius, material_id});
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
-		savePlanetTerrainEdits(*planet);
+		world.saves.savePlanetTerrainEdits(world_body_id);
 		return true;
 	}
 

@@ -29,10 +29,6 @@ namespace danikk_space_engine
 		void unloadChunksOutsideDesiredSet(PlanetData& planet);
 		void invalidateChunksAroundEdit(PlanetData& planet, const PlanetTerrainEdit& edit);
 		void removeQueuedRequests(const PlanetData& planet);
-		/** @brief Loads saved edit stamps and revision into the planet's owned data. */
-		bool loadPlanetTerrainEdits(PlanetData& planet);
-		/** @brief Persists the ordered edit stamps and revision owned by a planet. */
-		void savePlanetTerrainEdits(const PlanetData& planet);
 
 	public:
 		explicit PlanetSystem(World& world) : world(world) {}

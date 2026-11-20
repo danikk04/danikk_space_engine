@@ -20,7 +20,7 @@ namespace danikk_space_engine
 {
 	World::World()
 		: chunks(*this), chunk_mesh_generation(*this), environment(*this), physics(*this), controller(*this), camera(*this),
-		  components(*this), planets(*this), raycasts(*this), factions(), unit_system(*this)
+		  components(*this), planets(*this), raycasts(*this), saves(*this), factions(), unit_system(*this)
 	{
 	}
 
@@ -63,6 +63,7 @@ namespace danikk_space_engine
 		physics.init();
 		controller.init();
 		raycasts.init();
+		saves.init();
 		startBaseScenario(*this);
 	}
 
@@ -79,6 +80,7 @@ namespace danikk_space_engine
 		environment.shutdown();
 		physics.shutdown();
 		raycasts.shutdown();
+		saves.shutdown();
 		clearBuildPartMeshCache();
 		chunks.shutdown();
 		while(world_body_data.getUsedWorldBodyIds().size() > 0)
