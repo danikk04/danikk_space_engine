@@ -21,6 +21,8 @@ namespace danikk_space_engine
 		constexpr uint32 lod_resolutions[planet_lod_level_count] = {200, 256, 128, 64, 32, 16};
 		constexpr double level_altitude_ratios[planet_lod_level_count - 1] = {
 			0.001, 0.01, 0.05, 0.25, 0.75};
+		constexpr double lod_activation_height = 100.0;
+		constexpr double lod_deactivation_height = 70.0;
 		constexpr uint8 local_patch_index = 0;
 		constexpr uint32 global_face_patch_count = planet_lod_face_count;
 
@@ -89,25 +91,52 @@ namespace danikk_space_engine
 			DynamicArray<DefaultVertex> vertices;
 			DynamicArray<uint32> triangle_indices;
 			DynamicArray<MaterialId> triangle_material_ids;
+			size_t total_index_count = 0;
+			for(const PlanetLodPatch& patch : level.patches)
+				total_index_count += patch.triangle_indices.size();
+			vertices.reserve(total_index_count);
+			triangle_indices.reserve(total_index_count);
+			triangle_material_ids.reserve(total_index_count / 3);
+
 			for(const PlanetLodPatch& patch : level.patches)
 			{
-				const uint32 base_vertex = static_cast<uint32>(vertices.size());
-				for(const vec3& position : patch.positions)
+				for(size_t triangle = 0; triangle + 2 < patch.triangle_indices.size(); triangle += 3)
 				{
-					const glm::dvec3 planet_position = patch.origin + glm::dvec3(position);
-					const vec3 normal = glm::length(planet_position) > 1e-6
-						? vec3(glm::normalize(planet_position)) : vec3(0.0f, 0.0f, 1.0f);
-					const vec2 uv = level.camera_local
-						? projectLocalPositionToUv(position, normal)
-						: vec2(
-							std::atan2(planet_position.y, planet_position.x)
-								* glm::length(planet_position) / 32.0,
-							std::asin(glm::clamp(static_cast<double>(normal.z), -1.0, 1.0))
-								* glm::length(planet_position) / 32.0);
-					vertices.pushCtor(position, normal, uv);
+					const uint32 source_indices[3] = {
+						patch.triangle_indices[triangle],
+						patch.triangle_indices[triangle + 1],
+						patch.triangle_indices[triangle + 2]};
+					if(source_indices[0] >= patch.positions.size()
+						|| source_indices[1] >= patch.positions.size()
+						|| source_indices[2] >= patch.positions.size())
+						danikk_engine::formatFatalError("Generated planet LOD mesh has an invalid vertex index");
+
+					const vec3& a = patch.positions[source_indices[0]];
+					const vec3& b = patch.positions[source_indices[1]];
+					const vec3& c = patch.positions[source_indices[2]];
+					const vec3 cross_product = glm::cross(b - a, c - a);
+					const float normal_length = glm::length(cross_product);
+					if(normal_length <= 0.000001f) continue;
+					const vec3 normal = cross_product / normal_length;
+					const vec3 triangle_positions[3] = {a, b, c};
+					for(const vec3& position : triangle_positions)
+					{
+						const glm::dvec3 planet_position = patch.origin + glm::dvec3(position);
+						const double planet_position_length = glm::length(planet_position);
+						const vec3 radial_normal = planet_position_length > 1e-6
+							? vec3(planet_position / planet_position_length) : vec3(0.0f, 0.0f, 1.0f);
+						const vec2 uv = level.camera_local
+							? projectLocalPositionToUv(position, normal)
+							: vec2(
+								std::atan2(planet_position.y, planet_position.x)
+									* planet_position_length / 32.0,
+								std::asin(glm::clamp(static_cast<double>(radial_normal.z), -1.0, 1.0))
+									* planet_position_length / 32.0);
+						vertices.pushCtor(position, normal, uv);
+						triangle_indices.push(static_cast<uint32>(vertices.size() - 1));
+					}
+					triangle_material_ids.push(patch.triangle_material_ids[triangle / 3]);
 				}
-				for(uint32 index : patch.triangle_indices) triangle_indices.push(base_vertex + index);
-				for(MaterialId material_id : patch.triangle_material_ids) triangle_material_ids.push(material_id);
 			}
 
 			DynamicArray<gl_point_index_t> indices;
@@ -242,16 +271,12 @@ namespace danikk_space_engine
 					* (world.camera.getWorldPosition() - body.position);
 				const double height = world.planets.getPlanetHeightAboveSurface(
 					source.world_body_id, local_camera_position);
-				const double lod_activation_height = source.chunk_load_radius * 2.0;
-				const double lod_deactivation_height = -source.chunk_load_radius;
 				const bool was_enabled = planet.enabled;
 				if(planet.enabled)
 				{
-					// Keep the global surface visible through the surface-crossing transition;
-					// nearby terrain chunks then cover it where the cave or terrain occludes it.
 					if(height < lod_deactivation_height) planet.enabled = false;
 				}
-				else if(height >= lod_activation_height) planet.enabled = true;
+				else if(height > lod_activation_height) planet.enabled = true;
 				if(planet.enabled != was_enabled)
 				{
 					if(planet.enabled)
@@ -365,6 +390,8 @@ namespace danikk_space_engine
 							request.lod_face = face;
 							request.lod_level = level_index;
 							request.grid_coordinate = glm::ivec3(face, level_index, 0);
+							request.voxel_size = 1.57079632679489661923
+								* source.radius / level.resolution;
 							request.planet_terrain = planet.terrain_snapshot;
 							requests.pushMove(request);
 						}

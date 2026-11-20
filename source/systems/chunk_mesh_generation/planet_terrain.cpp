@@ -358,6 +358,7 @@ namespace danikk_space_engine
 		result.chunk_position = request.chunk_position;
 
 		const size_t resolution = request.lod_resolution;
+		const double minimum_terrain_wavelength = request.voxel_size * 3.0;
 		const size_t points_per_axis = resolution + 1;
 		const auto point_id = [points_per_axis](size_t x, size_t y)
 		{
@@ -379,7 +380,8 @@ namespace danikk_space_engine
 					const double v = (static_cast<double>(y) / resolution - 0.5) * request.chunk_width;
 					const glm::dvec3 tangent_position = request.chunk_position + right * u + forward * v;
 					const glm::dvec3 direction = glm::normalize(tangent_position);
-					const double radius = PlanetSystem::getPlanetSurfaceRadius(*request.planet_terrain, direction);
+					const double radius = PlanetSystem::getPlanetSurfaceRadius(
+						*request.planet_terrain, direction, minimum_terrain_wavelength);
 					result.point_positions.push(vec3(direction * radius - request.chunk_position));
 				}
 			}
@@ -403,13 +405,14 @@ namespace danikk_space_engine
 						default: cube_direction = glm::dvec3(-u, v, -1.0); break;
 					}
 					const glm::dvec3 direction = glm::normalize(cube_direction);
-					const double radius = PlanetSystem::getPlanetSurfaceRadius(*request.planet_terrain, direction);
+					const double radius = PlanetSystem::getPlanetSurfaceRadius(
+						*request.planet_terrain, direction, minimum_terrain_wavelength);
 					result.point_positions.push(vec3(direction * radius));
 				}
 			}
 		}
 
-		const auto append_triangle = [&result, &request](uint32 a, uint32 b, uint32 c)
+		const auto append_triangle = [&result, &request, minimum_terrain_wavelength](uint32 a, uint32 b, uint32 c)
 		{
 			const vec3& pa = result.point_positions[a];
 			const vec3& pb = result.point_positions[b];
@@ -430,7 +433,8 @@ namespace danikk_space_engine
 				+ glm::dvec3(result.point_positions[b]) + glm::dvec3(result.point_positions[c])) / 3.0;
 			const glm::dvec3 direction = glm::normalize(center);
 			const glm::dvec3 surface_position = direction
-				* PlanetSystem::getPlanetSurfaceRadius(*request.planet_terrain, direction);
+				* PlanetSystem::getPlanetSurfaceRadius(
+					*request.planet_terrain, direction, minimum_terrain_wavelength);
 			result.triangle_material_ids.push(
 				PlanetSystem::getPlanetMaterial(*request.planet_terrain, surface_position));
 		};

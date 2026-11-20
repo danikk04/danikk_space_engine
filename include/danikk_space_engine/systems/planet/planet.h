@@ -15,7 +15,7 @@ namespace danikk_space_engine
 
 	inline constexpr double default_planet_radius = 6371000.0;
 	inline constexpr double default_planet_core_radius = 3480000.0;
-	inline constexpr double planet_chunk_load_radius = 100.0;
+	inline constexpr double planet_chunk_load_radius = 150.0;
 	inline constexpr double planet_chunk_width = 32.0;
 	inline constexpr double planet_voxel_size = 2.0;
 
@@ -126,8 +126,9 @@ namespace danikk_space_engine
 		glm::vec3 getAtmosphereBackgroundColor(const glm::dvec3& world_position) const;
 		static double getPlanetDensity(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
 		static MaterialId getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position);
-		/** @brief Samples the cave-free radial surface used by distant planet meshes. */
-		static double getPlanetSurfaceRadius(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& direction);
+		/** @brief Samples the cave-free surface, optionally omitting noise layers finer than the LOD grid can represent. */
+		static double getPlanetSurfaceRadius(const PlanetTerrainSnapshot& snapshot,
+			const glm::dvec3& direction, double minimum_wavelength = 0.0);
 	};
 
 	/** @brief Applies a terrain edit to a planet registered in `world.planets`. */
