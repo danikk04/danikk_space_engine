@@ -4,6 +4,9 @@
 
 #include <glm/glm.hpp>
 
+#include <danikk_space_engine/id.h>
+#include <danikk_space_engine/resource_pool.h>
+
 namespace danikk_space_engine
 {
 	/**
@@ -34,4 +37,6 @@ namespace danikk_space_engine
 		/** @brief Writes this edit in the terrain-save record format. */
 		void write(std::ostream& output) const;
 	};
+
+	using PlanetTerrainEditPool = WorldResourcePool<PlanetTerrainEdit, PlanetTerrainEditId>;
 }

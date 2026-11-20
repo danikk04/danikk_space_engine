@@ -135,8 +135,9 @@ namespace danikk_space_engine
 			snapshot->planet_radius = planet_settings.radius;
 			snapshot->core_radius = planet_settings.core_radius;
 			snapshot->noise_seed = planet_settings.noise_seed;
-			snapshot->terrain_edits = planet.terrain_edits;
-			planet.terrain_snapshot = static_cast<std::shared_ptr<const PlanetTerrainSnapshot>&&>(snapshot);
+			snapshot->terrain_edit_pool = planet.terrain_edit_pool;
+			snapshot->terrain_edit_ids = planet.terrain_edit_ids;
+		planet.terrain_snapshot = static_cast<std::shared_ptr<const PlanetTerrainSnapshot>&&>(snapshot);
 		}
 		const double chunk_width = planet_chunk_width;
 		const glm::ivec3 minimum_key = center_key - planet_volume_chunk_half_width;

@@ -49,7 +49,8 @@ namespace danikk_space_engine
 		double planet_radius = 0.0;
 		double core_radius = 0.0;
 		uint64 noise_seed = 0;
-		DynamicArray<PlanetTerrainEdit> terrain_edits;
+		std::shared_ptr<const PlanetTerrainEditPool> terrain_edit_pool;
+		DynamicArray<PlanetTerrainEditId> terrain_edit_ids;
 	};
 
 	/** @brief Immutable CPU-only input copied into the worker queue. */

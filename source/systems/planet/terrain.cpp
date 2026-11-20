@@ -60,12 +60,13 @@ namespace danikk_space_engine
 		}
 
 		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed,
-			const DynamicArray<PlanetTerrainEdit>& edits, double minimum_wavelength = 0.0)
+			const PlanetTerrainEditPool& edit_pool, const DynamicArray<PlanetTerrainEditId>& edit_ids,
+			double minimum_wavelength = 0.0)
 		{
 			double surface_radius = samplePlanetSurfaceRadius(
 				direction, radius, noise_seed, minimum_wavelength);
-			for(const PlanetTerrainEdit& edit : edits)
-				surface_radius = edit.applyToSurfaceRadius(direction, surface_radius);
+			for(PlanetTerrainEditId edit_id : edit_ids)
+				surface_radius = edit_pool[edit_id].applyToSurfaceRadius(direction, surface_radius);
 			return surface_radius;
 		}
 
@@ -108,7 +109,8 @@ namespace danikk_space_engine
 		}
 
 		double samplePlanetDensity(const glm::dvec3& position, double radius, uint64 noise_seed,
-			const DynamicArray<PlanetTerrainEdit>& edits, double core_radius)
+			const PlanetTerrainEditPool& edit_pool, const DynamicArray<PlanetTerrainEditId>& edit_ids,
+			double core_radius)
 		{
 			const double distance_from_center = glm::length(position);
 			double density = radius + samplePlanetTerrainHeight(position, noise_seed) - distance_from_center;
@@ -123,8 +125,8 @@ namespace danikk_space_engine
 			const double cave_density = glm::mix(1.0, raw_cave_density, cave_fade);
 			density = std::min(density, cave_density);
 
-			for(const PlanetTerrainEdit& edit : edits)
-				density = edit.applyToScalarField(position, density);
+			for(PlanetTerrainEditId edit_id : edit_ids)
+				density = edit_pool[edit_id].applyToScalarField(position, density);
 			return std::max(density,
 				samplePlanetCoreDensity(position, distance_from_center, noise_seed, core_radius));
 		}
@@ -146,7 +148,7 @@ namespace danikk_space_engine
 	double PlanetSystem::getPlanetDensity(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position)
 	{
 		return samplePlanetDensity(position, snapshot.planet_radius, snapshot.noise_seed,
-			snapshot.terrain_edits, snapshot.core_radius);
+			*snapshot.terrain_edit_pool, snapshot.terrain_edit_ids, snapshot.core_radius);
 	}
 
 	double PlanetSystem::getPlanetSurfaceRadius(
@@ -156,7 +158,7 @@ namespace danikk_space_engine
 		if(direction_length <= 1e-12) return 0.0;
 		const glm::dvec3 radial_direction = direction / direction_length;
 		return samplePlanetSurfaceRadius(radial_direction, snapshot.planet_radius, snapshot.noise_seed,
-			snapshot.terrain_edits, minimum_wavelength);
+			*snapshot.terrain_edit_pool, snapshot.terrain_edit_ids, minimum_wavelength);
 	}
 
 	MaterialId PlanetSystem::getPlanetMaterial(const PlanetTerrainSnapshot& snapshot, const glm::dvec3& position)
@@ -169,7 +171,7 @@ namespace danikk_space_engine
 		const PlanetData& planet = getPlanet(world_body_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		return samplePlanetDensity(position, settings.radius, settings.noise_seed,
-			planet.terrain_edits, settings.core_radius);
+			*planet.terrain_edit_pool, planet.terrain_edit_ids, settings.core_radius);
 	}
 
 	MaterialId PlanetSystem::getPlanetMaterial(WorldBodyId world_body_id, const glm::dvec3& position) const
@@ -187,7 +189,8 @@ namespace danikk_space_engine
 		if(distance_from_center <= 1e-9) return -settings.radius;
 		const glm::dvec3 direction = position / distance_from_center;
 		return distance_from_center - samplePlanetSurfaceRadius(
-			direction, settings.radius, settings.noise_seed, planet.terrain_edits);
+			direction, settings.radius, settings.noise_seed,
+			*planet.terrain_edit_pool, planet.terrain_edit_ids);
 	}
 
 	/** @copydoc raycastPlanetScalarField */

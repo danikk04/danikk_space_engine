@@ -1,5 +1,14 @@
 #pragma once
 
+#ifdef swap
+#pragma push_macro("swap")
+#undef swap
+#include <memory>
+#pragma pop_macro("swap")
+#else
+#include <memory>
+#endif
+
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_engine/mesh.h>
 #include <danikk_space_engine/fwd.h>
@@ -78,10 +87,21 @@ namespace danikk_space_engine
 		bool terrain_edits_loaded = false;
 		bool chunk_set_initialized = false;
 		bool chunk_updates_active = false;
-		DynamicArray<PlanetTerrainEdit> terrain_edits;
+		std::shared_ptr<PlanetTerrainEditPool> terrain_edit_pool =
+			std::make_shared<PlanetTerrainEditPool>("PlanetTerrainEdit");
+		DynamicArray<PlanetTerrainEditId> terrain_edit_ids;
 		std::shared_ptr<const PlanetTerrainSnapshot> terrain_snapshot;
 		PlanetChunkLookup chunk_lookup;
 		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
+
+		/** @brief Adds one edit to this planet's pool and appends its handle in application order. */
+		PlanetTerrainEditId appendTerrainEdit(const PlanetTerrainEdit& edit)
+		{
+			const PlanetTerrainEditId edit_id = terrain_edit_pool->create();
+			(*terrain_edit_pool)[edit_id] = edit;
+			terrain_edit_ids.push(edit_id);
+			return edit_id;
+		}
 	};
 
 	inline constexpr uint8 planet_lod_level_count = 5;

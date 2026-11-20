@@ -77,11 +77,13 @@ namespace danikk_space_engine
 
 	/** @brief Loads saved terrain stamps for a planet body and procedural seed. */
 	bool loadPlanetTerrainEdits(WorldBodyId world_body_id, double planet_radius,
-		uint64 noise_seed, DynamicArray<PlanetTerrainEdit>& edits, uint64& terrain_revision);
+		uint64 noise_seed, PlanetTerrainEditPool& edit_pool,
+		DynamicArray<PlanetTerrainEditId>& edit_ids, uint64& terrain_revision);
 
 	/** @brief Persists the ordered terrain stamps for a planet body. */
 	void savePlanetTerrainEdits(WorldBodyId world_body_id, double planet_radius,
-		uint64 noise_seed, const DynamicArray<PlanetTerrainEdit>& edits, uint64 terrain_revision);
+		uint64 noise_seed, const PlanetTerrainEditPool& edit_pool,
+		const DynamicArray<PlanetTerrainEditId>& edit_ids, uint64 terrain_revision);
 
 	const PlanetSettings& getPlanetSettings(PlanetSettingsId id);
 	bool raycastPlanetScalarField(const World& world, WorldBodyId planet_body_id,

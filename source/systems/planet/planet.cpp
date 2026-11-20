@@ -151,9 +151,9 @@ namespace danikk_space_engine
 		if(!planet.terrain_edits_loaded)
 		{
 			loadPlanetTerrainEdits(planet.world_body_id, planet_settings.radius, planet_settings.noise_seed,
-				planet.terrain_edits, planet.terrain_revision);
+				*planet.terrain_edit_pool, planet.terrain_edit_ids, planet.terrain_revision);
 			planet.terrain_edits_loaded = true;
-			planet.processed_edit_count = planet.terrain_edits.size();
+			planet.processed_edit_count = planet.terrain_edit_ids.size();
 		}
 		const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 		const glm::dvec3 camera_position = glm::conjugate(body.rotation)
@@ -188,8 +188,9 @@ namespace danikk_space_engine
 			danikk_framework::formatLogInfo(
 				"Planet chunk streaming started: body=% height_above_surface=% m center_distance=% m",
 				planet.world_body_id, surface_height, distance_from_center);
-		while(planet.processed_edit_count < planet.terrain_edits.size())
-			invalidateChunksAroundEdit(planet, planet.terrain_edits[planet.processed_edit_count++]);
+		while(planet.processed_edit_count < planet.terrain_edit_ids.size())
+			invalidateChunksAroundEdit(planet,
+				(*planet.terrain_edit_pool)[planet.terrain_edit_ids[planet.processed_edit_count++]]);
 		const glm::ivec3 chunk_center_grid_coordinate(
 			static_cast<int>(std::floor(chunk_center_position.x / planet_chunk_width)),
 			static_cast<int>(std::floor(chunk_center_position.y / planet_chunk_width)),
@@ -214,11 +215,11 @@ namespace danikk_space_engine
 		const PlanetSettings& planet_settings = getPlanetSettings(planet->settings_id);
 		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
 		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
-		planet->terrain_edits.pushMove(PlanetTerrainEdit{center, radius, adds_solid_terrain});
+		planet->appendTerrainEdit(PlanetTerrainEdit{center, radius, adds_solid_terrain});
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
 		savePlanetTerrainEdits(world_body_id, planet_settings.radius, planet_settings.noise_seed,
-			planet->terrain_edits, planet->terrain_revision);
+			*planet->terrain_edit_pool, planet->terrain_edit_ids, planet->terrain_revision);
 		return true;
 	}
 

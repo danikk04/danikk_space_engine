@@ -40,7 +40,8 @@ namespace danikk_space_engine
 			snapshot->planet_radius = settings.radius;
 			snapshot->core_radius = settings.core_radius;
 			snapshot->noise_seed = settings.noise_seed;
-			snapshot->terrain_edits = planet.terrain_edits;
+			snapshot->terrain_edit_pool = planet.terrain_edit_pool;
+			snapshot->terrain_edit_ids = planet.terrain_edit_ids;
 			return snapshot;
 		}
 

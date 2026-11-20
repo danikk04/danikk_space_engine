@@ -33,8 +33,9 @@ namespace danikk_space_engine
 			if(planet_settings.radius <= core_clearance + planet_voxel_size) return false;
 
 			double outer_radius = planet_settings.radius + 64.0;
-			for(const PlanetTerrainEdit& edit : terrain_snapshot.terrain_edits)
-				outer_radius = glm::max(outer_radius, edit.getMaximumRadiusFromOrigin(surface_margin));
+			for(PlanetTerrainEditId edit_id : terrain_snapshot.terrain_edit_ids)
+				outer_radius = glm::max(outer_radius,
+					(*terrain_snapshot.terrain_edit_pool)[edit_id].getMaximumRadiusFromOrigin(surface_margin));
 			const glm::dvec3 directions[] = {
 				glm::dvec3(0.0, 0.0, 1.0), glm::dvec3(0.0, 0.0, -1.0),
 				glm::dvec3(1.0, 0.0, 0.0), glm::dvec3(-1.0, 0.0, 0.0),
@@ -104,7 +105,9 @@ namespace danikk_space_engine
 		terrain_snapshot.noise_seed = planet_settings.noise_seed;
 		uint64 terrain_revision = 0;
 		loadPlanetTerrainEdits(planet_body_id, planet_settings.radius,
-			planet_settings.noise_seed, terrain_snapshot.terrain_edits, terrain_revision);
+			planet_settings.noise_seed, *world.planets.getPlanet(planet_body_id).terrain_edit_pool,
+			terrain_snapshot.terrain_edit_ids, terrain_revision);
+		terrain_snapshot.terrain_edit_pool = world.planets.getPlanet(planet_body_id).terrain_edit_pool;
 		const PointId camera_point_id = world.point_data.createPoint();
 		Point& camera_point = world.point_data.getPoint(camera_point_id);
 		constexpr double camera_altitude = 10.0;
