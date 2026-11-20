@@ -22,7 +22,8 @@ namespace danikk_space_engine
 		constexpr double lod_activation_height = 100.0;
 		constexpr double lod_deactivation_height = 70.0;
 		constexpr double local_surface_patch_width = planet_chunk_width * 16.0;
-		constexpr uint8 local_patch_index = 0;
+		constexpr uint8 local_patch_level = 1;
+		constexpr uint8 local_patch_face = 0;
 		constexpr uint32 global_face_patch_count = planet_lod_face_count;
 
 std::shared_ptr<const PlanetTerrainSnapshot> createLodSnapshot(const PlanetData& planet)
@@ -38,7 +39,7 @@ std::shared_ptr<const PlanetTerrainSnapshot> createLodSnapshot(const PlanetData&
 			return snapshot;
 		}
 
-bool isLevelReady(const PlanetLodLevel& level)
+bool isLevelReady(const PlanetChunkLevel& level)
 		{
 			if(!level.initialized || level.mesh == nullptr
 				|| level.patches.size() != (level.camera_local ? 1 : planet_lod_face_count)) return false;
@@ -48,67 +49,71 @@ bool isLevelReady(const PlanetLodLevel& level)
 		}
 	}
 
-	PlanetLodData& PlanetSystem::getOrCreatePlanetLodData(const PlanetData& source)
+	PlanetChunkRenderData& PlanetSystem::getOrCreatePlanetChunkRenderData(const PlanetData& source)
 	{
-		for(PlanetLodData& planet : lod_data)
+		for(PlanetChunkRenderData& planet : chunk_render_data)
 		{
 			if(planet.world_body_id == source.world_body_id
 				&& planet.planet_generation_id == source.generation_id) return planet;
 		}
 
-		for(size_t index = 0; index < lod_data.size();)
+		for(size_t index = 0; index < chunk_render_data.size();)
 		{
-			if(lod_data[index].world_body_id != source.world_body_id)
+			if(chunk_render_data[index].world_body_id != source.world_body_id)
 			{
 				index++;
 				continue;
 			}
-			destroyPlanetLodMeshes(lod_data[index]);
-			for(size_t shift = index + 1; shift < lod_data.size(); shift++)
-				lod_data[shift - 1] = static_cast<PlanetLodData&&>(lod_data[shift]);
-			lod_data.resize(lod_data.size() - 1);
+			destroyPlanetLodMeshes(chunk_render_data[index]);
+			for(size_t shift = index + 1; shift < chunk_render_data.size(); shift++)
+				chunk_render_data[shift - 1] = static_cast<PlanetChunkRenderData&&>(chunk_render_data[shift]);
+			chunk_render_data.resize(chunk_render_data.size() - 1);
 		}
 
-		PlanetLodData planet;
+		PlanetChunkRenderData planet;
 		planet.world_body_id = source.world_body_id;
 		planet.planet_generation_id = source.generation_id;
 		planet.terrain_revision = source.terrain_revision;
-		planet.levels.resize(planet_lod_level_count);
-		for(uint8 level_index = 0; level_index < planet_lod_level_count; level_index++)
+		planet.levels.resize(planet_chunk_level_count);
+		for(uint8 level_index = 1; level_index < planet_chunk_level_count; level_index++)
 		{
-			PlanetLodLevel& level = planet.levels[level_index];
-			level.resolution = lod_resolutions[level_index];
-			level.camera_local = level_index == local_patch_index;
+			PlanetChunkLevel& level = planet.levels[level_index];
+			level.resolution = lod_resolutions[level_index - 1];
+			level.camera_local = level_index == local_patch_level;
 			level.patches.resize(level.camera_local ? 1 : global_face_patch_count);
 		}
-		lod_data.pushMove(planet);
-		return lod_data[lod_data.size() - 1];
+		chunk_render_data.pushMove(planet);
+		return chunk_render_data[chunk_render_data.size() - 1];
 	}
 	/** @copydoc PlanetSystem::updateLod */
 	void PlanetSystem::updateLod()
 	{
 		DSE_WATCH();
-		for(size_t index = 0; index < lod_data.size();)
+		for(size_t index = 0; index < chunk_render_data.size();)
 		{
-			if(isPlanet(lod_data[index].world_body_id)
-				&& world.world_body_data.isWorldBodyActive(lod_data[index].world_body_id))
+			if(isPlanet(chunk_render_data[index].world_body_id)
+				&& world.world_body_data.isWorldBodyActive(chunk_render_data[index].world_body_id))
 			{
 				index++;
 				continue;
 			}
 			DynamicArray<ChunkMeshGenerationRequest> no_requests;
 			world.chunk_mesh_generation.replacePlanetLodRequests(
-				lod_data[index].world_body_id, lod_data[index].planet_generation_id, no_requests);
-			destroyPlanetLodMeshes(lod_data[index]);
-			for(size_t shift = index + 1; shift < lod_data.size(); shift++)
-				lod_data[shift - 1] = static_cast<PlanetLodData&&>(lod_data[shift]);
-			lod_data.resize(lod_data.size() - 1);
+				chunk_render_data[index].world_body_id, chunk_render_data[index].planet_generation_id, no_requests);
+			destroyPlanetLodMeshes(chunk_render_data[index]);
+			for(size_t shift = index + 1; shift < chunk_render_data.size(); shift++)
+				chunk_render_data[shift - 1] = static_cast<PlanetChunkRenderData&&>(chunk_render_data[shift]);
+			chunk_render_data.resize(chunk_render_data.size() - 1);
 		}
 
 		for(const PlanetData& source : planets)
 		{
 			if(!world.world_body_data.isWorldBodyActive(source.world_body_id)) continue;
-			PlanetLodData& planet = getOrCreatePlanetLodData(source);
+			PlanetChunkRenderData& planet = getOrCreatePlanetChunkRenderData(source);
+			PlanetChunkLevel& regular_level = planet.levels[0];
+			regular_level.chunk_ids.clear();
+			const WorldBody& body = world.world_body_data.getWorldBody(source.world_body_id);
+			for(ChunkId chunk_id : body.chunk_ids) regular_level.chunk_ids.push(chunk_id);
 			if(planet.terrain_revision != source.terrain_revision)
 			{
 				destroyPlanetLodMeshes(planet);
@@ -122,11 +127,10 @@ bool isLevelReady(const PlanetLodLevel& level)
 			{
 				planet.enabled = false;
 				planet.show_local_patch = false;
-				planet.render_mode = PlanetSurfaceRenderMode::volume_chunks;
+				planet.render_level = 0;
 			}
 			else
 			{
-				const WorldBody& body = world.world_body_data.getWorldBody(source.world_body_id);
 				const glm::dvec3 local_camera_position = glm::conjugate(body.rotation)
 					* (world.camera.getWorldPosition() - body.position);
 				const double height = getPlanetHeightAboveSurface(
@@ -151,8 +155,8 @@ bool isLevelReady(const PlanetLodLevel& level)
 
 				const auto queue_local_patch_request = [&]()
 				{
-					PlanetLodLevel& level = planet.levels[local_patch_index];
-					PlanetLodPatch& patch = level.patches[local_patch_index];
+					PlanetChunkLevel& level = planet.levels[local_patch_level];
+					PlanetLodPatch& patch = level.patches[local_patch_face];
 					const double patch_grid_step = local_surface_patch_width * 0.5;
 					const glm::dvec3 camera_direction = glm::normalize(local_camera_position);
 					const glm::dvec3 camera_surface_position = camera_direction
@@ -182,8 +186,8 @@ bool isLevelReady(const PlanetLodLevel& level)
 						request.planet_generation_id = source.generation_id;
 						request.terrain_revision = source.terrain_revision;
 						request.lod_resolution = level.resolution;
-						request.lod_face = local_patch_index;
-						request.lod_level = local_patch_index;
+						request.lod_face = local_patch_face;
+						request.lod_level = local_patch_level;
 						request.chunk_width = local_surface_patch_width;
 						request.voxel_size = local_surface_patch_width / level.resolution;
 						request.grid_coordinate = patch_coordinate;
@@ -229,15 +233,16 @@ bool isLevelReady(const PlanetLodLevel& level)
 							"Planet LOD desired level changed: body=% level=% height_above_surface=% m",
 							source.world_body_id, planet.desired_level, height);
 
-					planet.show_local_patch = planet.desired_level == local_patch_index;
+					planet.show_local_patch = planet.desired_level == 0;
 					if(planet.show_local_patch) queue_local_patch_request();
 
 					const auto queue_level_requests = [&](uint8 level_index)
 					{
-						PlanetLodLevel& level = planet.levels[level_index];
+						const uint8 render_level = static_cast<uint8>(level_index + 1);
+						PlanetChunkLevel& level = planet.levels[render_level];
 						if(level.camera_local)
 						{
-							PlanetLodPatch& patch = level.patches[local_patch_index];
+							PlanetLodPatch& patch = level.patches[local_patch_face];
 							const double patch_width = glm::max(source.chunk_load_radius * 4.0, 128.0);
 							const double patch_grid_step = patch_width * 0.5;
 							const glm::dvec3 camera_direction = glm::normalize(local_camera_position);
@@ -268,8 +273,8 @@ bool isLevelReady(const PlanetLodLevel& level)
 								request.planet_generation_id = source.generation_id;
 								request.terrain_revision = source.terrain_revision;
 								request.lod_resolution = level.resolution;
-								request.lod_face = local_patch_index;
-								request.lod_level = level_index;
+								request.lod_face = local_patch_face;
+								request.lod_level = render_level;
 								request.chunk_width = patch_width;
 								request.voxel_size = patch_width / level.resolution;
 								request.grid_coordinate = patch_coordinate;
@@ -292,8 +297,8 @@ bool isLevelReady(const PlanetLodLevel& level)
 							request.terrain_revision = source.terrain_revision;
 							request.lod_resolution = level.resolution;
 							request.lod_face = face;
-							request.lod_level = level_index;
-							request.grid_coordinate = glm::ivec3(face, level_index, 0);
+							request.lod_level = render_level;
+							request.grid_coordinate = glm::ivec3(face, render_level, 0);
 							request.voxel_size = 1.57079632679489661923
 								* source.radius / level.resolution;
 							request.planet_terrain = planet.terrain_snapshot;
@@ -301,56 +306,52 @@ bool isLevelReady(const PlanetLodLevel& level)
 						}
 					};
 
-					if(planet.desired_level != local_patch_index)
+					if(planet.desired_level != 0)
 						queue_level_requests(planet.desired_level);
-					if(planet.desired_level == local_patch_index)
+					if(planet.desired_level == 0)
 						queue_level_requests(1);
 
-					const PlanetSurfaceRenderMode previous_render_mode = planet.render_mode;
 					const uint8 previous_render_level = planet.render_level;
-					planet.render_mode = PlanetSurfaceRenderMode::volume_chunks;
-					if(planet.desired_level == local_patch_index
-						&& isLevelReady(planet.levels[local_patch_index]))
+					planet.render_level = 0;
+					if(planet.desired_level == 0
+						&& isLevelReady(planet.levels[local_patch_level]))
 					{
-						planet.render_mode = PlanetSurfaceRenderMode::local_surface_lod;
-						planet.render_level = local_patch_index;
-						planet.active_level = local_patch_index;
+						planet.render_level = local_patch_level;
+						planet.active_level = local_patch_level;
 						planet.has_active_level = true;
 					}
 					else
-				{
-					uint8 selected_level = planet_lod_level_count;
-					if(planet.desired_level > local_patch_index
-						&& isLevelReady(planet.levels[planet.desired_level]))
-						selected_level = planet.desired_level;
-					else
 					{
-						for(uint8 candidate = 1; candidate < planet_lod_level_count; candidate++)
+						uint8 selected_level = planet_chunk_level_count;
+						if(planet.desired_level > 0
+							&& isLevelReady(planet.levels[planet.desired_level + 1]))
+							selected_level = static_cast<uint8>(planet.desired_level + 1);
+						else
 						{
-							if(!isLevelReady(planet.levels[candidate])) continue;
-						selected_level = candidate;
-						break;
+							for(uint8 candidate = 1; candidate < planet_lod_level_count; candidate++)
+							{
+								const uint8 candidate_level = static_cast<uint8>(candidate + 1);
+								if(!isLevelReady(planet.levels[candidate_level])) continue;
+								selected_level = candidate_level;
+								break;
+							}
 						}
-					}
-					if(selected_level < planet_lod_level_count)
+						if(selected_level < planet_chunk_level_count)
 					{
-						planet.render_mode = PlanetSurfaceRenderMode::global_surface_lod;
 						planet.render_level = selected_level;
 						planet.active_level = selected_level;
 						planet.has_active_level = true;
 					}
-				}
-				if(planet.render_mode != previous_render_mode
-					|| (planet.render_mode == PlanetSurfaceRenderMode::global_surface_lod
-						&& planet.render_level != previous_render_level))
-					danikk_framework::formatLogInfo(
-						"Planet surface render mode changed: body=% mode=% level=% height_above_surface=% m",
-						source.world_body_id, static_cast<uint8>(planet.render_mode),
-						planet.render_level, height);
+					}
+					if(planet.render_level != previous_render_level)
+						danikk_framework::formatLogInfo(
+							"Planet surface render level changed: body=% level=% height_above_surface=% m",
+							source.world_body_id,
+							planet.render_level, height);
 				}
 				else
 				{
-					planet.render_mode = PlanetSurfaceRenderMode::volume_chunks;
+					planet.render_level = 0;
 					planet.show_local_patch = false;
 				}
 			}

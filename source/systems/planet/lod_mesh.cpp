@@ -47,7 +47,7 @@ void destroyMesh(Mesh*& mesh)
 			}
 		}
 
-		bool isLevelReady(const PlanetLodLevel& level)
+		bool isLevelReady(const PlanetChunkLevel& level)
 		{
 			if(!level.initialized || level.mesh == nullptr
 				|| level.patches.size() != (level.camera_local ? 1 : planet_lod_face_count)) return false;
@@ -56,7 +56,7 @@ void destroyMesh(Mesh*& mesh)
 			return true;
 		}
 
-void uploadLevelMesh(PlanetLodLevel& level)
+void uploadLevelMesh(PlanetChunkLevel& level)
 		{
 			DynamicArray<DefaultVertex> vertices;
 			DynamicArray<uint32> triangle_indices;
@@ -139,9 +139,9 @@ void uploadLevelMesh(PlanetLodLevel& level)
 		}
 	}
 
-	void PlanetSystem::destroyPlanetLodMeshes(PlanetLodData& planet)
+	void PlanetSystem::destroyPlanetLodMeshes(PlanetChunkRenderData& planet)
 	{
-		for(PlanetLodLevel& level : planet.levels)
+		for(PlanetChunkLevel& level : planet.levels)
 		{
 			destroyMesh(level.mesh);
 			level.material_ranges.clear();
@@ -158,6 +158,8 @@ void uploadLevelMesh(PlanetLodLevel& level)
 			}
 		}
 		planet.has_active_level = false;
+		planet.active_level = 0;
+		planet.render_level = 0;
 		planet.terrain_snapshot.reset();
 	}
 
@@ -166,14 +168,15 @@ void uploadLevelMesh(PlanetLodLevel& level)
 	{
 		DSE_WATCH();
 		if(generated_mesh.source != ChunkMeshSource::planet_surface_lod
-			|| generated_mesh.lod_level >= planet_lod_level_count
+			|| generated_mesh.lod_level == 0
+			|| generated_mesh.lod_level >= planet_chunk_level_count
 			|| generated_mesh.lod_face >= planet_lod_face_count) return;
-		for(PlanetLodData& planet : lod_data)
+		for(PlanetChunkRenderData& planet : chunk_render_data)
 		{
 			if(planet.world_body_id != generated_mesh.world_body_id
 				|| planet.planet_generation_id != generated_mesh.planet_generation_id
 				|| planet.terrain_revision != generated_mesh.terrain_revision) continue;
-			PlanetLodLevel& level = planet.levels[generated_mesh.lod_level];
+			PlanetChunkLevel& level = planet.levels[generated_mesh.lod_level];
 			if(level.resolution != generated_mesh.lod_resolution) return;
 			if(generated_mesh.lod_face >= level.patches.size()) return;
 			PlanetLodPatch& patch = level.patches[generated_mesh.lod_face];
@@ -197,7 +200,7 @@ void uploadLevelMesh(PlanetLodLevel& level)
 					face_patch.triangle_material_ids = DynamicArray<MaterialId>();
 				}
 			}
-			if(planet.desired_level == generated_mesh.lod_level
+			if(planet.desired_level + 1 == generated_mesh.lod_level
 				&& isLevelReady(level))
 			{
 				planet.active_level = generated_mesh.lod_level;
@@ -212,12 +215,12 @@ void uploadLevelMesh(PlanetLodLevel& level)
 	{
 		DSE_WATCH();
 		DynamicArray<ChunkMeshGenerationRequest> no_requests;
-		for(PlanetLodData& planet : lod_data)
+		for(PlanetChunkRenderData& planet : chunk_render_data)
 		{
 			world.chunk_mesh_generation.replacePlanetLodRequests(
 				planet.world_body_id, planet.planet_generation_id, no_requests);
 			destroyPlanetLodMeshes(planet);
 		}
-		lod_data.clear();
+		chunk_render_data.clear();
 	}
 }

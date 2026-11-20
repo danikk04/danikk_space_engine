@@ -108,7 +108,7 @@ namespace danikk_space_engine
 			return static_cast<uint32>(y * points_per_axis + x);
 		};
 		result.point_positions.reserve(points_per_axis * points_per_axis);
-		if(request.lod_level == 0)
+		if(request.lod_level == 1)
 		{
 			const glm::dvec3 up = glm::normalize(request.chunk_position);
 			const glm::dvec3 reference = glm::abs(up.z) < 0.9

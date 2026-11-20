@@ -204,15 +204,15 @@ namespace danikk_space_engine
 	void PlanetSystem::destroyPlanet(WorldBodyId world_body_id)
 	{
 		DynamicArray<ChunkMeshGenerationRequest> no_lod_requests;
-		for(size_t index = 0; index < lod_data.size(); ++index)
+		for(size_t index = 0; index < chunk_render_data.size(); ++index)
 		{
-			if(lod_data[index].world_body_id != world_body_id) continue;
+			if(chunk_render_data[index].world_body_id != world_body_id) continue;
 			world.chunk_mesh_generation.replacePlanetLodRequests(
-				world_body_id, lod_data[index].planet_generation_id, no_lod_requests);
-			destroyPlanetLodMeshes(lod_data[index]);
-			for(size_t shift = index + 1; shift < lod_data.size(); shift++)
-				lod_data[shift - 1] = static_cast<PlanetLodData&&>(lod_data[shift]);
-			lod_data.resize(lod_data.size() - 1);
+				world_body_id, chunk_render_data[index].planet_generation_id, no_lod_requests);
+			destroyPlanetLodMeshes(chunk_render_data[index]);
+			for(size_t shift = index + 1; shift < chunk_render_data.size(); shift++)
+				chunk_render_data[shift - 1] = static_cast<PlanetChunkRenderData&&>(chunk_render_data[shift]);
+			chunk_render_data.resize(chunk_render_data.size() - 1);
 			break;
 		}
 

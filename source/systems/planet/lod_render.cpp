@@ -17,9 +17,9 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		constexpr uint8 local_patch_index = 0;
+		constexpr uint8 local_patch_level = 1;
 
-bool isLevelReady(const PlanetLodLevel& level)
+bool isLevelReady(const PlanetChunkLevel& level)
 		{
 			if(!level.initialized || level.mesh == nullptr
 				|| level.patches.size() != (level.camera_local ? 1 : planet_lod_face_count)) return false;
@@ -46,17 +46,16 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 	{
 		DSE_WATCH();
 		if(!world.camera.isActive()) return;
-		for(const PlanetLodData& planet : lod_data)
+		for(const PlanetChunkRenderData& planet : chunk_render_data)
 		{
-			if(planet.render_mode != PlanetSurfaceRenderMode::global_surface_lod) continue;
+			if(planet.render_level <= local_patch_level) continue;
 			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			setWorldMatrix(createPlanetTransform(world, body));
 			const uint8 global_level_index = planet.render_level;
-			if(global_level_index == local_patch_index
-				|| global_level_index >= planet_lod_level_count
+			if(global_level_index >= planet_chunk_level_count
 				|| !isLevelReady(planet.levels[global_level_index])) continue;
-			const PlanetLodLevel& level = planet.levels[global_level_index];
+			const PlanetChunkLevel& level = planet.levels[global_level_index];
 			if(level.mesh == nullptr) continue;
 			for(const PlanetLodMaterialRange& range : level.material_ranges)
 			{
@@ -75,11 +74,11 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 	{
 		DSE_WATCH();
 		if(!world.camera.isActive()) return;
-		for(const PlanetLodData& planet : lod_data)
+		for(const PlanetChunkRenderData& planet : chunk_render_data)
 		{
-			if(planet.render_mode != PlanetSurfaceRenderMode::local_surface_lod
+			if(planet.render_level != local_patch_level
 				|| !world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
-			const PlanetLodLevel& level = planet.levels[local_patch_index];
+			const PlanetChunkLevel& level = planet.levels[local_patch_level];
 			if(!level.initialized || level.mesh == nullptr) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			setWorldMatrix(createPlanetTransform(world, body, level.mesh_origin));
@@ -99,12 +98,22 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 	bool PlanetSystem::shouldDrawPlanetChunks(WorldBodyId world_body_id) const
 	{
 		DSE_WATCH();
-		for(const PlanetLodData& planet : lod_data)
+		for(const PlanetChunkRenderData& planet : chunk_render_data)
 		{
 			if(planet.world_body_id != world_body_id) continue;
-			return planet.render_mode == PlanetSurfaceRenderMode::volume_chunks;
+			return planet.render_level == 0;
 		}
 		return true;
+	}
+
+	/** @copydoc PlanetSystem::getRegularChunkIds */
+	const DynamicArray<ChunkId>* PlanetSystem::getRegularChunkIds(WorldBodyId world_body_id) const
+	{
+		DSE_WATCH();
+		for(const PlanetChunkRenderData& planet : chunk_render_data)
+			if(planet.world_body_id == world_body_id && planet.levels.size() > 0)
+				return &planet.levels[0].chunk_ids;
+		return nullptr;
 	}
 
 

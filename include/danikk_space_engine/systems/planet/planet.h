@@ -91,15 +91,8 @@ namespace danikk_space_engine
 	};
 
 	inline constexpr uint8 planet_lod_level_count = 6;
+	inline constexpr uint8 planet_chunk_level_count = planet_lod_level_count + 1;
 	inline constexpr uint8 planet_lod_face_count = 6;
-
-	/** @brief Mutually exclusive render source selected for one planet. */
-	enum class PlanetSurfaceRenderMode : uint8
-	{
-		volume_chunks,
-		local_surface_lod,
-		global_surface_lod
-	};
 
 	/** @brief Material range in one planetary LOD mesh. */
 	struct PlanetLodMaterialRange
@@ -120,9 +113,12 @@ namespace danikk_space_engine
 		bool ready = false;
 	};
 
-	/** @brief GPU mesh and pending tile data for one surface resolution. */
-	struct PlanetLodLevel
+	/** @brief Render resources for one planet level; level zero references regular chunks. */
+	struct PlanetChunkLevel
 	{
+		/** @brief Regular chunk IDs for level zero; unused by LOD levels. */
+		DynamicArray<ChunkId> chunk_ids;
+		/** @brief Combined surface mesh; unused by the regular chunk level. */
 		Mesh* mesh = nullptr;
 		DynamicArray<PlanetLodMaterialRange> material_ranges;
 		DynamicArray<PlanetLodPatch> patches;
@@ -132,22 +128,22 @@ namespace danikk_space_engine
 		bool initialized = false;
 	};
 
-	/** @brief Per-planet LOD state owned and updated by PlanetSystem. */
-	struct PlanetLodData
+	/** @brief Unified per-planet render-level selection and storage. */
+	struct PlanetChunkRenderData
 	{
 		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
-		uint8 desired_level = 0;
+		uint8 desired_level = 1;
 		uint8 active_level = 0;
 		bool has_desired_level = false;
 		bool has_active_level = false;
 		bool enabled = false;
 		bool show_local_patch = false;
-		PlanetSurfaceRenderMode render_mode = PlanetSurfaceRenderMode::volume_chunks;
-		uint8 render_level = 1;
+		/** @brief Active level: zero uses regular chunks, positive values use the matching LOD level. */
+		uint8 render_level = 0;
 		std::shared_ptr<const PlanetTerrainSnapshot> terrain_snapshot;
-		DynamicArray<PlanetLodLevel> levels;
+		DynamicArray<PlanetChunkLevel> levels;
 	};
 
 	/** @brief Owns planet state and provides terrain queries, editing, streaming, and result acceptance. */
@@ -155,12 +151,12 @@ namespace danikk_space_engine
 	{
 		World& world;
 		DynamicArray<PlanetData> planets;
-		DynamicArray<PlanetLodData> lod_data;
+		DynamicArray<PlanetChunkRenderData> chunk_render_data;
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
-		PlanetLodData& getOrCreatePlanetLodData(const PlanetData& planet);
-		void destroyPlanetLodMeshes(PlanetLodData& planet);
+		PlanetChunkRenderData& getOrCreatePlanetChunkRenderData(const PlanetData& planet);
+		void destroyPlanetLodMeshes(PlanetChunkRenderData& planet);
 		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position);
 		void queuePlanetRequests(PlanetData& planet);
 		void unloadChunksOutsideDesiredSet(PlanetData& planet);
@@ -194,6 +190,8 @@ namespace danikk_space_engine
 		void drawLodNear() const;
 		/** @brief Returns whether volume terrain chunks are the selected surface representation. */
 		bool shouldDrawPlanetChunks(WorldBodyId world_body_id) const;
+		/** @brief Returns the regular chunk IDs stored at render level zero, or null if unavailable. */
+		const DynamicArray<ChunkId>* getRegularChunkIds(WorldBodyId world_body_id) const;
 		/** @brief Cancels pending LOD work and releases all planet surface meshes. */
 		void clearLod();
 		void acceptGeneratedChunk(const GeneratedChunkMesh& generated_chunk);

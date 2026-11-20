@@ -85,28 +85,44 @@ namespace danikk_space_engine
 
 		const auto drawChunkMeshes = [this]()
 		{
+			const auto draw_chunk = [this](ChunkId chunk_id)
+			{
+				chunk_render_candidates++;
+				if(!chunks.isChunkActive(chunk_id))
+				{
+					chunk_render_inactive++;
+					return;
+				}
+				Chunk& chunk = chunks.getChunk(chunk_id);
+				switch(chunks.draw(chunk))
+				{
+					case ChunkDrawResult::missing_mesh: chunk_render_missing_mesh++; break;
+					case ChunkDrawResult::empty_mesh: chunk_render_empty_mesh++; break;
+					case ChunkDrawResult::drawn: chunk_render_drawn++; break;
+				}
+			};
 			for(WorldBodyId body_id : world_body_data.getUsedWorldBodyIds())
 			{
 				const WorldBody& body = world_body_data.getWorldBody(body_id);
-				const bool draw_planet_chunks = planets.isPlanet(body_id)
-					&& planets.shouldDrawPlanetChunks(body_id);
-				for(ChunkId chunk_id : body.chunk_ids)
+				if(planets.isPlanet(body_id))
 				{
-					chunk_render_candidates++;
-					if(!chunks.isChunkActive(chunk_id))
+					if(planets.shouldDrawPlanetChunks(body_id))
 					{
-						chunk_render_inactive++;
-						continue;
+						const DynamicArray<ChunkId>* regular_chunk_ids = planets.getRegularChunkIds(body_id);
+						if(regular_chunk_ids != nullptr)
+							for(ChunkId chunk_id : *regular_chunk_ids) draw_chunk(chunk_id);
 					}
-					Chunk& chunk = chunks.getChunk(chunk_id);
-					if(chunk.isPlanetTerrain() && !draw_planet_chunks) continue;
-					switch(chunks.draw(chunk))
+					else
 					{
-						case ChunkDrawResult::missing_mesh: chunk_render_missing_mesh++; break;
-						case ChunkDrawResult::empty_mesh: chunk_render_empty_mesh++; break;
-						case ChunkDrawResult::drawn: chunk_render_drawn++; break;
+						for(ChunkId chunk_id : body.chunk_ids)
+						{
+							if(!chunks.isChunkActive(chunk_id)) { draw_chunk(chunk_id); continue; }
+							if(!chunks.getChunk(chunk_id).isPlanetTerrain()) draw_chunk(chunk_id);
+						}
 					}
+					continue;
 				}
+				for(ChunkId chunk_id : body.chunk_ids) draw_chunk(chunk_id);
 			}
 		};
 
