@@ -50,7 +50,8 @@ void destroyMesh(Mesh*& mesh)
 		bool isLevelReady(const PlanetChunkLevel& level)
 		{
 			if(!level.initialized || level.mesh == nullptr
-				|| level.patches.size() != (level.camera_local ? 1 : planet_lod_face_count)) return false;
+				|| level.expected_patch_count == 0
+				|| level.patches.size() != level.expected_patch_count) return false;
 			for(const PlanetLodPatch& patch : level.patches)
 				if(!patch.ready) return false;
 			return true;
@@ -95,14 +96,15 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 						const double planet_position_length = glm::length(planet_position);
 						const vec3 radial_normal = planet_position_length > 1e-6
 							? vec3(planet_position / planet_position_length) : vec3(0.0f, 0.0f, 1.0f);
+						const vec3 local_position = vec3(planet_position - level.mesh_origin);
 						const vec2 uv = level.camera_local
-							? projectLocalPositionToUv(position, normal)
+							? projectLocalPositionToUv(local_position, normal)
 							: vec2(
 								std::atan2(planet_position.y, planet_position.x)
 									* planet_position_length / 32.0,
 								std::asin(glm::clamp(static_cast<double>(radial_normal.z), -1.0, 1.0))
 									* planet_position_length / 32.0);
-						vertices.pushCtor(position, normal, uv);
+						vertices.pushCtor(local_position, normal, uv);
 						triangle_indices.push(static_cast<uint32>(vertices.size() - 1));
 					}
 					triangle_material_ids.push(patch.triangle_material_ids[triangle / 3]);
@@ -134,8 +136,7 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 				reinterpret_cast<const float*>(vertices.data()),
 				vertices.size() * sizeof(DefaultVertex) / sizeof(float), indices.data(), indices.size());
 			DefaultVertex::setAttributes();
-			level.mesh_origin = level.camera_local && level.patches.size() > 0
-				? level.patches[0].origin : glm::dvec3(0.0);
+			if(!level.camera_local) level.mesh_origin = glm::dvec3(0.0);
 		}
 	}
 
@@ -146,6 +147,8 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 			destroyMesh(level.mesh);
 			level.material_ranges.clear();
 			level.initialized = false;
+			level.grid_center_set = false;
+			level.grid_center = glm::ivec3(0);
 			level.mesh_origin = glm::dvec3(0.0);
 			for(PlanetLodPatch& patch : level.patches)
 			{
@@ -169,8 +172,7 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 		DSE_WATCH();
 		if(generated_mesh.source != ChunkMeshSource::planet_surface_lod
 			|| generated_mesh.lod_level == 0
-			|| generated_mesh.lod_level >= planet_chunk_level_count
-			|| generated_mesh.lod_face >= planet_lod_face_count) return;
+			|| generated_mesh.lod_level >= planet_chunk_level_count) return;
 		for(PlanetChunkRenderData& planet : chunk_render_data)
 		{
 			if(planet.world_body_id != generated_mesh.world_body_id
@@ -180,7 +182,7 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 			if(level.resolution != generated_mesh.lod_resolution) return;
 			if(generated_mesh.lod_face >= level.patches.size()) return;
 			PlanetLodPatch& patch = level.patches[generated_mesh.lod_face];
-			if(level.camera_local && patch.grid_coordinate != generated_mesh.grid_coordinate) return;
+			if(patch.grid_coordinate != generated_mesh.grid_coordinate) return;
 			patch.positions = generated_mesh.point_positions;
 			patch.triangle_indices = generated_mesh.triangle_point_indices;
 			patch.triangle_material_ids = generated_mesh.triangle_material_ids;
@@ -200,7 +202,7 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 					face_patch.triangle_material_ids = DynamicArray<MaterialId>();
 				}
 			}
-			if(planet.desired_level + 1 == generated_mesh.lod_level
+			if(planet.desired_level == generated_mesh.lod_level
 				&& isLevelReady(level))
 			{
 				planet.active_level = generated_mesh.lod_level;

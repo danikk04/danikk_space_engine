@@ -84,8 +84,42 @@ namespace danikk_space_engine
 			|| request.planet_terrain->world_body_id != request.world_body_id
 			|| request.planet_terrain->planet_generation_id != request.planet_generation_id
 			|| request.planet_terrain->terrain_revision != request.terrain_revision
-			|| request.lod_face >= 6 || request.lod_resolution == 0)
+			|| request.lod_level == 0 || request.lod_level >= planet_chunk_level_count
+			|| request.lod_resolution == 0)
 			danikk_engine::formatFatalError("Planet surface LOD request has invalid data");
+
+		if(request.lod_level == 1)
+		{
+			if(request.lod_face >= planet_coarse_chunk_count)
+				danikk_engine::formatFatalError("Coarse planet chunk request has invalid patch index");
+			GeneratedChunkMesh result = generatePlanetChunkGeometry(request);
+			result.lod_resolution = request.lod_resolution;
+			result.lod_face = request.lod_face;
+			result.lod_level = request.lod_level;
+			result.chunk_position = request.chunk_position;
+			const size_t triangle_count = result.triangle_point_indices.size() / 3;
+			result.triangle_material_ids.reserve(triangle_count);
+			for(size_t triangle = 0; triangle < triangle_count; triangle++)
+			{
+				const size_t first_index = triangle * 3;
+				const uint32 a = result.triangle_point_indices[first_index];
+				const uint32 b = result.triangle_point_indices[first_index + 1];
+				const uint32 c = result.triangle_point_indices[first_index + 2];
+				const glm::dvec3 center = request.chunk_position
+					+ (glm::dvec3(result.point_positions[a]) + glm::dvec3(result.point_positions[b])
+						+ glm::dvec3(result.point_positions[c])) / 3.0;
+				result.triangle_material_ids.push(
+					PlanetSystem::getPlanetMaterial(*request.planet_terrain, center));
+			}
+			return result;
+		}
+
+		const bool local_heightmap = request.lod_level == 2 || request.lod_level == 3;
+		if(local_heightmap && (!request.has_heightmap_basis
+			|| request.lod_face >= planet_local_heightmap_tile_count))
+			danikk_engine::formatFatalError("Planet local heightmap request has invalid patch data");
+		if(!local_heightmap && request.lod_face >= planet_lod_face_count)
+			danikk_engine::formatFatalError("Planet heightmap request has invalid patch index");
 
 		GeneratedChunkMesh result;
 		result.generation_id = request.generation_id;
@@ -108,20 +142,16 @@ namespace danikk_space_engine
 			return static_cast<uint32>(y * points_per_axis + x);
 		};
 		result.point_positions.reserve(points_per_axis * points_per_axis);
-		if(request.lod_level == 1)
+		if(local_heightmap)
 		{
-			const glm::dvec3 up = glm::normalize(request.chunk_position);
-			const glm::dvec3 reference = glm::abs(up.z) < 0.9
-				? glm::dvec3(0.0, 0.0, 1.0) : glm::dvec3(1.0, 0.0, 0.0);
-			const glm::dvec3 right = glm::normalize(glm::cross(reference, up));
-			const glm::dvec3 forward = glm::normalize(glm::cross(up, right));
 			for(size_t y = 0; y <= resolution; y++)
 			{
 				for(size_t x = 0; x <= resolution; x++)
 				{
 					const double u = (static_cast<double>(x) / resolution - 0.5) * request.chunk_width;
 					const double v = (static_cast<double>(y) / resolution - 0.5) * request.chunk_width;
-					const glm::dvec3 tangent_position = request.chunk_position + right * u + forward * v;
+					const glm::dvec3 tangent_position = request.chunk_position
+						+ request.heightmap_right * u + request.heightmap_forward * v;
 					const glm::dvec3 direction = glm::normalize(tangent_position);
 					const double radius = PlanetSystem::getPlanetSurfaceRadius(
 						*request.planet_terrain, direction, minimum_terrain_wavelength);

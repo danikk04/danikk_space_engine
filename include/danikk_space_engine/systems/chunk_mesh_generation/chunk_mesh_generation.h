@@ -84,6 +84,10 @@ namespace danikk_space_engine
 		double voxel_size = 4.0;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 chunk_position = glm::dvec3(0.0);
+		/** @brief Shared tangent frame used to keep adjacent local heightmap tiles aligned. */
+		glm::dvec3 heightmap_right = glm::dvec3(1.0, 0.0, 0.0);
+		glm::dvec3 heightmap_forward = glm::dvec3(0.0, 1.0, 0.0);
+		bool has_heightmap_basis = false;
 		std::shared_ptr<const PlanetTerrainSnapshot> planet_terrain;
 		DynamicArray<BuildPartMeshInstance> build_parts;
 	};

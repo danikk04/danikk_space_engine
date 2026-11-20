@@ -90,9 +90,26 @@ namespace danikk_space_engine
 		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
 	};
 
-	inline constexpr uint8 planet_lod_level_count = 6;
+	inline constexpr uint8 planet_lod_level_count = 5;
 	inline constexpr uint8 planet_chunk_level_count = planet_lod_level_count + 1;
 	inline constexpr uint8 planet_lod_face_count = 6;
+	inline constexpr uint8 planet_coarse_chunk_half_width = 2;
+	inline constexpr uint8 planet_coarse_chunk_side = planet_coarse_chunk_half_width * 2 + 1;
+	inline constexpr uint8 planet_coarse_chunk_count = planet_coarse_chunk_side
+		* planet_coarse_chunk_side * planet_coarse_chunk_side;
+	inline constexpr uint8 planet_local_heightmap_tile_radius = 2;
+	inline constexpr uint8 planet_local_heightmap_tile_side = planet_local_heightmap_tile_radius * 2 + 1;
+	inline constexpr uint8 planet_local_heightmap_tile_count =
+		planet_local_heightmap_tile_side * planet_local_heightmap_tile_side;
+
+	/** @brief Geometry source represented by a planet render level. */
+	enum class PlanetChunkLevelGeometry : uint8
+	{
+		regular_volume_chunks,
+		coarse_volume_chunks,
+		local_heightmap,
+		global_heightmap
+	};
 
 	/** @brief Material range in one planetary LOD mesh. */
 	struct PlanetLodMaterialRange
@@ -116,14 +133,23 @@ namespace danikk_space_engine
 	/** @brief Render resources for one planet level; level zero references regular chunks. */
 	struct PlanetChunkLevel
 	{
+		/** @brief Geometry generation strategy used by this level. */
+		PlanetChunkLevelGeometry geometry = PlanetChunkLevelGeometry::regular_volume_chunks;
 		/** @brief Regular chunk IDs for level zero; unused by LOD levels. */
 		DynamicArray<ChunkId> chunk_ids;
 		/** @brief Combined surface mesh; unused by the regular chunk level. */
 		Mesh* mesh = nullptr;
 		DynamicArray<PlanetLodMaterialRange> material_ranges;
 		DynamicArray<PlanetLodPatch> patches;
+		/** @brief Number of mesh patches required before this level can be rendered. */
+		uint32 expected_patch_count = 0;
 		uint32 resolution = 0;
 		bool camera_local = false;
+		bool grid_center_set = false;
+		glm::ivec3 grid_center = glm::ivec3(0);
+		glm::dvec3 heightmap_right = glm::dvec3(1.0, 0.0, 0.0);
+		glm::dvec3 heightmap_forward = glm::dvec3(0.0, 1.0, 0.0);
+		glm::dvec3 heightmap_plane_origin = glm::dvec3(0.0);
 		glm::dvec3 mesh_origin = glm::dvec3(0.0);
 		bool initialized = false;
 	};

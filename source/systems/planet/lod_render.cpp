@@ -17,12 +17,13 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		constexpr uint8 local_patch_level = 1;
+		constexpr uint8 first_global_level = 4;
 
 bool isLevelReady(const PlanetChunkLevel& level)
 		{
 			if(!level.initialized || level.mesh == nullptr
-				|| level.patches.size() != (level.camera_local ? 1 : planet_lod_face_count)) return false;
+				|| level.expected_patch_count == 0
+				|| level.patches.size() != level.expected_patch_count) return false;
 			for(const PlanetLodPatch& patch : level.patches)
 				if(!patch.ready) return false;
 			return true;
@@ -48,7 +49,7 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 		if(!world.camera.isActive()) return;
 		for(const PlanetChunkRenderData& planet : chunk_render_data)
 		{
-			if(planet.render_level <= local_patch_level) continue;
+			if(planet.render_level < first_global_level) continue;
 			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			setWorldMatrix(createPlanetTransform(world, body));
@@ -76,12 +77,13 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 		if(!world.camera.isActive()) return;
 		for(const PlanetChunkRenderData& planet : chunk_render_data)
 		{
-			if(planet.render_level != local_patch_level
+			if(planet.render_level == 0 || planet.render_level >= first_global_level
 				|| !world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
-			const PlanetChunkLevel& level = planet.levels[local_patch_level];
+			const PlanetChunkLevel& level = planet.levels[planet.render_level];
 			if(!level.initialized || level.mesh == nullptr) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
-			setWorldMatrix(createPlanetTransform(world, body, level.mesh_origin));
+			setWorldMatrix(createPlanetTransform(world, body,
+				level.camera_local ? level.mesh_origin : glm::dvec3(0.0)));
 			for(const PlanetLodMaterialRange& range : level.material_ranges)
 			{
 				if(range.index_count == 0) continue;
