@@ -62,21 +62,21 @@ namespace danikk_space_engine
 		}
 
 		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed,
-			double minimum_wavelength = 0.0)
-		{
-			double surface_radius = radius;
-			for(uint8 iteration = 0; iteration < 2; iteration++)
-				surface_radius = radius + samplePlanetTerrainHeight(
-					direction * surface_radius, noise_seed, minimum_wavelength);
-			return surface_radius;
-		}
-
-		double samplePlanetSurfaceRadius(const glm::dvec3& direction, double radius, uint64 noise_seed,
 			const PlanetTerrainEdits& edits,
 			double minimum_wavelength, PlanetTerrainMode mode)
 		{
-			double surface_radius = samplePlanetSurfaceRadius(
-				direction, radius, noise_seed, minimum_wavelength);
+			double surface_radius = radius;
+			constexpr double surface_radius_tolerance = 0.001;
+			constexpr uint32 maximum_surface_radius_iterations = 64;
+			uint32 iteration = 0;
+			while(iteration++ < maximum_surface_radius_iterations)
+			{
+				const double next_surface_radius = radius + samplePlanetTerrainHeight(
+					direction * surface_radius, noise_seed, minimum_wavelength);
+				const double radius_change = std::abs(next_surface_radius - surface_radius);
+				surface_radius = next_surface_radius;
+				if(radius_change <= surface_radius_tolerance) break;
+			}
 			if(includesEdits(mode))
 				for(PlanetTerrainEditId edit_id : edits.ids)
 					surface_radius = (*edits.pool)[edit_id].applyToSurfaceRadius(direction, surface_radius);
@@ -161,7 +161,8 @@ namespace danikk_space_engine
 			if(distance_from_center >= 0.000001)
 			{
 				const glm::dvec3 direction = position / distance_from_center;
-				const double surface_depth = samplePlanetSurfaceRadius(direction, radius, noise_seed) - distance_from_center;
+				const double surface_depth = samplePlanetSurfaceRadius(direction, radius, noise_seed,
+					edits, 0.0, PlanetTerrainMode::heightmap) - distance_from_center;
 				if(surface_depth <= grass_layer_depth) material_id = default_materials::grass;
 				else if(surface_depth <= dirt_layer_depth) material_id = default_materials::dirt;
 			}
