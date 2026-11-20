@@ -180,9 +180,7 @@ namespace danikk_space_engine
 			if(!world.camera.isActive())
 			{
 				planet.enabled = false;
-				planet.show_local_patch = false;
-				planet.render_level = 0;
-				planet.has_active_level = false;
+				planet.lod_level = 0;
 			}
 			else
 			{
@@ -220,32 +218,28 @@ namespace danikk_space_engine
 						glm::max(source_settings.radius * 0.05, level_widths[3] * 2.0),
 						source_settings.radius * 0.75};
 
-					const bool had_desired_level = planet.has_desired_level;
-					const uint8 previous_desired_level = planet.desired_level;
-					if(!planet.has_desired_level)
+					const uint8 previous_lod_level = planet.lod_level;
+					uint8 target_level = planet.lod_level;
+					if(target_level == 0)
 					{
-						planet.desired_level = 1;
-						while(planet.desired_level < last_lod_level
-							&& height >= thresholds[planet.desired_level - 1])
-							planet.desired_level++;
-						planet.has_desired_level = true;
+						target_level = 1;
+						while(target_level < last_lod_level
+							&& height >= thresholds[target_level - 1])
+							target_level++;
 					}
 					else
 					{
-						while(planet.desired_level < last_lod_level
-							&& height >= thresholds[planet.desired_level - 1] * 1.1)
-							planet.desired_level++;
-						while(planet.desired_level > 1
-							&& height < thresholds[planet.desired_level - 2] * 0.9)
-							planet.desired_level--;
+						while(target_level < last_lod_level
+							&& height >= thresholds[target_level - 1] * 1.1)
+							target_level++;
+						while(target_level > 1
+							&& height < thresholds[target_level - 2] * 0.9)
+							target_level--;
 					}
-					if(!had_desired_level || previous_desired_level != planet.desired_level)
+					if(target_level != previous_lod_level)
 						danikk_framework::formatLogInfo(
-							"Planet LOD desired level changed: body=% level=% height_above_surface=% m",
-							source.world_body_id, planet.desired_level, height);
-
-					planet.show_local_patch = planet.desired_level >= first_local_heightmap_level
-						&& planet.desired_level <= last_local_heightmap_level;
+							"Planet LOD target level changed: body=% level=% height_above_surface=% m",
+							source.world_body_id, target_level, height);
 
 					const auto queue_level_requests = [&](uint8 level_index)
 					{
@@ -408,40 +402,26 @@ namespace danikk_space_engine
 						}
 					};
 
-					if(planet.desired_level != last_lod_level)
-						queue_level_requests(last_lod_level);
-					queue_level_requests(planet.desired_level);
+					queue_level_requests(target_level);
 
-					const uint8 previous_render_level = planet.render_level;
-					planet.render_level = 0;
-					planet.has_active_level = false;
-					if(isLevelReady(planet.levels[planet.desired_level]))
-						planet.render_level = planet.desired_level;
+					uint8 selected_level = 0;
+					if(isLevelReady(planet.levels[target_level]))
+						selected_level = target_level;
 					else
 					{
-						if(planet.desired_level != first_global_heightmap_level
+						if(target_level != first_global_heightmap_level
 							&& isLevelReady(planet.levels[first_global_heightmap_level]))
-							planet.render_level = first_global_heightmap_level;
-						else if(isLevelReady(planet.levels[last_lod_level]))
-							planet.render_level = last_lod_level;
-						else if(isLevelReady(planet.levels[first_global_heightmap_level]))
-							planet.render_level = first_global_heightmap_level;
+							selected_level = first_global_heightmap_level;
 					}
-					if(planet.render_level > 0)
-					{
-						planet.active_level = planet.render_level;
-						planet.has_active_level = true;
-					}
-					if(planet.render_level != previous_render_level)
+					planet.lod_level = selected_level;
+					if(planet.lod_level != previous_lod_level)
 						danikk_framework::formatLogInfo(
 							"Planet surface render level changed: body=% level=% height_above_surface=% m",
-							source.world_body_id, planet.render_level, height);
+							source.world_body_id, planet.lod_level, height);
 				}
 				else
 				{
-					planet.render_level = 0;
-					planet.show_local_patch = false;
-					planet.has_active_level = false;
+					planet.lod_level = 0;
 				}
 			}
 			world.chunk_mesh_generation.replacePlanetLodRequests(

@@ -47,16 +47,6 @@ void destroyMesh(Mesh*& mesh)
 			}
 		}
 
-		bool isLevelReady(const PlanetChunkLevel& level)
-		{
-			if(!level.initialized || level.mesh == nullptr
-				|| level.expected_patch_count == 0
-				|| level.patches.size() != level.expected_patch_count) return false;
-			for(const PlanetLodPatch& patch : level.patches)
-				if(!patch.ready) return false;
-			return true;
-		}
-
 void uploadLevelMesh(PlanetChunkLevel& level)
 		{
 			DynamicArray<DefaultVertex> vertices;
@@ -160,9 +150,7 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 				patch.ready = false;
 			}
 		}
-		planet.has_active_level = false;
-		planet.active_level = 0;
-		planet.render_level = 0;
+		planet.lod_level = 0;
 		planet.terrain_snapshot.reset();
 	}
 
@@ -201,12 +189,6 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 					face_patch.triangle_indices = DynamicArray<uint32>();
 					face_patch.triangle_material_ids = DynamicArray<MaterialId>();
 				}
-			}
-			if(planet.desired_level == generated_mesh.lod_level
-				&& isLevelReady(level))
-			{
-				planet.active_level = generated_mesh.lod_level;
-				planet.has_active_level = true;
 			}
 			return;
 		}

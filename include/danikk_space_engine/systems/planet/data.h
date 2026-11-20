@@ -153,14 +153,9 @@ namespace danikk_space_engine
 		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
-		uint8 desired_level = 1;
-		uint8 active_level = 0;
-		bool has_desired_level = false;
-		bool has_active_level = false;
+		/** @brief Current representation: zero uses ordinary chunks, positive values select one LOD. */
+		uint8 lod_level = 0;
 		bool enabled = false;
-		bool show_local_patch = false;
-		/** @brief Active level: zero uses regular chunks, positive values use the matching LOD level. */
-		uint8 render_level = 0;
 		std::shared_ptr<const PlanetTerrainSnapshot> terrain_snapshot;
 		DynamicArray<PlanetChunkLevel> levels;
 	};

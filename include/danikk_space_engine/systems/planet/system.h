@@ -48,6 +48,8 @@ namespace danikk_space_engine
 		void drawLodNear() const;
 		/** @brief Returns whether volume terrain chunks are the selected surface representation. */
 		bool shouldDrawPlanetChunks(WorldBodyId world_body_id) const;
+		/** @brief Gets the selected render level for a planet, returning false if it has no render state yet. */
+		bool getCurrentLodLevel(WorldBodyId world_body_id, uint8& lod_level) const;
 		/** @brief Returns the regular chunk IDs stored at render level zero, or null if unavailable. */
 		const DynamicArray<ChunkId>* getRegularChunkIds(WorldBodyId world_body_id) const;
 		/** @brief Cancels pending LOD work and releases all planet surface meshes. */

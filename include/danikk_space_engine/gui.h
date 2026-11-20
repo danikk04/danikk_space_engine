@@ -19,6 +19,10 @@ namespace danikk_space_engine
 		double nearest_planet_height = 0.0;
 		/** @brief Whether a planet was available for the nearest-surface height sample. */
 		bool nearest_planet_height_available = false;
+		/** @brief Current selected LOD level for Earth, where zero selects ordinary chunks. */
+		uint8 earth_lod_level = 0;
+		/** @brief Whether Earth's current LOD level is available. */
+		bool earth_lod_level_available = false;
 		/** @brief Camera forward axis used to orient catalog previews. */
 		vec3 preview_camera_front = vec3(0.0f, 0.0f, -1.0f);
 		/** @brief Camera up axis used to orient catalog previews. */

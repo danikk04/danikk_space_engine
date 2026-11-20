@@ -49,11 +49,11 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 		if(!world.camera.isActive()) return;
 		for(const PlanetChunkRenderData& planet : chunk_render_data)
 		{
-			if(planet.render_level < first_global_level) continue;
+			if(planet.lod_level < first_global_level) continue;
 			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			setWorldMatrix(createPlanetTransform(world, body));
-			const uint8 global_level_index = planet.render_level;
+			const uint8 global_level_index = planet.lod_level;
 			if(global_level_index >= planet_chunk_level_count
 				|| !isLevelReady(planet.levels[global_level_index])) continue;
 			const PlanetChunkLevel& level = planet.levels[global_level_index];
@@ -77,9 +77,9 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 		if(!world.camera.isActive()) return;
 		for(const PlanetChunkRenderData& planet : chunk_render_data)
 		{
-			if(planet.render_level == 0 || planet.render_level >= first_global_level
+			if(planet.lod_level == 0 || planet.lod_level >= first_global_level
 				|| !world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
-			const PlanetChunkLevel& level = planet.levels[planet.render_level];
+			const PlanetChunkLevel& level = planet.levels[planet.lod_level];
 			if(!level.initialized || level.mesh == nullptr) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			setWorldMatrix(createPlanetTransform(world, body,
@@ -103,9 +103,22 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 		for(const PlanetChunkRenderData& planet : chunk_render_data)
 		{
 			if(planet.world_body_id != world_body_id) continue;
-			return planet.render_level == 0;
+			return planet.lod_level == 0;
 		}
 		return true;
+	}
+
+	/** @copydoc PlanetSystem::getCurrentLodLevel */
+	bool PlanetSystem::getCurrentLodLevel(WorldBodyId world_body_id, uint8& lod_level) const
+	{
+		DSE_WATCH();
+		for(const PlanetChunkRenderData& planet : chunk_render_data)
+		{
+			if(planet.world_body_id != world_body_id) continue;
+			lod_level = planet.lod_level;
+			return true;
+		}
+		return false;
 	}
 
 	/** @copydoc PlanetSystem::getRegularChunkIds */

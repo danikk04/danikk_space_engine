@@ -128,6 +128,10 @@ namespace danikk_space_engine
 		if(data.nearest_planet_height_available) appendGuiNumber(text, data.nearest_planet_height);
 		else text << " unavailable";
 		text << " m\n";
+		text << "EARTH LOD:";
+		if(data.earth_lod_level_available) formatAppend(text, "%", data.earth_lod_level);
+		else text << " unavailable";
+		text << '\n';
 		text << "camera pos:";
 		appendGuiPosition(text, camera_position);
 		debug_info_label.text = static_cast<String&&>(text);

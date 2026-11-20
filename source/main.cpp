@@ -36,6 +36,9 @@ namespace danikk_engine_game
 		for(const PlanetData& planet : world.planets.getPlanets())
 		{
 			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
+			if(planet.settings_id == planet_settings_ids::earth)
+				data.earth_lod_level_available = world.planets.getCurrentLodLevel(
+					planet.world_body_id, data.earth_lod_level);
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			const glm::dvec3 planet_local_camera_position = glm::conjugate(body.rotation)
 				* (data.camera_position - body.position);
