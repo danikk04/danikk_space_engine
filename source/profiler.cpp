@@ -2,6 +2,7 @@
 
 #include <danikk_framework/log.h>
 
+#include <danikk_space_engine/config.h>
 #include <danikk_space_engine/profiler.h>
 
 namespace danikk_space_engine
@@ -172,23 +173,29 @@ namespace danikk_space_engine
 
 		static constexpr char indentation[] = "                                ";
 		constexpr size_t max_indent = sizeof(indentation) - 1;
+		const double minimum_average_profile_time_ms =
+			std::max(0.0, static_cast<double>(settings.minimum_average_profile_time_ms));
 		const auto report_children = [&](const auto& report, size_t parent, size_t depth) -> void
 		{
 			for(size_t index = first_child[parent]; index != no_node; index = next_sibling[index])
 			{
 				const Node& node = report_nodes[index];
-				if(node.total_calls > 0)
+				const double average_milliseconds_per_tick =
+					static_cast<double>(node.total_nanoseconds) / ticks_in_report / 1000000.0;
+				const bool visible = node.total_calls > 0
+					&& average_milliseconds_per_tick >= minimum_average_profile_time_ms;
+				if(visible)
 				{
 					const size_t spaces = depth < max_indent / 2 ? depth * 2 : max_indent;
 					formatLogInfo(
 						"% %: avg % ms/tick, max % ms/tick, calls %",
 						indentation + max_indent - spaces,
 						node.name,
-						static_cast<double>(node.total_nanoseconds) / ticks_in_report / 1000000.0,
+						average_milliseconds_per_tick,
 						static_cast<double>(node.maximum_tick_nanoseconds) / 1000000.0,
 						node.total_calls);
 				}
-				report(report, index, depth + 1);
+				report(report, index, depth + (visible ? 1 : 0));
 			}
 		};
 		report_children(report_children, root, 0);

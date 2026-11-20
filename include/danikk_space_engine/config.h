@@ -38,6 +38,8 @@ namespace danikk_space_engine
 		DefaultCameraPosition default_camera_position = DefaultCameraPosition::sky;
 		/** @brief Global planet surface meshing algorithm. */
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
+		/** @brief Minimum profiler average per tick to include a function in the report, in milliseconds. */
+		float minimum_average_profile_time_ms = 1.0f;
 	};
 
 	/**
@@ -48,7 +50,8 @@ namespace danikk_space_engine
 	 * on the normal first application start those values are the Settings defaults.
 	 * The keys are `show_chunk_bounds`, `show_world_body_preview`,
 	 * `default_camera_position` (`sky` or `ground`), and
-	 * `planet_mesh_generator` (`marching_tetrahedra` or `surface_nets`). `save()` rewrites the file with all supported keys
+	 * `planet_mesh_generator` (`marching_tetrahedra` or `surface_nets`), and
+	 * `minimum_average_profile_time_ms` (defaults to 1.0). `save()` rewrites the file with all supported keys
 	 * and their current values, using lowercase `true`/`false` for booleans.
 	 */
 	class Config

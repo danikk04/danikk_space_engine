@@ -74,6 +74,7 @@ namespace danikk_space_engine
 		values.bind("show_world_body_preview", settings.show_world_body_preview);
 		values.bind("default_camera_position", &settings.default_camera_position, &parseDefaultCameraPosition);
 		values.bind("planet_mesh_generator", &settings.planet_mesh_generator, &parsePlanetMeshGenerator);
+		values.bind("minimum_average_profile_time_ms", settings.minimum_average_profile_time_ms);
 	}
 
 	/**
@@ -146,6 +147,8 @@ namespace danikk_space_engine
 		contents << "planet_mesh_generator="
 			<< (settings.planet_mesh_generator == PlanetMeshGenerator::surface_nets
 				? "surface_nets" : "marching_tetrahedra") << '\n';
+		contents << "minimum_average_profile_time_ms="
+			<< settings.minimum_average_profile_time_ms << '\n';
 
 		std::FILE* file = std::fopen(path.c_string(), "wb");
 		if(file == nullptr)
