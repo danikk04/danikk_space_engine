@@ -259,4 +259,22 @@ namespace danikk_space_engine::unit_system_internal
 			return;
 		}
 	}
+
+	/** @brief Copies the current octree's human slot and owning-body pairs. */
+	void collectHumanSlots(const UnitSpatialIndex& index,
+		DynamicArray<PointComponentSlotId>& slot_ids, DynamicArray<WorldBodyId>& body_ids)
+	{
+		DSE_WATCH();
+		slot_ids.clear();
+		body_ids.clear();
+		for(const UnitSpatialTree& tree : index.trees)
+		{
+			if(!tree.active) continue;
+			for(const UnitSpatialEntry& entry : tree.entries)
+			{
+				slot_ids.push(entry.target.slot_id);
+				body_ids.push(tree.body_id);
+			}
+		}
+	}
 }

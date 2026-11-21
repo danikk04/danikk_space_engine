@@ -194,6 +194,13 @@ namespace danikk_space_engine
 			impl->spatial_index, body_id, center, half_extent, result);
 	}
 
+	/** @copydoc UnitSystem::collectHumanSlots */
+	void UnitSystem::collectHumanSlots(DynamicArray<PointComponentSlotId>& slot_ids,
+		DynamicArray<WorldBodyId>& body_ids) const
+	{
+		unit_system_internal::collectHumanSlots(impl->spatial_index, slot_ids, body_ids);
+	}
+
 	/** @brief Registers a human in the tactical group associated with its current faction. */
 	void UnitSystem::registerAgent(PointComponentSlotId human_slot_id, bool enabled)
 	{

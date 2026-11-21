@@ -70,6 +70,9 @@ namespace danikk_space_engine
 		/** @brief Collects human slots in a body-local box using the current adaptive spatial tree. */
 		void collectNearbyHumanSlots(WorldBodyId body_id, const glm::dvec3& center,
 			double half_extent, DynamicArray<PointComponentSlotId>& result) const;
+		/** @brief Copies indexed human component IDs and their owning bodies for spatial systems. */
+		void collectHumanSlots(DynamicArray<PointComponentSlotId>& slot_ids,
+			DynamicArray<WorldBodyId>& body_ids) const;
 		/** @brief Clears all faction groups when the owning world resets or shuts down. */
 		void reset();
 	};

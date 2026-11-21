@@ -293,18 +293,20 @@ namespace danikk_space_engine
 		DynamicArray<PointComponentSlotId> human_slot_ids;
 		DynamicArray<WorldBodyId> human_body_ids;
 		bool has_multiple_bodies = false;
-		for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
+		WorldBodyId first_human_body_id = static_cast<WorldBodyId>(-1);
+		world.unit_system.collectHumanSlots(human_slot_ids, human_body_ids);
+		for(size_t index = 0; index < human_slot_ids.size(); ++index)
 		{
+			const PointComponentSlotId slot_id = human_slot_ids[index];
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 			PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(slot.type_id != PointComponentTypeId::human) continue;
-			if(!world.chunks.isChunkActive(slot.chunk_id)) continue;
-			const WorldBodyId body_id = world.chunks.getChunk(slot.chunk_id).world_body_id;
-			if(human_body_ids.size() > 0 && human_body_ids[0] != body_id) has_multiple_bodies = true;
+			if(!world.point_data.isPointActive(slot.point_id)
+				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
+			if(first_human_body_id == static_cast<WorldBodyId>(-1))
+				first_human_body_id = human_body_ids[index];
+			else has_multiple_bodies |= human_body_ids[index] != first_human_body_id;
 			auto& human = *static_cast<HumanComponent*>(slot.getData());
 			human.displaced_by_human_collision = false;
-			human_slot_ids.push(slot_id);
-			human_body_ids.push(body_id);
 		}
 
 		constexpr double broadphase_half_extent = 8.0;

@@ -11,6 +11,9 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Collects indexed human slots in a body-local box. */
 	void collectNearbyHumanSlots(const UnitSpatialIndex&, WorldBodyId,
 		const glm::dvec3&, double, DynamicArray<PointComponentSlotId>&);
+	/** @brief Copies the current octree's human slot and owning-body pairs. */
+	void collectHumanSlots(const UnitSpatialIndex&, DynamicArray<PointComponentSlotId>&,
+		DynamicArray<WorldBodyId>&);
 	/** @brief Rebuilds a unit's hostile-human candidate list from nearby octree leaves. */
 	void collectEnemyTargets(World&, ChunkId, FactionId,
 		const UnitSpatialIndex&, UnitAgentState&);
