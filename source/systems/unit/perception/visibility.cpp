@@ -2,7 +2,6 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/systems/planet/system.h>
 
 #include <danikk_space_engine/systems/unit/internal/orders.h>
 #include <danikk_space_engine/systems/unit/internal/perception.h>
@@ -23,40 +22,9 @@ namespace danikk_space_engine::unit_system_internal
 			}
 		}
 	}
-	/** @brief Rebuilds a unit's nearby hostile-human candidates from its loaded 3x3x3 chunk neighborhood. */
-	void collectEnemyTargets(World& world, PointId point_id, ChunkId chunk_id, FactionId faction,
-		UnitAgentState& agent)
-	{
-		DSE_WATCH();
-		agent.enemy_candidates.clear();
-		agent.candidate_index = 0;
-		const Chunk& owner = world.chunks.getChunk(chunk_id);
-		const glm::ivec3 coordinate = glm::ivec3(glm::floor(
-			(owner.position + glm::dvec3(world.point_data.getPoint(point_id).position)) / planet_chunk_width));
-		const PlanetData* planet = world.planets.findPlanet(owner.world_body_id);
-		auto collect = [&](ChunkId candidate_chunk)
-		{
-			if(!world.chunks.isChunkActive(candidate_chunk)) return;
-			for(PointComponentSlotId id : world.chunks.getChunk(candidate_chunk).point_component_slot_ids)
-			{
-				if(!world.point_data.isPointComponentSlotActive(id)) continue;
-				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
-				if(slot.type_id != PointComponentTypeId::human || slot.point_id == point_id) continue;
-				const UnitTarget target{id, slot.point_id, slot.generation_id};
-				if(isValidEnemy(world, target, faction)) agent.enemy_candidates.push(target);
-			}
-		};
-		if(planet == nullptr) { collect(chunk_id); return; }
-		for(int x = -1; x <= 1; ++x)
-			for(int y = -1; y <= 1; ++y)
-				for(int z = -1; z <= 1; ++z)
-				{
-					ChunkId nearby = static_cast<ChunkId>(-1);
-					if(planet->chunk_lookup.getChunk(coordinate + glm::ivec3(x, y, z), nearby)) collect(nearby);
-				}
-	}
+
 	/** @brief Ages and prunes faction intelligence, then performs the scheduled NPC visibility raycasts. */
-	void updatePerception(World& world, UnitGroup& system)
+	void updatePerception(World& world, UnitGroup& system, const UnitSpatialIndex& spatial_index)
 	{
 		DSE_WATCH();
 		system.enemy_seen_this_tick = false;
@@ -97,8 +65,8 @@ namespace danikk_space_engine::unit_system_internal
 			{
 				agent.order.has_attack_target = false;
 				if(agent.candidate_index >= agent.enemy_candidates.size())
-					collectEnemyTargets(world, human_slot->point_id,
-						human_slot->chunk_id, human->faction_id, agent);
+					collectEnemyTargets(world, human_slot->chunk_id,
+						human->faction_id, spatial_index, agent);
 				if(agent.candidate_index >= agent.enemy_candidates.size()) continue;
 				const UnitTarget candidate = agent.enemy_candidates[agent.candidate_index++];
 				if(!isValidEnemy(world, candidate, human->faction_id)) continue;

@@ -169,11 +169,12 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		ensureUnitGroupCount(impl->groups, world.factions.size());
+		unit_system_internal::rebuildUnitSpatialIndex(world, impl->spatial_index);
 		for(UnitGroup& group : impl->groups)
 		{
 			pruneUnitAgents(world, group);
 			unit_system_internal::executeUnitOrders(world, group);
-			unit_system_internal::updatePerception(world, group);
+			unit_system_internal::updatePerception(world, group, impl->spatial_index);
 			unit_system_internal::updateTacticalMemory(world, group);
 			unit_system_internal::updateGroupMode(group, dt);
 			if(group.war_active)
@@ -247,5 +248,6 @@ namespace danikk_space_engine
 	void UnitSystem::reset()
 	{
 		impl->groups.clear();
+		impl->spatial_index.trees.clear();
 	}
 }

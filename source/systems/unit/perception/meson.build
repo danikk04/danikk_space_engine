@@ -1,1 +1,1 @@
-sources += files('visibility.cpp', 'intelligence.cpp')
+sources += files('visibility.cpp', 'intelligence.cpp', 'spatial_index.cpp')

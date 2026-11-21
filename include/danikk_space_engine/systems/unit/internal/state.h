@@ -14,6 +14,48 @@ namespace danikk_space_engine::unit_system_internal
 		uint64 generation_id = 0;
 	};
 
+	/** @brief One live human's identity and body-local position in the sparse unit index. */
+	struct UnitSpatialEntry
+	{
+		UnitTarget target;
+		glm::dvec3 position = glm::dvec3(0.0);
+	};
+
+	/** @brief Sparse octree cell containing unit entry indices until its population exceeds capacity. */
+	struct UnitSpatialNode
+	{
+		static constexpr uint32 invalid_child = static_cast<uint32>(-1);
+		glm::dvec3 center = glm::dvec3(0.0);
+		double half_extent = 0.0;
+		uint32 children[8] = {invalid_child, invalid_child, invalid_child, invalid_child,
+			invalid_child, invalid_child, invalid_child, invalid_child};
+		DynamicArray<uint32> entry_indices;
+
+		bool hasChildren() const
+		{
+			for(uint32 child_id : children)
+				if(child_id != invalid_child) return true;
+			return false;
+		}
+	};
+
+	/** @brief Per-WorldBody sparse unit octree; cells split by occupancy, not a target dimension. */
+	struct UnitSpatialTree
+	{
+		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
+		bool active = false;
+		DynamicArray<UnitSpatialEntry> entries;
+		DynamicArray<UnitSpatialNode> nodes;
+		uint32 root_id = UnitSpatialNode::invalid_child;
+		uint32 node_count = 0;
+	};
+
+	/** @brief Rebuilt broadphase index used to find nearby human agents without scanning chunks. */
+	struct UnitSpatialIndex
+	{
+		DynamicArray<UnitSpatialTree> trees;
+	};
+
 	/** @brief Current action values assigned by the unit system to one human. */
 	struct UnitOrder
 	{
@@ -144,5 +186,6 @@ namespace danikk_space_engine
 	struct UnitSystem::Impl
 	{
 		DynamicArray<unit_system_internal::UnitGroup> groups;
+		unit_system_internal::UnitSpatialIndex spatial_index;
 	};
 }

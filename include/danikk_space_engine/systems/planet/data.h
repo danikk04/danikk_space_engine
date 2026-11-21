@@ -8,9 +8,9 @@
 
 #include <danikk_framework/array.h>
 #include <danikk_framework/dynamic_array.h>
-#include <danikk_engine/mesh.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
+#include <danikk_space_engine/mesh_render_data.h>
 #include <danikk_space_engine/systems/planet/edit.h>
 #include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
 
@@ -243,7 +243,8 @@ namespace danikk_space_engine
 			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1),
 			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1),
 			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1)};
-		ChunkId mesh_chunk_id = static_cast<ChunkId>(-1);
+		MeshRenderData mesh;
+		glm::dvec3 mesh_position = glm::dvec3(0.0);
 		uint64 generation_id = 1;
 		uint64 mesh_revision = 0;
 		PlanetMeshGenerator mesh_generator = PlanetMeshGenerator::marching_tetrahedra;

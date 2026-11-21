@@ -84,16 +84,11 @@ namespace danikk_space_engine
 			return;
 		}
 		node.generation_pending = false;
-		if(node.mesh_chunk_id == static_cast<ChunkId>(-1)
-			|| !world.chunks.isChunkActive(node.mesh_chunk_id))
-			node.mesh_chunk_id = world.chunks.createChunk(planet->world_body_id).chunk_id;
-		Chunk& chunk = world.chunks.getChunk(node.mesh_chunk_id);
-		chunk.position = generated_mesh.chunk_position;
-		world.chunks.createMesh(chunk,
+		node.mesh_position = generated_mesh.chunk_position;
+		world.chunks.createMesh(node.mesh,
 			generated_mesh.point_positions.data(), generated_mesh.point_positions.size(),
 			generated_mesh.triangle_point_indices.data(), generated_mesh.triangle_point_indices.size(),
 			generated_mesh.triangle_material_ids.data(), generated_mesh.triangle_material_ids.size());
-		chunk.render_enabled = false;
 		node.mesh_revision = generated_mesh.terrain_revision;
 		node.mesh_generator = generated_mesh.planet_mesh_generator;
 		node.mesh_surface_only = generated_mesh.surface_only;

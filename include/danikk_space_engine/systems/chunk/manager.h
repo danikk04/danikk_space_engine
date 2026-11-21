@@ -5,22 +5,13 @@
 
 #include <danikk_space_engine/systems/chunk/chunk.h>
 #include <danikk_space_engine/resource_pool.h>
+#include <danikk_space_engine/mesh_render_data.h>
 
 namespace danikk_space_engine
 {
-	/** @brief Material range in a chunk's combined GPU mesh. */
-	struct ChunkMaterialRange
-	{
-		MaterialId material_id = 0;
-		uint32 first_index = 0;
-		uint32 index_count = 0;
-	};
-
 	/** @brief GPU mesh and draw metadata owned alongside one active chunk. */
-	struct ChunkRenderRecord
+	struct ChunkRenderRecord : MeshRenderData
 	{
-		Mesh* mesh = nullptr;
-		DynamicArray<ChunkMaterialRange> material_ranges;
 		bool has_build_part_mesh = false;
 	};
 
@@ -102,12 +93,20 @@ namespace danikk_space_engine
 			const uint32* triangle_indices, size_t index_count,
 			const MaterialId* triangle_material_ids, size_t material_count,
 			bool is_build_part_mesh = false);
+		/** @brief Builds GPU mesh data owned directly by a spatial tree node or other caller. */
+		void createMesh(MeshRenderData& record, const vec3* positions, size_t position_count,
+			const uint32* triangle_indices, size_t index_count,
+			const MaterialId* triangle_material_ids, size_t material_count);
 		/** @brief Draws the chunk's material ranges and reports why drawing did not occur. */
 		ChunkDrawResult draw(const Chunk& chunk);
+		/** @brief Draws a caller-owned mesh record with the supplied camera-relative transform. */
+		ChunkDrawResult draw(const MeshRenderData& record, const mat4& world_matrix);
 		/** @brief Draws chunk meshes using the world's one- or two-depth-pass setup. */
 		void renderWorld();
 		/** @brief Releases one chunk's GPU mesh and clears its bounds and render metadata. */
 		void destroyRenderData(Chunk& chunk);
+		/** @brief Frees GPU resources in a caller-owned mesh record without a Chunk. */
+		void destroyRenderData(MeshRenderData& record);
 		/** @brief Releases all GPU mesh resources while the graphics context is active. */
 		void clearRenderData();
 		/** @brief Returns whether the chunk currently has a combined BuildPart mesh. */

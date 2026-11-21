@@ -39,6 +39,8 @@ namespace danikk_space_engine
 		/** @brief Updates planet chunk streaming once for the current world frame. */
 		void update();
 		void acceptGeneratedSurfaceNode(const GeneratedChunkMesh& generated_mesh);
+		/** @brief Draws active adaptive surface-node meshes in the current depth pass. */
+		void renderSurfaceNodes();
 		/**
 		 * @brief Applies and persists a spherical terrain edit on a registered planet.
 		 * @param world_body_id Registered planet body to modify.

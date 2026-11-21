@@ -54,9 +54,7 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		for(PlanetSurfaceNode& node : planet.surface_tree.nodes)
-			if(node.mesh_chunk_id != static_cast<ChunkId>(-1)
-				&& world.chunks.isChunkActive(node.mesh_chunk_id))
-				world.chunks.destroyChunk(node.mesh_chunk_id);
+			if(node.mesh.mesh != nullptr) world.chunks.destroyRenderData(node.mesh);
 		planet.surface_tree.nodes.clear();
 		planet.surface_tree.root_id = invalid_surface_node;
 	}
@@ -85,9 +83,6 @@ namespace danikk_space_engine
 				node.generation_id = tree.next_node_generation_id++;
 				if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
 				node.render_active = false;
-				if(node.mesh_chunk_id != static_cast<ChunkId>(-1)
-					&& world.chunks.isChunkActive(node.mesh_chunk_id))
-					world.chunks.getChunk(node.mesh_chunk_id).render_enabled = false;
 			}
 			planet.surface_tree_revision = planet.terrain_revision;
 		}
@@ -139,9 +134,7 @@ namespace danikk_space_engine
 		if(tree.nodes.size() + 8192 > maximum_surface_tree_nodes)
 		{
 			for(PlanetSurfaceNode& node : tree.nodes)
-				if(node.mesh_chunk_id != static_cast<ChunkId>(-1)
-					&& world.chunks.isChunkActive(node.mesh_chunk_id))
-					world.chunks.destroyChunk(node.mesh_chunk_id);
+				if(node.mesh.mesh != nullptr) world.chunks.destroyRenderData(node.mesh);
 			tree.nodes.clear();
 			tree.root_id = invalid_surface_node;
 			PlanetSurfaceNode root;
@@ -180,9 +173,11 @@ namespace danikk_space_engine
 		const auto visit = [&](auto&& self, PlanetSurfaceNodeId node_id, uint8 depth) -> void
 		{
 			if(node_id >= tree.nodes.size() || depth >= 20) return;
-			const PlanetSurfaceNode node_copy = tree.nodes[node_id];
-			if(!isNodeRelevant(node_copy, camera_position, planet_settings.radius, height)) return;
-			if(node_copy.half_extent <= target_half_extent_for(node_copy.center, node_copy.half_extent))
+			PlanetSurfaceNode candidate;
+			candidate.center = tree.nodes[node_id].center;
+			candidate.half_extent = tree.nodes[node_id].half_extent;
+			if(!isNodeRelevant(candidate, camera_position, planet_settings.radius, height)) return;
+			if(candidate.half_extent <= target_half_extent_for(candidate.center, candidate.half_extent))
 			{
 				return;
 			}
@@ -196,12 +191,7 @@ namespace danikk_space_engine
 		visit(visit, tree.root_id, 0);
 
 		for(PlanetSurfaceNode& node : tree.nodes)
-		{
 			node.render_active = false;
-			if(node.mesh_chunk_id != static_cast<ChunkId>(-1)
-				&& world.chunks.isChunkActive(node.mesh_chunk_id))
-				world.chunks.getChunk(node.mesh_chunk_id).render_enabled = false;
-		}
 
 		planet.pending_requests.clear();
 		for(PlanetSurfaceNode& node : tree.nodes) node.generation_pending = false;
@@ -219,8 +209,7 @@ namespace danikk_space_engine
 			if(node.mesh_revision == planet.terrain_revision
 				&& node.mesh_generator == settings.planet_mesh_generator
 				&& node.mesh_surface_only == surface_only
-				&& node.mesh_chunk_id != static_cast<ChunkId>(-1)
-				&& world.chunks.isChunkActive(node.mesh_chunk_id)) return;
+				&& node.mesh.mesh != nullptr) return;
 			if(planet.pending_requests.size() >= maximum_requests_per_planet_frame) return;
 			ChunkMeshGenerationRequest request;
 			request.source = ChunkMeshSource::planet_surface_node;
@@ -244,8 +233,7 @@ namespace danikk_space_engine
 			return node.mesh_revision == planet.terrain_revision
 				&& node.mesh_generator == settings.planet_mesh_generator
 				&& node.mesh_surface_only == is_surface_node(node)
-				&& node.mesh_chunk_id != static_cast<ChunkId>(-1)
-				&& world.chunks.isChunkActive(node.mesh_chunk_id);
+				&& node.mesh.mesh != nullptr;
 		};
 		DynamicArray<PlanetSurfaceNodeId> request_nodes;
 		const auto collect_requests = [&](auto&& self, PlanetSurfaceNodeId node_id) -> void
@@ -295,10 +283,7 @@ namespace danikk_space_engine
 			if(!node.hasChildren() || node.half_extent <= target_half_extent_for(node.center, node.half_extent))
 			{
 				if(has_current_mesh(node_id))
-				{
 					node.render_active = true;
-					world.chunks.getChunk(node.mesh_chunk_id).render_enabled = true;
-				}
 				return;
 			}
 			if(children_ready(node_id))
@@ -316,7 +301,6 @@ namespace danikk_space_engine
 					* maximum_fallback_size_factor)
 			{
 				node.render_active = true;
-				world.chunks.getChunk(node.mesh_chunk_id).render_enabled = true;
 			}
 			else
 			{
@@ -368,8 +352,7 @@ namespace danikk_space_engine
 		constexpr size_t maximum_cached_surface_meshes = 1024;
 		size_t cached_mesh_count = 0;
 		for(const PlanetSurfaceNode& node : tree.nodes)
-			if(node.mesh_chunk_id != static_cast<ChunkId>(-1)
-				&& world.chunks.isChunkActive(node.mesh_chunk_id)) cached_mesh_count++;
+			if(node.mesh.mesh != nullptr) cached_mesh_count++;
 		while(cached_mesh_count > maximum_cached_surface_meshes)
 		{
 			PlanetSurfaceNodeId eviction_id = invalid_surface_node;
@@ -378,8 +361,7 @@ namespace danikk_space_engine
 			{
 				const PlanetSurfaceNode& node = tree.nodes[node_id];
 				if(node.render_active || node.generation_pending
-					|| node.mesh_chunk_id == static_cast<ChunkId>(-1)
-					|| !world.chunks.isChunkActive(node.mesh_chunk_id)) continue;
+					|| node.mesh.mesh == nullptr) continue;
 				const glm::dvec3 offset = node.center - camera_position;
 				const double distance_squared = glm::dot(offset, offset);
 				if(distance_squared <= farthest_distance_squared) continue;
@@ -388,8 +370,7 @@ namespace danikk_space_engine
 			}
 			if(eviction_id == invalid_surface_node) break;
 			PlanetSurfaceNode& node = tree.nodes[eviction_id];
-			world.chunks.destroyChunk(node.mesh_chunk_id);
-			node.mesh_chunk_id = static_cast<ChunkId>(-1);
+			world.chunks.destroyRenderData(node.mesh);
 			node.mesh_revision = 0;
 			cached_mesh_count--;
 		}
