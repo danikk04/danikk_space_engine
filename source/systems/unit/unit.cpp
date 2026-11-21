@@ -184,7 +184,6 @@ namespace danikk_space_engine
 				unit_system_internal::tickRest(group);
 			}
 		}
-		unit_system_internal::rebuildUnitSpatialIndex(world, impl->spatial_index);
 	}
 
 	/** @copydoc UnitSystem::collectNearbyHumanSlots */
