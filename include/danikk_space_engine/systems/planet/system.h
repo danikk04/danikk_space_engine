@@ -4,14 +4,6 @@
 
 namespace danikk_space_engine
 {
-	/** @brief Planet LOD rendering phase selected by World for the current depth pass. */
-	enum class PlanetRenderPass : uint8
-	{
-		all,
-		far_depth,
-		near_depth
-	};
-
 	/** @brief Owns planet state and provides terrain queries, editing, streaming, and result acceptance. */
 	class PlanetSystem
 	{
@@ -20,24 +12,6 @@ namespace danikk_space_engine
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
-		void updateLod();
-		void updatePlanetLod(PlanetData& planet);
-		void initializePlanetLodLevels(PlanetData& planet);
-		uint8 selectPlanetLodTargetLevel(PlanetData& planet, double height,
-			const PlanetSettings& settings);
-		uint8 selectPlanetLodRenderLevel(const PlanetData& planet, uint8 target_level) const;
-		void queuePlanetLodRequests(PlanetData& planet, uint8 level_index,
-			const glm::dvec3& local_camera_position,
-			const PlanetSettings& settings, DynamicArray<ChunkMeshGenerationRequest>& requests);
-		void queuePlanetLocalLodRequests(PlanetData& planet, uint8 level_index,
-			const glm::dvec3& local_camera_position,
-			DynamicArray<ChunkMeshGenerationRequest>& requests);
-		void queuePlanetGlobalLodRequests(PlanetData& planet, uint8 level_index,
-			const PlanetSettings& settings, DynamicArray<ChunkMeshGenerationRequest>& requests);
-		void setPlanetLodRequestIdentity(ChunkMeshGenerationRequest& request,
-			const PlanetData& planet, const PlanetChunkLevel& level,
-			uint8 level_index, uint16 patch_index);
-		void destroyPlanetLodMeshes(PlanetData& planet);
 		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position,
 			const glm::dvec3& chunk_center_position);
 		void queuePlanetRequests(PlanetData& planet);
@@ -47,9 +21,9 @@ namespace danikk_space_engine
 
 	public:
 		explicit PlanetSystem(World& world) : world(world) {}
-		/** @brief Clears cached LOD meshes and logs subsystem initialization. */
+		/** @brief Logs subsystem initialization. */
 		void init();
-		/** @brief Cancels LOD work, clears cached meshes, and logs shutdown. */
+		/** @brief Logs subsystem shutdown. */
 		void shutdown();
 
 		PlanetData& createPlanet(WorldBodyId world_body_id, PlanetSettingsId settings_id);
@@ -61,20 +35,8 @@ namespace danikk_space_engine
 		const PlanetData& getPlanet(WorldBodyId world_body_id) const;
 		const DynamicArray<PlanetData>& getPlanets() const { return planets; }
 
-		/** @brief Updates planet streaming and LOD selection once for the current world frame. */
+		/** @brief Updates planet chunk streaming once for the current world frame. */
 		void update();
-		/** @brief Draws the selected planet LODs for the specified World depth pass. */
-		void frame(PlanetRenderPass pass) const;
-		/** @brief Accepts a worker-generated LOD tile and uploads a complete level when ready. */
-		void acceptGeneratedLodMesh(const GeneratedChunkMesh& generated_mesh);
-		/** @brief Returns whether volume terrain chunks are the selected surface representation. */
-		bool shouldDrawPlanetChunks(WorldBodyId world_body_id) const;
-		/** @brief Gets the selected render level for a planet, returning false if it has no render state yet. */
-		bool getCurrentLodLevel(WorldBodyId world_body_id, uint8& lod_level) const;
-		/** @brief Returns the regular chunk IDs stored at render level zero, or null if unavailable. */
-		const DynamicArray<ChunkId>* getRegularChunkIds(WorldBodyId world_body_id) const;
-		/** @brief Cancels pending LOD work and releases all planet surface meshes. */
-		void clearLod();
 		void acceptGeneratedChunk(const GeneratedChunkMesh& generated_chunk);
 		/**
 		 * @brief Applies and persists a spherical terrain edit on a registered planet.

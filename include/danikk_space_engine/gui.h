@@ -19,10 +19,6 @@ namespace danikk_space_engine
 		double nearest_planet_height = 0.0;
 		/** @brief Whether a planet was available for the nearest-surface height sample. */
 		bool nearest_planet_height_available = false;
-		/** @brief Current selected LOD level for Earth, where zero selects ordinary chunks. */
-		uint8 earth_lod_level = 0;
-		/** @brief Whether Earth's current LOD level is available. */
-		bool earth_lod_level_available = false;
 		/** @brief Average time in milliseconds for the most recent group of 50 generated meshes. */
 		float average_chunk_generation_time_ms = 0.0f;
 		/** @brief Whether at least one complete group of 50 mesh-generation samples is available. */

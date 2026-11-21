@@ -20,8 +20,6 @@ namespace danikk_space_engine
 	{
 		/** @brief Extract an isosurface from a planet scalar field. */
 		planet_terrain,
-		/** @brief Generate a cave-free local tile or global cube-sphere face for a planet. */
-		planet_surface_lod,
 		/** @brief Combine the structural BuildPart instances owned by a chunk. */
 		build_parts
 	};
@@ -37,18 +35,10 @@ namespace danikk_space_engine
 		uint64 terrain_revision = 0;
 		ChunkMeshSource source = ChunkMeshSource::planet_terrain;
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
-		/** @brief Grid resolution along a local tile or cube-sphere face. */
-		uint32 lod_resolution = 0;
-		uint16 lod_face = 0;
-		uint8 lod_level = 0;
 		double chunk_width = 32.0;
 		double voxel_size = 4.0;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 chunk_position = glm::dvec3(0.0);
-		/** @brief Shared tangent frame used to keep adjacent local heightmap tiles aligned. */
-		glm::dvec3 heightmap_right = glm::dvec3(1.0, 0.0, 0.0);
-		glm::dvec3 heightmap_forward = glm::dvec3(0.0, 1.0, 0.0);
-		bool has_heightmap_basis = false;
 	};
 
 	/** @brief CPU mesh payload returned to the main thread for validation and GPU upload. */
@@ -62,10 +52,6 @@ namespace danikk_space_engine
 		uint64 terrain_revision = 0;
 		ChunkMeshSource source = ChunkMeshSource::planet_terrain;
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
-		/** @brief Grid resolution along a local tile or cube-sphere face. */
-		uint32 lod_resolution = 0;
-		uint16 lod_face = 0;
-		uint8 lod_level = 0;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 chunk_position = glm::dvec3(0.0);
 		DynamicArray<vec3> point_positions;
@@ -116,9 +102,6 @@ namespace danikk_space_engine
 		/** @brief Replaces the queued terrain requests for one planet incarnation. */
 		void replacePlanetRequests(WorldBodyId world_body_id, uint64 planet_generation_id,
 			const DynamicArray<ChunkMeshGenerationRequest>& planet_requests);
-		/** @brief Replaces queued full-planet surface LOD requests for one planet incarnation. */
-		void replacePlanetLodRequests(WorldBodyId world_body_id, uint64 planet_generation_id,
-			const DynamicArray<ChunkMeshGenerationRequest>& lod_requests);
 		/** @brief Removes a terrain request for one planet grid coordinate. */
 		void removePlanetRequest(WorldBodyId world_body_id, uint64 planet_generation_id,
 			const glm::ivec3& grid_coordinate);

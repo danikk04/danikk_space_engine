@@ -23,17 +23,13 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				&& a.world_body_id == b.world_body_id
 				&& a.chunk_id == b.chunk_id
 				&& a.grid_coordinate == b.grid_coordinate
-				&& a.planet_mesh_generator == b.planet_mesh_generator
-				&& a.lod_resolution == b.lod_resolution
-				&& a.lod_face == b.lod_face
-				&& a.lod_level == b.lod_level;
+				&& a.planet_mesh_generator == b.planet_mesh_generator;
 		}
 
 		bool requestHasCompletedResult(const ChunkMeshGenerationRequest& request,
 			const DynamicArray<GeneratedChunkMesh>& completed)
 		{
 			for(const GeneratedChunkMesh& result : completed)
-			{
 				if(result.generation_id == request.generation_id
 					&& result.source == request.source
 					&& result.source_revision == request.source_revision
@@ -42,11 +38,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 					&& result.world_body_id == request.world_body_id
 					&& result.chunk_id == request.chunk_id
 					&& result.grid_coordinate == request.grid_coordinate
-					&& result.planet_mesh_generator == request.planet_mesh_generator
-					&& result.lod_resolution == request.lod_resolution
-					&& result.lod_face == request.lod_face
-					&& result.lod_level == request.lod_level) return true;
-			}
+					&& result.planet_mesh_generator == request.planet_mesh_generator) return true;
 			return false;
 		}
 
@@ -54,7 +46,6 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			const DynamicArray<ChunkMeshGenerationRequest>& requests)
 		{
 			for(const ChunkMeshGenerationRequest& request : requests)
-			{
 				if(result.generation_id == request.generation_id
 					&& result.source == request.source
 					&& result.source_revision == request.source_revision
@@ -63,11 +54,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 					&& result.world_body_id == request.world_body_id
 					&& result.chunk_id == request.chunk_id
 					&& result.grid_coordinate == request.grid_coordinate
-					&& result.planet_mesh_generator == request.planet_mesh_generator
-					&& result.lod_resolution == request.lod_resolution
-					&& result.lod_face == request.lod_face
-					&& result.lod_level == request.lod_level) return true;
-			}
+					&& result.planet_mesh_generator == request.planet_mesh_generator) return true;
 			return false;
 		}
 
@@ -77,8 +64,6 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			{
 				case ChunkMeshSource::planet_terrain:
 					return generatePlanetTerrainChunkMesh(world, request);
-				case ChunkMeshSource::planet_surface_lod:
-					return generatePlanetSurfaceLodMesh(world, request);
 				case ChunkMeshSource::build_parts:
 					return generateBuildPartChunkMesh(world, request);
 			}
@@ -311,8 +296,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		for(size_t index = 0; index < requests.size();)
 		{
 			const ChunkMeshGenerationRequest& request = requests[index];
-			if((request.source != ChunkMeshSource::planet_terrain
-				&& request.source != ChunkMeshSource::planet_surface_lod)
+			if((request.source != ChunkMeshSource::planet_terrain)
 				|| request.world_body_id != world_body_id
 				|| request.planet_generation_id != planet_generation_id)
 			{
@@ -326,8 +310,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		for(size_t index = 0; index < completed.size();)
 		{
 			const GeneratedChunkMesh& result = completed[index];
-			if((result.source != ChunkMeshSource::planet_terrain
-				&& result.source != ChunkMeshSource::planet_surface_lod)
+			if((result.source != ChunkMeshSource::planet_terrain)
 				|| result.world_body_id != world_body_id
 				|| result.planet_generation_id != planet_generation_id)
 			{
@@ -339,8 +322,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			completed.resize(completed.size() - 1);
 		}
 		for(ActiveRequest& active : active_requests)
-			if((active.request.source == ChunkMeshSource::planet_terrain
-				|| active.request.source == ChunkMeshSource::planet_surface_lod)
+			if((active.request.source == ChunkMeshSource::planet_terrain)
 				&& active.request.world_body_id == world_body_id
 				&& active.request.planet_generation_id == planet_generation_id)
 				active.cancelled = true;

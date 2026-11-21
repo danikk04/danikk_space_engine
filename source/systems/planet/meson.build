@@ -1,12 +1,5 @@
 sources += files(
 	'planet.cpp',
-	'lod_update.cpp',
-	'lod_selection.cpp',
-	'lod_requests.cpp',
-	'lod_requests_local.cpp',
-	'lod_requests_global.cpp',
-	'lod_mesh.cpp',
-	'lod_render.cpp',
 	'chunk_accept.cpp',
 	'chunk_lookup.cpp',
 	'chunk_update.cpp',

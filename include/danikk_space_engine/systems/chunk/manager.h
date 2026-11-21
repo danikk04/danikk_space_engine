@@ -104,7 +104,7 @@ namespace danikk_space_engine
 			bool is_planet_terrain = true, bool is_build_part_mesh = false);
 		/** @brief Draws the chunk's material ranges and reports why drawing did not occur. */
 		ChunkDrawResult draw(const Chunk& chunk);
-		/** @brief Draws planet LODs and chunk meshes using the world's one- or two-depth-pass setup. */
+		/** @brief Draws chunk meshes using the world's one- or two-depth-pass setup. */
 		void renderWorld();
 		/** @brief Releases one chunk's GPU mesh and clears its bounds and render metadata. */
 		void destroyRenderData(Chunk& chunk);

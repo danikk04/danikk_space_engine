@@ -211,28 +211,8 @@ namespace danikk_space_engine
 		const auto draw_chunk_meshes = [this, &draw_chunk]()
 		{
 			for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
-			{
-				const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-				if(world.planets.isPlanet(body_id))
-				{
-					if(world.planets.shouldDrawPlanetChunks(body_id))
-					{
-						const DynamicArray<ChunkId>* regular_chunk_ids = world.planets.getRegularChunkIds(body_id);
-						if(regular_chunk_ids != nullptr)
-							for(ChunkId chunk_id : *regular_chunk_ids) draw_chunk(chunk_id);
-					}
-					else
-					{
-						for(ChunkId chunk_id : body.chunk_ids)
-						{
-							if(!isChunkActive(chunk_id)) { draw_chunk(chunk_id); continue; }
-							if(!getChunk(chunk_id).isPlanetTerrain()) draw_chunk(chunk_id);
-						}
-					}
-					continue;
-				}
-				for(ChunkId chunk_id : body.chunk_ids) draw_chunk(chunk_id);
-			}
+				for(ChunkId chunk_id : world.world_body_data.getWorldBody(body_id).chunk_ids)
+					draw_chunk(chunk_id);
 		};
 
 		if(far_render_distance > world.camera.far_clip_distance * 1.05)
@@ -246,18 +226,15 @@ namespace danikk_space_engine
 			setProjectionMatrix(glm::perspective(glm::radians(world.camera.vertical_fov_degrees),
 				screen_ratio_gz, far_near_clip, far_clip));
 			setDepthRange(0.5f, 1.0f);
-			world.planets.frame(PlanetRenderPass::far_depth);
 			draw_chunk_meshes();
 
 			world.camera.frame();
 			setDepthRange(0.0f, 0.5f);
-			world.planets.frame(PlanetRenderPass::near_depth);
 			draw_chunk_meshes();
 		}
 		else
 		{
 			setDepthRange(0.0f, 1.0f);
-			world.planets.frame(PlanetRenderPass::all);
 			draw_chunk_meshes();
 		}
 
