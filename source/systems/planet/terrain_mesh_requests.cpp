@@ -10,10 +10,10 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		for(MeshGenerationRequest& request : planet.pending_requests)
 		{
-			request.world_body_id = planet.world_body_id;
+			request.planet_id = planet.id;
 			request.planet_generation_id = planet.generation_id;
 		}
 		world.mesh_generation.replacePlanetRequests(
-			planet.world_body_id, planet.generation_id, planet.pending_requests);
+			planet.id, planet.generation_id, planet.pending_requests);
 	}
 }

@@ -51,7 +51,7 @@ namespace danikk_space_engine
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_position = inverse_rotation * (hit.position - body.position);
 			vec3 up = vec3(inverse_rotation * glm::dvec3(hit.normal));
-			if(world.planets.isPlanet(body_id))
+			if(world.planets.isPlanet(body.planet_id))
 			{
 				if(glm::length(local_position) < 1e-6) return;
 				up = vec3(glm::normalize(local_position));

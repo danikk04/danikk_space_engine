@@ -85,6 +85,8 @@ namespace danikk_space_engine
 		void frame();
 		/** @brief Draws planet-tree and WorldBody-owned detail meshes. */
 		void renderWorldMeshes();
+		/** @brief Mirrors planet-owned transforms into temporary WorldBody frames used by legacy entity ownership. */
+		void syncPlanetWorldBodyFrames();
 
 		/**
 		 * @brief Resets world state, initializes asynchronous mesh generation, and creates the base scenario.

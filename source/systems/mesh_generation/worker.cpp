@@ -34,6 +34,7 @@ namespace danikk_space_engine::mesh_generation_internal
 				&& a.planet_generation_id == b.planet_generation_id
 				&& a.terrain_revision == b.terrain_revision
 				&& a.world_body_id == b.world_body_id
+				&& a.planet_id == b.planet_id
 				&& a.planet_mesh_generator == b.planet_mesh_generator
 				&& a.terrain_node_id == b.terrain_node_id
 				&& a.terrain_node_generation_id == b.terrain_node_generation_id
@@ -50,6 +51,7 @@ namespace danikk_space_engine::mesh_generation_internal
 					&& result.planet_generation_id == request.planet_generation_id
 					&& result.terrain_revision == request.terrain_revision
 					&& result.world_body_id == request.world_body_id
+					&& result.planet_id == request.planet_id
 					&& result.planet_mesh_generator == request.planet_mesh_generator
 					&& result.terrain_node_id == request.terrain_node_id
 					&& result.terrain_node_generation_id == request.terrain_node_generation_id
@@ -108,6 +110,8 @@ namespace danikk_space_engine::mesh_generation_internal
 
 			const auto generation_start_time = std::chrono::steady_clock::now();
 			GeneratedMesh result = generateMesh(world, request);
+			if(request.source == MeshGenerationSource::planet_terrain_node)
+				result.planet_id = request.planet_id;
 			const uint64 generation_nanoseconds = static_cast<uint64>(std::chrono::duration_cast<std::chrono::nanoseconds>(
 				std::chrono::steady_clock::now() - generation_start_time).count());
 			if(request.source == MeshGenerationSource::planet_terrain_node)
@@ -281,14 +285,14 @@ namespace danikk_space_engine::mesh_generation_internal
 		return false;
 	}
 
-	void Worker::cancel(WorldBodyId world_body_id, uint64 planet_generation_id)
+	void Worker::cancel(PlanetId planet_id, uint64 planet_generation_id)
 	{
 		std::lock_guard<std::mutex> guard(mutex);
 		for(size_t index = 0; index < requests.size();)
 		{
 			const MeshGenerationRequest& request = requests[index];
 			if(request.source != MeshGenerationSource::planet_terrain_node
-				|| request.world_body_id != world_body_id
+				|| request.planet_id != planet_id
 				|| request.planet_generation_id != planet_generation_id)
 			{
 				++index;
@@ -302,7 +306,7 @@ namespace danikk_space_engine::mesh_generation_internal
 		{
 			const GeneratedMesh& result = completed[index];
 			if(result.source != MeshGenerationSource::planet_terrain_node
-				|| result.world_body_id != world_body_id
+				|| result.planet_id != planet_id
 				|| result.planet_generation_id != planet_generation_id)
 			{
 				++index;
@@ -314,7 +318,7 @@ namespace danikk_space_engine::mesh_generation_internal
 		}
 		for(ActiveRequest& active : active_requests)
 			if(active.request.source == MeshGenerationSource::planet_terrain_node
-				&& active.request.world_body_id == world_body_id
+				&& active.request.planet_id == planet_id
 				&& active.request.planet_generation_id == planet_generation_id)
 				active.cancelled = true;
 		request_available.notify_all();

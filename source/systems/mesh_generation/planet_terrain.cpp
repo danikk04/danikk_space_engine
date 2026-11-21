@@ -45,7 +45,7 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		const PlanetData* planet = world.planets.findPlanet(request.world_body_id);
+		const PlanetData* planet = world.planets.findPlanet(request.planet_id);
 		if(planet == nullptr || planet->generation_id != request.planet_generation_id
 			|| planet->terrain_revision != request.terrain_revision) return {};
 		GeneratedMesh result = generatePlanetNodeGeometry(world, request);
@@ -60,7 +60,7 @@ namespace danikk_space_engine
 			const vec3 c = result.point_positions[result.triangle_point_indices[first_index + 2]];
 			const glm::dvec3 center = request.node_minimum
 				+ (glm::dvec3(a) + glm::dvec3(b) + glm::dvec3(c)) / 3.0;
-			result.triangle_material_ids.push(world.planets.getPlanetMaterial(request.world_body_id,
+			result.triangle_material_ids.push(world.planets.getPlanetMaterial(request.planet_id,
 				center, request.surface_only
 					? PlanetTerrainMode::heightmap_with_edits
 					: PlanetTerrainMode::cave_field_with_edits));

@@ -26,7 +26,7 @@ namespace danikk_space_engine
 	inline constexpr double default_planet_core_radius = 3480000.0;
 	inline constexpr double planet_voxel_size = 2.0;
 
-	/** @brief Immutable settings used when registering a planet for a WorldBody. */
+	/** @brief Immutable settings used when creating a PlanetData instance. */
 	struct PlanetSettings
 	{
 		const char* name = "Earth";
@@ -246,10 +246,19 @@ namespace danikk_space_engine
 		uint64 next_node_generation_id = 1;
 	};
 
+	/** @brief Spherical terrain region whose cached meshes must be regenerated. */
+	struct PlanetTerrainDirtyRegion
+	{
+		glm::dvec3 center = glm::dvec3(0.0);
+		double radius = 0.0;
+	};
+
 	/** @brief Terrain, streaming, and render state owned by one planet. */
 	struct PlanetData
 	{
-		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
+		PlanetId id = static_cast<PlanetId>(-1);
+		glm::dvec3 position = glm::dvec3(0.0);
+		glm::dquat rotation = glm::dquat(1.0, 0.0, 0.0, 0.0);
 		PlanetSettingsId settings_id = planet_settings_ids::earth;
 		uint64 generation_id = 0;
 		uint64 terrain_revision = 0;
@@ -257,6 +266,7 @@ namespace danikk_space_engine
 		bool terrain_edits_loaded = false;
 		PlanetTerrainEdits terrain_edits;
 		PlanetTerrainTree terrain_tree;
+		DynamicArray<PlanetTerrainDirtyRegion> pending_terrain_dirty_regions;
 		DynamicArray<MeshGenerationRequest> pending_requests;
 
 	};

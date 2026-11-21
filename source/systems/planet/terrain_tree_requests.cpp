@@ -45,7 +45,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 			if(hasCurrentMesh(context, node_id)) continue;
 			MeshGenerationRequest request;
 			request.source = MeshGenerationSource::planet_terrain_node;
-			request.world_body_id = context.planet.world_body_id;
+			request.planet_id = context.planet.id;
 			request.planet_generation_id = context.planet.generation_id;
 			request.terrain_revision = context.planet.terrain_revision;
 			request.terrain_node_id = node_id;

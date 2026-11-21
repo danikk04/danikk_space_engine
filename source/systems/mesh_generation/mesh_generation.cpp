@@ -48,7 +48,7 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc MeshGenerationSystem::replacePlanetRequests */
-	void MeshGenerationSystem::replacePlanetRequests(WorldBodyId world_body_id,
+	void MeshGenerationSystem::replacePlanetRequests(PlanetId planet_id,
 		uint64 planet_generation_id, const DynamicArray<MeshGenerationRequest>& planet_requests)
 	{
 		DSE_WATCH();
@@ -56,7 +56,7 @@ namespace danikk_space_engine
 		{
 			const MeshGenerationRequest& queued = requests[index];
 			if(queued.source != MeshGenerationSource::planet_terrain_node
-				|| queued.world_body_id != world_body_id
+				|| queued.planet_id != planet_id
 				|| queued.planet_generation_id != planet_generation_id)
 			{
 				index++;
@@ -76,16 +76,16 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc MeshGenerationSystem::cancelPlanetRequests */
-	void MeshGenerationSystem::cancelPlanetRequests(WorldBodyId world_body_id,
+	void MeshGenerationSystem::cancelPlanetRequests(PlanetId planet_id,
 		uint64 planet_generation_id)
 	{
 		DSE_WATCH();
-		worker->cancel(world_body_id, planet_generation_id);
+		worker->cancel(planet_id, planet_generation_id);
 		for(size_t index = 0; index < requests.size();)
 		{
 			const MeshGenerationRequest& request = requests[index];
 			if(request.source != MeshGenerationSource::planet_terrain_node
-				|| request.world_body_id != world_body_id
+				|| request.planet_id != planet_id
 				|| request.planet_generation_id != planet_generation_id)
 			{
 				index++;
@@ -189,8 +189,7 @@ namespace danikk_space_engine
 
 		GeneratedMesh generated;
 		if(!worker->tryTake(generated) || generated.generation_id != generation_id) return;
-		if(generated.source == MeshGenerationSource::planet_terrain_node
-			&& world.world_body_data.isWorldBodyActive(generated.world_body_id))
+		if(generated.source == MeshGenerationSource::planet_terrain_node)
 		{
 			world.planets.acceptGeneratedSurfaceNode(generated);
 		}

@@ -24,7 +24,7 @@ namespace danikk_space_engine
 				return false;
 			}
 
-			if(world.planets.isPlanet(body_id)) return false;
+			if(world.world_body_data.getWorldBody(body_id).planet_id != static_cast<PlanetId>(-1)) return false;
 			return true;
 		}
 

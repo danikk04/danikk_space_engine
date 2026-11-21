@@ -30,7 +30,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 			const double depth_value = std::ceil(std::log2(root_half_extent / target_half_extent));
 			const uint8 target_depth = static_cast<uint8>(std::clamp(depth_value, 0.0,
 				static_cast<double>(PlanetTerrainTree::maximum_depth)));
-			const uint8 window_depth = target_depth > 4 ? static_cast<uint8>(target_depth - 4) : 0;
+			const uint8 window_depth = target_depth > 2 ? static_cast<uint8>(target_depth - 2) : 0;
 			const int32 cell_count = 1 << window_depth;
 			const double cell_width = std::ldexp(root_half_extent * 2.0, -window_depth);
 			for(uint8 axis = 0; axis < 3; ++axis)
@@ -57,6 +57,16 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 				if(node_maximum[axis] < context.render_window_minimum[axis]
 					|| node_minimum[axis] > context.render_window_maximum[axis]) return false;
 			return true;
+		}
+
+		bool intersectsDirtyRegion(const PlanetTerrainNode& node,
+			const PlanetTerrainDirtyRegion& region)
+		{
+			const glm::dvec3 node_minimum = node.center - glm::dvec3(node.half_extent);
+			const glm::dvec3 node_maximum = node.center + glm::dvec3(node.half_extent);
+			const glm::dvec3 closest_point = glm::clamp(region.center, node_minimum, node_maximum);
+			const glm::dvec3 delta = region.center - closest_point;
+			return glm::dot(delta, delta) <= region.radius * region.radius;
 		}
 	}
 
@@ -133,10 +143,24 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 			for(PlanetTerrainNode& node : context.tree.nodes)
 			{
 				node.generation_pending = false;
-				node.generation_id = context.tree.next_node_generation_id++;
-				if(context.tree.next_node_generation_id == 0) context.tree.next_node_generation_id++;
-				node.render_active = false;
+				bool dirty = context.planet.pending_terrain_dirty_regions.empty();
+				for(const PlanetTerrainDirtyRegion& region : context.planet.pending_terrain_dirty_regions)
+				{
+					if(!intersectsDirtyRegion(node, region)) continue;
+					dirty = true;
+					break;
+				}
+				if(dirty)
+				{
+					node.mesh_revision = 0;
+					node.render_active = false;
+					node.generation_id = context.tree.next_node_generation_id++;
+					if(context.tree.next_node_generation_id == 0) context.tree.next_node_generation_id++;
+				}
+				else if(node.mesh.mesh != nullptr)
+					node.mesh_revision = context.planet.terrain_revision;
 			}
+			context.planet.pending_terrain_dirty_regions.clear();
 			context.planet.terrain_tree_revision = context.planet.terrain_revision;
 		}
 

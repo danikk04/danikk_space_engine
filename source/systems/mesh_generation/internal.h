@@ -50,6 +50,6 @@ namespace danikk_space_engine::mesh_generation_internal
 		void update(uint64 generation_id, const DynamicArray<MeshGenerationRequest>& requests);
 		bool tryTake(GeneratedMesh& result);
 		bool getAverageGenerationTimeMilliseconds(float& average_time) const;
-		void cancel(WorldBodyId world_body_id, uint64 planet_generation_id);
+		void cancel(PlanetId planet_id, uint64 planet_generation_id);
 	};
 }

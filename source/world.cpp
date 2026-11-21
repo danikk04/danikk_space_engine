@@ -110,7 +110,20 @@ namespace danikk_space_engine
 		WorldBody& body = world_body_data.getWorldBody(body_id);
 		humans.destroyWorldBodyHumans(body_id);
 		while(body.point_ids.size() > 0) destroyPoint(body.point_ids[body.point_ids.size() - 1]);
-		world_body_data.destroyWorldBody(body_id, planets);
+		if(body.planet_id != static_cast<PlanetId>(-1)) planets.destroyPlanet(body.planet_id);
+		world_body_data.destroyWorldBody(body_id);
+	}
+
+	void World::syncPlanetWorldBodyFrames()
+	{
+		for(WorldBodyId body_id : world_body_data.getUsedWorldBodyIds())
+		{
+			WorldBody& body = world_body_data.getWorldBody(body_id);
+			const PlanetData* planet = planets.findPlanet(body.planet_id);
+			if(planet == nullptr) continue;
+			body.position = planet->position;
+			body.rotation = planet->rotation;
+		}
 	}
 
 	void World::setPointBodyLocalPosition(PointId point_id, const glm::dvec3& body_local_position)
@@ -193,6 +206,7 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
+		syncPlanetWorldBodyFrames();
 		components.tickWorldBodyComponents();
 		components.tickPointComponents();
 		camera.tick();
@@ -217,6 +231,7 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
+		syncPlanetWorldBodyFrames();
 		setClearColor(camera.isActive()
 			? planets.getAtmosphereBackgroundColor(camera.getWorldPosition()) : glm::vec3(0.0f));
 		components.renderWorldBodyComponents();
@@ -247,14 +262,12 @@ namespace danikk_space_engine
 		double closest_planet_surface_distance = std::numeric_limits<double>::max();
 		for(const PlanetData& planet : planets.getPlanets())
 		{
-			if(!world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
 			const PlanetSettings& settings = planets.getPlanetSettings(planet.settings_id);
-			const WorldBody& body = world_body_data.getWorldBody(planet.world_body_id);
-			const glm::dvec3 local_camera = glm::conjugate(body.rotation) * (camera_position - body.position);
-			const double surface_height = planets.getPlanetHeightAboveSurface(planet.world_body_id, local_camera);
+			const glm::dvec3 local_camera = glm::conjugate(planet.rotation) * (camera_position - planet.position);
+			const double surface_height = planets.getPlanetHeightAboveSurface(planet.id, local_camera);
 			closest_planet_surface_distance = glm::min(closest_planet_surface_distance, std::abs(surface_height));
 			far_render_distance = glm::max(far_render_distance,
-				glm::length(body.position - camera_position) + settings.radius);
+				glm::length(planet.position - camera_position) + settings.radius);
 		}
 		for(WorldBodyId id : world_body_data.getUsedWorldBodyIds())
 		{

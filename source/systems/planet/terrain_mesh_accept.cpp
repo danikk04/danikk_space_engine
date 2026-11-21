@@ -11,7 +11,7 @@ namespace danikk_space_engine
 		if(generated_mesh.source != MeshGenerationSource::planet_terrain_node) return;
 		const auto record = [](PlanetMeshAcceptance outcome)
 			{ telemetry_system.recordPlanetMeshAcceptance(outcome); };
-		PlanetData* planet = findPlanet(generated_mesh.world_body_id);
+		PlanetData* planet = findPlanet(generated_mesh.planet_id);
 		if(planet == nullptr)
 		{
 			record(PlanetMeshAcceptance::missing_planet);

@@ -19,8 +19,8 @@ namespace danikk_space_engine
 		void shutdown();
 
 		/** @brief Loads a planet's saved terrain edits into its registered PlanetData. */
-		bool loadPlanetTerrainEdits(WorldBodyId world_body_id);
+		bool loadPlanetTerrainEdits(PlanetId planet_id);
 		/** @brief Writes a planet's ordered terrain edits and revision to its save file. */
-		void savePlanetTerrainEdits(WorldBodyId world_body_id);
+		void savePlanetTerrainEdits(PlanetId planet_id);
 	};
 }

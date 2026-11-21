@@ -27,6 +27,7 @@ namespace danikk_space_engine
 		uint64 generation_id = 0;
 		uint64 source_revision = 0;
 		WorldBodyId world_body_id = 0;
+		PlanetId planet_id = static_cast<PlanetId>(-1);
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
 		PlanetTerrainNodeId terrain_node_id = static_cast<PlanetTerrainNodeId>(-1);
@@ -45,6 +46,7 @@ namespace danikk_space_engine
 		uint64 generation_id = 0;
 		uint64 source_revision = 0;
 		WorldBodyId world_body_id = 0;
+		PlanetId planet_id = static_cast<PlanetId>(-1);
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
 		PlanetTerrainNodeId terrain_node_id = static_cast<PlanetTerrainNodeId>(-1);
@@ -62,7 +64,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Owns asynchronous mesh requests and accepts generated CPU meshes.
 	 *
-	 * The planet octree and WorldBody own accepted meshes. This system manages requests,
+	 * PlanetData and WorldBody own their accepted meshes. This system manages requests,
 	 * worker lifecycle, stale-result rejection, and main-thread uploads.
 	 */
 	class MeshGenerationSystem
@@ -100,10 +102,10 @@ namespace danikk_space_engine
 		/** @brief Submits current requests and accepts at most one completed mesh on the main thread. */
 		void frame();
 		/** @brief Replaces the queued terrain requests for one planet incarnation. */
-		void replacePlanetRequests(WorldBodyId world_body_id, uint64 planet_generation_id,
+		void replacePlanetRequests(PlanetId planet_id, uint64 planet_generation_id,
 			const DynamicArray<MeshGenerationRequest>& planet_requests);
 		/** @brief Cancels all queued and worker-side requests for one planet incarnation. */
-		void cancelPlanetRequests(WorldBodyId world_body_id, uint64 planet_generation_id);
+		void cancelPlanetRequests(PlanetId planet_id, uint64 planet_generation_id);
 		/** @brief Marks the owning body's combined BuildPart mesh stale. */
 		void invalidateBodyDetailMesh(WorldBodyId world_body_id);
 		/** @brief Reads the latest average generation time over 50 completed mesh jobs. */

@@ -188,37 +188,37 @@ namespace danikk_space_engine
 	}
 
 	double PlanetSystem::getPlanetDensity(
-		WorldBodyId world_body_id, const glm::dvec3& position, PlanetTerrainMode mode) const
+		PlanetId planet_id, const glm::dvec3& position, PlanetTerrainMode mode) const
 	{
-		const PlanetData& planet = getPlanet(world_body_id);
+		const PlanetData& planet = getPlanet(planet_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		return samplePlanetDensity(position, settings.radius, settings.noise_seed,
 			planet.terrain_edits, settings.core_radius, mode);
 	}
 
 	MaterialId PlanetSystem::getPlanetMaterial(
-		WorldBodyId world_body_id, const glm::dvec3& position, PlanetTerrainMode mode) const
+		PlanetId planet_id, const glm::dvec3& position, PlanetTerrainMode mode) const
 	{
-		const PlanetData& planet = getPlanet(world_body_id);
+		const PlanetData& planet = getPlanet(planet_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		return samplePlanetMaterial(position, settings.radius, settings.noise_seed,
 			planet.terrain_edits, settings.core_radius, mode);
 	}
 
-	double PlanetSystem::getPlanetSurfaceRadius(WorldBodyId world_body_id,
+	double PlanetSystem::getPlanetSurfaceRadius(PlanetId planet_id,
 		const glm::dvec3& direction, PlanetTerrainMode mode, double minimum_wavelength) const
 	{
 		const double direction_length = glm::length(direction);
 		if(direction_length <= 1e-12) return 0.0;
-		const PlanetData& planet = getPlanet(world_body_id);
+		const PlanetData& planet = getPlanet(planet_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		return samplePlanetSurfaceRadius(direction / direction_length, settings.radius, settings.noise_seed,
 			planet.terrain_edits, minimum_wavelength, mode);
 	}
 
-	double PlanetSystem::getPlanetHeightAboveSurface(WorldBodyId world_body_id, const glm::dvec3& position) const
+	double PlanetSystem::getPlanetHeightAboveSurface(PlanetId planet_id, const glm::dvec3& position) const
 	{
-		const PlanetData& planet = getPlanet(world_body_id);
+		const PlanetData& planet = getPlanet(planet_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		const double distance_from_center = glm::length(position);
 		if(distance_from_center <= 1e-9) return -settings.radius;

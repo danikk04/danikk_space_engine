@@ -29,7 +29,7 @@ namespace danikk_space_engine::human_internal
 		 * @param maximum_drop Maximum downward support probe distance.
 		 * @return True if a walkable surface supports the character within the probe interval.
 		 */
-		bool findPlanetGroundPosition(World& world, WorldBodyId planet_body_id,
+		bool findPlanetGroundPosition(World& world, PlanetId planet_id,
 			const vec3& up, float human_height,
 			const glm::dvec3& proposed, glm::dvec3& supported, vec3& surface_normal,
 			float step_height, float maximum_drop)
@@ -40,7 +40,7 @@ namespace danikk_space_engine::human_internal
 			const glm::dvec3 bottom_center = proposed - glm::dvec3(up * static_cast<float>(half_axis));
 			const auto densityAtOffset = [&](double offset)
 			{
-				return world.planets.getPlanetDensity(planet_body_id,
+				return world.planets.getPlanetDensity(planet_id,
 					bottom_center + glm::dvec3(up) * offset,
 					PlanetTerrainMode::cave_field_with_edits);
 			};
@@ -69,9 +69,9 @@ namespace danikk_space_engine::human_internal
 			{
 				glm::dvec3 offset(0.0);
 				offset[axis] = gradient_step;
-				gradient[axis] = (world.planets.getPlanetDensity(planet_body_id,
+				gradient[axis] = (world.planets.getPlanetDensity(planet_id,
 					contact_position + offset, PlanetTerrainMode::cave_field_with_edits)
-					- world.planets.getPlanetDensity(planet_body_id,
+					- world.planets.getPlanetDensity(planet_id,
 						contact_position - offset, PlanetTerrainMode::cave_field_with_edits))
 					/ (2.0 * gradient_step);
 			}
@@ -105,7 +105,7 @@ namespace danikk_space_engine::human_internal
 		{
 			DSE_WATCH();
 			if(planet != nullptr)
-				return findPlanetGroundPosition(world, body_id, up, human_height,
+				return findPlanetGroundPosition(world, planet->id, up, human_height,
 					proposed, supported, surface_normal, step_height, maximum_drop);
 
 			const glm::dvec3 proposed_foot = proposed - glm::dvec3(up * (human_height * 0.5f));
@@ -153,7 +153,8 @@ namespace danikk_space_engine::human_internal
 				return;
 			}
 
-			const PlanetData* planet = world.planets.findPlanet(body_id);
+			const PlanetId planet_id = body.planet_id;
+			const PlanetData* planet = world.planets.findPlanet(planet_id);
 			const float height = human.getHeight();
 			const bool cached_support = planet != nullptr && human.grounded && human.vertical_speed == 0.0f
 				&& cache.planet_generation_id == planet->generation_id

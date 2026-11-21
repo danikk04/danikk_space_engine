@@ -86,7 +86,7 @@ namespace danikk_space_engine
 		{
 			GeneratedMesh result;
 			result.generation_id = request.generation_id;
-			result.world_body_id = request.world_body_id;
+			result.planet_id = request.planet_id;
 			result.planet_generation_id = request.planet_generation_id;
 			result.terrain_revision = request.terrain_revision;
 			result.source_revision = request.source_revision;
@@ -121,7 +121,7 @@ namespace danikk_space_engine
 					{
 						const size_t point_index = pointId(x, y, z);
 						densities[point_index] = world.planets.getPlanetDensity(
-							request.world_body_id, pointPosition(x, y, z),
+						request.planet_id, pointPosition(x, y, z),
 							request.surface_only
 								? PlanetTerrainMode::heightmap_with_edits
 								: PlanetTerrainMode::cave_field_with_edits);
@@ -160,7 +160,7 @@ namespace danikk_space_engine
 					std::abs(density_delta) > 1e-12 ? first.density / density_delta : 0.5,
 					0.0, 1.0);
 				glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
-				if(world.planets.getPlanetDensity(request.world_body_id, position,
+				if(world.planets.getPlanetDensity(request.planet_id, position,
 					request.surface_only ? PlanetTerrainMode::heightmap_with_edits
 						: PlanetTerrainMode::cave_field_with_edits) < 0.0)
 				{
@@ -169,7 +169,7 @@ namespace danikk_space_engine
 					for(uint8 iteration = 0; iteration < 6; ++iteration)
 					{
 						const glm::dvec3 midpoint = (inside + outside) * 0.5;
-						if(world.planets.getPlanetDensity(request.world_body_id, midpoint,
+						if(world.planets.getPlanetDensity(request.planet_id, midpoint,
 							request.surface_only ? PlanetTerrainMode::heightmap_with_edits
 								: PlanetTerrainMode::cave_field_with_edits) >= 0.0)
 							inside = midpoint;

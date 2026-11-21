@@ -48,7 +48,7 @@ namespace danikk_space_engine
 		{
 			if(body_id == dragged_body_id) continue;
 			WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			if(world.planets.isPlanet(body_id)) continue;
+			if(body.planet_id != static_cast<PlanetId>(-1)) continue;
 
 			if(!collision_internal::hasSpatialPoints(body)) continue;
 			const glm::dvec3 acceleration = world.environment.sampleGravityAt(body.position);

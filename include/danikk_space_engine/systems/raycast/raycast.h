@@ -31,6 +31,8 @@ namespace danikk_space_engine
 		bool hit_terrain = false;
 		/** @brief WorldBody containing the hit geometry. */
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
+		/** @brief Planet containing a terrain hit, even when it has no WorldBody proxy. */
+		PlanetId planet_id = static_cast<PlanetId>(-1);
 		/** @brief BuildPart component slot, valid when `hit_build_part` is true. */
 		PointComponentSlotId build_part_slot_id = static_cast<PointComponentSlotId>(-1);
 	};
@@ -42,7 +44,7 @@ namespace danikk_space_engine
 		RaycastHit castBodies(const WorldBodyId* body_ids, size_t body_count,
 			const glm::dvec3& origin, const vec3& direction, float max_distance) const;
 		/** @brief Finds a ray crossing of a planet's scalar-density surface. */
-		bool raycastPlanetScalarField(WorldBodyId planet_body_id,
+		bool raycastPlanetScalarField(PlanetId planet_id,
 			const glm::dvec3& origin, const glm::dvec3& direction, double max_distance,
 			PlanetTerrainMode mode,
 			double& distance, glm::dvec3& normal) const;
@@ -55,7 +57,7 @@ namespace danikk_space_engine
 		/** @brief Logs shutdown of the raycast subsystem. */
 		void shutdown();
 
-		/** @brief Casts against all active WorldBodies and returns the nearest hit. */
+		/** @brief Casts against all planets and active WorldBodies and returns the nearest hit. */
 		RaycastHit cast(const glm::dvec3& origin, const vec3& direction,
 			float max_distance = 10000.0f) const;
 		/** @brief Casts against one WorldBody. */

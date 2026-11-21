@@ -38,12 +38,10 @@ namespace danikk_engine_game
 		double nearest_surface_distance = std::numeric_limits<double>::max();
 		for(const PlanetData& planet : world.planets.getPlanets())
 		{
-			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
-			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
-			const glm::dvec3 planet_local_camera_position = glm::conjugate(body.rotation)
-				* (data.camera_position - body.position);
+			const glm::dvec3 planet_local_camera_position = glm::conjugate(planet.rotation)
+				* (data.camera_position - planet.position);
 			const double height = world.planets.getPlanetHeightAboveSurface(
-				planet.world_body_id, planet_local_camera_position);
+				planet.id, planet_local_camera_position);
 			const double surface_distance = std::abs(height);
 			if(surface_distance >= nearest_surface_distance) continue;
 			nearest_surface_distance = surface_distance;

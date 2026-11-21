@@ -36,13 +36,17 @@ namespace danikk_space_engine
 		}
 	}
 
-	bool PlanetSystem::removePlanetTerrainEdit(WorldBodyId world_body_id, PlanetTerrainEditId edit_id)
+	bool PlanetSystem::removePlanetTerrainEdit(PlanetId planet_id, PlanetTerrainEditId edit_id)
 	{
-		PlanetData* planet = findPlanet(world_body_id);
-		if(planet == nullptr || !planet->terrain_edits.remove(edit_id)) return false;
+		PlanetData* planet = findPlanet(planet_id);
+		if(planet == nullptr || !planet->terrain_edits.pool->isActive(edit_id)) return false;
+		const PlanetTerrainEdit& edit = (*planet->terrain_edits.pool)[edit_id];
+		const PlanetTerrainDirtyRegion dirty_region{edit.getCenter(), edit.getRadius()};
+		if(!planet->terrain_edits.remove(edit_id)) return false;
+		planet->pending_terrain_dirty_regions.push(dirty_region);
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
-		world.saves.savePlanetTerrainEdits(world_body_id);
+		world.saves.savePlanetTerrainEdits(planet_id);
 		return true;
 	}
 
@@ -53,32 +57,33 @@ namespace danikk_space_engine
 		return planet_settings[id];
 	}
 
-	PlanetData& PlanetSystem::createPlanet(WorldBodyId world_body_id, PlanetSettingsId settings_id)
+	PlanetData& PlanetSystem::createPlanet(PlanetSettingsId settings_id,
+		const glm::dvec3& position, const glm::dquat& rotation)
 	{
-		if(!world.world_body_data.isWorldBodyActive(world_body_id))
-			danikk_engine::formatFatalError("Cannot register a planet for inactive WorldBody %", world_body_id);
 		getPlanetSettings(settings_id);
-		if(PlanetData* existing = findPlanet(world_body_id)) return *existing;
 		PlanetData planet;
-		planet.world_body_id = world_body_id;
+		planet.id = 0;
+		while(findPlanet(planet.id) != nullptr) ++planet.id;
+		planet.position = position;
+		planet.rotation = rotation;
 		planet.settings_id = settings_id;
 		planet.generation_id = next_generation_id++;
 		if(next_generation_id == 0) next_generation_id = 1;
 		planets.pushMove(planet);
-		world.saves.loadPlanetTerrainEdits(world_body_id);
+		world.saves.loadPlanetTerrainEdits(planet.id);
 		return planets[planets.size() - 1];
 	}
 
 	void PlanetSystem::removeQueuedRequests(const PlanetData& planet)
 	{
-		world.mesh_generation.cancelPlanetRequests(planet.world_body_id, planet.generation_id);
+		world.mesh_generation.cancelPlanetRequests(planet.id, planet.generation_id);
 	}
 
-	void PlanetSystem::destroyPlanet(WorldBodyId world_body_id)
+	void PlanetSystem::destroyPlanet(PlanetId planet_id)
 	{
 		for(size_t index = 0; index < planets.size(); ++index)
 		{
-			if(planets[index].world_body_id != world_body_id) continue;
+			if(planets[index].id != planet_id) continue;
 			removeQueuedRequests(planets[index]);
 			destroyPlanetTerrainTree(planets[index]);
 			for(size_t shift = index + 1; shift < planets.size(); ++shift)
@@ -88,36 +93,36 @@ namespace danikk_space_engine
 		}
 	}
 
-	bool PlanetSystem::isPlanet(WorldBodyId world_body_id) const
+	bool PlanetSystem::isPlanet(PlanetId planet_id) const
 	{
-		return findPlanet(world_body_id) != nullptr;
+		return findPlanet(planet_id) != nullptr;
 	}
 
-	PlanetData* PlanetSystem::findPlanet(WorldBodyId world_body_id)
+	PlanetData* PlanetSystem::findPlanet(PlanetId planet_id)
 	{
 		for(PlanetData& planet : planets)
-			if(planet.world_body_id == world_body_id) return &planet;
+			if(planet.id == planet_id) return &planet;
 		return nullptr;
 	}
 
-	const PlanetData* PlanetSystem::findPlanet(WorldBodyId world_body_id) const
+	const PlanetData* PlanetSystem::findPlanet(PlanetId planet_id) const
 	{
 		for(const PlanetData& planet : planets)
-			if(planet.world_body_id == world_body_id) return &planet;
+			if(planet.id == planet_id) return &planet;
 		return nullptr;
 	}
 
-	PlanetData& PlanetSystem::getPlanet(WorldBodyId world_body_id)
+	PlanetData& PlanetSystem::getPlanet(PlanetId planet_id)
 	{
-		PlanetData* planet = findPlanet(world_body_id);
-		if(planet == nullptr) danikk_engine::formatFatalError("WorldBody % is not registered as a planet", world_body_id);
+		PlanetData* planet = findPlanet(planet_id);
+		if(planet == nullptr) danikk_engine::formatFatalError("Planet % is not registered", planet_id);
 		return *planet;
 	}
 
-	const PlanetData& PlanetSystem::getPlanet(WorldBodyId world_body_id) const
+	const PlanetData& PlanetSystem::getPlanet(PlanetId planet_id) const
 	{
-		const PlanetData* planet = findPlanet(world_body_id);
-		if(planet == nullptr) danikk_engine::formatFatalError("WorldBody % is not registered as a planet", world_body_id);
+		const PlanetData* planet = findPlanet(planet_id);
+		if(planet == nullptr) danikk_engine::formatFatalError("Planet % is not registered", planet_id);
 		return *planet;
 	}
 
@@ -130,12 +135,10 @@ namespace danikk_space_engine
 		for(const PlanetData& planet : planets)
 		{
 			const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
-			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)
-				|| settings.atmosphere_height <= 0.0) continue;
-			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
-			const glm::dvec3 planet_position = glm::conjugate(body.rotation)
-				* (world_position - body.position);
-			const double surface_height = getPlanetHeightAboveSurface(planet.world_body_id, planet_position);
+			if(settings.atmosphere_height <= 0.0) continue;
+			const glm::dvec3 planet_position = glm::conjugate(planet.rotation)
+				* (world_position - planet.position);
+			const double surface_height = getPlanetHeightAboveSurface(planet.id, planet_position);
 			const double surface_distance = std::abs(surface_height);
 			if(surface_distance >= nearest_surface_distance) continue;
 			nearest_surface_distance = surface_distance;
@@ -160,31 +163,28 @@ namespace danikk_space_engine
 	void PlanetSystem::updatePlanet(PlanetData& planet)
 	{
 		DSE_WATCH();
-		if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)
-			|| !world.camera.isActive()) return;
-		const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
-		const glm::dvec3 camera_position = glm::conjugate(body.rotation)
-			* (world.camera.getWorldPosition() - body.position);
-		const double surface_height = getPlanetHeightAboveSurface(planet.world_body_id, camera_position);
+		if(!world.camera.isActive()) return;
+		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
+			* (world.camera.getWorldPosition() - planet.position);
+		const double surface_height = getPlanetHeightAboveSurface(planet.id, camera_position);
 		updatePlanetTerrainTree(planet, camera_position, surface_height);
 	}
 
-	bool PlanetSystem::editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,
+	bool PlanetSystem::editPlanetGround(PlanetId planet_id, const glm::dvec3& position,
 		double radius, MaterialId material_id)
 	{
-		if(!world.world_body_data.isWorldBodyActive(world_body_id)
-			|| !std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z)
+		if(!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z)
 			|| !std::isfinite(radius) || radius <= 0.0
 			|| (material_id != default_materials::void_material && material_id >= getMaterialCount())) return false;
-		PlanetData* planet = findPlanet(world_body_id);
+		PlanetData* planet = findPlanet(planet_id);
 		if(planet == nullptr) return false;
-		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
-		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
+		const glm::dvec3 center = glm::conjugate(planet->rotation) * (position - planet->position);
 		if(planet->terrain_edits.append(PlanetTerrainEdit{center, radius, material_id})
 			== static_cast<PlanetTerrainEditId>(-1)) return false;
+		planet->pending_terrain_dirty_regions.push(PlanetTerrainDirtyRegion{center, radius});
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
-		world.saves.savePlanetTerrainEdits(world_body_id);
+		world.saves.savePlanetTerrainEdits(planet_id);
 		return true;
 	}
 

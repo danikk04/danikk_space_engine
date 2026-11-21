@@ -25,13 +25,15 @@ namespace danikk_space_engine
 		/** @brief Logs subsystem shutdown. */
 		void shutdown();
 
-		PlanetData& createPlanet(WorldBodyId world_body_id, PlanetSettingsId settings_id);
-		void destroyPlanet(WorldBodyId world_body_id);
-		bool isPlanet(WorldBodyId world_body_id) const;
-		PlanetData* findPlanet(WorldBodyId world_body_id);
-		const PlanetData* findPlanet(WorldBodyId world_body_id) const;
-		PlanetData& getPlanet(WorldBodyId world_body_id);
-		const PlanetData& getPlanet(WorldBodyId world_body_id) const;
+		PlanetData& createPlanet(PlanetSettingsId settings_id,
+			const glm::dvec3& position = glm::dvec3(0.0),
+			const glm::dquat& rotation = glm::dquat(1.0, 0.0, 0.0, 0.0));
+		void destroyPlanet(PlanetId planet_id);
+		bool isPlanet(PlanetId planet_id) const;
+		PlanetData* findPlanet(PlanetId planet_id);
+		const PlanetData* findPlanet(PlanetId planet_id) const;
+		PlanetData& getPlanet(PlanetId planet_id);
+		const PlanetData& getPlanet(PlanetId planet_id) const;
 		const DynamicArray<PlanetData>& getPlanets() const { return planets; }
 
 		/** @brief Updates adaptive terrain-tree streaming once for the current world frame. */
@@ -41,28 +43,28 @@ namespace danikk_space_engine
 		void renderSurfaceNodes();
 		/**
 		 * @brief Applies and persists a spherical terrain edit on a registered planet.
-		 * @param world_body_id Registered planet body to modify.
+		 * @param planet_id Planet to modify.
 		 * @param position World-space center of the edit sphere.
 		 * @param radius Edit sphere radius in metres; nonpositive values are rejected.
 		 * @param material_id Fill material, or material ID zero to remove terrain.
 		 * @return True when the planet was found and the edit was added.
 		 */
-		bool editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,
+		bool editPlanetGround(PlanetId planet_id, const glm::dvec3& position,
 			double radius, MaterialId material_id);
 		/** @brief Removes a terrain edit by its stable planet-local ID. */
-		bool removePlanetTerrainEdit(WorldBodyId world_body_id, PlanetTerrainEditId edit_id);
+		bool removePlanetTerrainEdit(PlanetId planet_id, PlanetTerrainEditId edit_id);
 		/** @brief Returns immutable settings from the planet settings catalog. */
 		const PlanetSettings& getPlanetSettings(PlanetSettingsId id) const;
 
-		double getPlanetDensity(WorldBodyId world_body_id, const glm::dvec3& position,
+		double getPlanetDensity(PlanetId planet_id, const glm::dvec3& position,
 			PlanetTerrainMode mode) const;
-		MaterialId getPlanetMaterial(WorldBodyId world_body_id, const glm::dvec3& position,
+		MaterialId getPlanetMaterial(PlanetId planet_id, const glm::dvec3& position,
 			PlanetTerrainMode mode) const;
-		double getPlanetHeightAboveSurface(WorldBodyId world_body_id, const glm::dvec3& position) const;
+		double getPlanetHeightAboveSurface(PlanetId planet_id, const glm::dvec3& position) const;
 		/** @brief Blends the nearest planet's atmosphere color into black space by altitude. */
 		glm::vec3 getAtmosphereBackgroundColor(const glm::dvec3& world_position) const;
 		/** @brief Samples the cave-free surface from current planet data, optionally omitting fine noise layers. */
-		double getPlanetSurfaceRadius(WorldBodyId world_body_id,
+		double getPlanetSurfaceRadius(PlanetId planet_id,
 			const glm::dvec3& direction,
 			PlanetTerrainMode mode, double minimum_wavelength = 0.0) const;
 	};

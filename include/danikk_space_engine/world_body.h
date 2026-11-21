@@ -60,6 +60,8 @@ namespace danikk_space_engine
 	class WorldBody
 	{
 	public:
+		/** @brief Planet whose spatial frame this body proxies, or invalid PlanetId. */
+		PlanetId planet_id = static_cast<PlanetId>(-1);
 		/** @brief Faction owning this body, or no_faction if unassigned. */
 		FactionId faction_id = no_faction;
 		/** @brief Body origin in double-precision world coordinates. */
@@ -130,8 +132,8 @@ namespace danikk_space_engine
 		/** @brief Creates a component slot attached to an active WorldBody. */
 		WorldBodyComponentSlotId createWorldBodyComponentSlot(WorldBodyId world_body_id,
 			WorldBodyComponentTypeId type_id, const void* init_data = nullptr);
-		/** @brief Destroys a body's planet record, mesh, component slots, and body resource. */
-		void destroyWorldBody(WorldBodyId id, PlanetSystem& planets);
+		/** @brief Destroys a body's mesh, component slots, and body resource. */
+		void destroyWorldBody(WorldBodyId id);
 		/** @brief Destroys a body-component slot and its payload. */
 		void destroyWorldBodyComponentSlot(WorldBodyComponentSlotId id);
 		/** @brief Checks whether a WorldBody ID is active. */

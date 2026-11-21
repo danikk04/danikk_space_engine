@@ -22,7 +22,7 @@ namespace danikk_space_engine::mesh_generation_internal
 	{
 		GeneratedMesh result;
 		result.generation_id = request.generation_id;
-		result.world_body_id = request.world_body_id;
+		result.planet_id = request.planet_id;
 		result.planet_generation_id = request.planet_generation_id;
 		result.terrain_revision = request.terrain_revision;
 		result.source_revision = request.source_revision;
@@ -60,7 +60,7 @@ namespace danikk_space_engine::mesh_generation_internal
 			for(int y = -1; y <= static_cast<int>(cells_per_axis) + 1; ++y)
 				for(int x = -1; x <= static_cast<int>(cells_per_axis) + 1; ++x)
 					densities[sampleIndex(x, y, z)] = world.planets.getPlanetDensity(
-						request.world_body_id, samplePosition(x, y, z),
+						request.planet_id, samplePosition(x, y, z),
 						request.surface_only
 						? PlanetTerrainMode::heightmap_with_edits
 						: PlanetTerrainMode::cave_field_with_edits);

@@ -13,7 +13,7 @@ namespace danikk_space_engine
 	{
 		/**
 		 * @brief Finds a deterministic camera sample just below the surface in solid terrain.
-		 * @param planet_body_id Planet whose persisted terrain edits are loaded for sampling.
+		 * @param planet_id Planet whose persisted terrain edits are loaded for sampling.
 		 * @param planet_settings Radius, seed, and protected core settings for the scalar field.
 		 * @param camera_position Receives the first qualifying world-body-local position.
 		 * @return True when a sample is found; false when the planet is too small or
@@ -25,7 +25,7 @@ namespace danikk_space_engine
 		 */
 		bool findGroundCameraPosition(
 			const World& world,
-			WorldBodyId planet_body_id,
+			PlanetId planet_id,
 			const PlanetSettings& planet_settings,
 			glm::dvec3& camera_position)
 		{
@@ -47,7 +47,7 @@ namespace danikk_space_engine
 				glm::max(step, (planet_settings.radius - core_clearance) * 0.25));
 			const auto density_at = [&](const glm::dvec3& position)
 			{
-				return world.planets.getPlanetDensity(planet_body_id, position,
+				return world.planets.getPlanetDensity(planet_id, position,
 					PlanetTerrainMode::cave_field_with_edits);
 			};
 
@@ -55,7 +55,7 @@ namespace danikk_space_engine
 			{
 				double consecutive_solid_depth = 0.0;
 				const double surface_radius = world.planets.getPlanetSurfaceRadius(
-					planet_body_id, direction, PlanetTerrainMode::heightmap_with_edits);
+					planet_id, direction, PlanetTerrainMode::heightmap_with_edits);
 				for(double depth = step; depth <= maximum_search_depth; depth += step)
 				{
 					const double distance = surface_radius - depth;
@@ -101,22 +101,26 @@ namespace danikk_space_engine
 		world.factions.setRelation(base_faction_ids::player, base_faction_ids::pirates,
 			{FactionRelationType::hostile, 0.0f});
 
-		const WorldBodyId planet_body_id = world.world_body_data.createWorldBody();
-		world.world_body_data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
+		const WorldBodyId planet_frame_id = world.world_body_data.createWorldBody();
+		world.world_body_data.getWorldBody(planet_frame_id).faction_id = base_faction_ids::celestial_body;
 		const PlanetSettings& planet_settings = world.planets.getPlanetSettings(planet_settings_ids::earth);
-		world.planets.createPlanet(planet_body_id, planet_settings_ids::earth);
+		PlanetData& planet = world.planets.createPlanet(planet_settings_ids::earth);
+		WorldBody& planet_frame = world.world_body_data.getWorldBody(planet_frame_id);
+		planet_frame.planet_id = planet.id;
+		planet_frame.position = planet.position;
+		planet_frame.rotation = planet.rotation;
 		constexpr double camera_altitude = 10.0;
 		const glm::dvec3 camera_direction(0.0, 0.0, 1.0);
 		glm::dvec3 camera_body_local_position = camera_direction
-			* (world.planets.getPlanetSurfaceRadius(planet_body_id, camera_direction,
+			* (world.planets.getPlanetSurfaceRadius(planet.id, camera_direction,
 				PlanetTerrainMode::heightmap_with_edits) + camera_altitude);
 		if(settings.default_camera_position == DefaultCameraPosition::ground
-			&& !findGroundCameraPosition(world, planet_body_id, planet_settings, camera_body_local_position))
+			&& !findGroundCameraPosition(world, planet.id, planet_settings, camera_body_local_position))
 		{
 			danikk_framework::formatLogWarning(
 				"Unable to find solid underground camera position; spawning above the planet");
 		}
-		world.camera.bind(planet_body_id, camera_body_local_position);
+		world.camera.bind(planet_frame_id, camera_body_local_position);
 		world.camera.rotation.y = -pi_half;
 		world.controller.reset();
 	}

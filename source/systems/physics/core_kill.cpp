@@ -60,7 +60,7 @@ namespace danikk_space_engine
 		{
 			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			if(world.planets.isPlanet(body_id)) planets.push(PlanetCoreTarget{body_id, body.position});
+			if(body.planet_id != static_cast<PlanetId>(-1)) planets.push(PlanetCoreTarget{body_id, body.position});
 		}
 		if(planets.size() == 0) return;
 
@@ -69,7 +69,7 @@ namespace danikk_space_engine
 		{
 			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			if(world.planets.isPlanet(body_id) || !collision_internal::hasSpatialPoints(body)) continue;
+			if(body.planet_id != static_cast<PlanetId>(-1) || !collision_internal::hasSpatialPoints(body)) continue;
 			if(isInsideAnyPlanetCore(body.position, planets)) bodies_to_destroy.push(body_id);
 		}
 		for(WorldBodyId body_id : bodies_to_destroy)

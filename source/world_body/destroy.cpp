@@ -1,7 +1,5 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/world_body.h>
-#include <danikk_space_engine/systems/planet/system.h>
-
 #include <cstdlib>
 
 namespace danikk_space_engine
@@ -41,10 +39,9 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc WorldBodyData::destroyWorldBody */
-	void WorldBodyData::destroyWorldBody(WorldBodyId id, PlanetSystem& planets)
+	void WorldBodyData::destroyWorldBody(WorldBodyId id)
 	{
 		if(!isWorldBodyActive(id)) return;
-		planets.destroyPlanet(id);
 		WorldBody& body = world_bodies[id];
 		destroyMeshRenderData(body.detail_mesh);
 		body.detail_mesh_bounds_valid = false;
