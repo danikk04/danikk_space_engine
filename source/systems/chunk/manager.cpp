@@ -74,6 +74,13 @@ namespace danikk_space_engine
 	const DynamicArray<ChunkId>& ChunkSystem::getUsedChunkIds() const { return chunks.usedIds(); }
 	/** @brief Returns the allocated chunk slot count, including reusable slots. */
 	size_t ChunkSystem::getChunkSlotCount() const { return chunks.size(); }
+	/** @copydoc ChunkSystem::getChunkPointIds */
+	const DynamicArray<PointId>& ChunkSystem::getChunkPointIds(ChunkId id) const
+	{
+		if(!isChunkActive(id) || id >= point_ids_by_chunk.size())
+			danikk_engine::formatFatalError("Invalid chunk ID %", id);
+		return point_ids_by_chunk[id];
+	}
 
 	/** @brief Allocates a chunk and adds its reverse membership to the owning body. */
 	Chunk& ChunkSystem::createChunk(WorldBodyId world_body_id)
@@ -81,6 +88,8 @@ namespace danikk_space_engine
 		if(!world.world_body_data.isWorldBodyActive(world_body_id))
 			danikk_engine::formatFatalError("Chunk references invalid world body %", world_body_id);
 		const ChunkId id = chunks.create();
+		if(id >= point_ids_by_chunk.size()) point_ids_by_chunk.resize(id + 1);
+		point_ids_by_chunk[id].clear();
 		Chunk& chunk = chunks[id];
 		chunk.chunk_id = id;
 		chunk.world_body_id = world_body_id;
@@ -110,6 +119,7 @@ namespace danikk_space_engine
 		else if(point.world_body_point_index >= body.point_ids.size()
 			|| body.point_ids[point.world_body_point_index] != point_id)
 			danikk_engine::formatFatalError("Point % has an invalid WorldBody index", point_id);
+		insertWorldResourceId(point_ids_by_chunk[chunk_id], point_id);
 		insertWorldResourceId(point.referencing_chunk_ids, chunk_id);
 	}
 
@@ -119,7 +129,9 @@ namespace danikk_space_engine
 		if(!isChunkActive(chunk_id) || !world.point_data.isPointActive(point_id)) return false;
 		Chunk& chunk = getChunk(chunk_id);
 		Point& point = world.point_data.getPoint(point_id);
-		if(!eraseWorldResourceId(point.referencing_chunk_ids, chunk_id)) return false;
+		if(!eraseWorldResourceId(point_ids_by_chunk[chunk_id], point_id)) return false;
+		if(!eraseWorldResourceId(point.referencing_chunk_ids, chunk_id))
+			danikk_engine::formatFatalError("Point % is missing reverse reference to chunk %", point_id, chunk_id);
 		if(point.world_body_id != chunk.world_body_id)
 			danikk_engine::formatFatalError("Point % is missing reverse reference to chunk %", point_id, chunk_id);
 		return true;
@@ -191,32 +203,28 @@ namespace danikk_space_engine
 			removePointComponentSlotFromChunk(slot_id);
 			world.point_data.destroyPointComponentSlot(slot_id);
 		}
-		if(body != nullptr)
+		while(point_ids_by_chunk[id].size() > 0)
 		{
-			for(size_t point_index = body->point_ids.size(); point_index > 0;)
+			const PointId point_id = point_ids_by_chunk[id][point_ids_by_chunk[id].size() - 1];
+			if(!world.point_data.isPointActive(point_id))
 			{
-				--point_index;
-				if(point_index >= body->point_ids.size()) continue;
-				const PointId point_id = body->point_ids[point_index];
-				if(!world.point_data.isPointActive(point_id))
-				{
-					removePointFromBody(world, *body, point_id);
-					continue;
-				}
-				Point& point = world.point_data.getPoint(point_id);
-				if(!eraseWorldResourceId(point.referencing_chunk_ids, id)) continue;
-				for(size_t slot_index = point.component_slot_ids.size(); slot_index > 0;)
-				{
-					--slot_index;
-					if(slot_index >= point.component_slot_ids.size()) continue;
-					const PointComponentSlotId slot_id = point.component_slot_ids[slot_index];
-					if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-					if(world.point_data.getPointComponentSlot(slot_id).chunk_id != id) continue;
-					removePointComponentSlotFromChunk(slot_id);
-					world.point_data.destroyPointComponentSlot(slot_id);
-				}
-				if(point.referencing_chunk_ids.size() == 0) destroyPoint(point_id);
+				point_ids_by_chunk[id].resize(point_ids_by_chunk[id].size() - 1);
+				if(body != nullptr) removePointFromBody(world, *body, point_id);
+				continue;
 			}
+			if(!removePointReferenceFromChunk(id, point_id)) continue;
+			Point& point = world.point_data.getPoint(point_id);
+			for(size_t slot_index = point.component_slot_ids.size(); slot_index > 0;)
+			{
+				--slot_index;
+				if(slot_index >= point.component_slot_ids.size()) continue;
+				const PointComponentSlotId slot_id = point.component_slot_ids[slot_index];
+				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
+				if(world.point_data.getPointComponentSlot(slot_id).chunk_id != id) continue;
+				removePointComponentSlotFromChunk(slot_id);
+				world.point_data.destroyPointComponentSlot(slot_id);
+			}
+			if(point.referencing_chunk_ids.size() == 0) destroyPoint(point_id);
 		}
 
 		chunk.world_body_id = 0;
@@ -226,6 +234,7 @@ namespace danikk_space_engine
 		chunk.build_part_mesh_revision = 0;
 		chunk.render_enabled = true;
 		chunk.bounds_valid = false;
+		point_ids_by_chunk[id].clear();
 		chunks.free(id);
 	}
 
@@ -235,6 +244,7 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		while(chunks.usedIds().size() > 0) destroyChunk(chunks.usedIds()[chunks.usedIds().size() - 1]);
 		chunks.clear();
+		point_ids_by_chunk.clear();
 		clearRenderData();
 	}
 }

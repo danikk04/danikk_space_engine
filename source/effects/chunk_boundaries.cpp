@@ -27,18 +27,14 @@ namespace danikk_space_engine
 		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			for(PointId point_id : body.point_ids)
+			for(ChunkId chunk_id : body.chunk_ids)
 			{
-				if(!world.point_data.isPointActive(point_id)) continue;
-				const Point& point = world.point_data.getPoint(point_id);
-				if(point.world_body_id != body_id) continue;
-				for(ChunkId chunk_id : point.referencing_chunk_ids)
+				if(!world.chunks.isChunkActive(chunk_id) || chunk_id >= chunk_bounds.size()) continue;
+				ChunkPointBounds& bounds = chunk_bounds[chunk_id];
+				for(PointId point_id : world.chunks.getChunkPointIds(chunk_id))
 				{
-					if(!world.chunks.isChunkActive(chunk_id)
-						|| chunk_id >= chunk_bounds.size()) continue;
-					const Chunk& chunk = world.chunks.getChunk(chunk_id);
-					if(chunk.world_body_id != body_id) continue;
-					ChunkPointBounds& bounds = chunk_bounds[chunk_id];
+					if(!world.point_data.isPointActive(point_id)) continue;
+					const Point& point = world.point_data.getPoint(point_id);
 					if(!bounds.found)
 					{
 						bounds.minimum = point.position;

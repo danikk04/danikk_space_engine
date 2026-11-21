@@ -28,6 +28,8 @@ namespace danikk_space_engine
 		World& world;
 		/** @brief Stable-ID pool for chunk spatial data and membership lists. */
 		WorldResourcePool<Chunk, ChunkId> chunks{"Chunk"};
+		/** @brief Point references indexed by chunk ID, kept outside the Chunk records. */
+		DynamicArray<DynamicArray<PointId>> point_ids_by_chunk;
 		/** @brief GPU resources and material ranges indexed by stable ChunkId. */
 		DynamicArray<ChunkRenderRecord> render_records;
 		/** @brief Last timestamp used to report chunk draw statistics. */
@@ -60,6 +62,8 @@ namespace danikk_space_engine
 		const DynamicArray<ChunkId>& getUsedChunkIds() const;
 		/** @brief Returns the total number of allocated chunk slots, including reusable slots. */
 		size_t getChunkSlotCount() const;
+		/** @brief Returns point IDs spatially referenced by an active chunk. */
+		const DynamicArray<PointId>& getChunkPointIds(ChunkId chunk_id) const;
 		/** @brief Returns a checked reference to an active chunk. */
 		Chunk& getChunk(ChunkId id);
 		/** @brief Returns a checked read-only reference to an active chunk. */
