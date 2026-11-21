@@ -1,4 +1,3 @@
-#include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/systems/chunk/chunk.h>
 #include <danikk_space_engine/world.h>
 
@@ -6,24 +5,8 @@
 
 namespace danikk_space_engine
 {
-	namespace
-	{
-		/** @brief Removes an ID from a callback list while preserving traversal order. */
-		bool removePointComponentId(DynamicArray<PointComponentSlotId>& ids, PointComponentSlotId slot_id)
-		{
-			for(size_t end = ids.size(); end > 0; --end)
-			{
-				if(ids[end - 1] != slot_id) continue;
-				for(size_t index = end; index < ids.size(); ++index) ids[index - 1] = ids[index];
-				ids.pop();
-				return true;
-			}
-			return false;
-		}
-	}
-
 	/**
-	 * @brief Transfers mesh and resource-array ownership from another chunk.
+	 * @brief Transfers spatial metadata and mesh invalidation state from another chunk.
 	 */
 	Chunk::Chunk(Chunk&& other) noexcept
 		: bounds_valid(other.bounds_valid),
@@ -32,8 +15,7 @@ namespace danikk_space_engine
 		build_part_mesh_revision(other.build_part_mesh_revision),
 		bounds_center(other.bounds_center), bounds_radius(other.bounds_radius),
 		chunk_id(other.chunk_id), world_body_id(other.world_body_id),
-		grid_coordinate(other.grid_coordinate), position(other.position),
-		build_part_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.build_part_component_slot_ids))
+		grid_coordinate(other.grid_coordinate), position(other.position)
 	{
 	}
 
@@ -54,7 +36,6 @@ namespace danikk_space_engine
 		world_body_id = other.world_body_id;
 		grid_coordinate = other.grid_coordinate;
 		position = other.position;
-		build_part_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.build_part_component_slot_ids);
 		return *this;
 	}
 
@@ -64,19 +45,6 @@ namespace danikk_space_engine
 		build_part_mesh_dirty = true;
 		build_part_mesh_revision++;
 		if(build_part_mesh_revision == 0) build_part_mesh_revision++;
-	}
-
-	/** @copydoc Chunk::addBuildPartComponentSlot */
-	void Chunk::addBuildPartComponentSlot(PointComponentSlotId slot_id)
-	{
-		build_part_component_slot_ids.push(slot_id);
-	}
-
-	/** @copydoc Chunk::removeBuildPartComponentSlot */
-	void Chunk::removeBuildPartComponentSlot(PointComponentSlotId slot_id)
-	{
-		if(!removePointComponentId(build_part_component_slot_ids, slot_id))
-			danikk_engine::formatFatalError("BuildPart component % is missing from owning chunk %", slot_id, chunk_id);
 	}
 
 	/**

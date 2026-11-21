@@ -19,8 +19,8 @@ namespace danikk_space_engine
 	 * @brief Owns chunk data, chunk-to-world membership, and chunk GPU meshes.
 	 *
 	 * PointData owns points and point components; WorldBodyData owns bodies and their components.
-	 * ChunkSystem coordinates operations that update those records and the chunk membership lists, and releases GPU meshes
-	 * before recycling chunk IDs.
+	 * ChunkSystem owns per-cell membership indices and GPU meshes, coordinates changes to those
+	 * records, and releases GPU resources before recycling chunk IDs.
 	 */
 	class ChunkSystem
 	{
@@ -30,6 +30,8 @@ namespace danikk_space_engine
 		WorldResourcePool<Chunk, ChunkId> chunks{"Chunk"};
 		/** @brief Point references indexed by chunk ID, kept outside the Chunk records. */
 		DynamicArray<DynamicArray<PointId>> point_ids_by_chunk;
+		/** @brief BuildPart slots indexed by chunk ID while component scheduling is still cell-based. */
+		DynamicArray<DynamicArray<PointComponentSlotId>> build_part_slots_by_chunk;
 		/** @brief GPU resources and material ranges indexed by stable ChunkId. */
 		DynamicArray<ChunkRenderRecord> render_records;
 		/** @brief Last timestamp used to report chunk draw statistics. */
@@ -64,6 +66,8 @@ namespace danikk_space_engine
 		size_t getChunkSlotCount() const;
 		/** @brief Returns point IDs spatially referenced by an active chunk. */
 		const DynamicArray<PointId>& getChunkPointIds(ChunkId chunk_id) const;
+		/** @brief Returns BuildPart component slots assigned to an active spatial cell. */
+		const DynamicArray<PointComponentSlotId>& getBuildPartSlotIds(ChunkId chunk_id) const;
 		/** @brief Returns a checked reference to an active chunk. */
 		Chunk& getChunk(ChunkId id);
 		/** @brief Returns a checked read-only reference to an active chunk. */

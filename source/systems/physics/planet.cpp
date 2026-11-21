@@ -65,7 +65,7 @@ namespace danikk_space_engine
 			size_t build_part_count = 0;
 			for(ChunkId chunk_id : moving_body.chunk_ids)
 				if(world.chunks.isChunkActive(chunk_id))
-					build_part_count += world.chunks.getChunk(chunk_id).build_part_component_slot_ids.size();
+					build_part_count += world.chunks.getBuildPartSlotIds(chunk_id).size();
 			point_contacts.reserve(moving_body.point_ids.size() + build_part_count * 8);
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
@@ -92,7 +92,7 @@ namespace danikk_space_engine
 			{
 				if(!world.chunks.isChunkActive(chunk_id)) continue;
 				const Chunk& chunk = world.chunks.getChunk(chunk_id);
-				for(PointComponentSlotId slot_id : chunk.build_part_component_slot_ids)
+				for(PointComponentSlotId slot_id : world.chunks.getBuildPartSlotIds(chunk_id))
 				{
 					if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 					const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
@@ -280,8 +280,7 @@ namespace danikk_space_engine
 			for(ChunkId chunk_id : moving_body.chunk_ids)
 			{
 				if(!world.chunks.isChunkActive(chunk_id)) continue;
-				const Chunk& chunk = world.chunks.getChunk(chunk_id);
-				for(PointComponentSlotId slot_id : chunk.build_part_component_slot_ids)
+				for(PointComponentSlotId slot_id : world.chunks.getBuildPartSlotIds(chunk_id))
 				{
 					if(world.point_data.isPointComponentSlotActive(slot_id)
 						&& world.point_data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)

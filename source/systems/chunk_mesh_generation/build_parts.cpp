@@ -19,10 +19,9 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		result.chunk_position = request.chunk_position;
 
 		if(!world.chunks.isChunkActive(request.chunk_id)) return result;
-		const Chunk& chunk = world.chunks.getChunk(request.chunk_id);
 		size_t vertex_count = 0;
 		size_t index_count = 0;
-		for(PointComponentSlotId slot_id : chunk.build_part_component_slot_ids)
+		for(PointComponentSlotId slot_id : world.chunks.getBuildPartSlotIds(request.chunk_id))
 		{
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
@@ -37,7 +36,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		result.triangle_point_indices.reserve(index_count);
 		result.triangle_material_ids.reserve(index_count / 3);
 
-		for(PointComponentSlotId slot_id : chunk.build_part_component_slot_ids)
+		for(PointComponentSlotId slot_id : world.chunks.getBuildPartSlotIds(request.chunk_id))
 		{
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);

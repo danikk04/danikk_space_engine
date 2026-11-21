@@ -15,9 +15,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Stores spatial point references and BuildPart geometry for one chunk.
 	 *
-	 * A Chunk is positioned relative to its WorldBody and references pooled point
-	 * and BuildPart lists. Other point components live in PointData, not duplicated here.
-	 * Render meshes are owned by ChunkSystem; the chunk keeps only
+	 * A Chunk is positioned relative to its WorldBody. Point and BuildPart
+	 * membership indices and render meshes are owned by ChunkSystem; the chunk keeps only
 	 * spatial bounds used by raycast broadphase.
 	 * Planet streaming metadata uses grid_coordinate.
 	 */
@@ -27,11 +26,6 @@ namespace danikk_space_engine
 
 		/** @brief True when bounds describe the most recently built, non-dirty mesh. */
 		bool bounds_valid = false;
-		/** @brief Registers a BuildPart slot used by this chunk's mesh and collision geometry. */
-		void addBuildPartComponentSlot(PointComponentSlotId slot_id);
-
-		/** @brief Removes a BuildPart slot from this chunk's geometry list. */
-		void removeBuildPartComponentSlot(PointComponentSlotId slot_id);
 
 	public:
 		/** @brief Whether the combined BuildPart mesh needs regeneration. */
@@ -52,8 +46,6 @@ namespace danikk_space_engine
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		/** @brief Chunk origin relative to its WorldBody origin, in double precision. */
 		glm::dvec3 position = glm::dvec3(0.0);
-		/** @brief BuildPart components whose combined geometry belongs to this chunk. */
-		DynamicArray<PointComponentSlotId> build_part_component_slot_ids;
 
 		/** @brief Creates an empty chunk resource. */
 		Chunk() = default;

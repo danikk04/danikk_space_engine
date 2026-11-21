@@ -111,7 +111,7 @@ namespace danikk_space_engine::collision_internal
 		{
 			if(!world.chunks.isChunkActive(chunk_id)) continue;
 			const Chunk& chunk = world.chunks.getChunk(chunk_id);
-			for(PointComponentSlotId slot_id : chunk.build_part_component_slot_ids)
+			for(PointComponentSlotId slot_id : world.chunks.getBuildPartSlotIds(chunk_id))
 			{
 				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
