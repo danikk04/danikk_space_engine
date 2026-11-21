@@ -11,8 +11,7 @@ namespace danikk_space_engine
 	enum class PointComponentTypeId : uint32
 	{
 		none = 0, ///< Empty slot type with no payload callbacks.
-		machine_gun, ///< Weapon model state and timed projectile spawning.
-		bullet, ///< Moving projectile state, collision sweep, and tracer rendering.
+		bullet = 2, ///< Moving projectile state, collision sweep, and tracer rendering.
 		engine, ///< Reserved component type; no implementation is registered yet.
 		human, ///< Reserved legacy ID; people are owned by HumanSystem.
 		inventory, ///< Reserved legacy ID; inventories are stored with their owning entity.

@@ -7,4 +7,6 @@ sources += files(
 	'human_mesh.cpp',
 	'human_appearance.cpp',
 	'human_spawn.cpp',
+	'inventory.cpp',
+	'damageable.cpp',
 )

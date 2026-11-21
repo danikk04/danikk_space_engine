@@ -2,9 +2,8 @@
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/geometry/cube.h>
-#include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/build_part.h>
-#include <danikk_space_engine/component/point/damageable.h>
+#include <danikk_space_engine/systems/human/damageable.h>
 #include <danikk_space_engine/systems/planet/system.h>
 
 #include <cmath>
@@ -75,36 +74,10 @@ namespace danikk_space_engine
 			return true;
 		}
 
-		/**
-		 * @brief Creates a point-attached machine gun on the hit WorldBody, oriented to the camera.
-		 * @param world World receiving the point and machine-gun component slot.
-		 * @param hit Surface hit used for the local point position and owning body.
-		 * The point is offset 0.03 m from the surface, transformed into body-local
-		 * coordinates; the weapon basis is transformed from camera axes into the
-		 * owning WorldBody's local orientation.
-		 */
-		void createMachinegunAtHit(World& world, const RaycastHit& hit)
-		{
-			if(!world.world_body_data.isWorldBodyActive(hit.body_id)) return;
-			const PointId point_id = world.point_data.createPoint();
-			const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
-			const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
-			const glm::dvec3 body_local_position = inverse_body_rotation
-				* (hit.position + glm::dvec3(hit.normal * 0.03f) - body.position);
-
-			MachinegunComponent machinegun;
-			machinegun.forward = vec3(inverse_body_rotation * glm::dvec3(world.camera.getFront()));
-			machinegun.up = vec3(inverse_body_rotation * glm::dvec3(world.camera.getUp()));
-			machinegun.right = vec3(inverse_body_rotation * glm::dvec3(world.camera.getRight()));
-			const PointComponentSlotId slot_id = world.point_data.createPointComponentSlot(
-				point_id, PointComponentTypeId::machine_gun, &machinegun);
-			world.attachPointComponentToBody(hit.body_id, point_id, slot_id, body_local_position);
-		}
-
 	}
 
 	/**
-	 * @brief Dispatches placement of a machine gun or a cube/slope BuildPart at a valid ray hit.
+	 * @brief Dispatches placement of a cube or slope BuildPart at a valid ray hit.
 	 * @param world World receiving the created resources.
 	 * @param hit Raycast result defining the target body, point, and normal.
 	 * @param action Place action; unsupported values are ignored.
@@ -117,9 +90,6 @@ namespace danikk_space_engine
 		if(!hit.hit) return ToolApplyResult();
 		switch(action)
 		{
-			case ToolActionId::machinegun:
-				createMachinegunAtHit(world, hit);
-				break;
 			case ToolActionId::create_body:
 				if(!createBuildPartAtHit(world, hit, BuildPartShape::cube,
 					build_part_size, build_part_rotation_step))

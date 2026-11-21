@@ -1,5 +1,5 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
-#include <danikk_space_engine/component/point/inventory.h>
+#include <danikk_space_engine/systems/human/inventory.h>
 #include <danikk_space_engine/item/item.h>
 
 namespace danikk_space_engine

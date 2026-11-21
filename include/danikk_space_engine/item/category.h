@@ -1,6 +1,6 @@
 #pragma once
 
-#include <danikk_space_engine/component/point/inventory.h>
+#include <danikk_space_engine/systems/human/inventory.h>
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>

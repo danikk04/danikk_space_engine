@@ -1,12 +1,9 @@
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/assets/collection.h>
-#include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
 #include <danikk_framework/glm.h>
 #include <danikk_engine/texture_methods.h>
-
-#include <limits>
 
 #include "gui_internal.h"
 
@@ -57,7 +54,7 @@ namespace danikk_space_engine
 	 * The preview is placed one unit in front of the camera and uses the active camera
 	 * projection, so it occupies the same screen rectangle as the cell without changing
 	 * the projection or view uniforms used for the next world frame. BuildPart meshes
-	 * use shared primitive geometry; the weapon thumbnail draws the catalogued MG-42 mesh.
+	 * use shared primitive geometry.
 	 */
 	void drawToolCatalogPreview(const GUIFrameData& frame_data, ToolCatalogEntryId entry_id,
 		const vec2& cell_position, const vec2& cell_size)
@@ -94,43 +91,6 @@ namespace danikk_space_engine
 			return;
 		}
 
-		if(entry.action == ToolActionId::machinegun)
-		{
-			const mat4 rotation = glm::rotate(mat4(1.0f), glm::radians(58.0f), vec3(1.0f, 0.0f, 0.0f))
-				* glm::rotate(mat4(1.0f), glm::radians(-18.0f), vec3(0.0f, 1.0f, 0.0f))
-				* glm::rotate(mat4(1.0f), glm::radians(38.0f), vec3(0.0f, 0.0f, 1.0f));
-			const vec3 model_center(0.001f, 0.039f, -0.241f);
-			const vec3 model_half_extents(4.55f, 0.85f, 0.80f);
-			float projected_min_x = std::numeric_limits<float>::max();
-			float projected_max_x = std::numeric_limits<float>::lowest();
-			float projected_min_y = std::numeric_limits<float>::max();
-			float projected_max_y = std::numeric_limits<float>::lowest();
-			for(int32 x_sign : {-1, 1})
-			{
-				for(int32 y_sign : {-1, 1})
-				{
-					for(int32 z_sign : {-1, 1})
-					{
-						const vec3 corner = model_center + model_half_extents
-							* vec3(static_cast<float>(x_sign), static_cast<float>(y_sign), static_cast<float>(z_sign));
-						const vec3 rotated = vec3(rotation * vec4(corner - model_center, 0.0f));
-						projected_min_x = glm::min(projected_min_x, rotated.x);
-						projected_max_x = glm::max(projected_max_x, rotated.x);
-						projected_min_y = glm::min(projected_min_y, rotated.y);
-						projected_max_y = glm::max(projected_max_y, rotated.y);
-					}
-				}
-			}
-			const float view_width = 2.0f * half_width * cell_size.x * 0.76f;
-			const float view_height = 2.0f * half_height * cell_size.y * 0.76f;
-			const float projected_width = projected_max_x - projected_min_x;
-			const float projected_height = projected_max_y - projected_min_y;
-			const float scale = glm::min(view_width / projected_width, view_height / projected_height);
-			const mat4 item_transform = cell_transform * rotation
-				* glm::scale(mat4(1.0f), vec3(scale))
-				* glm::translate(mat4(1.0f), -model_center);
-			drawItem(item_definition_ids::mg42, item_transform);
-		}
 	}
 
 	/** @brief Refreshes visible tool commands and category highlighting. */

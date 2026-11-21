@@ -1,7 +1,7 @@
 #pragma once
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/human/human.h>
-#include <danikk_space_engine/component/point/inventory.h>
+#include <danikk_space_engine/systems/human/inventory.h>
 namespace danikk_space_engine::human_internal
 {
 	void moveWithGround(World&, WorldBodyId, const WorldBody&, HumanState&,

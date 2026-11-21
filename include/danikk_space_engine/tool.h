@@ -38,7 +38,6 @@ namespace danikk_space_engine
 		extrude, ///< Adds terrain at the selected position.
 		erase, ///< Removes terrain at the selected position.
 		drag, ///< Captures and moves a WorldBody or human entity.
-		machinegun, ///< Places a machine-gun component at a raycast hit.
 		create_body, ///< Creates a WorldBody with a cube BuildPart.
 		create_slope, ///< Creates a WorldBody with a slope BuildPart.
 		create_human, ///< Creates a human at a supported surface hit.

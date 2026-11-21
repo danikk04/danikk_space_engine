@@ -4,8 +4,8 @@
 #include <danikk_framework/random.h>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/human/human.h>
-#include <danikk_space_engine/component/point/damageable.h>
-#include <danikk_space_engine/component/point/inventory.h>
+#include <danikk_space_engine/systems/human/damageable.h>
+#include <danikk_space_engine/systems/human/inventory.h>
 #include <danikk_space_engine/systems/human/data.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/item/item.h>

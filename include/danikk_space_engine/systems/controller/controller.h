@@ -43,20 +43,12 @@ namespace danikk_space_engine
 
 		/** @brief Owning World whose input and controlled point this system manages. */
 		World& world;
-		/** @brief Creates a machinegun point copy using the owning world's component pools. */
-		void duplicateControllerPointWithMachinegun(const Point& source_point,
-			const CameraSystem& camera, WorldBodyId body_id);
 		/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
 		void validateSelectedUnits();
 		/** @brief Selects the nearest visible player-faction human intersected by the camera ray. */
 		bool selectOwnHumanUnderCursor(const RaycastHit& surface_hit, bool shift_pressed);
 		/** @brief Checks that the controlled point still matches the active camera. */
 		void validateControllerBinding() const;
-		/** @brief Handles the modal tool catalog and reports whether it consumed this tick. */
-		bool handleToolCatalogInput(bool spawn_machinegun,
-			const Point& source_point, WorldBodyId owner_body_id);
-		/** @brief Captures the debug machinegun request and source point before world interaction. */
-		bool captureDebugSpawn(Point& source_point, WorldBodyId& owner_body_id) const;
 		/** @brief Toggles the player interaction mode when the slash key is pressed. */
 		void handleModeInput();
 		/** @brief Samples keyboard modifiers and mouse values for the current tick. */

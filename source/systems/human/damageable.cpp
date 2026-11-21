@@ -1,4 +1,4 @@
-#include <danikk_space_engine/component/point/damageable.h>
+#include <danikk_space_engine/systems/human/damageable.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine

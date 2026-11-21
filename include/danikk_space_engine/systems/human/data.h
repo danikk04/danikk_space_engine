@@ -2,8 +2,8 @@
 
 #include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/fwd.h>
-#include <danikk_space_engine/component/point/inventory.h>
-#include <danikk_space_engine/component/point/damageable.h>
+#include <danikk_space_engine/systems/human/inventory.h>
+#include <danikk_space_engine/systems/human/damageable.h>
 
 namespace danikk_space_engine
 {

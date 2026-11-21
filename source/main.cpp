@@ -9,7 +9,7 @@
 #include <danikk_space_engine/default.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/component/point/damageable.h>
+#include <danikk_space_engine/systems/human/damageable.h>
 #include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/localization.h>
 #include <danikk_space_engine/material.h>

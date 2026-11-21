@@ -1,5 +1,4 @@
 #include <danikk_space_engine/component/point/point.h>
-#include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
 #include <danikk_space_engine/component/point/build_part.h>
 
@@ -10,16 +9,7 @@ namespace danikk_space_engine
 		const PointComponentType point_component_types[] =
 		{
 			{}, // none
-			{
-				sizeof(MachinegunComponent),
-				alignof(MachinegunComponent),
-				true,
-				constructMachinegunComponent,
-				moveMachinegunComponent,
-				destroyMachinegunComponent,
-				tickMachinegunComponent,
-				frameMachinegunComponent
-			},
+			{}, // Legacy component ID slot kept reserved to preserve existing type values.
 			{
 				sizeof(BulletComponent),
 				alignof(BulletComponent),

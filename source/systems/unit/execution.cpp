@@ -3,8 +3,8 @@
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/component/point/damageable.h>
-#include <danikk_space_engine/component/point/inventory.h>
+#include <danikk_space_engine/systems/human/damageable.h>
+#include <danikk_space_engine/systems/human/inventory.h>
 #include <danikk_space_engine/systems/unit/internal/orders.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 #include <danikk_space_engine/systems/planet/system.h>

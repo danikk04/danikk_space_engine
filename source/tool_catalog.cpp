@@ -27,7 +27,6 @@ namespace danikk_space_engine
 			{tools_category_id, "Drag", "DRAG", ToolId::drag, ToolActionId::drag},
 			{parts_category_id, "Cube", "CUBE", ToolId::place, ToolActionId::create_body},
 			{parts_category_id, "Slope", "SLOPE", ToolId::place, ToolActionId::create_slope},
-			{parts_category_id, "MG-42", "MG42", ToolId::place, ToolActionId::machinegun},
 			{human_category_id, "Create human", "HUMAN", ToolId::human, ToolActionId::create_human},
 			{human_category_id, "Reimu Hakurei", "REIMU", ToolId::human, ToolActionId::create_reimu},
 			{human_category_id, "Marisa Kirisame", "MARISA", ToolId::human, ToolActionId::create_marisa},
