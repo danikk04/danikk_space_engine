@@ -1,4 +1,5 @@
 #include <cmath>
+#include <algorithm>
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/systems/physics/physics.h>
@@ -28,6 +29,15 @@ namespace danikk_space_engine
 			glm::dvec3 axis_start;
 			glm::dvec3 axis_end;
 			glm::dquat world_to_body_rotation;
+		};
+
+		/** @brief Conservative world-space bounds used to prune collisions across bodies. */
+		struct HumanColliderBounds
+		{
+			PointComponentSlotId slot_id;
+			WorldBodyId body_id;
+			glm::dvec3 minimum;
+			glm::dvec3 maximum;
 		};
 
 		/** @brief Builds one collider on the stack from an active human component slot. */
@@ -231,6 +241,49 @@ namespace danikk_space_engine
 			return corrected;
 		}
 
+		/** @brief Resolves cross-body capsule pairs using a sweep over conservative bounds. */
+		bool resolveCrossBodyHumanPairs(World& world,
+			const DynamicArray<PointComponentSlotId>& human_slot_ids)
+		{
+			DynamicArray<HumanColliderBounds> bounds;
+			for(PointComponentSlotId slot_id : human_slot_ids)
+			{
+				HumanCollider collider;
+				if(!getHumanCollider(world, slot_id, collider)) continue;
+				const glm::dvec3 extent(collider.height * 0.5);
+				bounds.push(HumanColliderBounds{
+					slot_id, collider.body_id, collider.center - extent, collider.center + extent});
+			}
+			std::sort(bounds.begin(), bounds.end(), [](const auto& left, const auto& right)
+			{
+				if(left.minimum.x != right.minimum.x) return left.minimum.x < right.minimum.x;
+				return left.slot_id < right.slot_id;
+			});
+
+			bool corrected = false;
+			for(size_t first_index = 0; first_index < bounds.size(); ++first_index)
+			{
+				const HumanColliderBounds& first_bounds = bounds[first_index];
+				for(size_t second_index = first_index + 1; second_index < bounds.size(); ++second_index)
+				{
+					const HumanColliderBounds& second_bounds = bounds[second_index];
+					if(second_bounds.minimum.x > first_bounds.maximum.x) break;
+					if(first_bounds.body_id == second_bounds.body_id
+						|| first_bounds.minimum.y > second_bounds.maximum.y
+						|| second_bounds.minimum.y > first_bounds.maximum.y
+						|| first_bounds.minimum.z > second_bounds.maximum.z
+						|| second_bounds.minimum.z > first_bounds.maximum.z) continue;
+
+					HumanCollider first;
+					HumanCollider second;
+					if(!getHumanCollider(world, first_bounds.slot_id, first)
+						|| !getHumanCollider(world, second_bounds.slot_id, second)) continue;
+					corrected |= resolveHumanPair(world, first, second);
+				}
+			}
+			return corrected;
+		}
+
 	}
 
 	/** @brief Separates overlapping human capsules using the UnitSystem's adaptive spatial index. */
@@ -280,18 +333,9 @@ namespace danikk_space_engine
 					corrected |= resolveHumanPair(world, first_current, second);
 				}
 
-				// Humans on separate bodies are uncommon; compare only cross-body pairs here.
-				if(has_multiple_bodies)
-					for(size_t second_index = first_index + 1; second_index < human_slot_ids.size(); ++second_index)
-					{
-						if(human_body_ids[second_index] == human_body_ids[first_index]) continue;
-						HumanCollider first_current;
-						HumanCollider second;
-						if(!getHumanCollider(world, first_slot_id, first_current)
-							|| !getHumanCollider(world, human_slot_ids[second_index], second)) continue;
-						corrected |= resolveHumanPair(world, first_current, second);
-					}
 			}
+			if(has_multiple_bodies)
+				corrected |= resolveCrossBodyHumanPairs(world, human_slot_ids);
 			if(!corrected) break;
 		}
 
