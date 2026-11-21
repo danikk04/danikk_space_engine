@@ -3,16 +3,19 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/chunk/manager.h>
 #include <danikk_space_engine/world.h>
+#include <danikk_engine/danikk_engine.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
 	namespace
 	{
 		constexpr PlanetSurfaceNodeId invalid_surface_node = static_cast<PlanetSurfaceNodeId>(-1);
-		constexpr size_t maximum_visible_surface_nodes = 512;
+		constexpr size_t maximum_visible_surface_nodes = 2048;
 		constexpr size_t maximum_requests_per_planet_frame = 32;
 		constexpr size_t maximum_surface_tree_nodes = 131072;
 		constexpr double maximum_fallback_size_factor = 4.0;
+		constexpr bool log_surface_tree_diagnostics = true;
 
 		bool isNodeRelevant(const PlanetSurfaceNode& node, const glm::dvec3& camera_position,
 			double planet_radius, double height)
@@ -120,13 +123,17 @@ namespace danikk_space_engine
 			}
 			return count;
 		};
+		size_t target_node_count = count_visible_target_nodes(count_visible_target_nodes,
+			glm::dvec3(0.0), PlanetSurfaceTree::initial_root_half_extent, 0,
+			maximum_visible_surface_nodes);
 		size_t detail_scale_adjustments = 0;
-		while(count_visible_target_nodes(count_visible_target_nodes, glm::dvec3(0.0),
-			PlanetSurfaceTree::initial_root_half_extent, 0, maximum_visible_surface_nodes)
-			> maximum_visible_surface_nodes && detail_scale_adjustments < 32)
+		while(target_node_count > maximum_visible_surface_nodes && detail_scale_adjustments < 32)
 		{
 			detail_scale *= 1.5;
 			detail_scale_adjustments++;
+			target_node_count = count_visible_target_nodes(count_visible_target_nodes,
+				glm::dvec3(0.0), PlanetSurfaceTree::initial_root_half_extent, 0,
+				maximum_visible_surface_nodes);
 		}
 
 		if(tree.nodes.size() + 8192 > maximum_surface_tree_nodes)
@@ -323,6 +330,40 @@ namespace danikk_space_engine
 			}
 		};
 		activate(activate, tree.root_id);
+		if constexpr(log_surface_tree_diagnostics)
+		{
+			static uint32 report_timestamp_ms = 0;
+			const uint32 now = danikk_engine::getMsTimestamp();
+			if(report_timestamp_ms == 0) report_timestamp_ms = now;
+			if(now - report_timestamp_ms >= 1000)
+			{
+				size_t active_node_count = 0;
+				double finest_active_half_extent = 0.0;
+				for(const PlanetSurfaceNode& node : tree.nodes)
+				{
+					if(!node.render_active) continue;
+					active_node_count++;
+					if(finest_active_half_extent == 0.0
+						|| node.half_extent < finest_active_half_extent)
+						finest_active_half_extent = node.half_extent;
+				}
+				size_t fine_request_count = 0;
+				double finest_request_width = 0.0;
+				for(const ChunkMeshGenerationRequest& request : planet.pending_requests)
+				{
+					if(request.chunk_width <= 128.0) fine_request_count++;
+					if(finest_request_width == 0.0 || request.chunk_width < finest_request_width)
+						finest_request_width = request.chunk_width;
+				}
+				danikk_framework::formatLogInfo(
+					"Planet surface tree: body=% height=% detail_scale=% detail_adjustments=% target_nodes=% nodes=% request_candidates=% queued=% fine_queued=% finest_request_width=% active=% finest_active_half_extent=%",
+					planet.world_body_id, height, detail_scale, detail_scale_adjustments,
+					target_node_count, tree.nodes.size(), request_nodes.size(),
+					planet.pending_requests.size(), fine_request_count, finest_request_width,
+					active_node_count, finest_active_half_extent);
+				report_timestamp_ms = now;
+			}
+		}
 
 		constexpr size_t maximum_cached_surface_meshes = 1024;
 		size_t cached_mesh_count = 0;

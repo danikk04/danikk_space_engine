@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <chrono>
 
+#include <danikk_engine/danikk_engine.h>
 #include <danikk_framework/log.h>
 #include <danikk_space_engine/profiler.h>
 
@@ -12,6 +13,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 	{
 		constexpr size_t max_completed_meshes = 2;
 		constexpr size_t max_worker_count = 4;
+		constexpr bool log_planet_mesh_queue_diagnostics = true;
 
 		bool sameRequestKey(const ChunkMeshGenerationRequest& a, const ChunkMeshGenerationRequest& b)
 		{
@@ -33,25 +35,6 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			const DynamicArray<GeneratedChunkMesh>& completed)
 		{
 			for(const GeneratedChunkMesh& result : completed)
-				if(result.generation_id == request.generation_id
-					&& result.source == request.source
-					&& result.source_revision == request.source_revision
-					&& result.planet_generation_id == request.planet_generation_id
-					&& result.terrain_revision == request.terrain_revision
-					&& result.world_body_id == request.world_body_id
-					&& result.chunk_id == request.chunk_id
-					&& result.grid_coordinate == request.grid_coordinate
-					&& result.planet_mesh_generator == request.planet_mesh_generator
-					&& result.surface_node_id == request.surface_node_id
-					&& result.surface_node_generation_id == request.surface_node_generation_id
-					&& result.surface_only == request.surface_only) return true;
-			return false;
-		}
-
-		bool resultHasRequest(const GeneratedChunkMesh& result,
-			const DynamicArray<ChunkMeshGenerationRequest>& requests)
-		{
-			for(const ChunkMeshGenerationRequest& request : requests)
 				if(result.generation_id == request.generation_id
 					&& result.source == request.source
 					&& result.source_revision == request.source_revision
@@ -227,32 +210,60 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				result_space_available.notify_all();
 			}
 
-			for(size_t index = 0; index < completed.size();)
-			{
-				if(resultHasRequest(completed[index], new_requests))
-				{
-					++index;
-					continue;
-				}
-				for(size_t shift = index + 1; shift < completed.size(); ++shift)
-					completed[shift - 1] = static_cast<GeneratedChunkMesh&&>(completed[shift]);
-				completed.resize(completed.size() - 1);
-			}
-
-			for(ActiveRequest& active : active_requests)
-			{
-				bool still_requested = false;
-				for(const ChunkMeshGenerationRequest& request : new_requests)
-				{
-					if(sameRequestKey(active.request, request))
-					{
-						still_requested = true;
-						break;
-					}
-				}
-				if(!still_requested) active.cancelled = true;
-			}
+			// Camera movement replaces queued work, but an in-flight mesh can still be
+			// useful as a cached parent or child when the camera returns to that region.
+			// Explicit planet cancellation and lifecycle changes still discard invalid work.
 			result_space_available.notify_all();
+			if constexpr(log_planet_mesh_queue_diagnostics)
+			{
+				static uint32 report_timestamp_ms = 0;
+				const uint32 now = danikk_engine::getMsTimestamp();
+				if(report_timestamp_ms == 0) report_timestamp_ms = now;
+				if(now - report_timestamp_ms >= 1000)
+				{
+					size_t queued_planet = 0;
+					size_t queued_fine = 0;
+					size_t desired_planet = 0;
+					size_t desired_fine = 0;
+					size_t active_planet = 0;
+					size_t active_fine = 0;
+					size_t active_not_requested = 0;
+					size_t completed_planet = 0;
+					for(const ChunkMeshGenerationRequest& request : new_requests)
+					{
+						if(request.source != ChunkMeshSource::planet_surface_node) continue;
+						desired_planet++;
+						if(request.chunk_width <= 128.0) desired_fine++;
+					}
+					for(const ChunkMeshGenerationRequest& request : requests)
+					{
+						if(request.source != ChunkMeshSource::planet_surface_node) continue;
+						queued_planet++;
+						if(request.chunk_width <= 128.0) queued_fine++;
+					}
+					for(const ActiveRequest& active : active_requests)
+					{
+						if(active.request.source != ChunkMeshSource::planet_surface_node) continue;
+						active_planet++;
+						if(active.request.chunk_width <= 128.0) active_fine++;
+						bool requested = false;
+						for(const ChunkMeshGenerationRequest& request : new_requests)
+							if(sameRequestKey(active.request, request))
+							{
+								requested = true;
+								break;
+							}
+						if(!requested) active_not_requested++;
+					}
+					for(const GeneratedChunkMesh& result : completed)
+						if(result.source == ChunkMeshSource::planet_surface_node) completed_planet++;
+					danikk_framework::formatLogInfo(
+						"Planet mesh queue: desired=% fine_desired=% queued=% fine_queued=% active=% fine_active=% active_not_desired=% completed=%",
+						desired_planet, desired_fine, queued_planet, queued_fine,
+						active_planet, active_fine, active_not_requested, completed_planet);
+					report_timestamp_ms = now;
+				}
+			}
 
 			size_t queue_index = 0;
 			bool same_queue = true;
