@@ -12,8 +12,8 @@ namespace danikk_space_engine
 	 * @brief Stores a chunk-local mesh or placement position and its chunk reference count.
 	 *
 	 * A point is stored once in PointData and can be shared by multiple chunks.
-	 * Its reference count measures distinct chunk `point_ids` lists. It does not
-	 * count how many point components inside one chunk use it.
+	 * Its reverse chunk index lists the distinct chunk `point_ids` arrays that
+	 * reference it. It does not count how many components use it.
 	 */
 	struct Point
 	{
@@ -21,12 +21,8 @@ namespace danikk_space_engine
 		vec3 position = vec3(0.0f);
 		/** @brief Components attached to this point, independent of chunk membership. */
 		DynamicArray<PointComponentSlotId> component_slot_ids;
-		/**
-		 * @brief Number of distinct chunks whose `point_ids` lists reference this point (maximum 100).
-		 * PointData tracks this once per chunk and frees the point when the
-		 * final referencing chunk is destroyed.
-		 */
-		uint8 referencing_chunk_count = 0;
+		/** @brief Sorted IDs of chunks whose `point_ids` lists reference this point. */
+		DynamicArray<ChunkId> referencing_chunk_ids;
 	};
 
 	/** @brief Owns points and their attached point-component slots. */

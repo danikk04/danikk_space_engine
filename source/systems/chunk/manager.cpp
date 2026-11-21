@@ -72,10 +72,20 @@ namespace danikk_space_engine
 		if(index < chunk.point_ids.size() && chunk.point_ids[index] == point_id) return;
 
 		Point& point = world.point_data.getPoint(point_id);
-		if(point.referencing_chunk_count >= 100)
-			danikk_engine::formatFatalError("Point % exceeds the maximum of 100 chunk references", point_id);
 		insertWorldResourceId(chunk.point_ids, point_id);
-		point.referencing_chunk_count++;
+		insertWorldResourceId(point.referencing_chunk_ids, chunk_id);
+	}
+
+	/** @copydoc ChunkSystem::removePointReferenceFromChunk */
+	bool ChunkSystem::removePointReferenceFromChunk(ChunkId chunk_id, PointId point_id)
+	{
+		if(!isChunkActive(chunk_id) || !world.point_data.isPointActive(point_id)) return false;
+		Chunk& chunk = getChunk(chunk_id);
+		if(!eraseWorldResourceId(chunk.point_ids, point_id)) return false;
+		Point& point = world.point_data.getPoint(point_id);
+		if(!eraseWorldResourceId(point.referencing_chunk_ids, chunk_id))
+			danikk_engine::formatFatalError("Point % is missing reverse reference to chunk %", point_id, chunk_id);
+		return true;
 	}
 
 	/** @brief Registers a component slot in its chunk and tracks the referenced point. */
@@ -111,13 +121,11 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		if(!world.point_data.isPointActive(point_id)) return;
-		for(ChunkId chunk_id : chunks.usedIds()) eraseWorldResourceId(getChunk(chunk_id).point_ids, point_id);
-		world.point_data.getPoint(point_id).referencing_chunk_count = 0;
-		for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
-		{
-			if(world.point_data.getPointComponentSlot(slot_id).point_id == point_id)
-				removePointComponentSlotFromChunk(slot_id);
-		}
+		Point& point = world.point_data.getPoint(point_id);
+		while(point.referencing_chunk_ids.size() > 0)
+			removePointReferenceFromChunk(point.referencing_chunk_ids[point.referencing_chunk_ids.size() - 1], point_id);
+		while(point.component_slot_ids.size() > 0)
+			removePointComponentSlotFromChunk(point.component_slot_ids[point.component_slot_ids.size() - 1]);
 		world.point_data.destroyPoint(point_id);
 	}
 
@@ -140,13 +148,14 @@ namespace danikk_space_engine
 		while(chunk.point_ids.size() > 0)
 		{
 			const PointId point_id = chunk.point_ids[chunk.point_ids.size() - 1];
-			chunk.point_ids.resize(chunk.point_ids.size() - 1);
-			if(!world.point_data.isPointActive(point_id)) continue;
-			Point& point = world.point_data.getPoint(point_id);
-			if(point.referencing_chunk_count == 0)
-				danikk_engine::formatFatalError("Point % has no chunk references while releasing chunk %", point_id, id);
-			point.referencing_chunk_count--;
-			if(point.referencing_chunk_count == 0) world.point_data.destroyPoint(point_id);
+			if(!world.point_data.isPointActive(point_id))
+			{
+				chunk.point_ids.resize(chunk.point_ids.size() - 1);
+				continue;
+			}
+			removePointReferenceFromChunk(id, point_id);
+			if(world.point_data.getPoint(point_id).referencing_chunk_ids.size() == 0)
+				world.point_data.destroyPoint(point_id);
 		}
 
 		chunk.world_body_id = 0;

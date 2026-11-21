@@ -75,8 +75,10 @@ namespace danikk_space_engine
 		/** @brief Transforms a chunk's body-local origin into world-space coordinates. */
 		glm::dvec3 getChunkWorldPosition(ChunkId chunk_id) const;
 
-		/** @brief Adds a point reference to a chunk and increments its distinct-owner count once. */
+		/** @brief Adds a point reference to a chunk and tracks the reverse membership on the point. */
 		void addPointReferenceToChunk(ChunkId chunk_id, PointId point_id);
+		/** @brief Removes a point reference from a chunk without destroying the point. */
+		bool removePointReferenceFromChunk(ChunkId chunk_id, PointId point_id);
 		/** @brief Attaches a point component to its scheduling chunk and point reference. */
 		void addPointComponentSlotToChunk(ChunkId chunk_id, PointComponentSlotId slot_id);
 		/** @brief Detaches a point component slot from its chunk while retaining its payload. */

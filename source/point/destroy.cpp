@@ -8,18 +8,6 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		/** @brief Destroys every active resource satisfying a predicate, tolerating swap removal. */
-		template<typename pool_t, typename predicate_t, typename destroy_t>
-		void destroyMatchingResources(pool_t& pool, predicate_t matches, destroy_t destroy)
-		{
-			for(size_t index = 0; index < pool.usedIds().size();)
-			{
-				const auto id = pool.usedIds()[index];
-				if(matches(pool[id])) destroy(id);
-				else index++;
-			}
-		}
-
 		/** @brief Repeatedly destroys the last active ID until the owning list is empty. */
 		template<typename list_t, typename destroy_t>
 		void destroyLastUntilEmpty(const list_t& ids, destroy_t destroy)
@@ -57,9 +45,9 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		if(!isPointActive(id)) return;
-		destroyMatchingResources(point_components,
-			[id](const PointComponentSlot& slot) { return slot.point_id == id; },
-			[this](PointComponentSlotId slot_id) { destroyPointComponentSlot(slot_id); });
+		DynamicArray<PointComponentSlotId>& attached_slots = points[id].component_slot_ids;
+		while(attached_slots.size() > 0)
+			destroyPointComponentSlot(attached_slots[attached_slots.size() - 1]);
 		points.free(id);
 	}
 

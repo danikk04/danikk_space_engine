@@ -110,15 +110,7 @@ namespace danikk_space_engine::unit_system_internal
 			moved_slots.push(id);
 			world.chunks.removePointComponentSlotFromChunk(id);
 		}
-		for(size_t i = 0; i < old_chunk.point_ids.size(); ++i)
-		{
-			if(old_chunk.point_ids[i] != point_id) continue;
-			for(size_t j = i; j + 1 < old_chunk.point_ids.size(); ++j)
-				old_chunk.point_ids[j] = old_chunk.point_ids[j + 1];
-			old_chunk.point_ids.resize(old_chunk.point_ids.size() - 1);
-			world.point_data.getPoint(point_id).referencing_chunk_count--;
-			break;
-		}
+		world.chunks.removePointReferenceFromChunk(human_slot.chunk_id, point_id);
 		world.point_data.getPoint(point_id).position = vec3(position - world.chunks.getChunk(new_chunk_id).position);
 		for(PointComponentSlotId id : moved_slots) world.chunks.addPointComponentSlotToChunk(new_chunk_id, id);
 	}
