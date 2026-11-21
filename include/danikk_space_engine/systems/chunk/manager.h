@@ -12,7 +12,13 @@ namespace danikk_space_engine
 	/** @brief GPU mesh and draw metadata owned alongside one active chunk. */
 	struct ChunkRenderRecord : MeshRenderData
 	{
+		bool build_part_mesh_dirty = false;
+		bool render_enabled = true;
 		bool has_build_part_mesh = false;
+		bool bounds_valid = false;
+		uint64 build_part_mesh_revision = 0;
+		vec3 bounds_center = vec3(0.0f);
+		float bounds_radius = 0.0f;
 	};
 
 	/**
@@ -68,6 +74,20 @@ namespace danikk_space_engine
 		const DynamicArray<PointId>& getChunkPointIds(ChunkId chunk_id) const;
 		/** @brief Returns BuildPart component slots assigned to an active spatial cell. */
 		const DynamicArray<PointComponentSlotId>& getBuildPartSlotIds(ChunkId chunk_id) const;
+		/** @brief Invalidates the combined BuildPart mesh for a spatial cell. */
+		void invalidateBuildPartMesh(ChunkId chunk_id);
+		/** @brief Returns whether the current BuildPart mesh is queued for regeneration. */
+		bool isBuildPartMeshDirty(ChunkId chunk_id) const;
+		/** @brief Returns the revision used to reject outdated BuildPart mesh jobs. */
+		uint64 getBuildPartMeshRevision(ChunkId chunk_id) const;
+		/** @brief Marks the current BuildPart mesh revision as submitted to the worker. */
+		void markBuildPartMeshQueued(ChunkId chunk_id);
+		/** @brief Enables or disables rendering for one spatial cell. */
+		void setRenderEnabled(ChunkId chunk_id, bool enabled);
+		/** @brief Returns whether a spatial cell has usable bounds; outputs its local sphere. */
+		bool getChunkBounds(ChunkId chunk_id, vec3& center, float& radius) const;
+		/** @brief Returns whether a spatial cell's mesh is enabled for rendering. */
+		bool isRenderEnabled(ChunkId chunk_id) const;
 		/** @brief Returns a checked reference to an active chunk. */
 		Chunk& getChunk(ChunkId id);
 		/** @brief Returns a checked read-only reference to an active chunk. */

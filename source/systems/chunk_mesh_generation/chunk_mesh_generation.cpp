@@ -119,13 +119,13 @@ namespace danikk_space_engine
 		for(ChunkId chunk_id : world.chunks.getUsedChunkIds())
 		{
 			Chunk& chunk = world.chunks.getChunk(chunk_id);
-			if(!chunk.build_part_mesh_dirty) continue;
+			if(!world.chunks.isBuildPartMeshDirty(chunk_id)) continue;
 			world.chunks.destroyRenderData(chunk);
 
 			ChunkMeshGenerationRequest request;
 			request.source = ChunkMeshSource::build_parts;
 			request.generation_id = generation_id;
-			request.source_revision = chunk.build_part_mesh_revision;
+			request.source_revision = world.chunks.getBuildPartMeshRevision(chunk_id);
 			request.world_body_id = chunk.world_body_id;
 			request.chunk_id = chunk_id;
 			request.chunk_position = chunk.position;
@@ -142,7 +142,7 @@ namespace danikk_space_engine
 				requests.resize(requests.size() - 1);
 			}
 			requests.pushMove(request);
-			chunk.build_part_mesh_dirty = false;
+			world.chunks.markBuildPartMeshQueued(chunk_id);
 			requests_dirty = true;
 		}
 	}
@@ -187,7 +187,7 @@ namespace danikk_space_engine
 				|| !world.chunks.isChunkActive(generated.chunk_id)) return;
 			Chunk& chunk = world.chunks.getChunk(generated.chunk_id);
 			if(chunk.world_body_id != generated.world_body_id
-				|| chunk.build_part_mesh_revision != generated.source_revision) return;
+				|| world.chunks.getBuildPartMeshRevision(generated.chunk_id) != generated.source_revision) return;
 			world.chunks.createMesh(chunk,
 				generated.point_positions.data(), generated.point_positions.size(),
 				generated.triangle_point_indices.data(), generated.triangle_point_indices.size(),

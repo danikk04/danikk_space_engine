@@ -123,7 +123,7 @@ namespace danikk_space_engine
 		Chunk& chunk = world.chunks.createChunk(world_body_id);
 		chunk.grid_coordinate = grid_coordinate;
 		chunk.position = glm::dvec3(grid_coordinate) * planet_chunk_width;
-		chunk.render_enabled = false;
+		world.chunks.setRenderEnabled(chunk.chunk_id, false);
 		planet->chunk_lookup.setChunk(grid_coordinate, chunk.chunk_id);
 		return chunk.chunk_id;
 	}

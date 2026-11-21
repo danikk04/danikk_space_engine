@@ -16,28 +16,13 @@ namespace danikk_space_engine
 	 * @brief Stores spatial point references and BuildPart geometry for one chunk.
 	 *
 	 * A Chunk is positioned relative to its WorldBody. Point and BuildPart
-	 * membership indices and render meshes are owned by ChunkSystem; the chunk keeps only
-	 * spatial bounds used by raycast broadphase.
+	 * membership indices and render data are owned by ChunkSystem; the chunk keeps
+	 * only body-relative spatial metadata.
 	 * Planet streaming metadata uses grid_coordinate.
 	 */
 	class Chunk
 	{
-		friend class ChunkSystem;
-
-		/** @brief True when bounds describe the most recently built, non-dirty mesh. */
-		bool bounds_valid = false;
-
 	public:
-		/** @brief Whether the combined BuildPart mesh needs regeneration. */
-		bool build_part_mesh_dirty = false;
-		/** @brief Whether this mesh is currently selected for rendering. */
-		bool render_enabled = true;
-		/** @brief Revision advanced whenever a BuildPart in the chunk changes. */
-		uint64 build_part_mesh_revision = 0;
-		/** @brief Center of the local-space bounding sphere used by raycast broadphase. */
-		vec3 bounds_center = vec3(0.0f);
-		/** @brief Radius of the local-space bounding sphere used by raycast broadphase. */
-		float bounds_radius = 0.0f;
 		/** @brief Stable pooled chunk ID. */
 		ChunkId chunk_id = 0;
 		/** @brief World body that supplies this chunk's parent transform. */
@@ -53,15 +38,12 @@ namespace danikk_space_engine
 		Chunk(const Chunk&) = delete;
 		/** @brief Copy assignment is disabled for the same ownership reason as copy construction. */
 		Chunk& operator=(const Chunk&) = delete;
-		/** @brief Transfers spatial data and resource lists from another chunk. */
-		Chunk(Chunk&& other) noexcept;
-		/** @brief Replaces this chunk's spatial data and resource lists. */
-		Chunk& operator=(Chunk&& other) noexcept;
+		/** @brief Transfers spatial metadata from another chunk. */
+		Chunk(Chunk&& other) noexcept = default;
+		/** @brief Replaces spatial metadata with another chunk's values. */
+		Chunk& operator=(Chunk&& other) noexcept = default;
 		/** @brief Destroys CPU-side chunk data. */
 		~Chunk() = default;
-
-		/** @brief Invalidates the combined BuildPart mesh and advances its source revision. */
-		void invalidateBuildPartMesh();
 
 		/**
 		 * @brief Builds the chunk-to-camera-relative render transform from body and chunk transforms.
@@ -70,7 +52,5 @@ namespace danikk_space_engine
 		 */
 		mat4 createWorldMatrix(const World& world) const;
 
-		/** @brief Reports whether bounds are valid for the current, non-dirty mesh. */
-		bool hasValidBounds() const { return bounds_valid; }
 	};
 }

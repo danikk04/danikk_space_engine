@@ -42,6 +42,54 @@ namespace danikk_space_engine
 		return chunk_id < render_records.size() ? &render_records[chunk_id] : nullptr;
 	}
 
+	void ChunkSystem::invalidateBuildPartMesh(ChunkId chunk_id)
+	{
+		DSE_WATCH();
+		if(!isChunkActive(chunk_id)) return;
+		ChunkRenderRecord& record = getRenderRecord(chunk_id);
+		record.build_part_mesh_dirty = true;
+		if(++record.build_part_mesh_revision == 0) ++record.build_part_mesh_revision;
+	}
+
+	bool ChunkSystem::isBuildPartMeshDirty(ChunkId chunk_id) const
+	{
+		const ChunkRenderRecord* record = findRenderRecord(chunk_id);
+		return record != nullptr && record->build_part_mesh_dirty;
+	}
+
+	uint64 ChunkSystem::getBuildPartMeshRevision(ChunkId chunk_id) const
+	{
+		const ChunkRenderRecord* record = findRenderRecord(chunk_id);
+		return record == nullptr ? 0 : record->build_part_mesh_revision;
+	}
+
+	void ChunkSystem::markBuildPartMeshQueued(ChunkId chunk_id)
+	{
+		DSE_WATCH();
+		if(isChunkActive(chunk_id)) getRenderRecord(chunk_id).build_part_mesh_dirty = false;
+	}
+
+	void ChunkSystem::setRenderEnabled(ChunkId chunk_id, bool enabled)
+	{
+		DSE_WATCH();
+		if(isChunkActive(chunk_id)) getRenderRecord(chunk_id).render_enabled = enabled;
+	}
+
+	bool ChunkSystem::isRenderEnabled(ChunkId chunk_id) const
+	{
+		const ChunkRenderRecord* record = findRenderRecord(chunk_id);
+		return record == nullptr || record->render_enabled;
+	}
+
+	bool ChunkSystem::getChunkBounds(ChunkId chunk_id, vec3& center, float& radius) const
+	{
+		const ChunkRenderRecord* record = findRenderRecord(chunk_id);
+		if(record == nullptr || !record->bounds_valid) return false;
+		center = record->bounds_center;
+		radius = record->bounds_radius;
+		return true;
+	}
+
 	/**
 	 * @brief Converts transient indexed triangles into a flat-shaded, material-grouped GPU mesh.
 	 *
@@ -106,9 +154,9 @@ namespace danikk_space_engine
 
 		if(vertices.size() == 0)
 		{
-			chunk.bounds_center = vec3(0.0f);
-			chunk.bounds_radius = 0.0f;
-			chunk.bounds_valid = false;
+			record.bounds_center = vec3(0.0f);
+			record.bounds_radius = 0.0f;
+			record.bounds_valid = false;
 		}
 		else
 		{
@@ -119,19 +167,19 @@ namespace danikk_space_engine
 				minimum = glm::min(minimum, vertex.pos);
 				maximum = glm::max(maximum, vertex.pos);
 			}
-			chunk.bounds_center = (minimum + maximum) * 0.5f;
-			chunk.bounds_radius = 0.0f;
+			record.bounds_center = (minimum + maximum) * 0.5f;
+			record.bounds_radius = 0.0f;
 			for(const DefaultVertex& vertex : vertices)
-				chunk.bounds_radius = glm::max(chunk.bounds_radius, glm::length(vertex.pos - chunk.bounds_center));
-			chunk.bounds_radius += 0.0001f;
-			chunk.bounds_valid = true;
+				record.bounds_radius = glm::max(record.bounds_radius, glm::length(vertex.pos - record.bounds_center));
+			record.bounds_radius += 0.0001f;
+			record.bounds_valid = true;
 		}
 
 		record.mesh->setData(
 			reinterpret_cast<const float*>(vertices.data()),
 			vertices.size() * sizeof(DefaultVertex) / sizeof(float), indices.data(), indices.size());
 		DefaultVertex::setAttributes();
-		chunk.render_enabled = true;
+		record.render_enabled = true;
 		record.has_build_part_mesh = is_build_part_mesh;
 	}
 
@@ -139,8 +187,8 @@ namespace danikk_space_engine
 	MeshDrawResult ChunkSystem::draw(const Chunk& chunk)
 	{
 		DSE_WATCH();
-		if(!chunk.render_enabled) return MeshDrawResult::empty_mesh;
 		const ChunkRenderRecord* record = findRenderRecord(chunk.chunk_id);
+		if(record != nullptr && !record->render_enabled) return MeshDrawResult::empty_mesh;
 		if(record == nullptr) return MeshDrawResult::missing_mesh;
 		return drawMeshRenderData(*record, chunk.createWorldMatrix(world));
 	}
@@ -173,12 +221,12 @@ namespace danikk_space_engine
 			{
 				if(!isChunkActive(chunk_id)) continue;
 				const Chunk& chunk = getChunk(chunk_id);
-				if(!chunk.render_enabled) continue;
-				if(!chunk.hasValidBounds()) continue;
+				const ChunkRenderRecord* record = findRenderRecord(chunk_id);
+				if(record == nullptr || !record->render_enabled || !record->bounds_valid) continue;
 				const glm::dvec3 chunk_center = body.position
-					+ body.rotation * (chunk.position + glm::dvec3(chunk.bounds_center));
+					+ body.rotation * (chunk.position + glm::dvec3(record->bounds_center));
 				far_render_distance = glm::max(far_render_distance,
-					glm::length(chunk_center - camera_position) + chunk.bounds_radius);
+					glm::length(chunk_center - camera_position) + record->bounds_radius);
 			}
 		}
 
@@ -189,7 +237,7 @@ namespace danikk_space_engine
 				render_inactive++;
 				return;
 			}
-			if(!getChunk(chunk_id).render_enabled) return;
+			if(!isRenderEnabled(chunk_id)) return;
 			render_candidates++;
 			switch(draw(getChunk(chunk_id)))
 			{
@@ -253,14 +301,15 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		const ChunkId chunk_id = chunk.chunk_id;
+		ChunkRenderRecord& record = getRenderRecord(chunk_id);
 		if(chunk_id < render_records.size())
 		{
-			destroyMeshRenderData(render_records[chunk_id]);
-			render_records[chunk_id].has_build_part_mesh = false;
+			destroyMeshRenderData(record);
 		}
-		chunk.bounds_valid = false;
-		chunk.bounds_center = vec3(0.0f);
-		chunk.bounds_radius = 0.0f;
+		record.has_build_part_mesh = false;
+		record.bounds_valid = false;
+		record.bounds_center = vec3(0.0f);
+		record.bounds_radius = 0.0f;
 	}
 
 	/** @copydoc ChunkSystem::clearRenderData */
@@ -271,6 +320,9 @@ namespace danikk_space_engine
 		{
 			destroyMeshRenderData(record);
 			record.has_build_part_mesh = false;
+			record.bounds_valid = false;
+			record.bounds_center = vec3(0.0f);
+			record.bounds_radius = 0.0f;
 		}
 		render_records.clear();
 	}

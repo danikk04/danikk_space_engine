@@ -99,6 +99,14 @@ namespace danikk_space_engine
 		if(id >= build_part_slots_by_chunk.size()) build_part_slots_by_chunk.resize(id + 1);
 		point_ids_by_chunk[id].clear();
 		build_part_slots_by_chunk[id].clear();
+		ChunkRenderRecord& render_record = getRenderRecord(id);
+		render_record.build_part_mesh_dirty = false;
+		render_record.render_enabled = true;
+		render_record.has_build_part_mesh = false;
+		render_record.bounds_valid = false;
+		render_record.build_part_mesh_revision = 0;
+		render_record.bounds_center = vec3(0.0f);
+		render_record.bounds_radius = 0.0f;
 		Chunk& chunk = chunks[id];
 		chunk.chunk_id = id;
 		chunk.world_body_id = world_body_id;
@@ -149,7 +157,7 @@ namespace danikk_space_engine
 	/** @brief Registers a component slot in its chunk and tracks the referenced point. */
 	void ChunkSystem::addPointComponentSlotToChunk(ChunkId chunk_id, PointComponentSlotId slot_id)
 	{
-		Chunk& chunk = getChunk(chunk_id);
+		getChunk(chunk_id);
 		PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 		if(slot.chunk_id != PointComponentSlot::no_chunk)
 			danikk_engine::formatFatalError("Point component % already belongs to chunk %", slot_id, slot.chunk_id);
@@ -158,7 +166,7 @@ namespace danikk_space_engine
 		if(slot.type_id == PointComponentTypeId::build_part)
 		{
 			insertWorldResourceId(build_part_slots_by_chunk[chunk_id], slot_id);
-			chunk.invalidateBuildPartMesh();
+			invalidateBuildPartMesh(chunk_id);
 		}
 		slot.chunk_id = chunk_id;
 	}
@@ -168,10 +176,10 @@ namespace danikk_space_engine
 	{
 		PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 		if(slot.chunk_id == PointComponentSlot::no_chunk) return;
-		Chunk& chunk = getChunk(slot.chunk_id);
+		getChunk(slot.chunk_id);
 		if(slot.type_id == PointComponentTypeId::build_part)
 		{
-			chunk.invalidateBuildPartMesh();
+			invalidateBuildPartMesh(slot.chunk_id);
 			if(!eraseWorldResourceId(build_part_slots_by_chunk[slot.chunk_id], slot_id))
 				danikk_engine::formatFatalError("BuildPart component % is missing from owning spatial cell %", slot_id, slot.chunk_id);
 		}
@@ -240,10 +248,6 @@ namespace danikk_space_engine
 		chunk.world_body_id = 0;
 		chunk.grid_coordinate = glm::ivec3(0);
 		chunk.position = glm::dvec3(0.0);
-		chunk.build_part_mesh_dirty = false;
-		chunk.build_part_mesh_revision = 0;
-		chunk.render_enabled = true;
-		chunk.bounds_valid = false;
 		point_ids_by_chunk[id].clear();
 		build_part_slots_by_chunk[id].clear();
 		chunks.free(id);

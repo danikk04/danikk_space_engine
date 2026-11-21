@@ -191,10 +191,13 @@ namespace danikk_space_engine
 				const Chunk& chunk = chunks.getChunk(chunk_id);
 				if(chunk.world_body_id != body_id) return;
 				const vec3 chunk_relative_position = vec3(getChunkWorldPosition(chunk_id) - origin);
-				const vec3 rotated_bounds_center = vec3(body.rotation * glm::dvec3(chunk.bounds_center));
-				if(chunk.hasValidBounds()
+				vec3 bounds_center(0.0f);
+				float bounds_radius = 0.0f;
+				const bool has_bounds = world.chunks.getChunkBounds(chunk_id, bounds_center, bounds_radius);
+				const vec3 rotated_bounds_center = vec3(body.rotation * glm::dvec3(bounds_center));
+				if(has_bounds
 					&& !rayIntersectsSphere(chunk_relative_position + rotated_bounds_center,
-						chunk.bounds_radius, normalized_direction, nearest_distance)) return;
+						bounds_radius, normalized_direction, nearest_distance)) return;
 
 				for(PointComponentSlotId slot_id : world.chunks.getBuildPartSlotIds(chunk_id))
 				{
