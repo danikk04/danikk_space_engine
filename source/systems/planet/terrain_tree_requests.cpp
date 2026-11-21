@@ -16,19 +16,18 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 		const auto collect = [&](auto&& self, PlanetTerrainNodeId node_id) -> void
 		{
 			const PlanetTerrainNode& node = context.tree.nodes[node_id];
-			if(!node.hasChildren()
-				|| node.half_extent <= getTargetHalfExtent(context, node.center)
-				|| !hasCurrentMesh(context, node_id))
+			if(node.half_extent > getTargetHalfExtent(context, node.center))
 			{
-				if(!hasCurrentMesh(context, node_id)) context.request_nodes.push(node_id);
+				if(!node.hasChildren()) return;
+				for(uint8 child_index = 0; child_index < 8; ++child_index)
+				{
+					const PlanetTerrainNodeId child_id = node.children[child_index];
+					if(child_id != invalid_node && isNodeRelevant(context, context.tree.nodes[child_id]))
+						self(self, child_id);
+				}
 				return;
 			}
-			for(uint8 child_index = 0; child_index < 8; ++child_index)
-			{
-				const PlanetTerrainNodeId child_id = node.children[child_index];
-				if(child_id != invalid_node && isNodeRelevant(context, context.tree.nodes[child_id]))
-					self(self, child_id);
-			}
+			if(!hasCurrentMesh(context, node_id)) context.request_nodes.push(node_id);
 		};
 		collect(collect, context.tree.root_id);
 		std::sort(context.request_nodes.begin(), context.request_nodes.end(),

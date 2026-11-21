@@ -9,7 +9,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 	double getTargetHalfExtent(const UpdateContext& context, const glm::dvec3& center)
 	{
 		const double distance = glm::length(context.camera_position - center);
-		const double minimum = context.height < 0.0 ? 16.0 : 32.0;
+		const double minimum = PlanetTerrainTree::minimum_node_width * 0.5;
 		return std::clamp(minimum + context.detail_scale * distance, minimum, 262144.0);
 	}
 
@@ -111,7 +111,8 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 			candidate.center = center;
 			candidate.half_extent = half_extent;
 			if(!isNodeRelevant(context, candidate)) return 0;
-			if(half_extent <= getTargetHalfExtent(context, center) || depth >= 20) return 1;
+			if(half_extent <= getTargetHalfExtent(context, center)
+				|| depth >= PlanetTerrainTree::maximum_depth) return 1;
 			const double child_half_extent = half_extent * 0.5;
 			size_t count = 0;
 			for(uint8 child_index = 0; child_index < 8; ++child_index)
@@ -171,7 +172,8 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 
 		const auto visit = [&](auto&& self, PlanetTerrainNodeId node_id, uint8 depth) -> void
 		{
-			if(node_id >= context.tree.nodes.size() || depth >= 20) return;
+			if(node_id >= context.tree.nodes.size()
+				|| depth >= PlanetTerrainTree::maximum_depth) return;
 			PlanetTerrainNode candidate;
 			candidate.center = context.tree.nodes[node_id].center;
 			candidate.half_extent = context.tree.nodes[node_id].half_extent;

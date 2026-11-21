@@ -86,7 +86,7 @@ namespace danikk_space_engine
 	/** @brief Owns all edit records and a spatial octree used to query candidate edits. */
 	struct PlanetTerrainEdits
 	{
-		static constexpr double initial_root_half_extent = 8192000.0;
+		static constexpr double initial_root_half_extent = 8388608.0;
 		static constexpr double minimum_cell_size = 4.0;
 		static constexpr size_t split_edit_threshold = 8;
 
@@ -235,7 +235,12 @@ namespace danikk_space_engine
 	/** @brief Adaptive spatial partition and render-node pool for a planet. */
 	struct PlanetTerrainTree
 	{
-		static constexpr double initial_root_half_extent = 8192000.0;
+		/** @brief Half the root side length; root width is exactly 2^24 metres. */
+		static constexpr double initial_root_half_extent = 8388608.0;
+		/** @brief Smallest render-node side length, matching the former 32 m chunks. */
+		static constexpr double minimum_node_width = 32.0;
+		/** @brief Number of halvings from a 2^24 m root to a 32 m leaf. */
+		static constexpr uint8 maximum_depth = 19;
 		DynamicArray<PlanetTerrainNode> nodes;
 		PlanetTerrainNodeId root_id = static_cast<PlanetTerrainNodeId>(-1);
 		uint64 next_node_generation_id = 1;

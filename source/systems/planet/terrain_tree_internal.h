@@ -8,7 +8,6 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 	inline constexpr size_t maximum_visible_nodes = 2048;
 	inline constexpr size_t maximum_requests_per_frame = 32;
 	inline constexpr size_t maximum_tree_nodes = 131072;
-	inline constexpr double fallback_size_factor = 4.0;
 
 	struct UpdateContext
 	{
