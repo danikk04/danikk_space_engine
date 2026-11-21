@@ -9,7 +9,7 @@
 
 namespace danikk_space_engine::chunk_mesh_generation_internal
 {
-	GeneratedChunkMesh generatePlanetSurfaceNodeMesh(World& world, const ChunkMeshGenerationRequest& request);
+	GeneratedChunkMesh generatePlanetTerrainNodeMesh(World& world, const ChunkMeshGenerationRequest& request);
 	GeneratedChunkMesh generatePlanetChunkMarchingTetrahedra(World& world, const ChunkMeshGenerationRequest& request);
 	GeneratedChunkMesh generatePlanetTerrainChunkMeshSurfaceNets(World& world, const ChunkMeshGenerationRequest& request);
 	GeneratedChunkMesh generateBuildPartChunkMesh(World& world, const ChunkMeshGenerationRequest& request);

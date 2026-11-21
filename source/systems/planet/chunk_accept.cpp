@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	void PlanetSystem::acceptGeneratedSurfaceNode(const GeneratedChunkMesh& generated_mesh)
 	{
 		DSE_WATCH();
-		if(generated_mesh.source != ChunkMeshSource::planet_surface_node) return;
+		if(generated_mesh.source != ChunkMeshSource::planet_terrain_node) return;
 		constexpr bool log_planet_mesh_acceptance_diagnostics = true;
 		static uint32 report_timestamp_ms = 0;
 		static size_t accepted = 0;
@@ -64,7 +64,7 @@ namespace danikk_space_engine
 			report_diagnostics();
 			return;
 		}
-		if(generated_mesh.surface_node_id >= planet->surface_tree.nodes.size())
+		if(generated_mesh.terrain_node_id >= planet->terrain_tree.nodes.size())
 		{
 			invalid_node++;
 			report_diagnostics();
@@ -76,8 +76,8 @@ namespace danikk_space_engine
 			report_diagnostics();
 			return;
 		}
-		PlanetSurfaceNode& node = planet->surface_tree.nodes[generated_mesh.surface_node_id];
-		if(node.generation_id != generated_mesh.surface_node_generation_id)
+		PlanetTerrainNode& node = planet->terrain_tree.nodes[generated_mesh.terrain_node_id];
+		if(node.generation_id != generated_mesh.terrain_node_generation_id)
 		{
 			stale_node++;
 			report_diagnostics();

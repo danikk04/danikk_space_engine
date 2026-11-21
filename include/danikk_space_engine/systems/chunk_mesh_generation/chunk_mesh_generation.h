@@ -19,7 +19,7 @@ namespace danikk_space_engine
 	enum class ChunkMeshSource : uint8
 	{
 		/** @brief Generate an adaptive planet surface or cave octree cell. */
-		planet_surface_node,
+		planet_terrain_node,
 		/** @brief Combine the structural BuildPart instances owned by a chunk. */
 		build_parts
 	};
@@ -33,8 +33,8 @@ namespace danikk_space_engine
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
-		PlanetSurfaceNodeId surface_node_id = static_cast<PlanetSurfaceNodeId>(-1);
-		uint64 surface_node_generation_id = 0;
+		PlanetTerrainNodeId terrain_node_id = static_cast<PlanetTerrainNodeId>(-1);
+		uint64 terrain_node_generation_id = 0;
 		bool surface_only = false;
 		ChunkMeshSource source = ChunkMeshSource::build_parts;
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
@@ -53,8 +53,8 @@ namespace danikk_space_engine
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
-		PlanetSurfaceNodeId surface_node_id = static_cast<PlanetSurfaceNodeId>(-1);
-		uint64 surface_node_generation_id = 0;
+		PlanetTerrainNodeId terrain_node_id = static_cast<PlanetTerrainNodeId>(-1);
+		uint64 terrain_node_generation_id = 0;
 		bool surface_only = false;
 		ChunkMeshSource source = ChunkMeshSource::build_parts;
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;

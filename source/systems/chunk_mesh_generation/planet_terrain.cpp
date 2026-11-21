@@ -38,7 +38,7 @@ namespace danikk_space_engine
 	 *         sampled field contains no surface in this chunk.
 	 * This worker-side function does not allocate World resources or upload a mesh.
 	 */
-	GeneratedChunkMesh chunk_mesh_generation_internal::generatePlanetSurfaceNodeMesh(
+	GeneratedChunkMesh chunk_mesh_generation_internal::generatePlanetTerrainNodeMesh(
 		World& world, const ChunkMeshGenerationRequest& request)
 	{
 		/**

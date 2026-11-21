@@ -234,15 +234,15 @@ namespace danikk_space_engine
 	};
 
 	/** @brief One adaptive spatial cell in a planet's render/streaming octree. */
-	struct PlanetSurfaceNode
+	struct PlanetTerrainNode
 	{
 		glm::dvec3 center = glm::dvec3(0.0);
 		double half_extent = 0.0;
-		PlanetSurfaceNodeId children[8] = {
-			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1),
-			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1),
-			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1),
-			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1)};
+		PlanetTerrainNodeId children[8] = {
+			static_cast<PlanetTerrainNodeId>(-1), static_cast<PlanetTerrainNodeId>(-1),
+			static_cast<PlanetTerrainNodeId>(-1), static_cast<PlanetTerrainNodeId>(-1),
+			static_cast<PlanetTerrainNodeId>(-1), static_cast<PlanetTerrainNodeId>(-1),
+			static_cast<PlanetTerrainNodeId>(-1), static_cast<PlanetTerrainNodeId>(-1)};
 		MeshRenderData mesh;
 		glm::dvec3 mesh_position = glm::dvec3(0.0);
 		uint64 generation_id = 1;
@@ -254,18 +254,18 @@ namespace danikk_space_engine
 
 		bool hasChildren() const
 		{
-			for(PlanetSurfaceNodeId child_id : children)
-				if(child_id != static_cast<PlanetSurfaceNodeId>(-1)) return true;
+			for(PlanetTerrainNodeId child_id : children)
+				if(child_id != static_cast<PlanetTerrainNodeId>(-1)) return true;
 			return false;
 		}
 	};
 
 	/** @brief Adaptive spatial partition and render-node pool for a planet. */
-	struct PlanetSurfaceTree
+	struct PlanetTerrainTree
 	{
 		static constexpr double initial_root_half_extent = 8192000.0;
-		DynamicArray<PlanetSurfaceNode> nodes;
-		PlanetSurfaceNodeId root_id = static_cast<PlanetSurfaceNodeId>(-1);
+		DynamicArray<PlanetTerrainNode> nodes;
+		PlanetTerrainNodeId root_id = static_cast<PlanetTerrainNodeId>(-1);
 		uint64 next_node_generation_id = 1;
 	};
 
@@ -277,11 +277,11 @@ namespace danikk_space_engine
 		uint64 generation_id = 0;
 		glm::ivec3 last_chunk_update_grid_coordinate = glm::ivec3(0);
 		uint64 terrain_revision = 0;
-		uint64 surface_tree_revision = 0;
+		uint64 terrain_tree_revision = 0;
 		bool terrain_edits_loaded = false;
 		bool chunk_set_initialized = false;
 		PlanetTerrainEdits terrain_edits;
-		PlanetSurfaceTree surface_tree;
+		PlanetTerrainTree terrain_tree;
 		PlanetChunkLookup chunk_lookup;
 		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
 

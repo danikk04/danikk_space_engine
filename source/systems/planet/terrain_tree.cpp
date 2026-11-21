@@ -10,14 +10,14 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		constexpr PlanetSurfaceNodeId invalid_surface_node = static_cast<PlanetSurfaceNodeId>(-1);
-		constexpr size_t maximum_visible_surface_nodes = 2048;
+		constexpr PlanetTerrainNodeId invalid_terrain_node = static_cast<PlanetTerrainNodeId>(-1);
+		constexpr size_t maximum_visible_terrain_nodes = 2048;
 		constexpr size_t maximum_requests_per_planet_frame = 32;
-		constexpr size_t maximum_surface_tree_nodes = 131072;
+		constexpr size_t maximum_terrain_tree_nodes = 131072;
 		constexpr double maximum_fallback_size_factor = 4.0;
-		constexpr bool log_surface_tree_diagnostics = true;
+		constexpr bool log_terrain_tree_diagnostics = true;
 
-		bool isNodeRelevant(const PlanetSurfaceNode& node, const glm::dvec3& camera_position,
+		bool isNodeRelevant(const PlanetTerrainNode& node, const glm::dvec3& camera_position,
 			double planet_radius, double height)
 		{
 			const double node_radius = node.half_extent * 1.7320508075688772;
@@ -50,41 +50,41 @@ namespace danikk_space_engine
 		}
 	}
 
-	void PlanetSystem::destroyPlanetSurfaceTree(PlanetData& planet)
+	void PlanetSystem::destroyPlanetTerrainTree(PlanetData& planet)
 	{
 		DSE_WATCH();
-		for(PlanetSurfaceNode& node : planet.surface_tree.nodes)
+		for(PlanetTerrainNode& node : planet.terrain_tree.nodes)
 			if(node.mesh.mesh != nullptr) destroyMeshRenderData(node.mesh);
-		planet.surface_tree.nodes.clear();
-		planet.surface_tree.root_id = invalid_surface_node;
+		planet.terrain_tree.nodes.clear();
+		planet.terrain_tree.root_id = invalid_terrain_node;
 	}
 
-	void PlanetSystem::updatePlanetSurfaceTree(PlanetData& planet,
+	void PlanetSystem::updatePlanetTerrainTree(PlanetData& planet,
 		const glm::dvec3& camera_position, double height)
 	{
 		DSE_WATCH();
-		PlanetSurfaceTree& tree = planet.surface_tree;
-		if(tree.root_id == invalid_surface_node)
+		PlanetTerrainTree& tree = planet.terrain_tree;
+		if(tree.root_id == invalid_terrain_node)
 		{
-			PlanetSurfaceNode root;
+			PlanetTerrainNode root;
 			root.center = glm::dvec3(0.0);
-			root.half_extent = PlanetSurfaceTree::initial_root_half_extent;
+			root.half_extent = PlanetTerrainTree::initial_root_half_extent;
 			root.generation_id = tree.next_node_generation_id++;
 			if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
 			tree.nodes.pushMove(root);
 			tree.root_id = 0;
 		}
 
-		if(planet.surface_tree_revision != planet.terrain_revision)
+		if(planet.terrain_tree_revision != planet.terrain_revision)
 		{
-			for(PlanetSurfaceNode& node : tree.nodes)
+			for(PlanetTerrainNode& node : tree.nodes)
 			{
 				node.generation_pending = false;
 				node.generation_id = tree.next_node_generation_id++;
 				if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
 				node.render_active = false;
 			}
-			planet.surface_tree_revision = planet.terrain_revision;
+			planet.terrain_tree_revision = planet.terrain_revision;
 		}
 
 		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
@@ -99,7 +99,7 @@ namespace danikk_space_engine
 		const auto count_visible_target_nodes = [&](auto&& self, const glm::dvec3& center,
 			double half_extent, uint8 depth, size_t limit) -> size_t
 		{
-			PlanetSurfaceNode candidate;
+			PlanetTerrainNode candidate;
 			candidate.center = center;
 			candidate.half_extent = half_extent;
 			if(!isNodeRelevant(candidate, camera_position, planet_settings.radius, height)) return 0;
@@ -119,43 +119,43 @@ namespace danikk_space_engine
 			return count;
 		};
 		size_t target_node_count = count_visible_target_nodes(count_visible_target_nodes,
-			glm::dvec3(0.0), PlanetSurfaceTree::initial_root_half_extent, 0,
-			maximum_visible_surface_nodes);
+			glm::dvec3(0.0), PlanetTerrainTree::initial_root_half_extent, 0,
+			maximum_visible_terrain_nodes);
 		size_t detail_scale_adjustments = 0;
-		while(target_node_count > maximum_visible_surface_nodes && detail_scale_adjustments < 32)
+		while(target_node_count > maximum_visible_terrain_nodes && detail_scale_adjustments < 32)
 		{
 			detail_scale *= 1.5;
 			detail_scale_adjustments++;
 			target_node_count = count_visible_target_nodes(count_visible_target_nodes,
-				glm::dvec3(0.0), PlanetSurfaceTree::initial_root_half_extent, 0,
-				maximum_visible_surface_nodes);
+				glm::dvec3(0.0), PlanetTerrainTree::initial_root_half_extent, 0,
+				maximum_visible_terrain_nodes);
 		}
 
-		if(tree.nodes.size() + 8192 > maximum_surface_tree_nodes)
+		if(tree.nodes.size() + 8192 > maximum_terrain_tree_nodes)
 		{
-			for(PlanetSurfaceNode& node : tree.nodes)
+			for(PlanetTerrainNode& node : tree.nodes)
 				if(node.mesh.mesh != nullptr) destroyMeshRenderData(node.mesh);
 			tree.nodes.clear();
-			tree.root_id = invalid_surface_node;
-			PlanetSurfaceNode root;
+			tree.root_id = invalid_terrain_node;
+			PlanetTerrainNode root;
 			root.center = glm::dvec3(0.0);
-			root.half_extent = PlanetSurfaceTree::initial_root_half_extent;
+			root.half_extent = PlanetTerrainTree::initial_root_half_extent;
 			root.generation_id = tree.next_node_generation_id++;
 			if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
 			tree.nodes.pushMove(root);
 			tree.root_id = 0;
 		}
 
-		const auto ensure_children = [&tree](PlanetSurfaceNodeId parent_id)
+		const auto ensure_children = [&tree](PlanetTerrainNodeId parent_id)
 		{
 			if(tree.nodes[parent_id].hasChildren()) return true;
-			if(tree.nodes.size() + 8 > maximum_surface_tree_nodes) return false;
-			const PlanetSurfaceNode& parent = tree.nodes[parent_id];
+			if(tree.nodes.size() + 8 > maximum_terrain_tree_nodes) return false;
+			const PlanetTerrainNode& parent = tree.nodes[parent_id];
 			const glm::dvec3 parent_center = parent.center;
 			const double child_half_extent = parent.half_extent * 0.5;
 			for(uint8 child_index = 0; child_index < 8; ++child_index)
 			{
-				PlanetSurfaceNode child;
+				PlanetTerrainNode child;
 				child.center = parent_center + glm::dvec3(
 					(child_index & 1) ? child_half_extent : -child_half_extent,
 					(child_index & 2) ? child_half_extent : -child_half_extent,
@@ -163,17 +163,17 @@ namespace danikk_space_engine
 				child.half_extent = child_half_extent;
 				child.generation_id = tree.next_node_generation_id++;
 				if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
-				const PlanetSurfaceNodeId child_id = static_cast<PlanetSurfaceNodeId>(tree.nodes.size());
+				const PlanetTerrainNodeId child_id = static_cast<PlanetTerrainNodeId>(tree.nodes.size());
 				tree.nodes.pushMove(child);
 				tree.nodes[parent_id].children[child_index] = child_id;
 			}
 			return true;
 		};
 
-		const auto visit = [&](auto&& self, PlanetSurfaceNodeId node_id, uint8 depth) -> void
+		const auto visit = [&](auto&& self, PlanetTerrainNodeId node_id, uint8 depth) -> void
 		{
 			if(node_id >= tree.nodes.size() || depth >= 20) return;
-			PlanetSurfaceNode candidate;
+			PlanetTerrainNode candidate;
 			candidate.center = tree.nodes[node_id].center;
 			candidate.half_extent = tree.nodes[node_id].half_extent;
 			if(!isNodeRelevant(candidate, camera_position, planet_settings.radius, height)) return;
@@ -190,21 +190,21 @@ namespace danikk_space_engine
 		};
 		visit(visit, tree.root_id, 0);
 
-		for(PlanetSurfaceNode& node : tree.nodes)
+		for(PlanetTerrainNode& node : tree.nodes)
 			node.render_active = false;
 
 		planet.pending_requests.clear();
-		for(PlanetSurfaceNode& node : tree.nodes) node.generation_pending = false;
-		const auto is_surface_node = [&planet_settings](const PlanetSurfaceNode& node)
+		for(PlanetTerrainNode& node : tree.nodes) node.generation_pending = false;
+		const auto is_surface_node = [&planet_settings](const PlanetTerrainNode& node)
 		{
 			const double radial_extent = node.half_extent * 1.7320508075688772;
 			const double center_radius = glm::length(node.center);
 			return center_radius + radial_extent >= planet_settings.radius - 25000.0
 				&& glm::max(0.0, center_radius - radial_extent) <= planet_settings.radius + 15000.0;
 		};
-		const auto append_request = [&](PlanetSurfaceNodeId node_id)
+		const auto append_request = [&](PlanetTerrainNodeId node_id)
 		{
-			PlanetSurfaceNode& node = tree.nodes[node_id];
+			PlanetTerrainNode& node = tree.nodes[node_id];
 			const bool surface_only = is_surface_node(node);
 			if(node.mesh_revision == planet.terrain_revision
 				&& node.mesh_generator == settings.planet_mesh_generator
@@ -212,12 +212,12 @@ namespace danikk_space_engine
 				&& node.mesh.mesh != nullptr) return;
 			if(planet.pending_requests.size() >= maximum_requests_per_planet_frame) return;
 			ChunkMeshGenerationRequest request;
-			request.source = ChunkMeshSource::planet_surface_node;
+			request.source = ChunkMeshSource::planet_terrain_node;
 			request.world_body_id = planet.world_body_id;
 			request.planet_generation_id = planet.generation_id;
 			request.terrain_revision = planet.terrain_revision;
-			request.surface_node_id = node_id;
-			request.surface_node_generation_id = node.generation_id;
+			request.terrain_node_id = node_id;
+			request.terrain_node_generation_id = node.generation_id;
 			request.surface_only = surface_only;
 			request.planet_mesh_generator = settings.planet_mesh_generator;
 			request.chunk_width = node.half_extent * 2.0;
@@ -227,18 +227,18 @@ namespace danikk_space_engine
 			node.generation_pending = true;
 		};
 
-		const auto has_current_mesh = [&tree, this, &planet, &is_surface_node](PlanetSurfaceNodeId node_id)
+		const auto has_current_mesh = [&tree, this, &planet, &is_surface_node](PlanetTerrainNodeId node_id)
 		{
-			const PlanetSurfaceNode& node = tree.nodes[node_id];
+			const PlanetTerrainNode& node = tree.nodes[node_id];
 			return node.mesh_revision == planet.terrain_revision
 				&& node.mesh_generator == settings.planet_mesh_generator
 				&& node.mesh_surface_only == is_surface_node(node)
 				&& node.mesh.mesh != nullptr;
 		};
-		DynamicArray<PlanetSurfaceNodeId> request_nodes;
-		const auto collect_requests = [&](auto&& self, PlanetSurfaceNodeId node_id) -> void
+		DynamicArray<PlanetTerrainNodeId> request_nodes;
+		const auto collect_requests = [&](auto&& self, PlanetTerrainNodeId node_id) -> void
 		{
-			const PlanetSurfaceNode& node = tree.nodes[node_id];
+			const PlanetTerrainNode& node = tree.nodes[node_id];
 			if(!node.hasChildren() || node.half_extent <= target_half_extent_for(node.center, node.half_extent)
 				|| !has_current_mesh(node_id))
 			{
@@ -247,28 +247,28 @@ namespace danikk_space_engine
 			}
 			for(uint8 i = 0; i < 8; ++i)
 			{
-				const PlanetSurfaceNodeId child_id = node.children[i];
-				if(child_id != invalid_surface_node && isNodeRelevant(tree.nodes[child_id],
+				const PlanetTerrainNodeId child_id = node.children[i];
+				if(child_id != invalid_terrain_node && isNodeRelevant(tree.nodes[child_id],
 					camera_position, planet_settings.radius, height)) self(self, child_id);
 			}
 		};
 		collect_requests(collect_requests, tree.root_id);
 		std::sort(request_nodes.begin(), request_nodes.end(), [&tree, &camera_position](
-			PlanetSurfaceNodeId a_id, PlanetSurfaceNodeId b_id)
+			PlanetTerrainNodeId a_id, PlanetTerrainNodeId b_id)
 		{
 			const glm::dvec3 a_offset = tree.nodes[a_id].center - camera_position;
 			const glm::dvec3 b_offset = tree.nodes[b_id].center - camera_position;
 			return glm::dot(a_offset, a_offset) < glm::dot(b_offset, b_offset);
 		});
-		for(PlanetSurfaceNodeId node_id : request_nodes) append_request(node_id);
-		const auto children_ready = [&](PlanetSurfaceNodeId node_id) -> bool
+		for(PlanetTerrainNodeId node_id : request_nodes) append_request(node_id);
+		const auto children_ready = [&](PlanetTerrainNodeId node_id) -> bool
 		{
-			const PlanetSurfaceNode& node = tree.nodes[node_id];
+			const PlanetTerrainNode& node = tree.nodes[node_id];
 			if(!node.hasChildren()) return false;
 			for(uint8 i = 0; i < 8; ++i)
 			{
-				const PlanetSurfaceNodeId child_id = node.children[i];
-				if(child_id == invalid_surface_node || !isNodeRelevant(tree.nodes[child_id],
+				const PlanetTerrainNodeId child_id = node.children[i];
+				if(child_id == invalid_terrain_node || !isNodeRelevant(tree.nodes[child_id],
 					camera_position, planet_settings.radius, height)) continue;
 				if(!has_current_mesh(child_id)) return false;
 			}
@@ -277,9 +277,9 @@ namespace danikk_space_engine
 			// visible that needs to block refinement.
 			return true;
 		};
-		const auto activate = [&](auto&& self, PlanetSurfaceNodeId node_id) -> void
+		const auto activate = [&](auto&& self, PlanetTerrainNodeId node_id) -> void
 		{
-			PlanetSurfaceNode& node = tree.nodes[node_id];
+			PlanetTerrainNode& node = tree.nodes[node_id];
 			if(!node.hasChildren() || node.half_extent <= target_half_extent_for(node.center, node.half_extent))
 			{
 				if(has_current_mesh(node_id))
@@ -290,8 +290,8 @@ namespace danikk_space_engine
 			{
 				for(uint8 i = 0; i < 8; ++i)
 				{
-					const PlanetSurfaceNodeId child_id = node.children[i];
-					if(child_id != invalid_surface_node && isNodeRelevant(tree.nodes[child_id],
+					const PlanetTerrainNodeId child_id = node.children[i];
+					if(child_id != invalid_terrain_node && isNodeRelevant(tree.nodes[child_id],
 						camera_position, planet_settings.radius, height))
 						self(self, child_id);
 				}
@@ -306,15 +306,15 @@ namespace danikk_space_engine
 			{
 				for(uint8 i = 0; i < 8; ++i)
 				{
-					const PlanetSurfaceNodeId child_id = node.children[i];
-					if(child_id != invalid_surface_node && isNodeRelevant(tree.nodes[child_id],
+					const PlanetTerrainNodeId child_id = node.children[i];
+					if(child_id != invalid_terrain_node && isNodeRelevant(tree.nodes[child_id],
 						camera_position, planet_settings.radius, height))
 						self(self, child_id);
 				}
 			}
 		};
 		activate(activate, tree.root_id);
-		if constexpr(log_surface_tree_diagnostics)
+		if constexpr(log_terrain_tree_diagnostics)
 		{
 			static uint32 report_timestamp_ms = 0;
 			const uint32 now = danikk_engine::getMsTimestamp();
@@ -323,7 +323,7 @@ namespace danikk_space_engine
 			{
 				size_t active_node_count = 0;
 				double finest_active_half_extent = 0.0;
-				for(const PlanetSurfaceNode& node : tree.nodes)
+				for(const PlanetTerrainNode& node : tree.nodes)
 				{
 					if(!node.render_active) continue;
 					active_node_count++;
@@ -351,15 +351,15 @@ namespace danikk_space_engine
 
 		constexpr size_t maximum_cached_surface_meshes = 1024;
 		size_t cached_mesh_count = 0;
-		for(const PlanetSurfaceNode& node : tree.nodes)
+		for(const PlanetTerrainNode& node : tree.nodes)
 			if(node.mesh.mesh != nullptr) cached_mesh_count++;
 		while(cached_mesh_count > maximum_cached_surface_meshes)
 		{
-			PlanetSurfaceNodeId eviction_id = invalid_surface_node;
+			PlanetTerrainNodeId eviction_id = invalid_terrain_node;
 			double farthest_distance_squared = -1.0;
-			for(PlanetSurfaceNodeId node_id = 0; node_id < tree.nodes.size(); ++node_id)
+			for(PlanetTerrainNodeId node_id = 0; node_id < tree.nodes.size(); ++node_id)
 			{
-				const PlanetSurfaceNode& node = tree.nodes[node_id];
+				const PlanetTerrainNode& node = tree.nodes[node_id];
 				if(node.render_active || node.generation_pending
 					|| node.mesh.mesh == nullptr) continue;
 				const glm::dvec3 offset = node.center - camera_position;
@@ -368,8 +368,8 @@ namespace danikk_space_engine
 				farthest_distance_squared = distance_squared;
 				eviction_id = node_id;
 			}
-			if(eviction_id == invalid_surface_node) break;
-			PlanetSurfaceNode& node = tree.nodes[eviction_id];
+			if(eviction_id == invalid_terrain_node) break;
+			PlanetTerrainNode& node = tree.nodes[eviction_id];
 			destroyMeshRenderData(node.mesh);
 			node.mesh_revision = 0;
 			cached_mesh_count--;

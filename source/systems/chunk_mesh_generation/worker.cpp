@@ -26,8 +26,8 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				&& a.chunk_id == b.chunk_id
 				&& a.grid_coordinate == b.grid_coordinate
 				&& a.planet_mesh_generator == b.planet_mesh_generator
-				&& a.surface_node_id == b.surface_node_id
-				&& a.surface_node_generation_id == b.surface_node_generation_id
+				&& a.terrain_node_id == b.terrain_node_id
+				&& a.terrain_node_generation_id == b.terrain_node_generation_id
 				&& a.surface_only == b.surface_only;
 		}
 
@@ -44,8 +44,8 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 					&& result.chunk_id == request.chunk_id
 					&& result.grid_coordinate == request.grid_coordinate
 					&& result.planet_mesh_generator == request.planet_mesh_generator
-					&& result.surface_node_id == request.surface_node_id
-					&& result.surface_node_generation_id == request.surface_node_generation_id
+					&& result.terrain_node_id == request.terrain_node_id
+					&& result.terrain_node_generation_id == request.terrain_node_generation_id
 					&& result.surface_only == request.surface_only) return true;
 			return false;
 		}
@@ -54,8 +54,8 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		{
 			switch(request.source)
 			{
-				case ChunkMeshSource::planet_surface_node:
-					return generatePlanetSurfaceNodeMesh(world, request);
+				case ChunkMeshSource::planet_terrain_node:
+					return generatePlanetTerrainNodeMesh(world, request);
 				case ChunkMeshSource::build_parts:
 					return generateBuildPartChunkMesh(world, request);
 			}
@@ -231,19 +231,19 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 					size_t completed_planet = 0;
 					for(const ChunkMeshGenerationRequest& request : new_requests)
 					{
-						if(request.source != ChunkMeshSource::planet_surface_node) continue;
+						if(request.source != ChunkMeshSource::planet_terrain_node) continue;
 						desired_planet++;
 						if(request.chunk_width <= 128.0) desired_fine++;
 					}
 					for(const ChunkMeshGenerationRequest& request : requests)
 					{
-						if(request.source != ChunkMeshSource::planet_surface_node) continue;
+						if(request.source != ChunkMeshSource::planet_terrain_node) continue;
 						queued_planet++;
 						if(request.chunk_width <= 128.0) queued_fine++;
 					}
 					for(const ActiveRequest& active : active_requests)
 					{
-						if(active.request.source != ChunkMeshSource::planet_surface_node) continue;
+						if(active.request.source != ChunkMeshSource::planet_terrain_node) continue;
 						active_planet++;
 						if(active.request.chunk_width <= 128.0) active_fine++;
 						bool requested = false;
@@ -256,7 +256,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 						if(!requested) active_not_requested++;
 					}
 					for(const GeneratedChunkMesh& result : completed)
-						if(result.source == ChunkMeshSource::planet_surface_node) completed_planet++;
+						if(result.source == ChunkMeshSource::planet_terrain_node) completed_planet++;
 					danikk_framework::formatLogInfo(
 						"Planet mesh queue: desired=% fine_desired=% queued=% fine_queued=% active=% fine_active=% active_not_desired=% completed=%",
 						desired_planet, desired_fine, queued_planet, queued_fine,
@@ -316,7 +316,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		for(size_t index = 0; index < requests.size();)
 		{
 			const ChunkMeshGenerationRequest& request = requests[index];
-			if(request.source != ChunkMeshSource::planet_surface_node
+			if(request.source != ChunkMeshSource::planet_terrain_node
 				|| request.world_body_id != world_body_id
 				|| request.planet_generation_id != planet_generation_id)
 			{
@@ -330,7 +330,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		for(size_t index = 0; index < completed.size();)
 		{
 			const GeneratedChunkMesh& result = completed[index];
-			if(result.source != ChunkMeshSource::planet_surface_node
+			if(result.source != ChunkMeshSource::planet_terrain_node
 				|| result.world_body_id != world_body_id
 				|| result.planet_generation_id != planet_generation_id)
 			{
@@ -342,7 +342,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			completed.resize(completed.size() - 1);
 		}
 		for(ActiveRequest& active : active_requests)
-			if(active.request.source == ChunkMeshSource::planet_surface_node
+			if(active.request.source == ChunkMeshSource::planet_terrain_node
 				&& active.request.world_body_id == world_body_id
 				&& active.request.planet_generation_id == planet_generation_id)
 				active.cancelled = true;

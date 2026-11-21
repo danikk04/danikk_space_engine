@@ -32,7 +32,7 @@ namespace danikk_space_engine
 		for(PlanetData& planet : planets)
 		{
 			removeQueuedRequests(planet);
-			destroyPlanetSurfaceTree(planet);
+			destroyPlanetTerrainTree(planet);
 		}
 	}
 
@@ -80,7 +80,7 @@ namespace danikk_space_engine
 		{
 			if(planets[index].world_body_id != world_body_id) continue;
 			removeQueuedRequests(planets[index]);
-			destroyPlanetSurfaceTree(planets[index]);
+			destroyPlanetTerrainTree(planets[index]);
 			for(size_t shift = index + 1; shift < planets.size(); ++shift)
 				planets[shift - 1] = static_cast<PlanetData&&>(planets[shift]);
 			planets.resize(planets.size() - 1);
@@ -170,7 +170,7 @@ namespace danikk_space_engine
 		glm::dvec3 chunk_center_position = camera_position;
 		if(surface_height >= 0.0 && distance_from_center > 1e-9)
 			chunk_center_position -= camera_position / distance_from_center * surface_height;
-		updatePlanetSurfaceTree(planet, camera_position, surface_height);
+		updatePlanetTerrainTree(planet, camera_position, surface_height);
 
 		const glm::ivec3 chunk_center_grid_coordinate(
 			static_cast<int>(std::floor(chunk_center_position.x / planet_chunk_width)),

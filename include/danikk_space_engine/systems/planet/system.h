@@ -12,9 +12,9 @@ namespace danikk_space_engine
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
-		void updatePlanetSurfaceTree(PlanetData& planet, const glm::dvec3& camera_position,
+		void updatePlanetTerrainTree(PlanetData& planet, const glm::dvec3& camera_position,
 			double height);
-		void destroyPlanetSurfaceTree(PlanetData& planet);
+		void destroyPlanetTerrainTree(PlanetData& planet);
 		void updatePlanetSpatialChunks(PlanetData& planet, const glm::dvec3& chunk_center_position);
 		void queuePlanetRequests(PlanetData& planet);
 		void unloadChunksOutsideDesiredSet(PlanetData& planet);

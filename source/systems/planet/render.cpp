@@ -13,7 +13,7 @@ namespace danikk_space_engine
 		{
 			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
-			for(const PlanetSurfaceNode& node : planet.surface_tree.nodes)
+			for(const PlanetTerrainNode& node : planet.terrain_tree.nodes)
 			{
 				if(!node.render_active || node.mesh.mesh == nullptr) continue;
 				const glm::dvec3 relative_position = body.position
