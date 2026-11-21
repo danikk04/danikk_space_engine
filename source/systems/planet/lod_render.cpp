@@ -17,8 +17,6 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		constexpr uint8 first_global_level = 4;
-
 mat4 createPlanetTransform(const World& world, const WorldBody& body,
 			const glm::dvec3& local_origin = glm::dvec3(0.0))
 		{
@@ -39,8 +37,10 @@ mat4 createPlanetTransform(const World& world, const WorldBody& body,
 		if(!world.camera.isActive()) return;
 		for(const PlanetData& planet : planets)
 		{
+			const uint8 first_global_level = findFirstGlobalPlanetLodLevel();
 			if(planet.lod_level == 0
-				|| (pass == PlanetRenderPass::near_depth && planet.lod_level >= first_global_level)) continue;
+			|| (pass == PlanetRenderPass::near_depth
+					&& planet.lod_level >= first_global_level)) continue;
 			if(!world.world_body_data.isWorldBodyActive(planet.world_body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 			const uint8 level_index = planet.lod_level;

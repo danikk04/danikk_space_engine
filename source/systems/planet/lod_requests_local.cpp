@@ -12,11 +12,13 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		constexpr uint16 tile_radius = planet_local_heightmap_tile_radius;
 		constexpr uint16 tile_side = planet_local_heightmap_tile_side;
-		const double tile_widths[4] = {
-			0.0, planet_chunk_width * 8.0,
-			planet_chunk_width * 64.0, planet_chunk_width * 1024.0};
 		PlanetChunkLevel& level = planet.levels[level_index];
-		const double tile_width = tile_widths[level_index];
+		const PlanetLodSettings& lod_settings = getPlanetLodSettings(level_index);
+		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
+		const double tile_width = lod_settings.coverage == PlanetLodCoverage::fixed_diameter
+			? lod_settings.coverage_parameter / tile_side
+			: 2.0 * std::sqrt(lod_settings.coverage_parameter
+				* (2.0 * settings.radius + lod_settings.coverage_parameter)) / (tile_side - 1.0);
 		const glm::dvec3 camera_direction = glm::length(local_camera_position) > 1e-9
 			? glm::normalize(local_camera_position) : glm::dvec3(0.0, 0.0, 1.0);
 		const double surface_radius = getPlanetSurfaceRadius(planet.world_body_id,

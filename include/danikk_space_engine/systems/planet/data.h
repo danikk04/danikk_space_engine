@@ -5,6 +5,7 @@
 #include <memory>
 #include <limits>
 
+#include <danikk_framework/array.h>
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_engine/mesh.h>
 #include <danikk_space_engine/fwd.h>
@@ -26,6 +27,8 @@ namespace danikk_space_engine
 	inline constexpr double planet_chunk_width = 32.0;
 	inline constexpr double planet_voxel_size = 2.0;
 	inline constexpr int32 planet_volume_chunk_half_width = 6;
+	inline constexpr uint32 planet_lod_triangle_budget = 100000;
+	inline constexpr uint32 planet_far_lod_triangle_budget = 500;
 
 	/** @brief Immutable settings used when registering a planet for a WorldBody. */
 	struct PlanetSettings
@@ -170,10 +173,6 @@ namespace danikk_space_engine
 	inline constexpr uint8 planet_lod_level_count = 5;
 	inline constexpr uint8 planet_chunk_level_count = planet_lod_level_count + 1;
 	inline constexpr uint8 planet_lod_face_count = 6;
-	inline constexpr uint16 planet_coarse_chunk_half_width = 6;
-	inline constexpr uint16 planet_coarse_chunk_side = planet_coarse_chunk_half_width * 2 + 1;
-	inline constexpr uint16 planet_coarse_chunk_count = planet_coarse_chunk_side
-		* planet_coarse_chunk_side * planet_coarse_chunk_side;
 	inline constexpr uint16 planet_local_heightmap_tile_radius = 6;
 	inline constexpr uint16 planet_local_heightmap_tile_side = planet_local_heightmap_tile_radius * 2 + 1;
 	inline constexpr uint16 planet_local_heightmap_tile_count =
@@ -183,10 +182,78 @@ namespace danikk_space_engine
 	enum class PlanetChunkLevelGeometry : uint8
 	{
 		regular_volume_chunks,
-		coarse_volume_chunks,
 		local_heightmap,
 		global_heightmap
 	};
+
+	/** @brief Rule used to size the surface represented by a planet LOD level. */
+	enum class PlanetLodCoverage : uint8
+	{
+		regular_chunks,
+		fixed_diameter,
+		horizon,
+		whole_planet
+	};
+
+	/** @brief All generation and transition parameters for one planet LOD level. */
+	struct PlanetLodSettings
+	{
+		PlanetChunkLevelGeometry geometry;
+		PlanetLodCoverage coverage;
+		double activation_height;
+		double deactivation_height;
+		double activation_radius_multiplier;
+		double deactivation_radius_multiplier;
+		/** @brief Diameter in fixed_diameter mode; target horizon altitude in horizon mode. */
+		double coverage_parameter;
+		uint32 resolution;
+		uint32 patch_count;
+		uint32 triangle_budget;
+
+		constexpr double getActivationHeight(double planet_radius) const
+		{
+			return activation_height + activation_radius_multiplier * planet_radius;
+		}
+
+		constexpr double getDeactivationHeight(double planet_radius) const
+		{
+			return deactivation_height + deactivation_radius_multiplier * planet_radius;
+		}
+	};
+
+	/** @brief Per-level LOD tuning table, indexed by the rendered level (including level zero). */
+	inline const danikk_framework::Array<PlanetLodSettings, planet_chunk_level_count> planet_lod_settings = {
+		PlanetLodSettings{PlanetChunkLevelGeometry::regular_volume_chunks, PlanetLodCoverage::regular_chunks,
+			0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0},
+		PlanetLodSettings{PlanetChunkLevelGeometry::local_heightmap, PlanetLodCoverage::fixed_diameter,
+			100.0, 70.0, 0.0, 0.0, 20000.0, 16, planet_local_heightmap_tile_count,
+			planet_lod_triangle_budget},
+		PlanetLodSettings{PlanetChunkLevelGeometry::local_heightmap, PlanetLodCoverage::horizon,
+			1000.0, 700.0, 0.0, 0.0, 10000.0, 16, planet_local_heightmap_tile_count,
+			planet_lod_triangle_budget},
+		PlanetLodSettings{PlanetChunkLevelGeometry::local_heightmap, PlanetLodCoverage::horizon,
+			10000.0, 7000.0, 0.0, 0.0, 100000.0, 16, planet_local_heightmap_tile_count,
+			planet_lod_triangle_budget},
+		PlanetLodSettings{PlanetChunkLevelGeometry::global_heightmap, PlanetLodCoverage::whole_planet,
+			100000.0, 70000.0, 0.0, 0.0, 0.0, 91, planet_lod_face_count,
+			planet_lod_triangle_budget},
+		PlanetLodSettings{PlanetChunkLevelGeometry::global_heightmap, PlanetLodCoverage::whole_planet,
+			0.0, 0.0, 20.0, 14.0, 0.0, 6, planet_lod_face_count,
+			planet_far_lod_triangle_budget}
+	};
+
+	inline const PlanetLodSettings& getPlanetLodSettings(uint8 level)
+	{
+		return planet_lod_settings.data()[level];
+	}
+
+	inline uint8 findFirstGlobalPlanetLodLevel()
+	{
+		for(uint8 level = 1; level < planet_chunk_level_count; level++)
+			if(getPlanetLodSettings(level).geometry == PlanetChunkLevelGeometry::global_heightmap)
+				return level;
+		return planet_chunk_level_count;
+	}
 
 	/** @brief Material range in one planetary LOD mesh. */
 	struct PlanetLodMaterialRange
@@ -248,11 +315,15 @@ namespace danikk_space_engine
 		bool terrain_edits_loaded = false;
 		bool chunk_set_initialized = false;
 		bool chunk_updates_active = false;
+		/** @brief True while ordinary chunk requests are paused in favor of a surface LOD. */
+		bool chunk_requests_paused_for_lod = false;
 		PlanetTerrainEdits terrain_edits;
 		PlanetChunkLookup chunk_lookup;
 		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
 		/** @brief Current representation: zero uses ordinary chunks, positive values select one LOD. */
 		uint8 lod_level = 0;
+		/** @brief Desired LOD independent of the currently displayed fallback level. */
+		uint8 target_lod_level = 0;
 		bool lod_enabled = false;
 		DynamicArray<PlanetChunkLevel> levels;
 

@@ -153,6 +153,7 @@ void uploadLevelMesh(PlanetChunkLevel& level)
 			}
 		}
 		planet.lod_level = 0;
+		planet.target_lod_level = 0;
 	}
 
 	/** @copydoc PlanetSystem::acceptGeneratedLodMesh */

@@ -24,7 +24,9 @@ namespace danikk_space_engine
 		const PlanetSettings& settings, DynamicArray<ChunkMeshGenerationRequest>& requests)
 	{
 		DSE_WATCH();
-		if(level_index >= 1 && level_index <= 3)
+		const PlanetLodCoverage coverage = getPlanetLodSettings(level_index).coverage;
+		if(coverage == PlanetLodCoverage::fixed_diameter
+			|| coverage == PlanetLodCoverage::horizon)
 			queuePlanetLocalLodRequests(planet, level_index, local_camera_position, requests);
 		else
 			queuePlanetGlobalLodRequests(planet, level_index, settings, requests);

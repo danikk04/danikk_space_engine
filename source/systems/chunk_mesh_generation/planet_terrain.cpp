@@ -85,7 +85,9 @@ namespace danikk_space_engine
 			|| request.lod_resolution == 0)
 			danikk_engine::formatFatalError("Planet surface LOD request has invalid data");
 
-		const bool local_heightmap = request.lod_level >= 1 && request.lod_level <= 3;
+		const PlanetLodCoverage coverage = getPlanetLodSettings(request.lod_level).coverage;
+		const bool local_heightmap = coverage == PlanetLodCoverage::fixed_diameter
+			|| coverage == PlanetLodCoverage::horizon;
 		if(local_heightmap && (!request.has_heightmap_basis
 			|| request.lod_face >= planet_local_heightmap_tile_count))
 			danikk_engine::formatFatalError("Planet local heightmap request has invalid patch data");

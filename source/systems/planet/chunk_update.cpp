@@ -88,14 +88,12 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Maintains the 5x5x5 volume chunk set around its selected center and queues missing meshes.
+	 * @brief Maintains the 13x13x13 volume chunk set around its selected center and queues missing meshes.
 	 *
 	 * When the camera crosses one chunk boundary, retains the overlapping chunk records and pending
-	 * requests, then generates only the newly entered 5x5 face. Larger jumps or terrain/generator
+	 * requests, then generates only the newly entered 13x13 face. Larger jumps or terrain/generator
 	 * revisions rebuild the complete local set. Empty results remain recorded to avoid regeneration.
-	 * @param planet Mutable lookup and chunk-set state for the planet.
-	 * @param slot Planet component slot used to stamp requests with owner identity.
-	 * @param world World used to unload chunks and clear controller selections.
+	 * @param planet Planet state used to update the desired chunk set and manage loaded chunks.
 	 * @param camera_position Camera position relative to the planet center, used to prioritize generation.
 	 * @param chunk_center_position Position relative to the planet center used to center the loaded chunk volume.
 	 */

@@ -132,8 +132,8 @@ namespace danikk_space_engine
 	void PlanetSystem::update()
 	{
 		DSE_WATCH();
-		for(PlanetData& planet : planets) updatePlanet(planet);
 		updateLod();
+		for(PlanetData& planet : planets) updatePlanet(planet);
 	}
 
 	void PlanetSystem::updatePlanet(PlanetData& planet)
@@ -177,6 +177,22 @@ namespace danikk_space_engine
 		while(planet.processed_edit_count < planet.terrain_edits.ids.size())
 			invalidateChunksAroundEdit(planet,
 				(*planet.terrain_edits.pool)[planet.terrain_edits.ids[planet.processed_edit_count++]]);
+		if(planet.lod_enabled)
+		{
+			if(!planet.chunk_requests_paused_for_lod)
+			{
+				planet.pending_requests.clear();
+				queuePlanetRequests(planet);
+				planet.chunk_requests_paused_for_lod = true;
+			}
+			planet.chunk_set_initialized = false;
+			return;
+		}
+		if(planet.chunk_requests_paused_for_lod)
+		{
+			planet.chunk_requests_paused_for_lod = false;
+			planet.chunk_set_initialized = false;
+		}
 		const glm::ivec3 chunk_center_grid_coordinate(
 			static_cast<int>(std::floor(chunk_center_position.x / planet_chunk_width)),
 			static_cast<int>(std::floor(chunk_center_position.y / planet_chunk_width)),

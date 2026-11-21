@@ -6,38 +6,41 @@
 
 namespace danikk_space_engine
 {
+	namespace
+	{
+		void validateLodTriangleBudgets()
+		{
+			for(uint8 level = 1; level < planet_chunk_level_count; level++)
+			{
+				const PlanetLodSettings& settings = getPlanetLodSettings(level);
+				const uint64 estimated_triangles = static_cast<uint64>(settings.patch_count)
+					* settings.resolution * settings.resolution * 2;
+				if(estimated_triangles > settings.triangle_budget)
+					danikk_engine::formatFatalError(
+						"Planet LOD level % exceeds triangle budget: estimated=% budget=%",
+						level, estimated_triangles, settings.triangle_budget);
+			}
+		}
+	}
+
 	void PlanetSystem::initializePlanetLodLevels(PlanetData& planet)
 	{
 		DSE_WATCH();
 		if(planet.levels.size() != 0) return;
+		validateLodTriangleBudgets();
 		planet.levels.resize(planet_chunk_level_count);
-		planet.levels[0].geometry = PlanetChunkLevelGeometry::regular_volume_chunks;
 		for(uint8 level_index = 1; level_index < planet_chunk_level_count; level_index++)
 		{
 			PlanetChunkLevel& level = planet.levels[level_index];
-			if(level_index == 1)
+			const PlanetLodSettings& settings = getPlanetLodSettings(level_index);
+			level.geometry = settings.geometry;
+			level.resolution = settings.resolution;
+			level.expected_patch_count = settings.patch_count;
+			level.camera_local = settings.coverage == PlanetLodCoverage::fixed_diameter
+				|| settings.coverage == PlanetLodCoverage::horizon;
+			level.patches.resize(settings.patch_count);
+			if(settings.coverage == PlanetLodCoverage::whole_planet)
 			{
-				level.geometry = PlanetChunkLevelGeometry::local_heightmap;
-				level.resolution = 16;
-				level.expected_patch_count = planet_local_heightmap_tile_count;
-				level.camera_local = true;
-				level.patches.resize(planet_local_heightmap_tile_count);
-			}
-			else if(level_index <= 3)
-			{
-				level.geometry = PlanetChunkLevelGeometry::local_heightmap;
-				level.resolution = 64;
-				level.expected_patch_count = planet_local_heightmap_tile_count;
-				level.camera_local = true;
-				level.patches.resize(planet_local_heightmap_tile_count);
-			}
-			else
-			{
-				level.geometry = PlanetChunkLevelGeometry::global_heightmap;
-				level.resolution = level_index == 4 ? 29 : 9;
-				level.expected_patch_count = planet_lod_face_count;
-				level.camera_local = false;
-				level.patches.resize(planet_lod_face_count);
 				for(uint8 face = 0; face < planet_lod_face_count; face++)
 					level.patches[face].grid_coordinate = glm::ivec3(face, level_index, 0);
 			}
@@ -57,6 +60,7 @@ namespace danikk_space_engine
 					planet.world_body_id, planet.generation_id, no_requests);
 				destroyPlanetLodMeshes(planet);
 				planet.lod_enabled = false;
+				planet.target_lod_level = 0;
 				continue;
 			}
 			updatePlanetLod(planet);
@@ -83,6 +87,7 @@ namespace danikk_space_engine
 		{
 			planet.lod_enabled = false;
 			planet.lod_level = 0;
+			planet.target_lod_level = 0;
 		}
 		else
 		{
@@ -91,21 +96,24 @@ namespace danikk_space_engine
 			const double height = getPlanetHeightAboveSurface(
 				planet.world_body_id, local_camera_position);
 			const bool was_enabled = planet.lod_enabled;
+			const PlanetLodSettings& first_lod_settings = getPlanetLodSettings(1);
+			const double lod_activation_height = first_lod_settings.getActivationHeight(settings.radius);
+			const double lod_deactivation_height = first_lod_settings.getDeactivationHeight(settings.radius);
 			if(planet.lod_enabled)
 			{
-				if(height < 70.0) planet.lod_enabled = false;
+				if(height < lod_deactivation_height) planet.lod_enabled = false;
 			}
-			else if(height > 100.0) planet.lod_enabled = true;
+			else if(height > lod_activation_height) planet.lod_enabled = true;
 			if(planet.lod_enabled != was_enabled)
 			{
 				if(planet.lod_enabled)
 					danikk_framework::formatLogInfo(
-						"Planet LOD enabled: body=% height_above_surface=% m activation_threshold=100 m",
-						planet.world_body_id, height);
+						"Planet LOD enabled: body=% height_above_surface=% m activation_threshold=% m",
+						planet.world_body_id, height, lod_activation_height);
 				else
 					danikk_framework::formatLogInfo(
-						"Planet LOD disabled: body=% height_above_surface=% m deactivation_threshold=70 m reason=below surface coverage range",
-						planet.world_body_id, height);
+						"Planet LOD disabled: body=% height_above_surface=% m deactivation_threshold=% m reason=below surface coverage range",
+						planet.world_body_id, height, lod_deactivation_height);
 			}
 
 			if(planet.lod_enabled)
@@ -123,6 +131,7 @@ namespace danikk_space_engine
 			else
 			{
 				planet.lod_level = 0;
+				planet.target_lod_level = 0;
 			}
 		}
 		world.chunk_mesh_generation.replacePlanetLodRequests(
