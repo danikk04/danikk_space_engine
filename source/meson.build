@@ -4,6 +4,7 @@ sources = files(
 	'localization.cpp', 
 	'main.cpp', 
 	'material.cpp',
+	'mesh_render_data.cpp',
 	'profiler.cpp',
 	'resource_pool.cpp',
 	'world.cpp',

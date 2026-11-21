@@ -23,7 +23,7 @@ namespace danikk_space_engine
 				body_rotation[1] = vec4(vec3(body.rotation * glm::dvec3(0.0, 1.0, 0.0)), 0.0f);
 				body_rotation[2] = vec4(vec3(body.rotation * glm::dvec3(0.0, 0.0, 1.0)), 0.0f);
 				const mat4 world_matrix = glm::translate(mat4(1.0f), vec3(relative_position)) * body_rotation;
-				world.chunks.draw(node.mesh, world_matrix);
+				drawMeshRenderData(node.mesh, world_matrix);
 			}
 		}
 	}

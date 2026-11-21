@@ -54,7 +54,7 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		for(PlanetSurfaceNode& node : planet.surface_tree.nodes)
-			if(node.mesh.mesh != nullptr) world.chunks.destroyRenderData(node.mesh);
+			if(node.mesh.mesh != nullptr) destroyMeshRenderData(node.mesh);
 		planet.surface_tree.nodes.clear();
 		planet.surface_tree.root_id = invalid_surface_node;
 	}
@@ -134,7 +134,7 @@ namespace danikk_space_engine
 		if(tree.nodes.size() + 8192 > maximum_surface_tree_nodes)
 		{
 			for(PlanetSurfaceNode& node : tree.nodes)
-				if(node.mesh.mesh != nullptr) world.chunks.destroyRenderData(node.mesh);
+				if(node.mesh.mesh != nullptr) destroyMeshRenderData(node.mesh);
 			tree.nodes.clear();
 			tree.root_id = invalid_surface_node;
 			PlanetSurfaceNode root;
@@ -370,7 +370,7 @@ namespace danikk_space_engine
 			}
 			if(eviction_id == invalid_surface_node) break;
 			PlanetSurfaceNode& node = tree.nodes[eviction_id];
-			world.chunks.destroyRenderData(node.mesh);
+			destroyMeshRenderData(node.mesh);
 			node.mesh_revision = 0;
 			cached_mesh_count--;
 		}

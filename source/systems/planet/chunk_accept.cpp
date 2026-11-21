@@ -85,7 +85,7 @@ namespace danikk_space_engine
 		}
 		node.generation_pending = false;
 		node.mesh_position = generated_mesh.chunk_position;
-		world.chunks.createMesh(node.mesh,
+		createMeshRenderData(node.mesh,
 			generated_mesh.point_positions.data(), generated_mesh.point_positions.size(),
 			generated_mesh.triangle_point_indices.data(), generated_mesh.triangle_point_indices.size(),
 			generated_mesh.triangle_material_ids.data(), generated_mesh.triangle_material_ids.size());

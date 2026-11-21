@@ -6,6 +6,14 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Outcome of attempting to draw a mesh record. */
+	enum class MeshDrawResult : uint8
+	{
+		missing_mesh,
+		empty_mesh,
+		drawn
+	};
+
 	/** @brief Index range for one material in a combined GPU mesh. */
 	struct MeshMaterialRange
 	{
@@ -20,4 +28,13 @@ namespace danikk_space_engine
 		Mesh* mesh = nullptr;
 		DynamicArray<MeshMaterialRange> material_ranges;
 	};
+
+	/** @brief Converts indexed triangles into a flat-shaded GPU mesh grouped by material. */
+	void createMeshRenderData(MeshRenderData& record, const vec3* positions, size_t position_count,
+		const uint32* triangle_indices, size_t index_count,
+		const MaterialId* triangle_material_ids, size_t material_count);
+	/** @brief Draws material ranges using a caller-provided camera-relative transform. */
+	MeshDrawResult drawMeshRenderData(const MeshRenderData& record, const mat4& world_matrix);
+	/** @brief Releases a mesh record's GPU resources and material ranges. */
+	void destroyMeshRenderData(MeshRenderData& record);
 }
