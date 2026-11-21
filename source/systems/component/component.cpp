@@ -55,7 +55,8 @@ namespace danikk_space_engine
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 
 			PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(!world.chunks.isChunkActive(slot.chunk_id)) continue;
+			if(!world.point_data.isPointActive(slot.point_id))
+				danikk_engine::formatFatalError("Point component slot % references inactive point %", slot_id, slot.point_id);
 			const PointComponentType& type = getPointComponentType(slot.type_id);
 			if(slot.uses_external_data && slot.external_data == nullptr)
 			{
@@ -128,7 +129,8 @@ namespace danikk_space_engine
 				danikk_engine::formatFatalError("PointData references invalid component slot %", slot_id);
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 			PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(!world.chunks.isChunkActive(slot.chunk_id)) continue;
+			if(!world.point_data.isPointActive(slot.point_id))
+				danikk_engine::formatFatalError("Point component slot % references inactive point %", slot_id, slot.point_id);
 			if(slot.uses_external_data && slot.external_data == nullptr)
 				danikk_engine::formatFatalError("Point component slot % has no external data", slot_id);
 			const PointComponentType& type = getPointComponentType(slot.type_id);
