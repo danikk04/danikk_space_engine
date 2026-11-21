@@ -17,25 +17,21 @@
 
 namespace danikk_space_engine::unit_system_internal
 {
-	InventoryComponent* findInventory(World& world, PointId point_id);
-
 	namespace
 	{
 		/** @brief Current-tick assignments used to spread a faction's fire across valid targets. */
 		struct TargetAllocation
 		{
-			PointComponentSlotId target_slot_id = static_cast<PointComponentSlotId>(-1);
+			HumanId target_slot_id = static_cast<HumanId>(-1);
 			uint64 target_generation_id = 0;
 			uint32 unit_count = 0;
 			float expected_damage_per_second = 0.0f;
 		};
 
 		/** @brief Finds the first weapon stack in an NPC's inventory. */
-		InventorySlot* findWeapon(World& world, PointId point_id)
+		InventorySlot* findWeapon(HumanData& human)
 		{
-			InventoryComponent* inventory = findInventory(world, point_id);
-			if(inventory == nullptr) return nullptr;
-			for(InventorySlot& item : inventory->slots)
+			for(InventorySlot& item : human.inventory.slots)
 				if(!item.isEmpty() && getItemDefinition(item.item_definition_id).category_id == item_category_ids::weapon)
 					return &item;
 			return nullptr;
@@ -52,19 +48,19 @@ namespace danikk_space_engine::unit_system_internal
 		}
 
 		/** @brief Returns expected weapon damage per second, or zero when no firearm is available. */
-		float estimateWeaponDamagePerSecond(World& world, PointId point_id)
+		float estimateWeaponDamagePerSecond(HumanData& human)
 		{
-			InventorySlot* weapon = findWeapon(world, point_id);
+			InventorySlot* weapon = findWeapon(human);
 			if(weapon == nullptr) return 0.0f;
 			const WeaponItemParameters& parameters = getWeaponItemParameters(weapon->item_definition_id);
 			return glm::max(0.0f, parameters.damage) * glm::max(0.0f, parameters.rounds_per_minute) / 60.0f;
 		}
 
 		/** @brief Estimates damage per second after accounting for this shooter and target size. */
-		float estimateExpectedDamagePerSecond(World& world, PointId point_id,
-			const HumanComponent& human, float target_height, double distance)
+		float estimateExpectedDamagePerSecond(HumanData& owner,
+			const HumanState& human, float target_height, double distance)
 		{
-			InventorySlot* weapon = findWeapon(world, point_id);
+			InventorySlot* weapon = findWeapon(owner);
 			if(weapon == nullptr) return 1.0f;
 			const WeaponItemParameters& parameters = getWeaponItemParameters(weapon->item_definition_id);
 			const float hit_probability = estimateHitProbability(target_height, distance,
@@ -84,25 +80,26 @@ namespace danikk_space_engine::unit_system_internal
 		}
 
 		/** @brief Scores a visible or remembered hostile using hit chance, threat, urgency, and team focus. */
-		float scoreTarget(World& world, const UnitSighting& sighting, const PointComponentSlot& own_slot,
-			const HumanComponent& human, const UnitTarget& previous_target, const glm::dvec3& own_position,
+		float scoreTarget(World& world, const UnitSighting& sighting, HumanData& own_data,
+			const HumanState& human, const UnitTarget& previous_target, const glm::dvec3& own_position,
 			const glm::dvec3& target_position, const WorldBody& body,
 			const DynamicArray<TargetAllocation>& allocations)
 		{
-			const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(sighting.target_slot_id);
-			const HumanComponent& target = *static_cast<const HumanComponent*>(target_slot.getData());
+			const HumanData* target_data = world.humans.findHuman(sighting.target_slot_id);
+			if(target_data == nullptr) return 0.0f;
+			const HumanState& target = *target_data;
 			const glm::dvec3 offset = target_position - own_position;
 			const double distance = glm::length(offset);
-			const float expected_damage = estimateExpectedDamagePerSecond(world,
-				own_slot.point_id, human, target.getHeight(), distance);
+			const float expected_damage = estimateExpectedDamagePerSecond(
+				own_data, human, target.getHeight(), distance);
 
-			const float target_threat_dps = estimateWeaponDamagePerSecond(world, target_slot.point_id);
+			const float target_threat_dps = estimateWeaponDamagePerSecond(*const_cast<HumanData*>(target_data));
 			const float threat_hit_probability = estimateHitProbability(human.getHeight(), distance,
 				target.getSpreadDegrees() + 1.5f);
 			float score = expected_damage * (1.0f + 0.75f * glm::clamp(
 				target_threat_dps * threat_hit_probability / 20.0f, 0.0f, 1.0f));
 
-			const DamageableComponent* health = findDamageable(world, target_slot.point_id);
+			const DamageableComponent* health = &target_data->damageable;
 			if(health != nullptr)
 			{
 				const float maximum_health = getDamageableDefinition(health->definition_id).max_health;
@@ -117,7 +114,7 @@ namespace danikk_space_engine::unit_system_internal
 			const uint32 attack_age = now - sighting.last_attack_timestamp_ms;
 			if(sighting.last_attack_timestamp_ms != 0 && attack_age <= 3000)
 			{
-				if(sighting.last_attacked_point_id == own_slot.point_id)
+				if(sighting.last_attacked_point_id == static_cast<PointId>(own_data.id))
 				{
 					const glm::dvec3 toward_attacker = distance > 0.001 ? offset / distance : glm::dvec3(0.0);
 					const glm::dvec3 own_forward = body.rotation * glm::dvec3(human.getForward());
@@ -160,30 +157,17 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Finds the inventory component on an NPC's point, if one is attached. */
-	InventoryComponent* findInventory(World& world, PointId point_id)
-	{
-		if(!world.point_data.isPointActive(point_id)) return nullptr;
-		for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
-		{
-			if(!world.point_data.isPointComponentSlotActive(id)) continue;
-			PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
-			if(slot.point_id == point_id && slot.type_id == PointComponentTypeId::inventory)
-				return static_cast<InventoryComponent*>(slot.getData());
-		}
-		return nullptr;
-	}
-
 	/** @brief Fills one unit's attack, movement, look, and equipment commands from faction intel. */
-	void assignOrder(World& world, UnitGroup& system, PointComponentSlot& human_slot,
-		UnitAgentState& agent, HumanComponent& human,
+	void assignOrder(World& world, UnitGroup& system, HumanData& human_data,
+		UnitAgentState& agent, HumanState& human,
 		DynamicArray<TargetAllocation>& allocations)
 	{
 		DynamicArray<UnitSighting>& known_sightings = system.known_sightings;
 		const UnitTarget previous_target{agent.order.target_slot_id,
 			agent.order.target_point_id, agent.order.target_generation_id};
 		agent.order.clear();
-		const glm::dvec3 own_position = world.getPointWorldPosition(human_slot.point_id);
-		const WorldBodyId own_body_id = human_slot.world_body_id;
+		const glm::dvec3 own_position = world.humans.getWorldPosition(human_data);
+		const WorldBodyId own_body_id = human_data.world_body_id;
 		const WorldBody& body = world.world_body_data.getWorldBody(own_body_id);
 		const UnitSighting* best = nullptr;
 		float best_score = -1.0f;
@@ -191,10 +175,10 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			if(sighting.faction_id != human.faction_id || !isRecentSighting(sighting)
 				|| !isValidSighting(world, sighting)) continue;
-			const PointComponentSlot& sighted_slot = world.point_data.getPointComponentSlot(sighting.target_slot_id);
-			if(sighted_slot.world_body_id != own_body_id) continue;
-			const glm::dvec3 target_position = world.getPointWorldPosition(sighted_slot.point_id);
-			const float score = scoreTarget(world, sighting, human_slot, human, previous_target,
+			const HumanData* sighted = world.humans.findHuman(sighting.target_slot_id);
+			if(sighted == nullptr || sighted->world_body_id != own_body_id) continue;
+			const glm::dvec3 target_position = world.humans.getWorldPosition(*sighted);
+			const float score = scoreTarget(world, sighting, human_data, human, previous_target,
 				own_position, target_position, body, allocations);
 			if(score > best_score)
 			{
@@ -208,14 +192,15 @@ namespace danikk_space_engine::unit_system_internal
 		agent.order.target_slot_id = best->target_slot_id;
 		agent.order.target_point_id = best->target_point_id;
 		agent.order.target_generation_id = best->target_generation_id;
-		const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(best->target_slot_id);
-		const glm::dvec3 target_position = world.getPointWorldPosition(target_slot.point_id);
+		HumanData* target_data = world.humans.findHuman(best->target_slot_id);
+		if(target_data == nullptr) return;
+		const glm::dvec3 target_position = world.humans.getWorldPosition(*target_data);
 		const glm::dvec3 shot_origin = own_position
 			+ body.rotation * glm::dvec3(human.up * (human.getHeight() * 0.2f));
 		const glm::dvec3 delta = target_position - shot_origin;
 		const double distance = glm::length(delta);
 		if(distance <= 0.001) return;
-			InventorySlot* weapon = findWeapon(world, human_slot.point_id);
+			InventorySlot* weapon = findWeapon(human_data);
 		if(weapon != nullptr && !weapon->is_equipped)
 		{
 			agent.order.has_equip_order = true;
@@ -253,8 +238,8 @@ namespace danikk_space_engine::unit_system_internal
 			agent.order.has_look_target = true;
 			agent.order.look_target_world = best->position;
 		}
-		const HumanComponent& target_human = *static_cast<const HumanComponent*>(target_slot.getData());
-		const float assigned_damage = estimateExpectedDamagePerSecond(world, human_slot.point_id,
+		const HumanState& target_human = *target_data;
+		const float assigned_damage = estimateExpectedDamagePerSecond(human_data,
 			human, target_human.getHeight(), distance);
 		recordAllocation(allocations, *best, assigned_damage);
 	}
@@ -266,11 +251,10 @@ namespace danikk_space_engine::unit_system_internal
 		DynamicArray<TargetAllocation> allocations;
 		for(UnitAgentState& agent : system.agents)
 		{
-			PointComponentSlot* human_slot = nullptr;
-			HumanComponent* human = nullptr;
-			if(!getActiveUnit(world, agent, human_slot, human)) continue;
+			HumanData* human = nullptr;
+			if(!getActiveUnit(world, agent, human)) continue;
 			if(human->faction_id != system.faction_id) continue;
-			assignOrder(world, system, *human_slot, agent, *human, allocations);
+			assignOrder(world, system, *human, agent, *human, allocations);
 		}
 	}
 }

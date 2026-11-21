@@ -91,19 +91,16 @@ namespace danikk_space_engine
 
 		for(const SelectedUnitRef& reference : player.selected_unit_refs)
 		{
-			if(!world.point_data.isPointComponentSlotActive(reference.slot_id)) continue;
-			const PointComponentSlot& human_slot = world.point_data.getPointComponentSlot(reference.slot_id);
-			if(human_slot.generation_id != reference.generation_id
-				|| human_slot.type_id != PointComponentTypeId::human
-				|| !world.point_data.isPointActive(human_slot.point_id)
-				|| !world.world_body_data.isWorldBodyActive(human_slot.world_body_id)) continue;
-			const HumanComponent& human = *static_cast<const HumanComponent*>(human_slot.getData());
+			const HumanData* human_data = world.humans.findHuman(reference.human_id);
+			if(human_data == nullptr || human_data->generation_id != reference.generation_id
+				|| !world.world_body_data.isWorldBodyActive(human_data->world_body_id)) continue;
+			const HumanState& human = *human_data;
 			if(human.hasDeathTimestamp()) continue;
 
 			glm::dvec3 move_target_world;
-			if(!world.unit_system.getMoveTarget(reference.slot_id, reference.generation_id, move_target_world)) continue;
+			if(!world.unit_system.getMoveTarget(reference.human_id, reference.generation_id, move_target_world)) continue;
 
-			const glm::dvec3 start_world = world.getPointWorldPosition(human_slot.point_id);
+			const glm::dvec3 start_world = world.humans.getWorldPosition(*human_data);
 			const glm::dvec3 start = start_world - camera_position;
 			const glm::dvec3 target = move_target_world - camera_position;
 			appendMovementArrow(arrow_vertices, arrow_indices, vec3(start), vec3(target), camera_up);

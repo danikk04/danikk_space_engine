@@ -17,7 +17,7 @@ namespace danikk_space_engine
 	/** @brief Identity of a selected human incarnation, protected from slot reuse. */
 	struct SelectedUnitRef
 	{
-		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1);
+		HumanId human_id = static_cast<HumanId>(-1);
 		uint64 generation_id = 0;
 	};
 
@@ -109,10 +109,8 @@ namespace danikk_space_engine
 		double dragged_body_distance = 0.0;
 		/** @brief Hit offset from a dragged body's origin. */
 		glm::dvec3 dragged_hit_offset = glm::dvec3(0.0);
-		/** @brief Point ID of the human captured by the drag action. */
-		PointId dragged_human_point_id = static_cast<PointId>(-1);
-		/** @brief Human component slot validated before each drag update. */
-		PointComponentSlotId dragged_human_slot_id = static_cast<PointComponentSlotId>(-1);
+		/** @brief HumanSystem identity of the person captured by the drag action. */
+		HumanId dragged_human_id = static_cast<HumanId>(-1);
 		/** @brief Camera-to-human distance retained while dragging. */
 		double dragged_human_distance = 0.0;
 		/** @brief Saved follow-ground setting restored after the human drag ends. */

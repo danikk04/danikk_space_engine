@@ -91,28 +91,25 @@ namespace danikk_space_engine
 		constexpr float panel_padding_x = 0.05f;
 		constexpr float panel_height = 0.18f;
 
-		for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
+		for(const HumanData& data : world.humans.getHumans())
 		{
-			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(slot.type_id != PointComponentTypeId::human || !world.point_data.isPointActive(slot.point_id)
-				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
-			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
+			if(!world.world_body_data.isWorldBodyActive(data.world_body_id)) continue;
+			const HumanState& human = data;
 			if(human.hasDeathTimestamp() || human.faction_id >= world.factions.size()
 				|| world.factions.getRelation(base_faction_ids::player, human.faction_id).type
 					!= FactionRelationType::allied) continue;
 
 			UnitGlobalState global_state;
 			UnitSubstate substate;
-			if(!world.unit_system.getState(slot_id, slot.generation_id, global_state, substate)) continue;
+			if(!world.unit_system.getState(data.id, data.generation_id, global_state, substate)) continue;
 			const char* label = getStateText(global_state, substate);
 			const size_t character_count = getTextLength(label);
 			const float text_width = character_count * glyph_size.x
 				+ (character_count - 1) * glyph_spacing;
 			const float panel_width = text_width + panel_padding_x * 2.0f;
 
-			const glm::dvec3 human_position = world.getPointWorldPosition(slot.point_id);
-			const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
+			const glm::dvec3 human_position = world.humans.getWorldPosition(data);
+			const WorldBody& body = world.world_body_data.getWorldBody(data.world_body_id);
 			vec3 human_up = vec3(body.rotation * glm::dvec3(human.up));
 			if(glm::length(human_up) <= 1e-6f) human_up = vec3(0.0f, 0.0f, 1.0f);
 			human_up = glm::normalize(human_up);

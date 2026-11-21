@@ -36,20 +36,21 @@ namespace danikk_space_engine::unit_system_internal
 
 		for(UnitAgentState& agent : system.agents)
 		{
-			PointComponentSlot* human_slot = nullptr;
-			HumanComponent* human = nullptr;
-			if(!getActiveUnit(world, agent, human_slot, human)) continue;
+			HumanData* human = nullptr;
+			if(!getActiveUnit(world, agent, human)) continue;
 			if(human->faction_id != system.faction_id) continue;
 			const UnitTarget previous_target{agent.order.target_slot_id,
 				agent.order.target_point_id, agent.order.target_generation_id};
 			if(agent.order.has_attack_target) markVisibilityChecked(system, previous_target);
 			if(agent.order.has_attack_target && isValidEnemy(world, previous_target, human->faction_id))
 			{
-				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->point_id);
-				const WorldBody& body = world.world_body_data.getWorldBody(human_slot->world_body_id);
+				const glm::dvec3 origin = world.humans.getWorldPosition(*human);
+				const WorldBody& body = world.world_body_data.getWorldBody(human->world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
-				const glm::dvec3 target_position = world.getPointWorldPosition(previous_target.point_id);
+				const HumanData* target_human = world.humans.findHuman(previous_target.slot_id);
+				if(target_human == nullptr) continue;
+				const glm::dvec3 target_position = world.humans.getWorldPosition(*target_human);
 				const glm::dvec3 delta = target_position - shot_origin;
 				const double distance = glm::length(delta);
 				if(distance > 0.001)
@@ -63,17 +64,19 @@ namespace danikk_space_engine::unit_system_internal
 			{
 				agent.order.has_attack_target = false;
 				if(agent.candidate_index >= agent.enemy_candidates.size())
-					collectEnemyTargets(world, human_slot->world_body_id,
+					collectEnemyTargets(world, human->world_body_id,
 						human->faction_id, spatial_index, agent);
 				if(agent.candidate_index >= agent.enemy_candidates.size()) continue;
 				const UnitTarget candidate = agent.enemy_candidates[agent.candidate_index++];
 				if(!isValidEnemy(world, candidate, human->faction_id)) continue;
 				markVisibilityChecked(system, candidate);
-				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->point_id);
-				const WorldBody& body = world.world_body_data.getWorldBody(human_slot->world_body_id);
+				const glm::dvec3 origin = world.humans.getWorldPosition(*human);
+				const WorldBody& body = world.world_body_data.getWorldBody(human->world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
-				const glm::dvec3 target_position = world.getPointWorldPosition(candidate.point_id);
+				const HumanData* target_human = world.humans.findHuman(candidate.slot_id);
+				if(target_human == nullptr) continue;
+				const glm::dvec3 target_position = world.humans.getWorldPosition(*target_human);
 				const glm::dvec3 delta = target_position - shot_origin;
 				const double distance = glm::length(delta);
 				if(distance <= 0.001) continue;

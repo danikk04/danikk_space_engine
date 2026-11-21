@@ -41,13 +41,16 @@ namespace danikk_space_engine
 	 */
 	class PhysicsSystem;
 
+	/** @brief Owns people, their local positions, inventory, health, and lifecycle. */
+	class HumanSystem;
+
 	/** @brief Owns active camera state, movement, and projection. */
 	class CameraSystem;
 
 	/**
 	 * @brief Stores a human character’s state, orientation, pose, and appearance.
 	 */
-	struct HumanComponent;
+	struct HumanState;
 
 	/**
 	 * @brief Holds worker-generated mesh data before main-thread resource creation.

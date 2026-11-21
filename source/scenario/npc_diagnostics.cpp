@@ -24,7 +24,7 @@ namespace danikk_space_engine
 		/** @brief Tracks a diagnostic NPC and its center at the start of each phase. */
 		struct DiagnosticNpc
 		{
-			PointComponentSlotId slot_id;
+			HumanId human_id;
 			glm::dvec3 start_position;
 		};
 
@@ -37,33 +37,25 @@ namespace danikk_space_engine
 		};
 
 		/** @brief Reads the point center in planet coordinates without adding telemetry scopes. */
-		glm::dvec3 getNpcPosition(const World& world, const PointComponentSlot& slot)
+		glm::dvec3 getNpcPosition(const World& world, const HumanData& human)
 		{
-			return world.getPointWorldPosition(slot.point_id);
+			return world.humans.getWorldPosition(human);
 		}
 
 		/**
 		 * @brief Attaches a human and health component, then registers a disabled central agent.
 		 * Movement comes from the scenario so faction combat and input cannot change the test.
 		 */
-		PointComponentSlotId spawnDiagnosticNpc(World& world, WorldBodyId body_id, FactionId faction_id,
+		HumanId spawnDiagnosticNpc(World& world, WorldBodyId body_id, FactionId faction_id,
 			const glm::dvec3& feet)
 		{
-			PointData& data = world.point_data;
-			const PointId point_id = data.createPoint();
-			HumanComponent human;
+			HumanState human;
 			human.faction_id = faction_id;
 			human.up = vec3(glm::normalize(feet));
 			const glm::dvec3 center = feet + glm::dvec3(human.up) * (human.getHeight() * 0.5);
-			data.getPoint(point_id).body_local_position = center;
-
-			const PointComponentSlotId human_id = data.createPointComponentSlot(point_id, PointComponentTypeId::human, &human);
-			world.attachPointComponentToBody(body_id, point_id, human_id, center);
-			const PointComponentSlotId health_id = data.createPointComponentSlot(point_id, PointComponentTypeId::damageable);
-			world.attachPointComponentToBody(body_id, point_id, health_id, center);
-
-			world.unit_system.registerAgent(human_id, false);
-			return human_id;
+			HumanData& data = world.humans.createHuman(body_id, center, human);
+			world.unit_system.registerAgent(data.id, false);
+			return data.id;
 		}
 
 		/**
@@ -86,7 +78,7 @@ namespace danikk_space_engine
 				const double z = hill_center.z + std::sqrt(hill_radius * hill_radius - x * x - y * y);
 				const glm::dvec3 feet(x, y, z + 0.03);
 				const FactionId faction = i % 2 == 0 ? base_faction_ids::player : base_faction_ids::pirates;
-				npcs[i].slot_id = spawnDiagnosticNpc(world, body_id, faction, feet);
+				npcs[i].human_id = spawnDiagnosticNpc(world, body_id, faction, feet);
 			}
 		}
 
@@ -100,16 +92,15 @@ namespace danikk_space_engine
 		{
 			formatLogInfo("NPC diagnostics phase=% ticks=%", name, ticks);
 			for(DiagnosticNpc& npc : npcs)
-				if(world.point_data.isPointComponentSlotActive(npc.slot_id))
-				npc.start_position = getNpcPosition(world, world.point_data.getPointComponentSlot(npc.slot_id));
+				if(const HumanData* human = world.humans.findHuman(npc.human_id))
+					npc.start_position = getNpcPosition(world, *human);
 
 			for(uint32 tick = 0; tick < ticks; ++tick)
 			{
 				for(const DiagnosticNpc& npc : npcs)
 				{
-					if(!world.point_data.isPointComponentSlotActive(npc.slot_id)) continue;
-					PointComponentSlot& slot = world.point_data.getPointComponentSlot(npc.slot_id);
-					static_cast<HumanComponent*>(slot.getData())->desired_velocity = velocity;
+					if(HumanData* human = world.humans.findHuman(npc.human_id))
+						human->desired_velocity = velocity;
 				}
 				telemetry_system.beginTick();
 				world.tick();
@@ -119,12 +110,11 @@ namespace danikk_space_engine
 			PhaseResult result;
 			for(const DiagnosticNpc& npc : npcs)
 			{
-				if(!world.point_data.isPointComponentSlotActive(npc.slot_id)) continue;
-				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(npc.slot_id);
-				const auto& human = *static_cast<const HumanComponent*>(slot.getData());
+				const HumanData* human = world.humans.findHuman(npc.human_id);
+				if(human == nullptr) continue;
 				++result.active;
-				if(human.grounded) ++result.grounded;
-				if(glm::length(getNpcPosition(world, slot) - npc.start_position) > 0.001) ++result.moved;
+				if(human->grounded) ++result.grounded;
+				if(glm::length(getNpcPosition(world, *human) - npc.start_position) > 0.001) ++result.moved;
 			}
 			formatLogInfo("NPC diagnostics result phase=% active=% grounded=% moved=%",
 				name, result.active, result.grounded, result.moved);
@@ -154,21 +144,18 @@ namespace danikk_space_engine
 
 		bool lost_support = false;
 		double drop = 0.0;
-		if(scene.point_data.isPointComponentSlotActive(npcs[0].slot_id))
+		if(HumanData* before = scene.humans.findHuman(npcs[0].human_id))
 		{
-			const auto& before = scene.point_data.getPointComponentSlot(npcs[0].slot_id);
-			const glm::dvec3 center = getNpcPosition(scene, before);
+			const glm::dvec3 center = getNpcPosition(scene, *before);
 			planet.terrain_edits.append(
 				PlanetTerrainEdit{center, 2.0, default_materials::void_material});
 			++planet.terrain_revision;
 			measureNpcPhase(scene, npcs, "excavation", 1, vec3(0.0f));
 
-			if(scene.point_data.isPointComponentSlotActive(npcs[0].slot_id))
+			if(const HumanData* after = scene.humans.findHuman(npcs[0].human_id))
 			{
-				const auto& after = scene.point_data.getPointComponentSlot(npcs[0].slot_id);
-				const auto& human = *static_cast<const HumanComponent*>(after.getData());
-				drop = glm::dot(center - getNpcPosition(scene, after), glm::dvec3(human.up));
-				lost_support = !human.grounded && drop > 0.0001;
+				drop = glm::dot(center - getNpcPosition(scene, *after), glm::dvec3(after->up));
+				lost_support = !after->grounded && drop > 0.0001;
 			}
 		}
 		const bool passed = warmup.grounded == npc_count
@@ -177,6 +164,7 @@ namespace danikk_space_engine
 		formatLogInfo("NPC diagnostics excavation lost_support=% drop_m=%", lost_support, drop);
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
 		scene.destroyWorldBody(body_id);
+		scene.humans.shutdown();
 		scene.point_data.release();
 		scene.world_body_data.release();
 		scene.factions.release();

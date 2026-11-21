@@ -14,44 +14,17 @@ namespace danikk_space_engine
 		return definitions[id];
 	}
 
-	DamageableComponent* findDamageable(World& world, PointId point_id)
-	{
-		if(!world.point_data.isPointActive(point_id)) return nullptr;
-		for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
-		{
-			if(!world.point_data.isPointComponentSlotActive(id)) continue;
-			PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
-			if(slot.point_id == point_id && slot.type_id == PointComponentTypeId::damageable)
-				return static_cast<DamageableComponent*>(slot.getData());
-		}
-		return nullptr;
-	}
-
-	const DamageableComponent* findDamageable(const World& world, PointId point_id)
-	{
-		if(!world.point_data.isPointActive(point_id)) return nullptr;
-		for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
-		{
-			if(!world.point_data.isPointComponentSlotActive(id)) continue;
-			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
-			if(slot.type_id == PointComponentTypeId::damageable)
-				return static_cast<const DamageableComponent*>(slot.getData());
-		}
-		return nullptr;
-	}
-
-	void DamageableComponent::setHealth(float value, PointId point_id)
+	void DamageableComponent::setHealth(float value)
 	{
 		const float next = glm::max(0.0f, value);
 		if(next == health) return;
-		(void)point_id;
 		health = next;
 	}
 
-	void applyBallisticDamage(DamageableComponent& damageable, float damage, PointId point_id)
+	void applyBallisticDamage(DamageableComponent& damageable, float damage)
 	{
 		const float resistance = glm::clamp(getDamageableDefinition(damageable.definition_id).ballistic_resistance, 0.0f, 1.0f);
-		damageable.setHealth(damageable.getHealth() - glm::max(0.0f, damage) * (1.0f - resistance), point_id);
+		damageable.setHealth(damageable.getHealth() - glm::max(0.0f, damage) * (1.0f - resistance));
 	}
 
 	void constructDamageableComponent(void* destination, const void* init_data)

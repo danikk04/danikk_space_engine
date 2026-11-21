@@ -15,6 +15,7 @@
 #include <danikk_space_engine/systems/save/system.h>
 #include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/systems/unit/unit.h>
+#include <danikk_space_engine/systems/human/system.h>
 
 namespace danikk_space_engine
 {
@@ -57,6 +58,8 @@ namespace danikk_space_engine
 		FactionSystem factions;
 		/** @brief Owns per-faction unit groups, tactical memory, and orders. */
 		UnitSystem unit_system;
+		/** @brief Owns human entities, their positions, health, and inventory. */
+		HumanSystem humans;
 
 		/** @brief Constructs subsystems bound to this World instance. */
 		World();

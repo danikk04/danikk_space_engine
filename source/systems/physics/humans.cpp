@@ -19,9 +19,9 @@ namespace danikk_space_engine
 		 */
 		struct HumanCollider
 		{
-			PointId point_id;
+			HumanId human_id;
 			WorldBodyId body_id;
-			HumanComponent* component;
+			HumanData* component;
 			glm::dvec3 center;
 			glm::dvec3 up;
 			double height;
@@ -34,36 +34,32 @@ namespace danikk_space_engine
 		/** @brief Conservative world-space bounds used to prune collisions across bodies. */
 		struct HumanColliderBounds
 		{
-			PointComponentSlotId slot_id;
+			HumanId slot_id;
 			WorldBodyId body_id;
 			glm::dvec3 minimum;
 			glm::dvec3 maximum;
 		};
 
 		/** @brief Builds one collider on the stack from an active human component slot. */
-		bool getHumanCollider(World& world, PointComponentSlotId slot_id, HumanCollider& result)
+		bool getHumanCollider(World& world, HumanId human_id, HumanCollider& result)
 		{
-			if(!world.point_data.isPointComponentSlotActive(slot_id)) return false;
-			PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(slot.type_id != PointComponentTypeId::human
-				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)
-				|| !world.point_data.isPointActive(slot.point_id)) return false;
-			HumanComponent& component = *static_cast<HumanComponent*>(slot.getData());
+			HumanData* data = world.humans.findHuman(human_id);
+			if(data == nullptr || !world.world_body_data.isWorldBodyActive(data->world_body_id)) return false;
+			HumanState& component = *data;
 			if(component.hasDeathTimestamp()) return false;
-			const DamageableComponent* health = findDamageable(world, slot.point_id);
-			if(health != nullptr && health->getHealth() <= 0.0f) return false;
+			if(data->damageable.getHealth() <= 0.0f) return false;
 			const double height = component.getHeight();
 			if(height <= 0.0) return false;
 
-			const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(data->world_body_id);
 			const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(glm::normalize(component.up)));
 			const double radius = height * 0.14;
-			const glm::dvec3 center = world.getPointWorldPosition(slot.point_id);
+			const glm::dvec3 center = world.humans.getWorldPosition(*data);
 			const double half_axis = height * 0.5 - radius;
 			result = HumanCollider{
-				slot.point_id,
-				slot.world_body_id,
-				&component,
+				data->id,
+				data->world_body_id,
+				data,
 				center,
 				up,
 				height,
@@ -145,10 +141,9 @@ namespace danikk_space_engine
 		 */
 		bool moveHuman(World& world, HumanCollider& human, const glm::dvec3& world_delta)
 		{
-			Point& point = world.point_data.getPoint(human.point_id);
 			const glm::dvec3 local_delta = glm::conjugate(human.world_to_body_rotation) * world_delta;
 			if(glm::dot(local_delta, local_delta) <= 1e-20) return false;
-			world.setPointBodyLocalPosition(human.point_id, point.body_local_position + local_delta);
+			human.component->body_local_position += local_delta;
 			const glm::dvec3 applied_delta = glm::conjugate(human.world_to_body_rotation) * local_delta;
 			human.component->displaced_by_human_collision = true;
 			human.center += applied_delta;
@@ -241,10 +236,10 @@ namespace danikk_space_engine
 
 		/** @brief Resolves cross-body capsule pairs using a sweep over conservative bounds. */
 		bool resolveCrossBodyHumanPairs(World& world,
-			const DynamicArray<PointComponentSlotId>& human_slot_ids)
+			const DynamicArray<HumanId>& human_slot_ids)
 		{
 			DynamicArray<HumanColliderBounds> bounds;
-			for(PointComponentSlotId slot_id : human_slot_ids)
+			for(HumanId slot_id : human_slot_ids)
 			{
 				HumanCollider collider;
 				if(!getHumanCollider(world, slot_id, collider)) continue;
@@ -288,41 +283,39 @@ namespace danikk_space_engine
 	void PhysicsSystem::resolveHumanCollisions()
 	{
 		DSE_WATCH();
-		DynamicArray<PointComponentSlotId> human_slot_ids;
+		DynamicArray<HumanId> human_slot_ids;
 		DynamicArray<WorldBodyId> human_body_ids;
 		bool has_multiple_bodies = false;
 		WorldBodyId first_human_body_id = static_cast<WorldBodyId>(-1);
-		world.unit_system.collectHumanSlots(human_slot_ids, human_body_ids);
+		world.unit_system.collectHumanIds(human_slot_ids, human_body_ids);
 		for(size_t index = 0; index < human_slot_ids.size(); ++index)
 		{
-			const PointComponentSlotId slot_id = human_slot_ids[index];
-			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-			PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(!world.point_data.isPointActive(slot.point_id)
-				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
+			const HumanId slot_id = human_slot_ids[index];
+			HumanData* data = world.humans.findHuman(slot_id);
+			if(data == nullptr || !world.world_body_data.isWorldBodyActive(data->world_body_id)) continue;
 			if(first_human_body_id == static_cast<WorldBodyId>(-1))
 				first_human_body_id = human_body_ids[index];
 			else has_multiple_bodies |= human_body_ids[index] != first_human_body_id;
-			auto& human = *static_cast<HumanComponent*>(slot.getData());
+			auto& human = *data;
 			human.displaced_by_human_collision = false;
 		}
 
 		constexpr double broadphase_half_extent = 8.0;
-		DynamicArray<PointComponentSlotId> nearby_slot_ids;
+		DynamicArray<HumanId> nearby_slot_ids;
 		for(uint8 iteration = 0; iteration < 4; ++iteration)
 		{
 			bool corrected = false;
 			for(size_t first_index = 0; first_index < human_slot_ids.size(); ++first_index)
 			{
-				const PointComponentSlotId first_slot_id = human_slot_ids[first_index];
+				const HumanId first_slot_id = human_slot_ids[first_index];
 				HumanCollider first;
 				if(!getHumanCollider(world, first_slot_id, first)) continue;
 				const WorldBody& first_body = world.world_body_data.getWorldBody(first.body_id);
 				const glm::dvec3 first_local_center = glm::conjugate(first_body.rotation)
 					* (first.center - first_body.position);
-				world.unit_system.collectNearbyHumanSlots(first.body_id, first_local_center,
+				world.unit_system.collectNearbyHumanIds(first.body_id, first_local_center,
 					broadphase_half_extent, nearby_slot_ids);
-				for(PointComponentSlotId second_slot_id : nearby_slot_ids)
+			for(HumanId second_slot_id : nearby_slot_ids)
 				{
 					if(second_slot_id <= first_slot_id) continue;
 					HumanCollider first_current;
@@ -339,14 +332,13 @@ namespace danikk_space_engine
 			if(!corrected) break;
 		}
 
-		for(PointComponentSlotId slot_id : human_slot_ids)
+		for(HumanId slot_id : human_slot_ids)
 		{
-			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-			auto& human = *static_cast<HumanComponent*>(world.point_data.getPointComponentSlot(slot_id).getData());
-			if(!human.displaced_by_human_collision) continue;
+			HumanData* human = world.humans.findHuman(slot_id);
+			if(human == nullptr || !human->displaced_by_human_collision) continue;
 			HumanCollider collider;
 			if(getHumanCollider(world, slot_id, collider)) restoreHumanGroundClearance(world, collider);
-			human.displaced_by_human_collision = false;
+			human->displaced_by_human_collision = false;
 		}
 	}
 }

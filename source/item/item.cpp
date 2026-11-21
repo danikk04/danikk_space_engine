@@ -21,28 +21,28 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Dispatches stack use to its category callback when available. */
-	bool useItem(World& world, PointId owner_point_id, InventorySlot& slot)
+	bool useItem(World& world, HumanId owner_human_id, InventorySlot& slot)
 	{
 		if(slot.isEmpty() || slot.count == 0) return false;
 		const ItemDefinition& definition = getItemDefinition(slot.item_definition_id);
 		const ItemCategoryDefinition& category = getItemCategoryDefinition(definition.category_id);
-		return category.use != nullptr && category.use(world, owner_point_id, slot, definition);
+		return category.use != nullptr && category.use(world, owner_human_id, slot, definition);
 	}
 
 	/** @brief Dispatches item equip to the category callback. */
-	bool equipItem(World& world, PointId owner_point_id, ItemDefinitionId id)
+	bool equipItem(World& world, HumanId owner_human_id, ItemDefinitionId id)
 	{
 		const ItemDefinition& definition = getItemDefinition(id);
 		const ItemCategoryDefinition& category = getItemCategoryDefinition(definition.category_id);
-		return category.equip != nullptr && category.equip(world, owner_point_id, definition);
+		return category.equip != nullptr && category.equip(world, owner_human_id, definition);
 	}
 
 	/** @brief Dispatches item unequip to the category callback. */
-	bool unequipItem(World& world, PointId owner_point_id, ItemDefinitionId id)
+	bool unequipItem(World& world, HumanId owner_human_id, ItemDefinitionId id)
 	{
 		const ItemDefinition& definition = getItemDefinition(id);
 		const ItemCategoryDefinition& category = getItemCategoryDefinition(definition.category_id);
-		return category.unequip != nullptr && category.unequip(world, owner_point_id, definition);
+		return category.unequip != nullptr && category.unequip(world, owner_human_id, definition);
 	}
 
 	/** @brief Dispatches rendering to the category's draw callback. */

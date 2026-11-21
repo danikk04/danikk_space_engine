@@ -1,10 +1,7 @@
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/component/point/machinegun.h>
 #include <danikk_space_engine/component/point/bullet.h>
-#include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/component/point/build_part.h>
-#include <danikk_space_engine/component/point/damageable.h>
-#include <danikk_space_engine/component/point/human/human.h>
 
 namespace danikk_space_engine
 {
@@ -34,26 +31,14 @@ namespace danikk_space_engine
 				frameBulletComponent
 			},
 			{}, // reserved engine type; no component implementation is registered yet
-			{
-				sizeof(HumanComponent), alignof(HumanComponent), true,
-				constructHumanComponent, moveHumanComponent, destroyHumanComponent,
-				tickHumanComponent, frameHumanComponent
-			},
-			{
-				sizeof(InventoryComponent), alignof(InventoryComponent), false,
-				constructInventoryComponent, moveInventoryComponent, destroyInventoryComponent,
-				tickInventoryComponent, nullptr
-			},
+			{}, // Reserved legacy type; people live in HumanSystem.
+			{}, // Reserved legacy type; inventories live with their owning entities.
 			{
 				sizeof(BuildPartComponent), alignof(BuildPartComponent), true,
 				constructBuildPartComponent, moveBuildPartComponent, destroyBuildPartComponent,
 				nullptr, frameBuildPartComponent
 			},
-			{
-				sizeof(DamageableComponent), alignof(DamageableComponent), true,
-				constructDamageableComponent, moveDamageableComponent, destroyDamageableComponent,
-				nullptr, nullptr
-			}
+			{} // Reserved legacy type; health is stored with its owning system record.
 		};
 		static_assert(sizeof(point_component_types) / sizeof(point_component_types[0])
 			== static_cast<size_t>(PointComponentTypeId::count));

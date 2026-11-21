@@ -9,10 +9,10 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Rebuilds the body-local sparse octree used for nearby-human queries. */
 	void rebuildUnitSpatialIndex(World&, UnitSpatialIndex&);
 	/** @brief Collects indexed human slots in a body-local box. */
-	void collectNearbyHumanSlots(World&, const UnitSpatialIndex&, WorldBodyId,
-		const glm::dvec3&, double, DynamicArray<PointComponentSlotId>&);
+	void collectNearbyHumanIds(World&, const UnitSpatialIndex&, WorldBodyId,
+		const glm::dvec3&, double, DynamicArray<HumanId>&);
 	/** @brief Copies the current octree's human slot and owning-body pairs. */
-	void collectHumanSlots(const UnitSpatialIndex&, DynamicArray<PointComponentSlotId>&,
+	void collectHumanIds(const UnitSpatialIndex&, DynamicArray<HumanId>&,
 		DynamicArray<WorldBodyId>&);
 	/** @brief Rebuilds a unit's hostile-human candidate list from nearby octree leaves. */
 	void collectEnemyTargets(World&, WorldBodyId, FactionId,

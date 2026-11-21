@@ -22,21 +22,20 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Checks nearby indexed humans and defers destruction of visible eligible corpses. */
 	void inspectNearbyCorpses(World& world, const UnitGroup& system,
 		const glm::dvec3& search_position, const glm::dvec3& eye_position,
-		double search_radius_squared, WorldBodyId body_id)
+		double search_radius_squared, WorldBodyId body_id, DynamicArray<HumanId>& pending_destruction)
 	{
 		if(!world.world_body_data.isWorldBodyActive(body_id)) return;
 		const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 		const glm::dvec3 local_search_position = glm::conjugate(body.rotation)
 			* (search_position - body.position);
-		DynamicArray<PointComponentSlotId> nearby_humans;
-		world.unit_system.collectNearbyHumanSlots(body_id, local_search_position,
+		DynamicArray<HumanId> nearby_humans;
+		world.unit_system.collectNearbyHumanIds(body_id, local_search_position,
 			std::sqrt(search_radius_squared), nearby_humans);
-		for(PointComponentSlotId id : nearby_humans)
+		for(HumanId id : nearby_humans)
 		{
-			if(!world.point_data.isPointComponentSlotActive(id)) continue;
-			const PointComponentSlot& corpse_slot = world.point_data.getPointComponentSlot(id);
-			if(!world.point_data.isPointActive(corpse_slot.point_id)) continue;
-			const HumanComponent& corpse = *static_cast<const HumanComponent*>(corpse_slot.getData());
+			const HumanData* corpse_data = world.humans.findHuman(id);
+			if(corpse_data == nullptr) continue;
+			const HumanState& corpse = *corpse_data;
 			if(!corpse.hasDeathTimestamp()) continue;
 			if(corpse.faction_id >= world.factions.size()
 				|| system.faction_id >= world.factions.size()) continue;
@@ -44,11 +43,10 @@ namespace danikk_space_engine::unit_system_internal
 			const bool is_hostile = world.factions.getRelation(
 				system.faction_id, corpse.faction_id).type == FactionRelationType::hostile;
 			if(!is_ally && !is_hostile) continue;
-			const glm::dvec3 corpse_position = world.getPointWorldPosition(corpse_slot.point_id);
+			const glm::dvec3 corpse_position = world.humans.getWorldPosition(*corpse_data);
 			const glm::dvec3 search_offset = corpse_position - search_position;
 			if(glm::dot(search_offset, search_offset) > search_radius_squared) continue;
-			const DamageableComponent* health = findDamageable(world, corpse_slot.point_id);
-			if(health == nullptr || health->getHealth() > 0.0f) continue;
+			if(corpse_data->damageable.getHealth() > 0.0f) continue;
 			const glm::dvec3 ray = corpse_position - eye_position;
 			const double ray_length = glm::length(ray);
 			if(ray_length > 0.001)
@@ -56,22 +54,23 @@ namespace danikk_space_engine::unit_system_internal
 				const RaycastHit hit = world.raycasts.cast(eye_position, vec3(ray), static_cast<float>(ray_length));
 				if(hit.hit && hit.distance < ray_length - 0.1) continue;
 			}
-			world.components.deferPointDestruction(corpse_slot.point_id);
+			pending_destruction.push(corpse_data->id);
 		}
 	}
 
 	/** @brief Deletes visible allied or hostile corpses close to an inspected search location. */
 	void removeCorpsesAtSearchLocation(World& world, const UnitGroup& system,
-		const PointComponentSlot& inspector_slot, const HumanComponent& inspector,
-		const UnitSearchLocation& location, const glm::dvec3& search_position)
+		const HumanData& inspector, const HumanState& inspector_component,
+		const UnitSearchLocation& location, const glm::dvec3& search_position,
+		DynamicArray<HumanId>& pending_destruction)
 	{
 		DSE_WATCH();
-		const glm::dvec3 eye_position = world.getPointWorldPosition(inspector_slot.point_id)
-			+ glm::dvec3(inspector.up * (inspector.getHeight() * 0.25f));
+		const glm::dvec3 eye_position = world.humans.getWorldPosition(inspector)
+			+ glm::dvec3(inspector_component.up * (inspector_component.getHeight() * 0.25f));
 		constexpr double search_radius = 2.5;
 		constexpr double search_radius_squared = search_radius * search_radius;
 		inspectNearbyCorpses(world, system, search_position, eye_position,
-			search_radius_squared, location.body_id);
+			search_radius_squared, location.body_id, pending_destruction);
 	}
 
 	/** @brief Assigns agents to the selected category of persistent search locations. */
@@ -91,23 +90,23 @@ namespace danikk_space_engine::unit_system_internal
 		if(system.search_locations.size() == 0) return;
 
 		DynamicArray<UnitSearchCandidate>& candidates = system.search_candidates;
+		DynamicArray<HumanId> pending_human_destruction;
 		candidates.clear();
 		candidates.reserve(system.agents.size());
 		for(UnitAgentState& agent : system.agents)
 		{
-			PointComponentSlot* slot = nullptr;
-			HumanComponent* human = nullptr;
-			if(!getActiveUnit(world, agent, slot, human) || human->faction_id != system.faction_id) continue;
-			const WorldBodyId body_id = slot->world_body_id;
-			const glm::dvec3 position = world.getPointWorldPosition(slot->point_id);
-			candidates.push(UnitSearchCandidate{agent.human_slot_id, slot, &agent, human, body_id, position, false});
+			HumanData* human = nullptr;
+			if(!getActiveUnit(world, agent, human) || human->faction_id != system.faction_id) continue;
+			const WorldBodyId body_id = human->world_body_id;
+			const glm::dvec3 position = world.humans.getWorldPosition(*human);
+			candidates.push(UnitSearchCandidate{agent.human_slot_id, human, &agent, human, body_id, position, false});
 		}
 
 		// Reserve agents already assigned to valid locations before assigning the remaining units.
 		for(const UnitSearchLocation& location : system.search_locations)
 		{
 			if(location.is_corpse != corpse_recovery) continue;
-			if(location.assigned_unit_slot_id == static_cast<PointComponentSlotId>(-1)) continue;
+			if(location.assigned_unit_slot_id == static_cast<HumanId>(-1)) continue;
 			for(UnitSearchCandidate& candidate : candidates)
 			{
 				if(candidate.slot_id != location.assigned_unit_slot_id
@@ -129,7 +128,7 @@ namespace danikk_space_engine::unit_system_internal
 			UnitSearchLocation& location = system.search_locations[index];
 			if(location.is_corpse != corpse_recovery) { ++index; continue; }
 			UnitSearchCandidate* assigned_unit = nullptr;
-			if(location.assigned_unit_slot_id != static_cast<PointComponentSlotId>(-1))
+			if(location.assigned_unit_slot_id != static_cast<HumanId>(-1))
 			{
 				for(UnitSearchCandidate& candidate : candidates)
 					if(candidate.slot_id == location.assigned_unit_slot_id)
@@ -140,7 +139,7 @@ namespace danikk_space_engine::unit_system_internal
 				if(assigned_unit == nullptr || assigned_unit->body_id != location.body_id)
 				{
 					if(assigned_unit != nullptr) assigned_unit->assigned_to_search = false;
-					location.assigned_unit_slot_id = static_cast<PointComponentSlotId>(-1);
+					location.assigned_unit_slot_id = static_cast<HumanId>(-1);
 				}
 				else if(world.world_body_data.isWorldBodyActive(location.body_id))
 				{
@@ -154,8 +153,8 @@ namespace danikk_space_engine::unit_system_internal
 					if(reached_location)
 					{
 						if(corpse_recovery)
-							removeCorpsesAtSearchLocation(world, system, *assigned_unit->slot,
-								*assigned_unit->human, location, target_position);
+						removeCorpsesAtSearchLocation(world, system, *assigned_unit->data,
+								*assigned_unit->human, location, target_position, pending_human_destruction);
 						assigned_unit->assigned_to_search = false;
 						eraseCurrentLocation(index);
 						continue;
@@ -169,7 +168,7 @@ namespace danikk_space_engine::unit_system_internal
 				}
 			}
 
-			if(location.assigned_unit_slot_id == static_cast<PointComponentSlotId>(-1))
+			if(location.assigned_unit_slot_id == static_cast<HumanId>(-1))
 			{
 				const glm::dvec3 target_position = getSearchWorldPosition(world, location);
 				UnitSearchCandidate* nearest_candidate = nullptr;
@@ -198,8 +197,8 @@ namespace danikk_space_engine::unit_system_internal
 				if(reached_location)
 				{
 					if(corpse_recovery)
-						removeCorpsesAtSearchLocation(world, system, *nearest_candidate->slot,
-							*nearest_candidate->human, location, target_position);
+						removeCorpsesAtSearchLocation(world, system, *nearest_candidate->data,
+							*nearest_candidate->human, location, target_position, pending_human_destruction);
 					nearest_candidate->assigned_to_search = false;
 					eraseCurrentLocation(index);
 					continue;
@@ -212,5 +211,6 @@ namespace danikk_space_engine::unit_system_internal
 			++index;
 		}
 		candidates.clear();
+		for(HumanId id : pending_human_destruction) world.humans.destroyHuman(id);
 	}
 }

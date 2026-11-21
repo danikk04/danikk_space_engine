@@ -134,17 +134,16 @@ namespace danikk_space_engine::human_internal
 		 * @param body_id Owning body used for local/world coordinate conversion.
 		 * @param body Owning world body and transform.
 		 * @param human Character dimensions and grounded/fall state.
-		 * @param point Mutable point position representing the character center.
+		 * @param position Mutable body-local position representing the character center.
 		 * @param velocity Tangential movement command for this tick.
 		 * @param gravity Gravity magnitude in units per second squared.
 		 * @param dt Simulation step duration in seconds.
 		 */
 		void moveWithGround(World& world, WorldBodyId body_id, const WorldBody& body,
-			HumanComponent& human, Point& point, const vec3& velocity, float gravity, float dt)
+			HumanState& human, glm::dvec3& position, const vec3& velocity, float gravity, float dt)
 		{
 			DSE_WATCH();
 			const glm::dvec3 step = glm::dvec3(velocity) * static_cast<double>(dt);
-			auto& position = point.body_local_position;
 			auto& cache = human.ground_support;
 			if(!human.follow_ground)
 			{

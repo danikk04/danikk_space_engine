@@ -15,8 +15,8 @@ namespace danikk_space_engine
 		inline constexpr ItemCategoryId count = 2;
 	}
 
-	using ItemUseFunction = bool (*)(World&, PointId, InventorySlot&, const ItemDefinition&);
-	using ItemEquipFunction = bool (*)(World&, PointId, const ItemDefinition&);
+	using ItemUseFunction = bool (*)(World&, HumanId, InventorySlot&, const ItemDefinition&);
+	using ItemEquipFunction = bool (*)(World&, HumanId, const ItemDefinition&);
 	using ItemDrawFunction = void (*)(ItemDefinition&, const mat4&);
 
 	/** @brief Shared behavior callbacks for one category of concrete items. */

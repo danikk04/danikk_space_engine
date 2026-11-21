@@ -71,17 +71,13 @@ namespace danikk_engine_game
 		uint32 health_sample_count = 0;
 		for(const SelectedUnitRef& reference : controller.selected_unit_refs)
 		{
-			if(!world.point_data.isPointComponentSlotActive(reference.slot_id)) continue;
-			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(reference.slot_id);
-			if(slot.generation_id != reference.generation_id
-				|| slot.type_id != PointComponentTypeId::human
-				|| !world.point_data.isPointActive(slot.point_id)
-				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
-			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
+			const HumanData* human_data = world.humans.findHuman(reference.human_id);
+			if(human_data == nullptr || human_data->generation_id != reference.generation_id
+				|| !world.world_body_data.isWorldBodyActive(human_data->world_body_id)) continue;
+			const HumanState& human = *human_data;
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 			++data.selected_unit_count;
-			const DamageableComponent* damageable = findDamageable(world, slot.point_id);
-			if(damageable == nullptr) continue;
+			const DamageableComponent* damageable = &human_data->damageable;
 			const float maximum_health = getDamageableDefinition(damageable->definition_id).max_health;
 			if(maximum_health <= 0.0f) continue;
 			total_health_percent += glm::clamp(damageable->getHealth() / maximum_health, 0.0f, 1.0f) * 100.0;

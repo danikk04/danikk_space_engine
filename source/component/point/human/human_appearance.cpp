@@ -24,7 +24,7 @@ namespace danikk_space_engine
 		 * @param base Character transform shared by all six parts.
 		 * @param skin_id Index into the loaded Minecraft skin texture array; index zero is fallback.
 		 */
-		void drawMinecraftHuman(const HumanComponent& human, const mat4& base, HumanSkinId skin_id,
+		void drawMinecraftHuman(const HumanState& human, const mat4& base, HumanSkinId skin_id,
 			const vec4& color_tint)
 		{
 			DSE_WATCH();
@@ -126,7 +126,7 @@ namespace danikk_space_engine
 	 * @param human Appearance selection and animated pose to render.
 	 * @param world_matrix Character-local to render-space transform.
 	 */
-	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix, const vec4& color_tint)
+	void drawHumanAppearance(const HumanState& human, const mat4& world_matrix, const vec4& color_tint)
 	{
 		DSE_WATCH();
 		switch(human.appearance.render_type)

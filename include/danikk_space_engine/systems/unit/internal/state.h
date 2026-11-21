@@ -3,13 +3,14 @@
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/data.h>
 
 namespace danikk_space_engine::unit_system_internal
 {
 	/** @brief Pooled point-component identity used for safe enemy references. */
 	struct UnitTarget
 	{
-		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1);
+		HumanId slot_id = static_cast<HumanId>(-1);
 		PointId point_id = static_cast<PointId>(-1);
 		uint64 generation_id = 0;
 	};
@@ -34,7 +35,7 @@ namespace danikk_space_engine::unit_system_internal
 		bool has_look_target = false;
 		glm::dvec3 look_target_world = glm::dvec3(0.0);
 		bool has_attack_target = false;
-		PointComponentSlotId target_slot_id = static_cast<PointComponentSlotId>(-1);
+		HumanId target_slot_id = static_cast<HumanId>(-1);
 		PointId target_point_id = static_cast<PointId>(-1);
 		uint64 target_generation_id = 0;
 		bool has_equip_order = false;
@@ -48,7 +49,7 @@ namespace danikk_space_engine::unit_system_internal
 			has_move_target = false;
 			has_look_target = false;
 			has_attack_target = false;
-			target_slot_id = static_cast<PointComponentSlotId>(-1);
+			target_slot_id = static_cast<HumanId>(-1);
 			target_point_id = static_cast<PointId>(-1);
 			target_generation_id = 0;
 			has_equip_order = false;
@@ -61,7 +62,7 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Central AI state and current order for one registered human. */
 	struct UnitAgentState
 	{
-		PointComponentSlotId human_slot_id = static_cast<PointComponentSlotId>(-1);
+		HumanId human_slot_id = static_cast<HumanId>(-1);
 		uint64 human_generation_id = 0;
 		bool enabled = true;
 		UnitGlobalState global_state = UnitGlobalState::rest;
@@ -75,7 +76,7 @@ namespace danikk_space_engine::unit_system_internal
 	struct UnitSighting
 	{
 		FactionId faction_id = static_cast<FactionId>(-1);
-		PointComponentSlotId target_slot_id = static_cast<PointComponentSlotId>(-1);
+		HumanId target_slot_id = static_cast<HumanId>(-1);
 		PointId target_point_id = static_cast<PointId>(-1);
 		uint64 target_generation_id = 0;
 		glm::dvec3 position = glm::dvec3(0.0);
@@ -94,9 +95,9 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 body_local_position = glm::dvec3(0.0);
-		PointComponentSlotId target_slot_id = static_cast<PointComponentSlotId>(-1);
+		HumanId target_slot_id = static_cast<HumanId>(-1);
 		uint64 target_generation_id = 0;
-		PointComponentSlotId assigned_unit_slot_id = static_cast<PointComponentSlotId>(-1);
+		HumanId assigned_unit_slot_id = static_cast<HumanId>(-1);
 		bool is_corpse = false;
 	};
 
@@ -110,10 +111,10 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Tick-local candidate data reused while assigning one faction's search tasks. */
 	struct UnitSearchCandidate
 	{
-		PointComponentSlotId slot_id = static_cast<PointComponentSlotId>(-1);
-		PointComponentSlot* slot = nullptr;
+		HumanId slot_id = static_cast<HumanId>(-1);
+		HumanData* data = nullptr;
 		UnitAgentState* agent = nullptr;
-		HumanComponent* human = nullptr;
+		HumanState* human = nullptr;
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 position = glm::dvec3(0.0);
 		bool assigned_to_search = false;
@@ -122,7 +123,7 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Persistent dispersal position and scan phase for one battle recon unit. */
 	struct UnitPostCombatAssignment
 	{
-		PointComponentSlotId unit_slot_id = static_cast<PointComponentSlotId>(-1);
+		HumanId unit_slot_id = static_cast<HumanId>(-1);
 		uint64 unit_generation_id = 0;
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 body_local_position = glm::dvec3(0.0);

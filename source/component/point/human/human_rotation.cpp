@@ -5,7 +5,7 @@
 
 namespace danikk_space_engine
 {
-	void HumanComponent::setInitialForward(const vec3& direction)
+	void HumanState::setInitialForward(const vec3& direction)
 	{
 		DSE_WATCH();
 		vec3 horizontal = direction - up * glm::dot(direction, up);
@@ -17,7 +17,7 @@ namespace danikk_space_engine
 		forward = glm::normalize(horizontal);
 	}
 
-	void HumanComponent::lookAtDirection(const vec3& direction, float target_distance)
+	void HumanState::lookAtDirection(const vec3& direction, float target_distance)
 	{
 		DSE_WATCH();
 		if(glm::length(direction) > 1e-6f)
@@ -27,13 +27,13 @@ namespace danikk_space_engine
 		}
 	}
 
-	vec3 HumanComponent::getWeaponDirection() const
+	vec3 HumanState::getWeaponDirection() const
 	{
 		DSE_WATCH();
 		return glm::normalize(forward * std::cos(weapon_aim_pitch) + up * std::sin(weapon_aim_pitch));
 	}
 
-	void HumanComponent::updateOrientation(const vec3& displacement, float dt)
+	void HumanState::updateOrientation(const vec3& displacement, float dt)
 	{
 		DSE_WATCH();
 		setInitialForward(forward);

@@ -61,14 +61,6 @@ namespace danikk_space_engine
 			const PointComponentSlotId part_slot_id = world.point_data.createPointComponentSlot(
 				point_id, PointComponentTypeId::build_part, &part);
 			world.attachPointComponentToBody(body_id, point_id, part_slot_id, anchor_body_position);
-			DamageableComponent damageable;
-			damageable.definition_id = damageable_definition_ids::build_part;
-			const float volume_factor = shape == BuildPartShape::slope ? 0.5f : 1.0f;
-			damageable.setHealth(getDamageableDefinition(damageable.definition_id).max_health
-				* size.x * size.y * size.z * volume_factor, point_id);
-			const PointComponentSlotId damageable_id = world.point_data.createPointComponentSlot(
-				point_id, PointComponentTypeId::damageable, &damageable);
-			world.attachPointComponentToBody(body_id, point_id, damageable_id, anchor_body_position);
 			double shape_radius = 0.0;
 			const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
 			for(const vec3& position : geometry.positions)

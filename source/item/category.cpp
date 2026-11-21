@@ -10,51 +10,32 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		/** @brief Finds a human component attached to a point, if present. */
-		HumanComponent* getHumanAtPoint(World& world, PointId point_id)
-		{
-			for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
-			{
-				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-				PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-				if(slot.point_id == point_id && slot.type_id == PointComponentTypeId::human)
-					return static_cast<HumanComponent*>(slot.getData());
-			}
-			return nullptr;
-		}
+		/** @brief Resolves a human by its independent HumanSystem identity. */
+		HumanData* getHuman(World& world, HumanId human_id)
+		{ return world.humans.findHuman(human_id); }
 
 		/** @brief Creates a projectile using weapon and owner parameters. */
-		bool useWeapon(World& world, PointId owner_point_id, InventorySlot& slot, const ItemDefinition& definition)
+		bool useWeapon(World& world, HumanId owner_human_id, InventorySlot& slot, const ItemDefinition& definition)
 		{
 			if(!slot.is_equipped || slot.instance_state.weapon.cooldown > 0.0f
 				|| definition.parameters.weapon.projectile_id == projectile_definition_ids::none)
 				return false;
-			HumanComponent* human = getHumanAtPoint(world, owner_point_id);
-			if(human == nullptr || !world.point_data.isPointActive(owner_point_id)) return false;
-
-			WorldBodyId body_id = static_cast<WorldBodyId>(-1);
-			for(PointComponentSlotId id : world.point_data.getUsedPointComponentSlotIds())
-			{
-				const PointComponentSlot& owner = world.point_data.getPointComponentSlot(id);
-				if(owner.point_id == owner_point_id && owner.type_id == PointComponentTypeId::human)
-				{
-					body_id = owner.world_body_id;
-					break;
-				}
-			}
-			if(!world.world_body_data.isWorldBodyActive(body_id)) return false;
+			HumanData* human_data = getHuman(world, owner_human_id);
+			if(human_data == nullptr || !world.world_body_data.isWorldBodyActive(human_data->world_body_id)) return false;
+			HumanState* human = human_data;
+			const WorldBodyId body_id = human_data->world_body_id;
 
 			const ProjectileDefinition& projectile = getProjectileDefinition(definition.parameters.weapon.projectile_id);
 			const vec3 up = glm::normalize(human->up);
 			const vec3 direction = human->getWeaponDirection();
-			const glm::dvec3 muzzle = world.point_data.getPoint(owner_point_id).body_local_position
+			const glm::dvec3 muzzle = human_data->body_local_position
 				+ glm::dvec3(up * (human->getHeight() * 0.2f)
 					+ direction * (human->getHeight() * 0.6f));
 			BulletComponent bullet;
 			const vec3 weapon_direction = applyAngularSpread(direction, definition.parameters.weapon.spread_degrees);
 			bullet.velocity = applyAngularSpread(weapon_direction, human->getSpreadDegrees()) * projectile.speed;
 			bullet.lifetime = projectile.lifetime;
-			bullet.owner_point_id = owner_point_id;
+			bullet.owner_human_id = owner_human_id;
 			bullet.damage = definition.parameters.weapon.damage;
 			const float rate = definition.parameters.weapon.rounds_per_minute;
 			slot.instance_state.weapon.cooldown = rate > 0.0f ? 60.0f / rate : 0.25f;
@@ -63,18 +44,18 @@ namespace danikk_space_engine
 		}
 
 		/** @brief Poses a human's arms to hold a firearm. */
-		bool equipWeapon(World& world, PointId owner_point_id, const ItemDefinition&)
+		bool equipWeapon(World& world, HumanId owner_human_id, const ItemDefinition&)
 		{
-			HumanComponent* human = getHumanAtPoint(world, owner_point_id);
+			HumanState* human = getHuman(world, owner_human_id);
 			if(human == nullptr) return false;
 			human->arm_pose = HumanArmPose::weapon_ready;
 			return true;
 		}
 
 		/** @brief Restores a human's relaxed arm pose after unequipping a firearm. */
-		bool unequipWeapon(World& world, PointId owner_point_id, const ItemDefinition&)
+		bool unequipWeapon(World& world, HumanId owner_human_id, const ItemDefinition&)
 		{
-			HumanComponent* human = getHumanAtPoint(world, owner_point_id);
+			HumanState* human = getHuman(world, owner_human_id);
 			if(human == nullptr) return false;
 			human->arm_pose = HumanArmPose::relaxed;
 			return true;

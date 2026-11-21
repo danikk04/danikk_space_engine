@@ -10,89 +10,67 @@ namespace danikk_space_engine::unit_system_internal
 	namespace
 	{
 		constexpr double unit_spatial_query_half_extent = 64.0;
-
-		void appendHumanSlots(World& world, PointId point_id,
-			DynamicArray<PointComponentSlotId>& output)
-		{
-			if(!world.point_data.isPointActive(point_id)) return;
-			for(PointComponentSlotId slot_id : world.point_data.getPoint(point_id).component_slot_ids)
-			{
-				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-				if(world.point_data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::human)
-					output.push(slot_id);
-			}
-		}
 	}
 
-	/** @brief Refreshes live unit positions in their owning body's shared octree and flat identity list. */
+	/** @brief Rebuilds the flat tactical index from HumanSystem's authoritative array. */
 	void rebuildUnitSpatialIndex(World& world, UnitSpatialIndex& index)
 	{
 		DSE_WATCH();
 		index.entries.clear();
-		for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
+		for(const HumanData& human : world.humans.getHumans())
 		{
-			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-			PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(slot.type_id != PointComponentTypeId::human
-				|| !world.point_data.isPointActive(slot.point_id)
-				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
-			Point& point = world.point_data.getPoint(slot.point_id);
-			const glm::dvec3 local_position = point.body_local_position;
+			if(!world.world_body_data.isWorldBodyActive(human.world_body_id)) continue;
 			UnitSpatialEntry& entry = index.entries.pushCtor();
-			entry.target = UnitTarget{slot_id, slot.point_id, slot.generation_id};
-			entry.body_id = slot.world_body_id;
-			entry.position = local_position;
+			entry.target = UnitTarget{human.id, human.id, human.generation_id};
+			entry.body_id = human.world_body_id;
+			entry.position = human.body_local_position;
 		}
 	}
 
-	/** @brief Collects nearby hostile humans from the body's adaptive octree. */
+	/** @brief Collects nearby hostile humans from the flat HumanSystem array. */
 	void collectEnemyTargets(World& world, WorldBodyId body_id, FactionId faction,
 		const UnitSpatialIndex&, UnitAgentState& agent)
 	{
 		DSE_WATCH();
 		agent.enemy_candidates.clear();
 		agent.candidate_index = 0;
-		if(!world.world_body_data.isWorldBodyActive(body_id)
-			|| !world.point_data.isPointComponentSlotActive(agent.human_slot_id)) return;
-		const PointComponentSlot& agent_slot = world.point_data.getPointComponentSlot(agent.human_slot_id);
-		if(agent_slot.generation_id != agent.human_generation_id
-			|| !world.point_data.isPointActive(agent_slot.point_id)) return;
-		const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-		DynamicArray<PointId> point_ids;
-		body.spatial_tree.collectBoxCandidates(
-			world.point_data.getPoint(agent_slot.point_id).body_local_position,
-			unit_spatial_query_half_extent, point_ids);
-		for(PointId point_id : point_ids)
+		const HumanData* own = world.humans.findHuman(agent.human_slot_id);
+		if(own == nullptr || own->generation_id != agent.human_generation_id
+			|| own->world_body_id != body_id) return;
+		const glm::dvec3 extent(unit_spatial_query_half_extent);
+		const glm::dvec3 minimum = own->body_local_position - extent;
+		const glm::dvec3 maximum = own->body_local_position + extent;
+		for(const HumanData& candidate : world.humans.getHumans())
 		{
-			if(!world.point_data.isPointActive(point_id)) continue;
-			const Point& point = world.point_data.getPoint(point_id);
-			for(PointComponentSlotId slot_id : point.component_slot_ids)
-			{
-				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-				if(slot.type_id != PointComponentTypeId::human) continue;
-				const UnitTarget target{slot_id, point_id, slot.generation_id};
-				if(isValidEnemy(world, target, faction)) agent.enemy_candidates.push(target);
-			}
+			if(candidate.world_body_id != body_id) continue;
+			if(glm::any(glm::lessThan(candidate.body_local_position, minimum))
+				|| glm::any(glm::greaterThan(candidate.body_local_position, maximum))) continue;
+			const UnitTarget target{candidate.id, candidate.id, candidate.generation_id};
+			if(isValidEnemy(world, target, faction)) agent.enemy_candidates.push(target);
 		}
 	}
 
-	/** @brief Collects human component slots in a body-local box using the shared WorldBody octree. */
-	void collectNearbyHumanSlots(World& world, const UnitSpatialIndex&, WorldBodyId body_id,
+	/** @brief Collects humans within an axis-aligned body-local range. */
+	void collectNearbyHumanIds(World& world, const UnitSpatialIndex&, WorldBodyId body_id,
 		const glm::dvec3& center, double half_extent,
-		DynamicArray<PointComponentSlotId>& result)
+		DynamicArray<HumanId>& result)
 	{
 		DSE_WATCH();
 		result.clear();
 		if(half_extent < 0.0 || !world.world_body_data.isWorldBodyActive(body_id)) return;
-		DynamicArray<PointId> point_ids;
-		world.world_body_data.getWorldBody(body_id).spatial_tree.collectBoxCandidates(center, half_extent, point_ids);
-		for(PointId point_id : point_ids) appendHumanSlots(world, point_id, result);
+		const glm::dvec3 extent(half_extent);
+		for(const HumanData& human : world.humans.getHumans())
+		{
+			if(human.world_body_id != body_id) continue;
+			const glm::dvec3 delta = glm::abs(human.body_local_position - center);
+			if(delta.x <= extent.x && delta.y <= extent.y && delta.z <= extent.z)
+				result.push(human.id);
+		}
 	}
 
-	/** @brief Copies current human slot and owning-body pairs from the compact identity list. */
-	void collectHumanSlots(const UnitSpatialIndex& index,
-		DynamicArray<PointComponentSlotId>& slot_ids, DynamicArray<WorldBodyId>& body_ids)
+	/** @brief Copies human IDs and owning bodies from the tactical index. */
+	void collectHumanIds(const UnitSpatialIndex& index,
+		DynamicArray<HumanId>& slot_ids, DynamicArray<WorldBodyId>& body_ids)
 	{
 		DSE_WATCH();
 		slot_ids.clear();

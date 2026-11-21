@@ -34,12 +34,11 @@ namespace danikk_space_engine::unit_system_internal
 		candidates.reserve(system.agents.size());
 		for(UnitAgentState& agent : system.agents)
 		{
-			PointComponentSlot* slot = nullptr;
-			HumanComponent* human = nullptr;
-			if(!getActiveUnit(world, agent, slot, human) || human->faction_id != system.faction_id) continue;
-			const WorldBodyId body_id = slot->world_body_id;
-			const glm::dvec3 position = world.getPointWorldPosition(slot->point_id);
-			candidates.push(UnitSearchCandidate{agent.human_slot_id, slot, &agent, human, body_id, position, false});
+			HumanData* human = nullptr;
+			if(!getActiveUnit(world, agent, human) || human->faction_id != system.faction_id) continue;
+			const WorldBodyId body_id = human->world_body_id;
+			const glm::dvec3 position = world.humans.getWorldPosition(*human);
+			candidates.push(UnitSearchCandidate{agent.human_slot_id, human, &agent, human, body_id, position, false});
 		}
 
 		// Drop assignments for removed units, units that moved to another body, and units now fighting/searching.
@@ -53,7 +52,7 @@ namespace danikk_space_engine::unit_system_internal
 					candidate = &current;
 					break;
 				}
-			if(candidate == nullptr || candidate->slot->generation_id != assignment.unit_generation_id
+			if(candidate == nullptr || candidate->data->generation_id != assignment.unit_generation_id
 				|| candidate->body_id != assignment.body_id || candidate->agent->order.has_attack_target
 				|| candidate->agent->order.has_move_target)
 			{
@@ -67,7 +66,7 @@ namespace danikk_space_engine::unit_system_internal
 		for(UnitSearchCandidate& candidate : candidates)
 		{
 			UnitAgentState& agent = *candidate.agent;
-			HumanComponent& human = *candidate.human;
+			HumanState& human = *candidate.human;
 			// Last-known enemy locations have priority over general area scanning.
 			if(agent.order.has_attack_target || agent.order.has_move_target) continue;
 			agent.substate = UnitSubstate::reconnaissance;
@@ -75,7 +74,7 @@ namespace danikk_space_engine::unit_system_internal
 			UnitPostCombatAssignment* assignment = nullptr;
 			for(UnitPostCombatAssignment& existing : assignments)
 				if(existing.unit_slot_id == candidate.slot_id
-					&& existing.unit_generation_id == candidate.slot->generation_id
+					&& existing.unit_generation_id == candidate.data->generation_id
 					&& existing.body_id == candidate.body_id)
 				{
 					assignment = &existing;
@@ -83,7 +82,7 @@ namespace danikk_space_engine::unit_system_internal
 				}
 
 			const WorldBody& body = world.world_body_data.getWorldBody(candidate.body_id);
-			const glm::dvec3 body_local_position = world.point_data.getPoint(candidate.slot->point_id).body_local_position;
+			const glm::dvec3 body_local_position = candidate.data->body_local_position;
 			if(assignment == nullptr)
 			{
 				vec3 up = human.up;
@@ -93,12 +92,12 @@ namespace danikk_space_engine::unit_system_internal
 				const vec3 tangent_x = glm::normalize(glm::cross(up, reference));
 				const vec3 tangent_y = glm::normalize(glm::cross(up, tangent_x));
 				const uint32 seed = static_cast<uint32>(candidate.slot_id) * 2654435761u
-					+ static_cast<uint32>(candidate.slot->generation_id);
+					+ static_cast<uint32>(candidate.data->generation_id);
 				const float angle = static_cast<float>(seed % 6283u) * 0.001f;
 				const float radius = 2.5f + static_cast<float>((seed >> 8) % 4u) * 0.75f;
 				UnitPostCombatAssignment created;
 				created.unit_slot_id = candidate.slot_id;
-				created.unit_generation_id = candidate.slot->generation_id;
+				created.unit_generation_id = candidate.data->generation_id;
 				created.body_id = candidate.body_id;
 				created.body_local_position = body_local_position
 					+ glm::dvec3((tangent_x * std::cos(angle) + tangent_y * std::sin(angle)) * radius);

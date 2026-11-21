@@ -30,17 +30,13 @@ namespace danikk_space_engine
 		/** @brief Returns the remaining health. */
 		float getHealth() const { return health; }
 		/** @brief Sets remaining health, clamped to zero. */
-		void setHealth(float value, PointId point_id);
+		void setHealth(float value);
 	};
 
 	/** @brief Returns the immutable settings at a valid definition index. */
 	const DamageableDefinition& getDamageableDefinition(DamageableDefinitionId id);
-	/** @brief Returns the damageable component attached to a point, or null. */
-	DamageableComponent* findDamageable(World& world, PointId point_id);
-	/** @brief Returns a read-only damageable component attached to a point, or null. */
-	const DamageableComponent* findDamageable(const World& world, PointId point_id);
 	/** @brief Applies ballistic resistance and clamps remaining health to zero. */
-	void applyBallisticDamage(DamageableComponent& damageable, float damage, PointId point_id);
+	void applyBallisticDamage(DamageableComponent& damageable, float damage);
 	/** @brief Constructs a damageable payload using optional initial state. */
 	void constructDamageableComponent(void* destination, const void* init_data);
 	/** @brief Moves a damageable payload to replacement storage. */

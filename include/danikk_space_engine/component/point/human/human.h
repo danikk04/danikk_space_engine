@@ -101,7 +101,7 @@ namespace danikk_space_engine
 	 * writes the velocity command; this component consumes and clears it during its tick, updates
 	 * gravity/support state, and advances the visual walking pose from actual tangential travel.
 	 */
-	struct HumanComponent
+	struct HumanState
 	{
 		/** @brief Records the inputs for which the planet field last confirmed ground support. */
 		struct GroundSupportCache
@@ -219,46 +219,12 @@ namespace danikk_space_engine
 	 * @param forward Initial local facing direction.
 	 * @return ID of the new human component slot.
 	 */
-	PointComponentSlotId createHumanSoldier(World& world, WorldBodyId body_id,
+	HumanId createHumanSoldier(World& world, WorldBodyId body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward, FactionId faction_id);
 
 	/** @brief Creates and registers a faction-controlled human soldier on a WorldBody. */
-	PointComponentSlotId createNpc(World& world, WorldBodyId body_id,
+	HumanId createNpc(World& world, WorldBodyId body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward, FactionId faction_id);
-
-	/**
-	 * @brief Placement-constructs a HumanComponent from optional initial state.
-	 * @param destination Component payload storage supplied by the slot pool.
-	 * @param init_data Optional HumanComponent to copy; null uses default state.
-	 */
-	void constructHumanComponent(void* destination, const void* init_data);
-
-	/**
-	 * @brief Move-constructs a HumanComponent during point-slot relocation.
-	 * @param destination Uninitialized replacement payload storage.
-	 * @param source Existing payload, destroyed after the move.
-	 */
-	void moveHumanComponent(void* destination, void* source);
-
-	/**
-	 * @brief Runs the HumanComponent destructor without freeing slot-owned storage.
-	 * @param data Address of the live payload.
-	 */
-	void destroyHumanComponent(void* data);
-
-	/**
-	 * @brief Consumes the movement command, applies ground/gravity motion, and updates facing/animation.
-	 * @param slot Human component slot, including its point and owning body IDs.
-	 * @param world World used for gravity, terrain support tests, and coordinate conversion.
-	 */
-	void tickHumanComponent(PointComponentSlot& slot, World& world);
-
-	/**
-	 * @brief Draws the human appearance and any equipped item using the current pose.
-	 * @param slot Human component slot used to locate the point, owning body, and inventory.
-	 * @param world World used to build camera-relative transforms.
-	 */
-	void frameHumanComponent(PointComponentSlot& slot, World& world);
 
 	/**
 	 * @brief Dispatches the selected renderer and draws the shared body parts with the chosen skin.
@@ -266,6 +232,6 @@ namespace danikk_space_engine
 	 * @param world_matrix Transform from character-local coordinates to render coordinates.
 	 * @param color_tint Multiplied with skin/part colors; alpha controls preview translucency.
 	 */
-	void drawHumanAppearance(const HumanComponent& human, const mat4& world_matrix,
+	void drawHumanAppearance(const HumanState& human, const mat4& world_matrix,
 		const vec4& color_tint = vec4(1.0f));
 }

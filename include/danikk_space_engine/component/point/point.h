@@ -14,10 +14,10 @@ namespace danikk_space_engine
 		machine_gun, ///< Weapon model state and timed projectile spawning.
 		bullet, ///< Moving projectile state, collision sweep, and tracer rendering.
 		engine, ///< Reserved component type; no implementation is registered yet.
-		human, ///< Human pose, locomotion, ground following, and appearance.
-		inventory, ///< Dynamic item-stack storage attached to a point.
+		human, ///< Reserved legacy ID; people are owned by HumanSystem.
+		inventory, ///< Reserved legacy ID; inventories are stored with their owning entity.
 		build_part, ///< Structural cube or slope with rendering and collision geometry.
-		damageable, ///< Health and damage resistance for a point-attached object.
+		damageable, ///< Reserved legacy ID; health is stored with its owning entity.
 		count ///< Number of entries in the point-component type table.
 	};
 

@@ -34,7 +34,7 @@ namespace danikk_space_engine
 			orientation[0] = vec4(right, 0.0f);
 			orientation[1] = vec4(forward, 0.0f);
 			orientation[2] = vec4(up, 0.0f);
-			HumanComponent preview_human;
+			HumanState preview_human;
 			preview_human.up = local_up;
 			preview_human.setInitialForward(local_forward);
 			const float height = preview_human.getHeight();

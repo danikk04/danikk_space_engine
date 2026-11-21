@@ -33,23 +33,18 @@ namespace danikk_space_engine::unit_system_internal
 		/** @brief Adds known dead faction members to the same post-combat inspection queue as lost contacts. */
 		void rememberFriendlyCorpseLocations(World& world, UnitGroup& system)
 		{
-			for(PointComponentSlotId id : world.point_data.getUsedPointComponentSlotIds())
+			for(const HumanData& human : world.humans.getHumans())
 			{
-				if(!world.point_data.isPointComponentSlotActive(id)) continue;
-				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
-				if(slot.type_id != PointComponentTypeId::human || !world.point_data.isPointActive(slot.point_id)
-					|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
-				const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
-				if(human.faction_id != system.faction_id) continue;
-				const DamageableComponent* health = findDamageable(world, slot.point_id);
-				if(health == nullptr || health->getHealth() > 0.0f) continue;
+				if(human.faction_id != system.faction_id || human.damageable.getHealth() > 0.0f
+					|| !world.world_body_data.isWorldBodyActive(human.world_body_id)) continue;
 
 				UnitSighting corpse_location;
 				corpse_location.faction_id = system.faction_id;
-				corpse_location.target_slot_id = id;
-				corpse_location.target_generation_id = slot.generation_id;
-				corpse_location.body_id = slot.world_body_id;
-				corpse_location.body_local_position = world.point_data.getPoint(slot.point_id).body_local_position;
+				corpse_location.target_slot_id = human.id;
+				corpse_location.target_generation_id = human.generation_id;
+				corpse_location.target_point_id = human.id;
+				corpse_location.body_id = human.world_body_id;
+				corpse_location.body_local_position = human.body_local_position;
 				rememberSearchLocation(system, corpse_location, true);
 			}
 		}
@@ -63,52 +58,41 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Checks that a cached target still identifies a living hostile human. */
 	bool isValidEnemy(World& world, const UnitTarget& target, FactionId faction)
 	{
-		if(!world.point_data.isPointComponentSlotActive(target.slot_id)) return false;
-		const PointComponentSlot& slot = world.point_data.getPointComponentSlot(target.slot_id);
-		if(slot.type_id != PointComponentTypeId::human || slot.point_id != target.point_id
-			|| slot.generation_id != target.generation_id || !world.point_data.isPointActive(slot.point_id)
-			|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) return false;
-		const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
-		const DamageableComponent* health = findDamageable(world, slot.point_id);
-		return health != nullptr && health->getHealth() > 0.0f && faction < world.factions.size()
-			&& human.faction_id < world.factions.size()
-			&& world.factions.getRelation(faction, human.faction_id).type == FactionRelationType::hostile;
+		const HumanData* human = world.humans.findHuman(target.slot_id);
+		if(human == nullptr || human->generation_id != target.generation_id
+			|| !world.world_body_data.isWorldBodyActive(human->world_body_id)) return false;
+		return human->damageable.getHealth() > 0.0f && faction < world.factions.size()
+			&& human->faction_id < world.factions.size()
+			&& world.factions.getRelation(faction, human->faction_id).type == FactionRelationType::hostile;
 	}
 	/** @brief Checks that a shared contact still names a living hostile human. */
 	bool isValidSighting(World& world, const UnitSighting& sighting)
 	{
-		if(sighting.faction_id >= world.factions.size()
-			|| !world.point_data.isPointComponentSlotActive(sighting.target_slot_id)) return false;
-		const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(sighting.target_slot_id);
-		if(target_slot.type_id != PointComponentTypeId::human
-			|| target_slot.point_id != sighting.target_point_id
-			|| target_slot.generation_id != sighting.target_generation_id
-			|| !world.point_data.isPointActive(target_slot.point_id)
-			|| !world.world_body_data.isWorldBodyActive(target_slot.world_body_id)) return false;
-		const HumanComponent& target = *static_cast<const HumanComponent*>(target_slot.getData());
-		if(target.faction_id >= world.factions.size()
-			|| world.factions.getRelation(sighting.faction_id, target.faction_id).type != FactionRelationType::hostile)
+		if(sighting.faction_id >= world.factions.size()) return false;
+		const HumanData* target = world.humans.findHuman(sighting.target_slot_id);
+		if(target == nullptr || target->generation_id != sighting.target_generation_id
+			|| !world.world_body_data.isWorldBodyActive(target->world_body_id)) return false;
+		if(target->faction_id >= world.factions.size()
+			|| world.factions.getRelation(sighting.faction_id, target->faction_id).type != FactionRelationType::hostile)
 			return false;
-		const DamageableComponent* health = findDamageable(world, target_slot.point_id);
-		return health != nullptr && health->getHealth() > 0.0f;
+		return target->damageable.getHealth() > 0.0f;
 	}
 
 	/** @brief Refreshes an existing faction contact or appends a newly observed target. */
 	void rememberSighting(World& world, UnitGroup& system, FactionId faction_id,
 		const UnitTarget& target, const glm::dvec3& position)
 	{
-		if(!world.point_data.isPointComponentSlotActive(target.slot_id)) return;
-		const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(target.slot_id);
-		if(!world.world_body_data.isWorldBodyActive(target_slot.world_body_id)
-			|| !world.point_data.isPointActive(target.point_id)) return;
-		const glm::dvec3 body_local_position = world.point_data.getPoint(target.point_id).body_local_position;
+		const HumanData* target_data = world.humans.findHuman(target.slot_id);
+		if(target_data == nullptr || target_data->generation_id != target.generation_id
+			|| !world.world_body_data.isWorldBodyActive(target_data->world_body_id)) return;
+		const glm::dvec3 body_local_position = target_data->body_local_position;
 		for(UnitSighting& sighting : system.known_sightings)
 		{
 			if(sighting.faction_id != faction_id || sighting.target_slot_id != target.slot_id
 				|| sighting.target_generation_id != target.generation_id) continue;
-			sighting.target_point_id = target.point_id;
+			sighting.target_point_id = target.slot_id;
 			sighting.position = position;
-			sighting.body_id = target_slot.world_body_id;
+			sighting.body_id = target_data->world_body_id;
 			sighting.body_local_position = body_local_position;
 			sighting.last_seen_timestamp_ms = danikk_engine::getMsTimestamp();
 			sighting.visible_this_tick = true;
@@ -119,10 +103,10 @@ namespace danikk_space_engine::unit_system_internal
 		UnitSighting sighting;
 		sighting.faction_id = faction_id;
 		sighting.target_slot_id = target.slot_id;
-		sighting.target_point_id = target.point_id;
+		sighting.target_point_id = target.slot_id;
 		sighting.target_generation_id = target.generation_id;
 		sighting.position = position;
-		sighting.body_id = target_slot.world_body_id;
+		sighting.body_id = target_data->world_body_id;
 		sighting.body_local_position = body_local_position;
 		sighting.last_seen_timestamp_ms = danikk_engine::getMsTimestamp();
 		sighting.visible_this_tick = true;

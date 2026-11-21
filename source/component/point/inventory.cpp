@@ -51,7 +51,14 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		InventoryComponent& inventory = *static_cast<InventoryComponent*>(slot.getData());
-		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
+		tickInventory(inventory, getTargetFrameDelay());
+	}
+
+	/** @brief Decreases each weapon stack's remaining fire cooldown. */
+	void tickInventory(InventoryComponent& inventory, float dt)
+	{
+		DSE_WATCH();
+		dt = glm::max(dt, 0.0f);
 		for(InventorySlot& item : inventory.slots)
 		{
 			if(item.isEmpty() || item.count == 0 || getItemDefinition(item.item_definition_id).category_id != item_category_ids::weapon) continue;

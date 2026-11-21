@@ -14,8 +14,8 @@ namespace danikk_space_engine
 		vec3 velocity = vec3(0.0f);
 		/** @brief Previous body-local position used to draw the current camera-facing tracer segment. */
 		glm::dvec3 previous_position = glm::dvec3(0.0);
-		/** @brief Shooter point; excluded from projectile collision. */
-		PointId owner_point_id = static_cast<PointId>(-1);
+		/** @brief Shooter human; excluded from projectile collision. */
+		HumanId owner_human_id = static_cast<HumanId>(-1);
 		/** @brief Damage dealt to a human on impact. */
 		float damage = 0.0f;
 		/** @brief Simulation time elapsed since this projectile was spawned. */

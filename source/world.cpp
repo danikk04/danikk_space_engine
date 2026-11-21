@@ -21,7 +21,7 @@ namespace danikk_space_engine
 {
 	World::World()
 		: mesh_generation(*this), environment(*this), physics(*this), controller(*this), camera(*this),
-		  components(*this), planets(*this), raycasts(*this), saves(*this), factions(), unit_system(*this)
+		  components(*this), planets(*this), raycasts(*this), saves(*this), factions(), unit_system(*this), humans(*this)
 	{
 	}
 
@@ -108,6 +108,7 @@ namespace danikk_space_engine
 	{
 		if(!world_body_data.isWorldBodyActive(body_id)) return;
 		WorldBody& body = world_body_data.getWorldBody(body_id);
+		humans.destroyWorldBodyHumans(body_id);
 		while(body.point_ids.size() > 0) destroyPoint(body.point_ids[body.point_ids.size() - 1]);
 		world_body_data.destroyWorldBody(body_id, planets);
 	}
@@ -142,6 +143,7 @@ namespace danikk_space_engine
 		mesh_generation.init();
 		components.init();
 		unit_system.init();
+		humans.init();
 		factions.init();
 		environment.init();
 		physics.init();
@@ -176,6 +178,7 @@ namespace danikk_space_engine
 		factions.shutdown();
 		components.shutdown();
 		unit_system.shutdown();
+		humans.shutdown();
 	}
 
 	/**
@@ -195,6 +198,7 @@ namespace danikk_space_engine
 		camera.tick();
 		controller.tick();
 		components.flushDeferredPointDestruction();
+		humans.tick();
 		unit_system.tick(glm::max(getTargetFrameDelay(), 0.0f));
 		physics.tick();
 	}
@@ -227,6 +231,7 @@ namespace danikk_space_engine
 		// Draw dynamic point components after the world meshes so transparent overlays
 		// do not allow later terrain draws to pass through the base mesh depth.
 		components.renderPointComponents();
+		humans.frame();
 		drawUnitSelectionIndicators(*this);
 		drawUnitOrderIndicators(*this);
 		controller.renderPreview();

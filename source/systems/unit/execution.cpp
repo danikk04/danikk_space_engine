@@ -14,34 +14,19 @@ namespace danikk_space_engine::unit_system_internal
 {
 	namespace
 	{
-		/** @brief Finds an inventory attached to a unit's point. */
-		InventoryComponent* findUnitInventory(World& world, PointId point_id)
-		{
-			DSE_WATCH();
-			if(!world.point_data.isPointActive(point_id)) return nullptr;
-			for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
-			{
-				if(!world.point_data.isPointComponentSlotActive(id)) continue;
-				PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
-				if(slot.point_id == point_id && slot.type_id == PointComponentTypeId::inventory)
-					return static_cast<InventoryComponent*>(slot.getData());
-			}
-			return nullptr;
-		}
-
 		/** @brief Applies movement, look, equipment, and firing actions stored in one unit order. */
-		void executeOrder(World& world, PointComponentSlot& slot, UnitAgentState& agent, HumanComponent& human)
+		void executeOrder(World& world, HumanData& data, UnitAgentState& agent, HumanState& human)
 		{
 			DSE_WATCH();
 			const float dt = glm::max(getTargetFrameDelay(), 0.0f);
-			const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
-			const glm::dvec3 own_position = world.getPointWorldPosition(slot.point_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(data.world_body_id);
+			const glm::dvec3 own_position = world.humans.getWorldPosition(data);
 			human.desired_velocity = vec3(0.0f);
 			if(agent.order.has_move_target)
 			{
 				const glm::dvec3 body_local_target = glm::conjugate(body.rotation)
 					* (agent.order.move_target_world - body.position);
-				vec3 offset = vec3(body_local_target - world.point_data.getPoint(slot.point_id).body_local_position);
+				vec3 offset = vec3(body_local_target - data.body_local_position);
 				offset -= human.up * glm::dot(offset, human.up);
 				const float distance = glm::length(offset);
 				if(distance > 0.02f && dt > 0.0f)
@@ -57,25 +42,24 @@ namespace danikk_space_engine::unit_system_internal
 				human.lookAtDirection(direction, static_cast<float>(glm::length(target_offset)));
 			}
 
-			InventoryComponent* inventory = findUnitInventory(world, slot.point_id);
-			if(inventory == nullptr) return;
+			InventoryComponent* inventory = &data.inventory;
 			if(agent.order.has_equip_order)
 				for(InventorySlot& item : inventory->slots)
 				{
 					if(item.isEmpty()) continue;
 					if(item.is_equipped && item.item_definition_id != agent.order.equip_item_definition_id)
 					{
-						if(unequipItem(world, slot.point_id, item.item_definition_id)) item.is_equipped = false;
+						if(unequipItem(world, data.id, item.item_definition_id)) item.is_equipped = false;
 					}
 					if(item.item_definition_id == agent.order.equip_item_definition_id && !item.is_equipped)
-						if(equipItem(world, slot.point_id, item.item_definition_id)) item.is_equipped = true;
+						if(equipItem(world, data.id, item.item_definition_id)) item.is_equipped = true;
 				}
 			if(!agent.order.should_fire) return;
 			for(InventorySlot& item : inventory->slots)
 			{
 				if(item.isEmpty() || !item.is_equipped
 					|| item.item_definition_id != agent.order.fire_item_definition_id) continue;
-				useItem(world, slot.point_id, item);
+				useItem(world, data.id, item);
 				return;
 			}
 		}
@@ -87,11 +71,10 @@ namespace danikk_space_engine::unit_system_internal
 		DSE_WATCH();
 		for(UnitAgentState& agent : system.agents)
 		{
-			PointComponentSlot* slot = nullptr;
-			HumanComponent* human = nullptr;
-			if(!getActiveUnit(world, agent, slot, human)) continue;
+			HumanData* human = nullptr;
+			if(!getActiveUnit(world, agent, human)) continue;
 			if(human->faction_id != system.faction_id) continue;
-			executeOrder(world, *slot, agent, *human);
+			executeOrder(world, *human, agent, *human);
 		}
 	}
 }

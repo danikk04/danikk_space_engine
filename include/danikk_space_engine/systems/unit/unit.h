@@ -58,20 +58,20 @@ namespace danikk_space_engine
 		/** @brief Runs perception, chooses each faction group's mode, then dispatches its behavior. */
 		void tick(float dt);
 		/** @brief Records hostile fire as fresh tactical information for the victim's faction. */
-		void reportAttack(PointId attacker_point_id, PointId victim_point_id);
+		void reportAttack(HumanId attacker_id, HumanId victim_id);
 		/** @brief Adds or updates a human in the group associated with its faction. */
-		void registerAgent(PointComponentSlotId human_slot_id, bool enabled = true);
+		void registerAgent(HumanId human_id, bool enabled = true);
 		/** @brief Gets a live unit's assigned movement target. */
-		bool getMoveTarget(PointComponentSlotId human_slot_id, uint64 generation_id,
+		bool getMoveTarget(HumanId human_id, uint64 generation_id,
 			glm::dvec3& target_world) const;
 		/** @brief Gets a registered unit's current hierarchical tactical state. */
-		bool getState(PointComponentSlotId human_slot_id, uint64 generation_id,
+		bool getState(HumanId human_id, uint64 generation_id,
 			UnitGlobalState& global_state, UnitSubstate& substate) const;
 		/** @brief Collects human slots in a body-local box using the current adaptive spatial tree. */
-		void collectNearbyHumanSlots(WorldBodyId body_id, const glm::dvec3& center,
-			double half_extent, DynamicArray<PointComponentSlotId>& result) const;
+		void collectNearbyHumanIds(WorldBodyId body_id, const glm::dvec3& center,
+			double half_extent, DynamicArray<HumanId>& result) const;
 		/** @brief Copies indexed human component IDs and their owning bodies for spatial systems. */
-		void collectHumanSlots(DynamicArray<PointComponentSlotId>& slot_ids,
+		void collectHumanIds(DynamicArray<HumanId>& slot_ids,
 			DynamicArray<WorldBodyId>& body_ids) const;
 		/** @brief Clears all faction groups when the owning world resets or shuts down. */
 		void reset();

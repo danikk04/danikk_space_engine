@@ -43,61 +43,31 @@ namespace danikk_space_engine
 			}
 		}
 
-		/** @brief Removes agent entries whose pooled human slot was destroyed or reused. */
+		/** @brief Removes agent entries whose human was destroyed or replaced. */
 		void pruneUnitAgents(World& world, UnitGroup& group)
 		{
 			for(size_t i = 0; i < group.agents.size();)
 			{
 				const UnitAgentState& agent = group.agents[i];
-				if(world.point_data.isPointComponentSlotActive(agent.human_slot_id))
-				{
-					const PointComponentSlot& slot = world.point_data.getPointComponentSlot(agent.human_slot_id);
-					if(slot.type_id == PointComponentTypeId::human
-						&& slot.generation_id == agent.human_generation_id)
-					{
-						++i;
-						continue;
-					}
-				}
+				const HumanData* human = world.humans.findHuman(agent.human_slot_id);
+				if(human != nullptr && human->generation_id == agent.human_generation_id) { ++i; continue; }
 				for(size_t j = i + 1; j < group.agents.size(); ++j)
 					group.agents[j - 1] = static_cast<UnitAgentState&&>(group.agents[j]);
 				group.agents.resize(group.agents.size() - 1);
 			}
 		}
 
-		/** @brief Finds a living human component attached to a point. */
-		PointComponentSlot* findHumanSlot(World& world, PointId point_id, PointComponentSlotId* found_id)
-		{
-			for(PointComponentSlotId id : world.point_data.getUsedPointComponentSlotIds())
-			{
-				if(!world.point_data.isPointComponentSlotActive(id)) continue;
-				PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
-				if(slot.type_id == PointComponentTypeId::human && slot.point_id == point_id
-					&& world.point_data.isPointActive(point_id)
-					&& world.world_body_data.isWorldBodyActive(slot.world_body_id))
-				{
-					if(found_id != nullptr) *found_id = id;
-					return &slot;
-				}
-			}
-			return nullptr;
-		}
-
 	}
 
 	/** @brief Resolves a registered live human and its point slot. */
-	bool unit_system_internal::getActiveUnit(World& world, UnitAgentState& agent,
-		PointComponentSlot*& human_slot, HumanComponent*& human)
+	bool unit_system_internal::getActiveUnit(World& world, UnitAgentState& agent, HumanData*& human)
 	{
-		if(!agent.enabled || !world.point_data.isPointComponentSlotActive(agent.human_slot_id)) return false;
-		human_slot = &world.point_data.getPointComponentSlot(agent.human_slot_id);
-		if(human_slot->type_id != PointComponentTypeId::human
-			|| human_slot->generation_id != agent.human_generation_id
-			|| !world.point_data.isPointActive(human_slot->point_id)
-			|| !world.world_body_data.isWorldBodyActive(human_slot->world_body_id)) return false;
-		human = static_cast<HumanComponent*>(human_slot->getData());
-		const DamageableComponent* health = findDamageable(world, human_slot->point_id);
-		if(health == nullptr || health->getHealth() <= 0.0f)
+		if(!agent.enabled) return false;
+		HumanData* data = world.humans.findHuman(agent.human_slot_id);
+		if(data == nullptr || data->generation_id != agent.human_generation_id
+			|| !world.world_body_data.isWorldBodyActive(data->world_body_id)) return false;
+		human = data;
+		if(data->damageable.getHealth() <= 0.0f)
 		{
 			agent.order.clear();
 			return false;
@@ -113,15 +83,14 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Shares hostile fire with the threatened faction as fresh attacker intel. */
-	void UnitSystem::reportAttack(PointId attacker_point_id, PointId victim_point_id)
+	void UnitSystem::reportAttack(HumanId attacker_human_id, HumanId victim_human_id)
 	{
 		DSE_WATCH();
-		PointComponentSlotId attacker_slot_id = static_cast<PointComponentSlotId>(-1);
-		PointComponentSlot* attacker_slot = findHumanSlot(world, attacker_point_id, &attacker_slot_id);
-		PointComponentSlot* victim_slot = findHumanSlot(world, victim_point_id, nullptr);
-		if(attacker_slot == nullptr || victim_slot == nullptr) return;
-		HumanComponent& attacker = *static_cast<HumanComponent*>(attacker_slot->getData());
-		HumanComponent& victim = *static_cast<HumanComponent*>(victim_slot->getData());
+		HumanData* attacker_data = world.humans.findHuman(attacker_human_id);
+		HumanData* victim_data = world.humans.findHuman(victim_human_id);
+		if(attacker_data == nullptr || victim_data == nullptr) return;
+		HumanState& attacker = *attacker_data;
+		HumanState& victim = *victim_data;
 		if(attacker.faction_id >= world.factions.size() || victim.faction_id >= world.factions.size()
 			|| world.factions.getRelation(victim.faction_id, attacker.faction_id).type != FactionRelationType::hostile)
 			return;
@@ -129,12 +98,12 @@ namespace danikk_space_engine
 		ensureUnitGroupCount(impl->groups, world.factions.size());
 		UnitGroup& group = impl->groups[victim.faction_id];
 		const uint32 now = danikk_engine::getMsTimestamp();
-		const glm::dvec3 attacker_position = world.getPointWorldPosition(attacker_point_id);
-		const glm::dvec3 local_position = world.point_data.getPoint(attacker_point_id).body_local_position;
+		const glm::dvec3 attacker_position = world.humans.getWorldPosition(*attacker_data);
+		const glm::dvec3 local_position = attacker_data->body_local_position;
 		UnitSighting* contact = nullptr;
 		for(UnitSighting& sighting : group.known_sightings)
-			if(sighting.target_slot_id == attacker_slot_id
-				&& sighting.target_generation_id == attacker_slot->generation_id)
+			if(sighting.target_slot_id == attacker_human_id
+				&& sighting.target_generation_id == attacker_data->generation_id)
 			{
 				contact = &sighting;
 				break;
@@ -143,21 +112,21 @@ namespace danikk_space_engine
 		{
 			UnitSighting sighting;
 			sighting.faction_id = victim.faction_id;
-			sighting.target_slot_id = attacker_slot_id;
-			sighting.target_point_id = attacker_point_id;
-			sighting.target_generation_id = attacker_slot->generation_id;
+			sighting.target_slot_id = attacker_human_id;
+			sighting.target_point_id = attacker_human_id;
+			sighting.target_generation_id = attacker_data->generation_id;
 			sighting.position = attacker_position;
-			sighting.body_id = attacker_slot->world_body_id;
+			sighting.body_id = attacker_data->world_body_id;
 			sighting.body_local_position = local_position;
 			group.known_sightings.push(sighting);
 			contact = &group.known_sightings[group.known_sightings.size() - 1];
 		}
 		contact->position = attacker_position;
-		contact->body_id = attacker_slot->world_body_id;
+		contact->body_id = attacker_data->world_body_id;
 		contact->body_local_position = local_position;
 		contact->last_seen_timestamp_ms = now;
 		contact->last_attack_timestamp_ms = now;
-		contact->last_attacked_point_id = victim_point_id;
+		contact->last_attacked_point_id = victim_human_id;
 		// A confirmed hit is useful tactical intel but does not prove current line of sight.
 		group.attack_reported_this_tick = true;
 	}
@@ -185,53 +154,52 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @copydoc UnitSystem::collectNearbyHumanSlots */
-	void UnitSystem::collectNearbyHumanSlots(WorldBodyId body_id, const glm::dvec3& center,
-		double half_extent, DynamicArray<PointComponentSlotId>& result) const
+	/** @copydoc UnitSystem::collectNearbyHumanIds */
+	void UnitSystem::collectNearbyHumanIds(WorldBodyId body_id, const glm::dvec3& center,
+		double half_extent, DynamicArray<HumanId>& result) const
 	{
-		unit_system_internal::collectNearbyHumanSlots(
+		unit_system_internal::collectNearbyHumanIds(
 			world, impl->spatial_index, body_id, center, half_extent, result);
 	}
 
-	/** @copydoc UnitSystem::collectHumanSlots */
-	void UnitSystem::collectHumanSlots(DynamicArray<PointComponentSlotId>& slot_ids,
+	/** @copydoc UnitSystem::collectHumanIds */
+	void UnitSystem::collectHumanIds(DynamicArray<HumanId>& slot_ids,
 		DynamicArray<WorldBodyId>& body_ids) const
 	{
-		unit_system_internal::collectHumanSlots(impl->spatial_index, slot_ids, body_ids);
+		unit_system_internal::collectHumanIds(impl->spatial_index, slot_ids, body_ids);
 	}
 
 	/** @brief Registers a human in the tactical group associated with its current faction. */
-	void UnitSystem::registerAgent(PointComponentSlotId human_slot_id, bool enabled)
+	void UnitSystem::registerAgent(HumanId human_id, bool enabled)
 	{
 		DSE_WATCH();
-		if(!world.point_data.isPointComponentSlotActive(human_slot_id)) return;
-		PointComponentSlot& slot = world.point_data.getPointComponentSlot(human_slot_id);
-		if(slot.type_id != PointComponentTypeId::human) return;
-		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
+		HumanData* data = world.humans.findHuman(human_id);
+		if(data == nullptr) return;
+		HumanState& human = *data;
 		if(human.faction_id >= world.factions.size()) return;
 		ensureUnitGroupCount(impl->groups, world.factions.size());
 		UnitGroup& group = impl->groups[human.faction_id];
 		for(UnitAgentState& agent : group.agents)
-			if(agent.human_slot_id == human_slot_id && agent.human_generation_id == slot.generation_id)
+			if(agent.human_slot_id == human_id && agent.human_generation_id == data->generation_id)
 			{
 				agent.enabled = enabled;
 				return;
 			}
 		UnitAgentState agent;
-		agent.human_slot_id = human_slot_id;
-		agent.human_generation_id = slot.generation_id;
+		agent.human_slot_id = human_id;
+		agent.human_generation_id = data->generation_id;
 		agent.enabled = enabled;
 		group.agents.push(static_cast<UnitAgentState&&>(agent));
 	}
 
 	/** @brief Reads the registered unit's current movement target for its order indicator. */
-	bool UnitSystem::getMoveTarget(PointComponentSlotId human_slot_id,
+	bool UnitSystem::getMoveTarget(HumanId human_id,
 		uint64 generation_id, glm::dvec3& target_world) const
 	{
 		DSE_WATCH();
 		for(const UnitGroup& group : impl->groups)
 			for(const UnitAgentState& agent : group.agents)
-				if(agent.enabled && agent.human_slot_id == human_slot_id
+				if(agent.enabled && agent.human_slot_id == human_id
 					&& agent.human_generation_id == generation_id && agent.order.has_move_target)
 				{
 					target_world = agent.order.move_target_world;
@@ -241,13 +209,13 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Reads the current hierarchical state for a registered live unit. */
-	bool UnitSystem::getState(PointComponentSlotId human_slot_id, uint64 generation_id,
+	bool UnitSystem::getState(HumanId human_id, uint64 generation_id,
 		UnitGlobalState& global_state, UnitSubstate& substate) const
 	{
 		DSE_WATCH();
 		for(const UnitGroup& group : impl->groups)
 			for(const UnitAgentState& agent : group.agents)
-				if(agent.enabled && agent.human_slot_id == human_slot_id
+				if(agent.enabled && agent.human_slot_id == human_id
 					&& agent.human_generation_id == generation_id)
 				{
 					global_state = agent.global_state;

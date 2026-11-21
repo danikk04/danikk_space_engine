@@ -81,6 +81,9 @@ namespace danikk_space_engine
 		void resizeSlots(size_t count) { slots.resize(count); }
 	};
 
+	/** @brief Advances weapon cooldowns for an inventory owned outside the point-component system. */
+	void tickInventory(InventoryComponent& inventory, float dt);
+
 	/**
 	 * @brief Placement-constructs an inventory, copying optional initial slot contents.
 	 * @param destination Address of storage supplied by the point-component slot.

@@ -71,17 +71,14 @@ namespace danikk_space_engine
 
 		for(const SelectedUnitRef& reference : controller.selected_unit_refs)
 		{
-			if(!world.point_data.isPointComponentSlotActive(reference.slot_id)) continue;
-			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(reference.slot_id);
-			if(slot.generation_id != reference.generation_id
-				|| slot.type_id != PointComponentTypeId::human
-				|| !world.point_data.isPointActive(slot.point_id)
-				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
-			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
+			const HumanData* data = world.humans.findHuman(reference.human_id);
+			if(data == nullptr || data->generation_id != reference.generation_id
+				|| !world.world_body_data.isWorldBodyActive(data->world_body_id)) continue;
+			const HumanState& human = *data;
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 
-			const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
-			const glm::dvec3 center = world.getPointWorldPosition(slot.point_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(data->world_body_id);
+			const glm::dvec3 center = world.humans.getWorldPosition(*data);
 			glm::dvec3 body_up = body.rotation * glm::dvec3(human.up);
 			if(glm::length(body_up) <= 1e-9) body_up = body.rotation * glm::dvec3(human.ground_normal);
 			if(glm::length(body_up) <= 1e-9) body_up = glm::dvec3(0.0, 0.0, 1.0);
@@ -91,7 +88,7 @@ namespace danikk_space_engine
 			const glm::dvec3 feet = center - body_up * half_height;
 			// Query the ground for every selected unit so stale grounded state cannot leave a ring floating in the air.
 			const glm::dvec3 ray_origin = center + body_up * 0.1;
-			const RaycastHit ground_hit = world.raycasts.castBody(slot.world_body_id, ray_origin,
+			const RaycastHit ground_hit = world.raycasts.castBody(data->world_body_id, ray_origin,
 				vec3(-body_up), static_cast<float>(half_height + maximum_ground_gap + 0.25));
 			if(!ground_hit.hit) continue;
 			glm::dvec3 ground_normal = glm::dvec3(ground_hit.normal);

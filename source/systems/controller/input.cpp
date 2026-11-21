@@ -185,7 +185,7 @@ namespace danikk_space_engine
 		{
 			tickHumanDragTool(world, *this, hit, true, input.left_mouse_state,
 				input.alt_pressed ? tool_mouse_scroll_delta : 0.0f, input.alt_pressed);
-			const bool dragging_human = dragged_human_slot_id != static_cast<PointComponentSlotId>(-1);
+			const bool dragging_human = dragged_human_id != static_cast<HumanId>(-1);
 			tickDragTool(world, *this, hit, !dragging_human, input.left_mouse_state,
 				tool_mouse_scroll_delta, input.alt_pressed, getCursorDelta() * getMouseSensivity());
 		}

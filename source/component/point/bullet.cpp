@@ -114,21 +114,16 @@ namespace danikk_space_engine
 			const glm::dvec3 direction = glm::normalize(body.rotation * glm::dvec3(bullet.velocity));
 			const RaycastHit hit = world.raycasts.cast(start_world_position, vec3(direction), step_distance);
 			double nearest = hit.hit ? hit.distance : step_distance;
-			PointComponentSlotId victim_id = static_cast<PointComponentSlotId>(-1);
-			PointComponentSlotId suppression_target_id = static_cast<PointComponentSlotId>(-1);
+			HumanId victim_id = static_cast<HumanId>(-1);
+			HumanId suppression_target_id = static_cast<HumanId>(-1);
 			double nearest_suppression_distance = nearest;
-			for(PointComponentSlotId id : world.point_data.getUsedPointComponentSlotIds())
+			for(const HumanData& candidate : world.humans.getHumans())
 			{
-				if(!world.point_data.isPointComponentSlotActive(id)) continue;
-				const PointComponentSlot& candidate = world.point_data.getPointComponentSlot(id);
-				if(candidate.type_id != PointComponentTypeId::human || candidate.point_id == bullet.owner_point_id
-					|| !world.point_data.isPointActive(candidate.point_id)
-					|| candidate.world_body_id != slot.world_body_id) continue;
-				const HumanComponent& human = *static_cast<const HumanComponent*>(candidate.getData());
-				const DamageableComponent* health = findDamageable(world, candidate.point_id);
-				if(health == nullptr || health->getHealth() <= 0.0f) continue;
+				if(candidate.id == bullet.owner_human_id || candidate.world_body_id != slot.world_body_id
+					|| candidate.damageable.getHealth() <= 0.0f) continue;
+				const HumanState& human = candidate;
 				const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(human.up));
-				const glm::dvec3 center = world.getPointWorldPosition(candidate.point_id);
+				const glm::dvec3 center = world.humans.getWorldPosition(candidate);
 				const double radius = human.getHeight() * 0.14;
 				for(int i = -2; i <= 2; ++i)
 				{
@@ -140,45 +135,33 @@ namespace danikk_space_engine
 						&& along < nearest_suppression_distance)
 					{
 						nearest_suppression_distance = along;
-						suppression_target_id = id;
+						suppression_target_id = candidate.id;
 					}
 					if(perpendicular > radius * radius) continue;
 					const double half_chord = std::sqrt(glm::max(0.0, radius * radius - perpendicular));
 					if(along + half_chord < 0.0) continue;
 					const double entry = glm::max(0.0, along - half_chord);
-					if(entry < nearest) { nearest = entry; victim_id = id; }
+					if(entry < nearest) { nearest = entry; victim_id = candidate.id; }
 				}
 			}
-			if(victim_id != static_cast<PointComponentSlotId>(-1))
+			if(victim_id != static_cast<HumanId>(-1))
 			{
-				const PointComponentSlot& victim = world.point_data.getPointComponentSlot(victim_id);
-				DamageableComponent* health = findDamageable(world, victim.point_id);
-				if(health != nullptr)
+				HumanData* victim = world.humans.findHuman(victim_id);
+				if(victim != nullptr)
 				{
-					world.unit_system.reportAttack(bullet.owner_point_id, victim.point_id);
-					applyBallisticDamage(*health, bullet.damage, victim.point_id);
+					world.unit_system.reportAttack(bullet.owner_human_id, victim_id);
+					applyBallisticDamage(victim->damageable, bullet.damage);
 				}
 				bullet.destruction_queued = true;
 				world.components.deferPointDestruction(slot.point_id);
 				return;
 			}
-			if(suppression_target_id != static_cast<PointComponentSlotId>(-1))
+			if(suppression_target_id != static_cast<HumanId>(-1))
 			{
-				const PointComponentSlot& target = world.point_data.getPointComponentSlot(suppression_target_id);
-				world.unit_system.reportAttack(bullet.owner_point_id, target.point_id);
+				world.unit_system.reportAttack(bullet.owner_human_id, suppression_target_id);
 			}
 			if(hit.hit)
 			{
-				if(hit.hit_build_part && world.point_data.isPointComponentSlotActive(hit.build_part_slot_id))
-				{
-					const PointComponentSlot& part = world.point_data.getPointComponentSlot(hit.build_part_slot_id);
-					DamageableComponent* health = findDamageable(world, part.point_id);
-					if(health != nullptr)
-					{
-						applyBallisticDamage(*health, bullet.damage, part.point_id);
-						if(health->getHealth() <= 0.0f) world.components.deferPointDestruction(part.point_id);
-					}
-				}
 				world.setPointBodyLocalPosition(slot.point_id,
 					glm::conjugate(body.rotation) * (hit.position - body.position));
 				bullet.destruction_queued = true;
