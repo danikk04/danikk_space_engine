@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
 
@@ -13,8 +14,55 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 		return std::clamp(minimum + context.detail_scale * distance, minimum, 262144.0);
 	}
 
+	namespace
+	{
+		void updateRenderWindow(UpdateContext& context)
+		{
+			const double root_half_extent = PlanetTerrainTree::initial_root_half_extent;
+			const glm::dvec3 root_minimum(-root_half_extent);
+			const glm::dvec3 root_maximum(root_half_extent);
+			const double camera_distance = glm::length(context.camera_position);
+			glm::dvec3 anchor = context.camera_position;
+			if(context.height >= 0.0 && camera_distance > 1e-9)
+				anchor *= (camera_distance - context.height) / camera_distance;
+
+			const double target_half_extent = getTargetHalfExtent(context, anchor);
+			const double depth_value = std::ceil(std::log2(root_half_extent / target_half_extent));
+			const uint8 target_depth = static_cast<uint8>(std::clamp(depth_value, 0.0,
+				static_cast<double>(PlanetTerrainTree::maximum_depth)));
+			const uint8 window_depth = target_depth > 4 ? static_cast<uint8>(target_depth - 4) : 0;
+			const int32 cell_count = 1 << window_depth;
+			const double cell_width = std::ldexp(root_half_extent * 2.0, -window_depth);
+			for(uint8 axis = 0; axis < 3; ++axis)
+			{
+				int32 center_cell = static_cast<int32>(std::floor(
+					(anchor[axis] + root_half_extent) / cell_width));
+				center_cell = std::clamp(center_cell, 0, cell_count - 1);
+				const int32 first_cell = center_cell - 1;
+				const int32 end_cell = center_cell + 2;
+				context.render_window_minimum[axis] = glm::max(root_minimum[axis],
+					-root_half_extent + first_cell * cell_width);
+				context.render_window_maximum[axis] = glm::min(root_maximum[axis],
+					-root_half_extent + end_cell * cell_width);
+			}
+			context.render_window_initialized = true;
+		}
+
+		bool intersectsRenderWindow(const UpdateContext& context, const PlanetTerrainNode& node)
+		{
+			if(!context.render_window_initialized) return false;
+			const glm::dvec3 node_minimum = node.center - glm::dvec3(node.half_extent);
+			const glm::dvec3 node_maximum = node.center + glm::dvec3(node.half_extent);
+			for(uint8 axis = 0; axis < 3; ++axis)
+				if(node_maximum[axis] < context.render_window_minimum[axis]
+					|| node_minimum[axis] > context.render_window_maximum[axis]) return false;
+			return true;
+		}
+	}
+
 	bool isNodeRelevant(const UpdateContext& context, const PlanetTerrainNode& node)
 	{
+		if(!intersectsRenderWindow(context, node)) return false;
 		const double node_radius = node.half_extent * 1.7320508075688772;
 		const double center_distance = glm::length(node.center);
 		const double minimum_radius = glm::max(0.0, center_distance - node_radius);
@@ -104,6 +152,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 	{
 		DSE_WATCH();
 		context.detail_scale = context.height < 0.0 ? 0.01 : 0.015;
+		updateRenderWindow(context);
 		const auto count_visible_target_nodes = [&](auto&& self, const glm::dvec3& center,
 			double half_extent, uint8 depth, size_t limit) -> size_t
 		{
@@ -139,6 +188,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 		{
 			context.detail_scale *= 1.5;
 			context.detail_scale_adjustments++;
+			updateRenderWindow(context);
 			context.target_node_count = count_nodes();
 		}
 	}

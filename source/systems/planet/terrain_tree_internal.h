@@ -16,6 +16,9 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 		const glm::dvec3& camera_position;
 		double height;
 		const PlanetSettings& settings;
+		glm::dvec3 render_window_minimum = glm::dvec3(0.0);
+		glm::dvec3 render_window_maximum = glm::dvec3(0.0);
+		bool render_window_initialized = false;
 		double detail_scale = 0.0;
 		size_t target_node_count = 0;
 		size_t detail_scale_adjustments = 0;
