@@ -1,6 +1,6 @@
 #pragma once
 
-#include <danikk_space_engine/component/point/point.h>
+#include <danikk_space_engine/default.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_engine/mesh.h>
 
@@ -96,9 +96,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Stores a human character’s state, orientation, pose, and appearance.
 	 *
-	 * The owning Point is at the vertical center of the character. `forward`, `up`, and the
-	 * one-tick `desired_velocity` are in the owning WorldBody's local axes. UnitGroup or player control
-	 * writes the velocity command; this component consumes and clears it during its tick, updates
+	 * `forward`, `up`, and the one-tick `desired_velocity` are in the owning WorldBody's local axes.
+	 * UnitGroup or player control writes the velocity command; HumanSystem consumes and clears it, updates
 	 * gravity/support state, and advances the visual walking pose from actual tangential travel.
 	 */
 	struct HumanState
@@ -206,25 +205,6 @@ namespace danikk_space_engine
 	 * @param definition Definition object to populate for later shared rendering.
 	 */
 	void loadHumanDefinition(HumanDefinition& definition);
-
-	/**
-	 * @brief Creates a human at a world-body-relative position and equips it with the soldier loadout.
-	 *
-	 * Creates a point attached to a WorldBody and attaches the human and inventory components,
-	 * selects the loaded USMC MARPAT Woodland skin, and equips the initial MG-42 stack.
-	 * @param world World whose resource pools receive the new point and component slots.
-	 * @param body_id WorldBody that owns the new point and components.
-	 * @param position Feet position in world-body-local coordinates.
-	 * @param up Initial local up direction.
-	 * @param forward Initial local facing direction.
-	 * @return ID of the new human component slot.
-	 */
-	HumanId createHumanSoldier(World& world, WorldBodyId body_id,
-		const glm::dvec3& position, const vec3& up, const vec3& forward, FactionId faction_id);
-
-	/** @brief Creates and registers a faction-controlled human soldier on a WorldBody. */
-	HumanId createNpc(World& world, WorldBodyId body_id,
-		const glm::dvec3& position, const vec3& up, const vec3& forward, FactionId faction_id);
 
 	/**
 	 * @brief Dispatches the selected renderer and draws the shared body parts with the chosen skin.

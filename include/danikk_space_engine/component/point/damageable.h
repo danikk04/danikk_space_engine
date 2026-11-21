@@ -1,6 +1,6 @@
 #pragma once
 
-#include <danikk_space_engine/component/point/point.h>
+#include <danikk_space_engine/id.h>
 
 namespace danikk_space_engine
 {
@@ -20,7 +20,7 @@ namespace danikk_space_engine
 		float thermal_resistance; ///< Fraction of thermal damage absorbed.
 	};
 
-	/** @brief Current health for one point-attached object. */
+	/** @brief Current health for one entity. */
 	struct DamageableComponent
 	{
 		DamageableDefinitionId definition_id = damageable_definition_ids::human; ///< Shared settings index.
@@ -37,10 +37,4 @@ namespace danikk_space_engine
 	const DamageableDefinition& getDamageableDefinition(DamageableDefinitionId id);
 	/** @brief Applies ballistic resistance and clamps remaining health to zero. */
 	void applyBallisticDamage(DamageableComponent& damageable, float damage);
-	/** @brief Constructs a damageable payload using optional initial state. */
-	void constructDamageableComponent(void* destination, const void* init_data);
-	/** @brief Moves a damageable payload to replacement storage. */
-	void moveDamageableComponent(void* destination, void* source);
-	/** @brief Destroys a damageable payload. */
-	void destroyDamageableComponent(void* data);
 }

@@ -38,7 +38,7 @@ namespace danikk_space_engine::unit_system_internal
 			if(!getActiveUnit(world, agent, human) || human->faction_id != system.faction_id) continue;
 			const WorldBodyId body_id = human->world_body_id;
 			const glm::dvec3 position = world.humans.getWorldPosition(*human);
-			candidates.push(UnitSearchCandidate{agent.human_slot_id, human, &agent, human, body_id, position, false});
+			candidates.push(UnitSearchCandidate{agent.human_id, human, &agent, human, body_id, position, false});
 		}
 
 		// Drop assignments for removed units, units that moved to another body, and units now fighting/searching.
@@ -47,7 +47,7 @@ namespace danikk_space_engine::unit_system_internal
 			UnitPostCombatAssignment& assignment = assignments[i];
 			UnitSearchCandidate* candidate = nullptr;
 			for(UnitSearchCandidate& current : candidates)
-				if(current.slot_id == assignment.unit_slot_id)
+				if(current.human_id == assignment.human_id)
 				{
 					candidate = &current;
 					break;
@@ -73,7 +73,7 @@ namespace danikk_space_engine::unit_system_internal
 
 			UnitPostCombatAssignment* assignment = nullptr;
 			for(UnitPostCombatAssignment& existing : assignments)
-				if(existing.unit_slot_id == candidate.slot_id
+				if(existing.human_id == candidate.human_id
 					&& existing.unit_generation_id == candidate.data->generation_id
 					&& existing.body_id == candidate.body_id)
 				{
@@ -91,12 +91,12 @@ namespace danikk_space_engine::unit_system_internal
 				const vec3 reference = std::abs(up.x) < 0.8f ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 1.0f, 0.0f);
 				const vec3 tangent_x = glm::normalize(glm::cross(up, reference));
 				const vec3 tangent_y = glm::normalize(glm::cross(up, tangent_x));
-				const uint32 seed = static_cast<uint32>(candidate.slot_id) * 2654435761u
+				const uint32 seed = static_cast<uint32>(candidate.human_id) * 2654435761u
 					+ static_cast<uint32>(candidate.data->generation_id);
 				const float angle = static_cast<float>(seed % 6283u) * 0.001f;
 				const float radius = 2.5f + static_cast<float>((seed >> 8) % 4u) * 0.75f;
 				UnitPostCombatAssignment created;
-				created.unit_slot_id = candidate.slot_id;
+				created.human_id = candidate.human_id;
 				created.unit_generation_id = candidate.data->generation_id;
 				created.body_id = candidate.body_id;
 				created.body_local_position = body_local_position
@@ -121,7 +121,7 @@ namespace danikk_space_engine::unit_system_internal
 				if(assignment->scan_angle > glm::two_pi<float>())
 					assignment->scan_angle -= glm::two_pi<float>();
 				assignment->next_scan_timestamp_ms = now + 1800u
-					+ (static_cast<uint32>(candidate.slot_id) * 97u) % 900u;
+					+ (static_cast<uint32>(candidate.human_id) * 97u) % 900u;
 			}
 
 			vec3 up = human.up;

@@ -3,7 +3,7 @@
 #include <danikk_engine/input.h>
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/assets/human_skin.h>
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/systems/faction/faction.h>
@@ -61,7 +61,7 @@ namespace danikk_space_engine
 			const vec3 local_normal = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			if(glm::dot(up, local_normal) < 0.5f) return;
 			const vec3 forward = vec3(inverse_rotation * (world.camera.getWorldPosition() - hit.position));
-			const HumanId human_id = createNpc(world, body_id,
+			const HumanId human_id = world.humans.createNpc(body_id,
 				local_position + glm::dvec3(up * 0.02f), up, forward, faction_id);
 			if(HumanData* human = world.humans.findHuman(human_id)) human->appearance.skin_id = skin_id;
 		}

@@ -6,7 +6,7 @@
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/scenario/npc_diagnostics.h>
-#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/world.h>

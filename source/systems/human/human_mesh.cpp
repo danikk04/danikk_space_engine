@@ -1,4 +1,4 @@
-#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/human.h>
 
 namespace danikk_space_engine
 {

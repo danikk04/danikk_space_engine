@@ -79,14 +79,6 @@ namespace danikk_space_engine
 		return nullptr;
 	}
 
-	HumanData* HumanSystem::findHumanAtPosition(WorldBodyId body_id,
-		const glm::dvec3& body_local_position)
-	{
-		for(HumanData& human : humans)
-			if(human.world_body_id == body_id && human.body_local_position == body_local_position) return &human;
-		return nullptr;
-	}
-
 	glm::dvec3 HumanSystem::getWorldPosition(const HumanData& human) const
 	{
 		if(!world.world_body_data.isWorldBodyActive(human.world_body_id))

@@ -19,12 +19,14 @@ namespace danikk_space_engine
 		void shutdown();
 		HumanData& createHuman(WorldBodyId body_id, const glm::dvec3& body_local_position,
 			const HumanState& initial_state = HumanState());
+		/** @brief Creates a soldier at a feet position, equips its default weapon, and registers its AI. */
+		HumanId createNpc(WorldBodyId body_id, const glm::dvec3& feet_position,
+			const vec3& up, const vec3& forward, FactionId faction_id);
 		bool destroyHuman(HumanId id);
 		void destroyWorldBodyHumans(WorldBodyId body_id);
 		bool isHumanActive(HumanId id) const;
 		HumanData* findHuman(HumanId id);
 		const HumanData* findHuman(HumanId id) const;
-		HumanData* findHumanAtPosition(WorldBodyId body_id, const glm::dvec3& body_local_position);
 		const DynamicArray<HumanData>& getHumans() const { return humans; }
 		void tick();
 		void frame();

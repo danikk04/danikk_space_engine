@@ -99,17 +99,17 @@ namespace danikk_space_engine::unit_system_internal
 			if(!getActiveUnit(world, agent, human) || human->faction_id != system.faction_id) continue;
 			const WorldBodyId body_id = human->world_body_id;
 			const glm::dvec3 position = world.humans.getWorldPosition(*human);
-			candidates.push(UnitSearchCandidate{agent.human_slot_id, human, &agent, human, body_id, position, false});
+			candidates.push(UnitSearchCandidate{agent.human_id, human, &agent, human, body_id, position, false});
 		}
 
 		// Reserve agents already assigned to valid locations before assigning the remaining units.
 		for(const UnitSearchLocation& location : system.search_locations)
 		{
 			if(location.is_corpse != corpse_recovery) continue;
-			if(location.assigned_unit_slot_id == static_cast<HumanId>(-1)) continue;
+			if(location.assigned_human_id == static_cast<HumanId>(-1)) continue;
 			for(UnitSearchCandidate& candidate : candidates)
 			{
-				if(candidate.slot_id != location.assigned_unit_slot_id
+				if(candidate.human_id != location.assigned_human_id
 					|| candidate.body_id != location.body_id) continue;
 				candidate.assigned_to_search = true;
 				break;
@@ -128,10 +128,10 @@ namespace danikk_space_engine::unit_system_internal
 			UnitSearchLocation& location = system.search_locations[index];
 			if(location.is_corpse != corpse_recovery) { ++index; continue; }
 			UnitSearchCandidate* assigned_unit = nullptr;
-			if(location.assigned_unit_slot_id != static_cast<HumanId>(-1))
+			if(location.assigned_human_id != static_cast<HumanId>(-1))
 			{
 				for(UnitSearchCandidate& candidate : candidates)
-					if(candidate.slot_id == location.assigned_unit_slot_id)
+					if(candidate.human_id == location.assigned_human_id)
 					{
 						assigned_unit = &candidate;
 						break;
@@ -139,7 +139,7 @@ namespace danikk_space_engine::unit_system_internal
 				if(assigned_unit == nullptr || assigned_unit->body_id != location.body_id)
 				{
 					if(assigned_unit != nullptr) assigned_unit->assigned_to_search = false;
-					location.assigned_unit_slot_id = static_cast<HumanId>(-1);
+					location.assigned_human_id = static_cast<HumanId>(-1);
 				}
 				else if(world.world_body_data.isWorldBodyActive(location.body_id))
 				{
@@ -168,7 +168,7 @@ namespace danikk_space_engine::unit_system_internal
 				}
 			}
 
-			if(location.assigned_unit_slot_id == static_cast<HumanId>(-1))
+			if(location.assigned_human_id == static_cast<HumanId>(-1))
 			{
 				const glm::dvec3 target_position = getSearchWorldPosition(world, location);
 				UnitSearchCandidate* nearest_candidate = nullptr;
@@ -186,7 +186,7 @@ namespace danikk_space_engine::unit_system_internal
 					}
 				}
 				if(nearest_candidate == nullptr) { ++index; continue; }
-				location.assigned_unit_slot_id = nearest_candidate->slot_id;
+				location.assigned_human_id = nearest_candidate->human_id;
 				nearest_candidate->assigned_to_search = true;
 				if(corpse_recovery) nearest_candidate->agent->global_state = UnitGlobalState::work;
 				const glm::dvec3 offset = target_position - nearest_candidate->position;

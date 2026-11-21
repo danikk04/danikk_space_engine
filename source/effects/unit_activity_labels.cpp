@@ -1,6 +1,6 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/assets/collection.h>
-#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/effects/unit_activity_labels.h>
 #include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/systems/unit/unit.h>

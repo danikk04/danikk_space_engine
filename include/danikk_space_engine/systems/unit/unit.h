@@ -71,7 +71,7 @@ namespace danikk_space_engine
 		void collectNearbyHumanIds(WorldBodyId body_id, const glm::dvec3& center,
 			double half_extent, DynamicArray<HumanId>& result) const;
 		/** @brief Copies indexed human component IDs and their owning bodies for spatial systems. */
-		void collectHumanIds(DynamicArray<HumanId>& slot_ids,
+		void collectHumanIds(DynamicArray<HumanId>& human_ids,
 			DynamicArray<WorldBodyId>& body_ids) const;
 		/** @brief Clears all faction groups when the owning world resets or shuts down. */
 		void reset();

@@ -2,7 +2,7 @@
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/assets/human_skin.h>
-#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/effects/world_body_preview.h>
 #include <danikk_space_engine/effects/event_spawn_preview.h>
 #include <danikk_space_engine/assets/collection.h>

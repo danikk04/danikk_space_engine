@@ -1,7 +1,7 @@
 #pragma once
 
 #include <danikk_framework/dynamic_array.h>
-#include <danikk_space_engine/component/point/point.h>
+#include <danikk_space_engine/id.h>
 #include <danikk_space_engine/id.h>
 
 namespace danikk_space_engine
@@ -58,7 +58,7 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Owns a dynamic sequence of item stacks for the point carrying this component.
+	 * @brief Owns a dynamic sequence of item stacks for one entity.
 	 *
 	 * The inventory is generic and can be attached to people, machines, or storage points;
 	 * item behavior and render data are resolved through the item-definition catalog.
@@ -84,25 +84,4 @@ namespace danikk_space_engine
 	/** @brief Advances weapon cooldowns for an inventory owned outside the point-component system. */
 	void tickInventory(InventoryComponent& inventory, float dt);
 
-	/**
-	 * @brief Placement-constructs an inventory, copying optional initial slot contents.
-	 * @param destination Address of storage supplied by the point-component slot.
-	 * @param init_data Optional pointer to an `InventoryComponent`; null creates an empty inventory.
-	 */
-	void constructInventoryComponent(void* destination, const void* init_data);
-
-	/**
-	 * @brief Move-constructs an inventory payload during slot relocation.
-	 * @param destination Address of replacement payload storage.
-	 * @param source Existing payload, whose destructor is run after the move.
-	 */
-	void moveInventoryComponent(void* destination, void* source);
-
-	/**
-	 * @brief Runs the inventory destructor, releasing its dynamic slot array.
-	 * @param data Address of the live inventory payload.
-	 */
-	void destroyInventoryComponent(void* data);
-	/** @brief Advances cooldowns of weapon items in this inventory. */
-	void tickInventoryComponent(PointComponentSlot& slot, World& world);
 }

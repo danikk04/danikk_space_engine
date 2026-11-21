@@ -31,7 +31,7 @@ namespace danikk_space_engine::unit_system_internal
 					if(!location.is_corpse)
 					{
 						location.is_corpse = true;
-						location.assigned_unit_slot_id = static_cast<HumanId>(-1);
+						location.assigned_human_id = static_cast<HumanId>(-1);
 					}
 			}
 		}

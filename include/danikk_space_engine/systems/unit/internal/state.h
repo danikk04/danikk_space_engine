@@ -2,16 +2,15 @@
 
 #include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/systems/unit/unit.h>
-#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/systems/human/data.h>
 
 namespace danikk_space_engine::unit_system_internal
 {
-	/** @brief Pooled point-component identity used for safe enemy references. */
+	/** @brief Stable human identity paired with its generation token. */
 	struct UnitTarget
 	{
-		HumanId slot_id = static_cast<HumanId>(-1);
-		PointId point_id = static_cast<PointId>(-1);
+		HumanId human_id = static_cast<HumanId>(-1);
 		uint64 generation_id = 0;
 	};
 
@@ -35,8 +34,7 @@ namespace danikk_space_engine::unit_system_internal
 		bool has_look_target = false;
 		glm::dvec3 look_target_world = glm::dvec3(0.0);
 		bool has_attack_target = false;
-		HumanId target_slot_id = static_cast<HumanId>(-1);
-		PointId target_point_id = static_cast<PointId>(-1);
+		HumanId target_human_id = static_cast<HumanId>(-1);
 		uint64 target_generation_id = 0;
 		bool has_equip_order = false;
 		ItemDefinitionId equip_item_definition_id = static_cast<ItemDefinitionId>(-1);
@@ -49,8 +47,7 @@ namespace danikk_space_engine::unit_system_internal
 			has_move_target = false;
 			has_look_target = false;
 			has_attack_target = false;
-			target_slot_id = static_cast<HumanId>(-1);
-			target_point_id = static_cast<PointId>(-1);
+			target_human_id = static_cast<HumanId>(-1);
 			target_generation_id = 0;
 			has_equip_order = false;
 			equip_item_definition_id = static_cast<ItemDefinitionId>(-1);
@@ -62,7 +59,7 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Central AI state and current order for one registered human. */
 	struct UnitAgentState
 	{
-		HumanId human_slot_id = static_cast<HumanId>(-1);
+		HumanId human_id = static_cast<HumanId>(-1);
 		uint64 human_generation_id = 0;
 		bool enabled = true;
 		UnitGlobalState global_state = UnitGlobalState::rest;
@@ -76,15 +73,14 @@ namespace danikk_space_engine::unit_system_internal
 	struct UnitSighting
 	{
 		FactionId faction_id = static_cast<FactionId>(-1);
-		HumanId target_slot_id = static_cast<HumanId>(-1);
-		PointId target_point_id = static_cast<PointId>(-1);
+		HumanId target_human_id = static_cast<HumanId>(-1);
 		uint64 target_generation_id = 0;
 		glm::dvec3 position = glm::dvec3(0.0);
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 body_local_position = glm::dvec3(0.0);
 		uint32 last_seen_timestamp_ms = 0;
 		uint32 last_attack_timestamp_ms = 0;
-		PointId last_attacked_point_id = static_cast<PointId>(-1);
+		HumanId last_attacked_human_id = static_cast<HumanId>(-1);
 		bool visible_last_tick = false;
 		bool visible_this_tick = false;
 		bool visibility_checked_this_tick = false;
@@ -95,9 +91,9 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 body_local_position = glm::dvec3(0.0);
-		HumanId target_slot_id = static_cast<HumanId>(-1);
+		HumanId target_human_id = static_cast<HumanId>(-1);
 		uint64 target_generation_id = 0;
-		HumanId assigned_unit_slot_id = static_cast<HumanId>(-1);
+		HumanId assigned_human_id = static_cast<HumanId>(-1);
 		bool is_corpse = false;
 	};
 
@@ -111,7 +107,7 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Tick-local candidate data reused while assigning one faction's search tasks. */
 	struct UnitSearchCandidate
 	{
-		HumanId slot_id = static_cast<HumanId>(-1);
+		HumanId human_id = static_cast<HumanId>(-1);
 		HumanData* data = nullptr;
 		UnitAgentState* agent = nullptr;
 		HumanState* human = nullptr;
@@ -123,7 +119,7 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Persistent dispersal position and scan phase for one battle recon unit. */
 	struct UnitPostCombatAssignment
 	{
-		HumanId unit_slot_id = static_cast<HumanId>(-1);
+		HumanId human_id = static_cast<HumanId>(-1);
 		uint64 unit_generation_id = 0;
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 body_local_position = glm::dvec3(0.0);

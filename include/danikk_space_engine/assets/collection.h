@@ -8,7 +8,7 @@
 #include <danikk_engine/style.h>
 #include <danikk_engine/mesh.h>
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/human.h>
 
 namespace danikk_space_engine
 {

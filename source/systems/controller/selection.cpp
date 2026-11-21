@@ -1,5 +1,5 @@
 #include <danikk_space_engine/systems/controller/controller.h>
-#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/world.h>

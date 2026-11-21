@@ -22,7 +22,7 @@ namespace danikk_space_engine::unit_system_internal
 		/** @brief Current-tick assignments used to spread a faction's fire across valid targets. */
 		struct TargetAllocation
 		{
-			HumanId target_slot_id = static_cast<HumanId>(-1);
+			HumanId target_human_id = static_cast<HumanId>(-1);
 			uint64 target_generation_id = 0;
 			uint32 unit_count = 0;
 			float expected_damage_per_second = 0.0f;
@@ -74,7 +74,7 @@ namespace danikk_space_engine::unit_system_internal
 			const UnitSighting& sighting)
 		{
 			for(const TargetAllocation& allocation : allocations)
-				if(allocation.target_slot_id == sighting.target_slot_id
+				if(allocation.target_human_id == sighting.target_human_id
 					&& allocation.target_generation_id == sighting.target_generation_id) return &allocation;
 			return nullptr;
 		}
@@ -85,7 +85,7 @@ namespace danikk_space_engine::unit_system_internal
 			const glm::dvec3& target_position, const WorldBody& body,
 			const DynamicArray<TargetAllocation>& allocations)
 		{
-			const HumanData* target_data = world.humans.findHuman(sighting.target_slot_id);
+			const HumanData* target_data = world.humans.findHuman(sighting.target_human_id);
 			if(target_data == nullptr) return 0.0f;
 			const HumanState& target = *target_data;
 			const glm::dvec3 offset = target_position - own_position;
@@ -107,14 +107,14 @@ namespace danikk_space_engine::unit_system_internal
 					score *= 1.0f + 0.35f * (1.0f - glm::clamp(health->getHealth() / maximum_health, 0.0f, 1.0f));
 			}
 			if(sighting.visible_this_tick) score *= 1.35f;
-			if(sighting.target_slot_id == previous_target.slot_id
+			if(sighting.target_human_id == previous_target.human_id
 				&& sighting.target_generation_id == previous_target.generation_id) score *= 1.4f;
 
 			const uint32 now = danikk_engine::getMsTimestamp();
 			const uint32 attack_age = now - sighting.last_attack_timestamp_ms;
 			if(sighting.last_attack_timestamp_ms != 0 && attack_age <= 3000)
 			{
-				if(sighting.last_attacked_point_id == static_cast<PointId>(own_data.id))
+				if(sighting.last_attacked_human_id == own_data.id)
 				{
 					const glm::dvec3 toward_attacker = distance > 0.001 ? offset / distance : glm::dvec3(0.0);
 					const glm::dvec3 own_forward = body.rotation * glm::dvec3(human.getForward());
@@ -140,7 +140,7 @@ namespace danikk_space_engine::unit_system_internal
 			const UnitSighting& sighting, float expected_damage_per_second)
 		{
 			for(TargetAllocation& allocation : allocations)
-				if(allocation.target_slot_id == sighting.target_slot_id
+				if(allocation.target_human_id == sighting.target_human_id
 					&& allocation.target_generation_id == sighting.target_generation_id)
 				{
 					++allocation.unit_count;
@@ -148,7 +148,7 @@ namespace danikk_space_engine::unit_system_internal
 					return;
 				}
 			TargetAllocation allocation;
-			allocation.target_slot_id = sighting.target_slot_id;
+			allocation.target_human_id = sighting.target_human_id;
 			allocation.target_generation_id = sighting.target_generation_id;
 			allocation.unit_count = 1;
 			allocation.expected_damage_per_second = expected_damage_per_second;
@@ -163,8 +163,8 @@ namespace danikk_space_engine::unit_system_internal
 		DynamicArray<TargetAllocation>& allocations)
 	{
 		DynamicArray<UnitSighting>& known_sightings = system.known_sightings;
-		const UnitTarget previous_target{agent.order.target_slot_id,
-			agent.order.target_point_id, agent.order.target_generation_id};
+		const UnitTarget previous_target{agent.order.target_human_id,
+			agent.order.target_generation_id};
 		agent.order.clear();
 		const glm::dvec3 own_position = world.humans.getWorldPosition(human_data);
 		const WorldBodyId own_body_id = human_data.world_body_id;
@@ -175,7 +175,7 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			if(sighting.faction_id != human.faction_id || !isRecentSighting(sighting)
 				|| !isValidSighting(world, sighting)) continue;
-			const HumanData* sighted = world.humans.findHuman(sighting.target_slot_id);
+			const HumanData* sighted = world.humans.findHuman(sighting.target_human_id);
 			if(sighted == nullptr || sighted->world_body_id != own_body_id) continue;
 			const glm::dvec3 target_position = world.humans.getWorldPosition(*sighted);
 			const float score = scoreTarget(world, sighting, human_data, human, previous_target,
@@ -189,10 +189,9 @@ namespace danikk_space_engine::unit_system_internal
 		if(best == nullptr) return;
 
 		agent.order.has_attack_target = true;
-		agent.order.target_slot_id = best->target_slot_id;
-		agent.order.target_point_id = best->target_point_id;
+		agent.order.target_human_id = best->target_human_id;
 		agent.order.target_generation_id = best->target_generation_id;
-		HumanData* target_data = world.humans.findHuman(best->target_slot_id);
+		HumanData* target_data = world.humans.findHuman(best->target_human_id);
 		if(target_data == nullptr) return;
 		const glm::dvec3 target_position = world.humans.getWorldPosition(*target_data);
 		const glm::dvec3 shot_origin = own_position
@@ -214,7 +213,7 @@ namespace danikk_space_engine::unit_system_internal
 			agent.order.has_look_target = true;
 			agent.order.look_target_world = target_position;
 			rememberSighting(world, system, human.faction_id,
-				UnitTarget{best->target_slot_id, best->target_point_id, best->target_generation_id},
+				UnitTarget{best->target_human_id, best->target_generation_id},
 				target_position);
 
 			if(weapon != nullptr && weapon->is_equipped)

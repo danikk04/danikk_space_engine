@@ -15,7 +15,7 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			for(UnitSearchLocation& location : system.search_locations)
 			{
-				if(location.target_slot_id != sighting.target_slot_id
+				if(location.target_human_id != sighting.target_human_id
 					|| location.target_generation_id != sighting.target_generation_id) continue;
 				location.body_id = sighting.body_id;
 				location.body_local_position = sighting.body_local_position;
@@ -25,7 +25,7 @@ namespace danikk_space_engine::unit_system_internal
 			UnitSearchLocation location;
 			location.body_id = sighting.body_id;
 			location.body_local_position = sighting.body_local_position;
-			location.target_slot_id = sighting.target_slot_id;
+			location.target_human_id = sighting.target_human_id;
 			location.target_generation_id = sighting.target_generation_id;
 			location.is_corpse = is_corpse;
 			system.search_locations.push(location);
@@ -40,9 +40,8 @@ namespace danikk_space_engine::unit_system_internal
 
 				UnitSighting corpse_location;
 				corpse_location.faction_id = system.faction_id;
-				corpse_location.target_slot_id = human.id;
+				corpse_location.target_human_id = human.id;
 				corpse_location.target_generation_id = human.generation_id;
-				corpse_location.target_point_id = human.id;
 				corpse_location.body_id = human.world_body_id;
 				corpse_location.body_local_position = human.body_local_position;
 				rememberSearchLocation(system, corpse_location, true);
@@ -58,7 +57,7 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Checks that a cached target still identifies a living hostile human. */
 	bool isValidEnemy(World& world, const UnitTarget& target, FactionId faction)
 	{
-		const HumanData* human = world.humans.findHuman(target.slot_id);
+		const HumanData* human = world.humans.findHuman(target.human_id);
 		if(human == nullptr || human->generation_id != target.generation_id
 			|| !world.world_body_data.isWorldBodyActive(human->world_body_id)) return false;
 		return human->damageable.getHealth() > 0.0f && faction < world.factions.size()
@@ -69,7 +68,7 @@ namespace danikk_space_engine::unit_system_internal
 	bool isValidSighting(World& world, const UnitSighting& sighting)
 	{
 		if(sighting.faction_id >= world.factions.size()) return false;
-		const HumanData* target = world.humans.findHuman(sighting.target_slot_id);
+		const HumanData* target = world.humans.findHuman(sighting.target_human_id);
 		if(target == nullptr || target->generation_id != sighting.target_generation_id
 			|| !world.world_body_data.isWorldBodyActive(target->world_body_id)) return false;
 		if(target->faction_id >= world.factions.size()
@@ -82,15 +81,14 @@ namespace danikk_space_engine::unit_system_internal
 	void rememberSighting(World& world, UnitGroup& system, FactionId faction_id,
 		const UnitTarget& target, const glm::dvec3& position)
 	{
-		const HumanData* target_data = world.humans.findHuman(target.slot_id);
+		const HumanData* target_data = world.humans.findHuman(target.human_id);
 		if(target_data == nullptr || target_data->generation_id != target.generation_id
 			|| !world.world_body_data.isWorldBodyActive(target_data->world_body_id)) return;
 		const glm::dvec3 body_local_position = target_data->body_local_position;
 		for(UnitSighting& sighting : system.known_sightings)
 		{
-			if(sighting.faction_id != faction_id || sighting.target_slot_id != target.slot_id
+			if(sighting.faction_id != faction_id || sighting.target_human_id != target.human_id
 				|| sighting.target_generation_id != target.generation_id) continue;
-			sighting.target_point_id = target.slot_id;
 			sighting.position = position;
 			sighting.body_id = target_data->world_body_id;
 			sighting.body_local_position = body_local_position;
@@ -102,8 +100,7 @@ namespace danikk_space_engine::unit_system_internal
 		}
 		UnitSighting sighting;
 		sighting.faction_id = faction_id;
-		sighting.target_slot_id = target.slot_id;
-		sighting.target_point_id = target.slot_id;
+		sighting.target_human_id = target.human_id;
 		sighting.target_generation_id = target.generation_id;
 		sighting.position = position;
 		sighting.body_id = target_data->world_body_id;

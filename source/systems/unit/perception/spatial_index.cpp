@@ -21,7 +21,7 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			if(!world.world_body_data.isWorldBodyActive(human.world_body_id)) continue;
 			UnitSpatialEntry& entry = index.entries.pushCtor();
-			entry.target = UnitTarget{human.id, human.id, human.generation_id};
+			entry.target = UnitTarget{human.id, human.generation_id};
 			entry.body_id = human.world_body_id;
 			entry.position = human.body_local_position;
 		}
@@ -34,7 +34,7 @@ namespace danikk_space_engine::unit_system_internal
 		DSE_WATCH();
 		agent.enemy_candidates.clear();
 		agent.candidate_index = 0;
-		const HumanData* own = world.humans.findHuman(agent.human_slot_id);
+		const HumanData* own = world.humans.findHuman(agent.human_id);
 		if(own == nullptr || own->generation_id != agent.human_generation_id
 			|| own->world_body_id != body_id) return;
 		const glm::dvec3 extent(unit_spatial_query_half_extent);
@@ -45,7 +45,7 @@ namespace danikk_space_engine::unit_system_internal
 			if(candidate.world_body_id != body_id) continue;
 			if(glm::any(glm::lessThan(candidate.body_local_position, minimum))
 				|| glm::any(glm::greaterThan(candidate.body_local_position, maximum))) continue;
-			const UnitTarget target{candidate.id, candidate.id, candidate.generation_id};
+			const UnitTarget target{candidate.id, candidate.generation_id};
 			if(isValidEnemy(world, target, faction)) agent.enemy_candidates.push(target);
 		}
 	}
@@ -70,14 +70,14 @@ namespace danikk_space_engine::unit_system_internal
 
 	/** @brief Copies human IDs and owning bodies from the tactical index. */
 	void collectHumanIds(const UnitSpatialIndex& index,
-		DynamicArray<HumanId>& slot_ids, DynamicArray<WorldBodyId>& body_ids)
+		DynamicArray<HumanId>& human_ids, DynamicArray<WorldBodyId>& body_ids)
 	{
 		DSE_WATCH();
-		slot_ids.clear();
+		human_ids.clear();
 		body_ids.clear();
 		for(const UnitSpatialEntry& entry : index.entries)
 		{
-			slot_ids.push(entry.target.slot_id);
+			human_ids.push(entry.target.human_id);
 			body_ids.push(entry.body_id);
 		}
 	}

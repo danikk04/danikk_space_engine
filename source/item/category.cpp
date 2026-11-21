@@ -2,7 +2,7 @@
 #include <danikk_space_engine/item/item.h>
 
 #include <danikk_space_engine/component/point/bullet.h>
-#include <danikk_space_engine/component/point/human/human.h>
+#include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/item/definition.h>
 #include <danikk_space_engine/world.h>
 

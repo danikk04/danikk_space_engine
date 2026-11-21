@@ -15,7 +15,7 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			for(UnitSighting& sighting : system.known_sightings)
 			{
-				if(sighting.target_slot_id != target.slot_id
+				if(sighting.target_human_id != target.human_id
 					|| sighting.target_generation_id != target.generation_id) continue;
 				sighting.visibility_checked_this_tick = true;
 				return;
@@ -39,8 +39,8 @@ namespace danikk_space_engine::unit_system_internal
 			HumanData* human = nullptr;
 			if(!getActiveUnit(world, agent, human)) continue;
 			if(human->faction_id != system.faction_id) continue;
-			const UnitTarget previous_target{agent.order.target_slot_id,
-				agent.order.target_point_id, agent.order.target_generation_id};
+			const UnitTarget previous_target{agent.order.target_human_id,
+				agent.order.target_generation_id};
 			if(agent.order.has_attack_target) markVisibilityChecked(system, previous_target);
 			if(agent.order.has_attack_target && isValidEnemy(world, previous_target, human->faction_id))
 			{
@@ -48,7 +48,7 @@ namespace danikk_space_engine::unit_system_internal
 				const WorldBody& body = world.world_body_data.getWorldBody(human->world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
-				const HumanData* target_human = world.humans.findHuman(previous_target.slot_id);
+				const HumanData* target_human = world.humans.findHuman(previous_target.human_id);
 				if(target_human == nullptr) continue;
 				const glm::dvec3 target_position = world.humans.getWorldPosition(*target_human);
 				const glm::dvec3 delta = target_position - shot_origin;
@@ -74,7 +74,7 @@ namespace danikk_space_engine::unit_system_internal
 				const WorldBody& body = world.world_body_data.getWorldBody(human->world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
-				const HumanData* target_human = world.humans.findHuman(candidate.slot_id);
+				const HumanData* target_human = world.humans.findHuman(candidate.human_id);
 				if(target_human == nullptr) continue;
 				const glm::dvec3 target_position = world.humans.getWorldPosition(*target_human);
 				const glm::dvec3 delta = target_position - shot_origin;

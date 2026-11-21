@@ -6,5 +6,3 @@ sources += files(
 	'damageable.cpp',
 	'point.cpp',
 )
-
-subdir('human')
