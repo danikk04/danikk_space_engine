@@ -192,7 +192,8 @@ namespace danikk_space_engine
 		if(planet == nullptr) return false;
 		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
 		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
-		planet->terrain_edits.append(PlanetTerrainEdit{center, radius, material_id});
+		if(planet->terrain_edits.append(PlanetTerrainEdit{center, radius, material_id})
+			== static_cast<PlanetTerrainEditId>(-1)) return false;
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
 		world.saves.savePlanetTerrainEdits(world_body_id);

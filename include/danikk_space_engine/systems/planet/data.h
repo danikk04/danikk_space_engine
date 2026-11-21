@@ -60,6 +60,8 @@ namespace danikk_space_engine
 		uint8 state = 0;
 		bool desired = false;
 		bool has_record = false;
+
+		bool isOccupied() const;
 	};
 
 	/** @brief Per-planet hash lookup of local equal-sized spatial buckets for points and units. */

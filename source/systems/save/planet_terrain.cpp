@@ -99,7 +99,8 @@ namespace danikk_space_engine
 			loaded_edits.push(edit);
 		}
 		for(const PlanetTerrainEdit& edit : loaded_edits)
-			planet.terrain_edits.append(edit);
+			if(planet.terrain_edits.append(edit) == static_cast<PlanetTerrainEditId>(-1))
+				formatLogWarning("Ignoring terrain edit that exceeds the spatial index range");
 		planet.terrain_revision = header.terrain_revision;
 		if(loaded_legacy_file || header.version != terrain_edits_version)
 		{

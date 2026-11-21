@@ -12,16 +12,16 @@ namespace danikk_space_engine
 	namespace
 	{
 		/**
-		 * @brief Finds a deterministic underground camera sample in a sufficiently thick solid region.
+		 * @brief Finds a deterministic camera sample just below the surface in solid terrain.
 		 * @param planet_body_id Planet whose persisted terrain edits are loaded for sampling.
 		 * @param planet_settings Radius, seed, and protected core settings for the scalar field.
 		 * @param camera_position Receives the first qualifying world-body-local position.
 		 * @return True when a sample is found; false when the planet is too small or
 		 *         all tested radial directions lack the required solid depth.
-		 * Scans ten fixed directions from beyond the terrain inward, one voxel-size
-		 * step at a time, stopping outside the core plus a two-voxel safety margin.
-		 * It requires consecutive solid samples to avoid spawning in a thin cave
-		 * wall. Terrain edit stamps are loaded before evaluating the field.
+		 * Scans a bounded depth below the edited heightmap in ten fixed directions.
+		 * Starting from each direction's actual surface avoids scanning from a
+		 * planet-wide edit radius, while the depth limit prevents a cave opening from
+		 * triggering millions of expensive density samples toward the core.
 		 */
 		bool findGroundCameraPosition(
 			const World& world,
@@ -30,17 +30,9 @@ namespace danikk_space_engine
 			glm::dvec3& camera_position)
 		{
 			constexpr double surface_margin = planet_voxel_size * 2.0;
+			constexpr double maximum_search_depth = 512.0;
 			const double core_clearance = planet_settings.core_radius + surface_margin;
 			if(planet_settings.radius <= core_clearance + planet_voxel_size) return false;
-
-			double outer_radius = planet_settings.radius + 64.0;
-			const PlanetData& planet = world.planets.getPlanet(planet_body_id);
-			for(PlanetTerrainEditId edit_id : planet.terrain_edits.ids)
-			{
-				if(!planet.terrain_edits.pool->isActive(edit_id)) continue;
-				outer_radius = glm::max(outer_radius,
-					(*planet.terrain_edits.pool)[edit_id].getMaximumRadiusFromOrigin(surface_margin));
-			}
 			const glm::dvec3 directions[] = {
 				glm::dvec3(0.0, 0.0, 1.0), glm::dvec3(0.0, 0.0, -1.0),
 				glm::dvec3(1.0, 0.0, 0.0), glm::dvec3(-1.0, 0.0, 0.0),
@@ -62,8 +54,12 @@ namespace danikk_space_engine
 			for(const glm::dvec3& direction : directions)
 			{
 				double consecutive_solid_depth = 0.0;
-				for(double distance = outer_radius; distance > core_clearance; distance -= step)
+				const double surface_radius = world.planets.getPlanetSurfaceRadius(
+					planet_body_id, direction, PlanetTerrainMode::heightmap_with_edits);
+				for(double depth = step; depth <= maximum_search_depth; depth += step)
 				{
+					const double distance = surface_radius - depth;
+					if(distance < core_clearance) break;
 					const glm::dvec3 sample_position = direction * distance;
 					if(density_at(sample_position) <= 0.0)
 					{

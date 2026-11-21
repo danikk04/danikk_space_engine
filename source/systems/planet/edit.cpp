@@ -96,27 +96,46 @@ namespace danikk_space_engine
 			recordReferenceLocation(tree, node_id, reference);
 		}
 
-		void expandRootToContain(PlanetTerrainEdits& tree, const PlanetTerrainEdit& edit)
+		bool expandRootToContain(PlanetTerrainEdits& tree, const PlanetTerrainEdit& edit)
 		{
+			const size_t original_node_count = tree.nodes.size();
+			const uint32 original_root_id = tree.root_id;
+			const auto reject_expansion = [&tree, original_node_count, original_root_id]()
+			{
+				tree.nodes.resize(original_node_count);
+				tree.root_id = original_root_id;
+				return false;
+			};
+			const glm::dvec3 minimum = edit.getCenter() - glm::dvec3(edit.getRadius());
+			const glm::dvec3 maximum = edit.getCenter() + glm::dvec3(edit.getRadius());
+			if(!std::isfinite(minimum.x) || !std::isfinite(minimum.y) || !std::isfinite(minimum.z)
+				|| !std::isfinite(maximum.x) || !std::isfinite(maximum.y) || !std::isfinite(maximum.z))
+				return false;
 			if(tree.root_id == invalid_node_id)
 				tree.root_id = appendNode(tree, glm::dvec3(0.0),
 					PlanetTerrainEdits::initial_root_half_extent);
-			const glm::dvec3 minimum = edit.getCenter() - glm::dvec3(edit.getRadius());
-			const glm::dvec3 maximum = edit.getCenter() + glm::dvec3(edit.getRadius());
-			while(true)
+			constexpr uint32 maximum_root_expansions = 64;
+			for(uint32 expansion = 0; expansion <= maximum_root_expansions; ++expansion)
 			{
 				const PlanetTerrainEditNode& root = tree.nodes[tree.root_id];
 				const glm::dvec3 root_minimum = root.center - glm::dvec3(root.half_extent);
 				const glm::dvec3 root_maximum = root.center + glm::dvec3(root.half_extent);
 				if(glm::all(glm::greaterThanEqual(minimum, root_minimum))
-					&& glm::all(glm::lessThanEqual(maximum, root_maximum))) return;
+					&& glm::all(glm::lessThanEqual(maximum, root_maximum))) return true;
+				if(expansion == maximum_root_expansions) break;
 				const glm::dvec3 old_center = root.center;
 				const double old_half_extent = root.half_extent;
+				const double new_half_extent = old_half_extent * 2.0;
+				if(!std::isfinite(new_half_extent) || new_half_extent <= old_half_extent)
+					return reject_expansion();
 				glm::dvec3 shift(0.0);
 				for(uint8 axis = 0; axis < 3; ++axis)
 					shift[axis] = (edit.getCenter()[axis] >= old_center[axis] ? 1.0 : -1.0) * old_half_extent;
 				const uint32 old_root_id = tree.root_id;
-				const uint32 new_root_id = appendNode(tree, old_center + shift, old_half_extent * 2.0);
+				const glm::dvec3 new_center = old_center + shift;
+				if(!std::isfinite(new_center.x) || !std::isfinite(new_center.y)
+					|| !std::isfinite(new_center.z)) return reject_expansion();
+				const uint32 new_root_id = appendNode(tree, new_center, new_half_extent);
 				uint8 old_child_index = 0;
 				for(uint8 axis = 0; axis < 3; ++axis)
 					if(old_center[axis] >= tree.nodes[new_root_id].center[axis])
@@ -124,16 +143,17 @@ namespace danikk_space_engine
 				tree.nodes[new_root_id].children[old_child_index] = old_root_id;
 				tree.root_id = new_root_id;
 			}
+			return reject_expansion();
 		}
 	}
 
 	PlanetTerrainEditId PlanetTerrainEdits::append(const PlanetTerrainEdit& edit)
 	{
+		if(!expandRootToContain(*this, edit)) return static_cast<PlanetTerrainEditId>(-1);
 		const PlanetTerrainEditId edit_id = pool->create();
 		(*pool)[edit_id] = edit;
 		ids.push(edit_id);
 		const uint64 order = next_order++;
-		expandRootToContain(*this, edit);
 		insertReference(*this, root_id, PlanetTerrainEditReference{edit_id, order}, edit);
 		return edit_id;
 	}

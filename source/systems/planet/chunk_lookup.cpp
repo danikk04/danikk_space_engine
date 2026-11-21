@@ -60,7 +60,8 @@ namespace danikk_space_engine
 				const PlanetChunkLookupEntry& entry = entries[index];
 				if(entry.state == empty_bucket)
 				{
-					return find_deleted_bucket && first_deleted != static_cast<size_t>(-1)
+					if(!find_deleted_bucket) return static_cast<size_t>(-1);
+					return first_deleted != static_cast<size_t>(-1)
 						? first_deleted
 						: index;
 				}
@@ -77,7 +78,8 @@ namespace danikk_space_engine
 		/**
 		 * @brief Grows the lookup table at its load threshold and rehashes live entries.
 		 *
-		 * Capacity starts at 16 and doubles; tombstones are discarded during rehashing.
+		 * Capacity starts at 16 and doubles when live entries require more room.
+		 * When tombstones fill the table, rehashing reuses the current capacity.
 		 * @param lookup Table whose bucket storage may be replaced.
 		 */
 		void ensureChunkLookupCapacity(PlanetChunkLookup& lookup)
@@ -85,7 +87,9 @@ namespace danikk_space_engine
 			if(lookup.entries.size() != 0
 				&& (lookup.used_bucket_count + 1) * 10 < lookup.entries.size() * 7) return;
 
-			const size_t new_capacity = lookup.entries.size() == 0 ? 16 : lookup.entries.size() * 2;
+			const size_t capacity = lookup.entries.size();
+			size_t new_capacity = capacity == 0 ? 16 : capacity;
+			if((lookup.entry_count + 1) * 10 >= new_capacity * 7) new_capacity *= 2;
 			DynamicArray<PlanetChunkLookupEntry> new_entries;
 			new_entries.resize(new_capacity);
 			for(const PlanetChunkLookupEntry& old_entry : lookup.entries)
@@ -98,6 +102,11 @@ namespace danikk_space_engine
 			lookup.entries = static_cast<DynamicArray<PlanetChunkLookupEntry>&&>(new_entries);
 			lookup.used_bucket_count = lookup.entry_count;
 		}
+	}
+
+	bool PlanetChunkLookupEntry::isOccupied() const
+	{
+		return state == occupied_bucket;
 	}
 
 	/**

@@ -193,9 +193,11 @@ namespace danikk_space_engine
 		if(!world.point_data.isPointActive(point_id)) return;
 		Point& point = world.point_data.getPoint(point_id);
 		while(point.referencing_chunk_ids.size() > 0)
-			removePointReferenceFromChunk(point.referencing_chunk_ids[point.referencing_chunk_ids.size() - 1], point_id);
-		while(point.component_slot_ids.size() > 0)
-			removePointComponentSlotFromChunk(point.component_slot_ids[point.component_slot_ids.size() - 1]);
+			if(!removePointReferenceFromChunk(
+				point.referencing_chunk_ids[point.referencing_chunk_ids.size() - 1], point_id))
+				danikk_engine::formatFatalError("Point % references a chunk that does not contain it", point_id);
+		for(PointComponentSlotId slot_id : point.component_slot_ids)
+			removePointComponentSlotFromChunk(slot_id);
 		if(point.world_body_id != static_cast<WorldBodyId>(-1)
 			&& world.world_body_data.isWorldBodyActive(point.world_body_id)
 			&& !removePointFromBody(world,
@@ -218,6 +220,8 @@ namespace danikk_space_engine
 		while(build_part_slots_by_chunk[id].size() > 0)
 		{
 			const PointComponentSlotId slot_id = build_part_slots_by_chunk[id][build_part_slots_by_chunk[id].size() - 1];
+			if(world.point_data.getPointComponentSlot(slot_id).chunk_id != id)
+				danikk_engine::formatFatalError("BuildPart component % does not belong to chunk %", slot_id, id);
 			removePointComponentSlotFromChunk(slot_id);
 			world.point_data.destroyPointComponentSlot(slot_id);
 		}
@@ -230,7 +234,8 @@ namespace danikk_space_engine
 				if(body != nullptr) removePointFromBody(world, *body, point_id);
 				continue;
 			}
-			if(!removePointReferenceFromChunk(id, point_id)) continue;
+			if(!removePointReferenceFromChunk(id, point_id))
+				danikk_engine::formatFatalError("Chunk % could not detach point %", id, point_id);
 			Point& point = world.point_data.getPoint(point_id);
 			for(size_t slot_index = point.component_slot_ids.size(); slot_index > 0;)
 			{

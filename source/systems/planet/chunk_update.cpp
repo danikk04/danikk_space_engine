@@ -55,14 +55,9 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		for(size_t index = 0; index < planet.chunk_lookup.entries.size();)
+		for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
 		{
-			const PlanetChunkLookupEntry& entry = planet.chunk_lookup.entries[index];
-			if(planet.chunk_lookup.isDesired(entry.grid_coordinate))
-			{
-				++index;
-				continue;
-			}
+			if(!entry.isOccupied() || entry.desired) continue;
 			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.chunks.isChunkActive(entry.chunk_id))
 			{
 				if constexpr(log_chunk_diagnostics)
