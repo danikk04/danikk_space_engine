@@ -5,24 +5,6 @@
 
 namespace danikk_space_engine
 {
-	namespace
-	{
-
-		/**
-		 * @brief Checks whether an active chunk is owned by a body with a live Planet component.
-		 * @param world World used to resolve the chunk, body, and component slots.
-		 * @param chunk_id Candidate chunk ID.
-		 * @return True when the full ownership chain is active and contains a planet component.
-		 */
-		bool isPlanetChunk(const World& world, ChunkId chunk_id)
-		{
-			if(!world.chunks.isChunkActive(chunk_id)) return false;
-			const Chunk& chunk = world.chunks.getChunk(chunk_id);
-			if(!world.world_body_data.isWorldBodyActive(chunk.world_body_id)) return false;
-			return world.planets.isPlanet(chunk.world_body_id);
-		}
-	}
-
 	/**
 	 * @brief Applies a six-metre-radius stone fill or terrain cut to a planet hit.
 	 * @param world World containing the target planet.
@@ -32,7 +14,7 @@ namespace danikk_space_engine
 	 */
 	ToolApplyResult applyTerrainTool(World& world, ToolActionId action, const RaycastHit& hit)
 	{
-		if(!hit.hit || hit.hit_build_part || !isPlanetChunk(world, hit.chunk_id)) return ToolApplyResult();
+		if(!hit.hit || hit.hit_build_part || !world.planets.isPlanet(hit.body_id)) return ToolApplyResult();
 		switch(action)
 		{
 			case ToolActionId::extrude:

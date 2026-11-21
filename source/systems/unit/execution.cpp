@@ -94,7 +94,8 @@ namespace danikk_space_engine::unit_system_internal
 		const glm::ivec3 coordinate = glm::ivec3(glm::floor(position / planet_chunk_width));
 		ChunkId new_chunk_id = static_cast<ChunkId>(-1);
 		PlanetData* planet = world.planets.findPlanet(old_chunk.world_body_id);
-		if(planet != nullptr) planet->chunk_lookup.getChunk(coordinate, new_chunk_id);
+		if(planet != nullptr && planet->chunk_lookup.isDesired(coordinate))
+			new_chunk_id = world.planets.getOrCreateSpatialChunk(old_chunk.world_body_id, coordinate);
 		if(planet == nullptr || new_chunk_id == human_slot.chunk_id) return;
 		if(!world.chunks.isChunkActive(new_chunk_id))
 		{

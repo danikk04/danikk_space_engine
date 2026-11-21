@@ -45,7 +45,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Destroys loaded chunks outside the current desired set and removes their lookup records.
+	 * @brief Destroys object chunks outside the desired set and removes unused lookup records.
 	 * @param planet Lookup containing the current desired set and loaded chunk IDs.
 	 * @param world World that coordinates chunk, point, and mesh resources.
 	 */
@@ -58,8 +58,7 @@ namespace danikk_space_engine
 		for(size_t index = 0; index < planet.chunk_lookup.entries.size();)
 		{
 			const PlanetChunkLookupEntry& entry = planet.chunk_lookup.entries[index];
-			if((!entry.has_record && entry.chunk_id == static_cast<ChunkId>(-1))
-				|| planet.chunk_lookup.isDesired(entry.grid_coordinate))
+			if(planet.chunk_lookup.isDesired(entry.grid_coordinate))
 			{
 				++index;
 				continue;
@@ -80,7 +79,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Maintains the 13x13x13 spatial-cell set around the camera or projected surface point.
+		 * @brief Maintains the desired 13x13x13 object-storage cell set around the camera.
 	 *
 	 * The cells provide spatial buckets for points and units; planet surface meshes are managed by
 	 * the adaptive surface tree independently.
@@ -104,17 +103,29 @@ namespace danikk_space_engine
 				{
 					const glm::ivec3 key(x, y, z);
 					planet.chunk_lookup.markDesired(key);
-					ChunkId chunk_id = static_cast<ChunkId>(-1);
-					if(planet.chunk_lookup.getChunk(key, chunk_id) && world.chunks.isChunkActive(chunk_id)) continue;
-					Chunk& chunk = world.chunks.createChunk(planet.world_body_id);
-					chunk.grid_coordinate = key;
-					chunk.position = glm::dvec3(key) * planet_chunk_width;
-					chunk.render_enabled = false;
-					chunk_id = chunk.chunk_id;
-					planet.chunk_lookup.setChunk(key, chunk_id);
 				}
 
 		unloadChunksOutsideDesiredSet(planet);
+	}
+
+	/** @copydoc PlanetSystem::getOrCreateSpatialChunk */
+	ChunkId PlanetSystem::getOrCreateSpatialChunk(
+		WorldBodyId world_body_id, const glm::ivec3& grid_coordinate)
+	{
+		if(!world.world_body_data.isWorldBodyActive(world_body_id)) return static_cast<ChunkId>(-1);
+		PlanetData* planet = findPlanet(world_body_id);
+		if(planet == nullptr) return static_cast<ChunkId>(-1);
+		ChunkId chunk_id = static_cast<ChunkId>(-1);
+		if(planet->chunk_lookup.getChunk(grid_coordinate, chunk_id)
+			&& world.chunks.isChunkActive(chunk_id)) return chunk_id;
+
+		planet->chunk_lookup.markDesired(grid_coordinate);
+		Chunk& chunk = world.chunks.createChunk(world_body_id);
+		chunk.grid_coordinate = grid_coordinate;
+		chunk.position = glm::dvec3(grid_coordinate) * planet_chunk_width;
+		chunk.render_enabled = false;
+		planet->chunk_lookup.setChunk(grid_coordinate, chunk.chunk_id);
+		return chunk.chunk_id;
 	}
 
 }

@@ -38,6 +38,8 @@ namespace danikk_space_engine
 
 		/** @brief Updates planet chunk streaming once for the current world frame. */
 		void update();
+		/** @brief Returns or creates an object-storage chunk at a desired planet grid coordinate. */
+		ChunkId getOrCreateSpatialChunk(WorldBodyId world_body_id, const glm::ivec3& grid_coordinate);
 		void acceptGeneratedSurfaceNode(const GeneratedChunkMesh& generated_mesh);
 		/** @brief Draws active adaptive surface-node meshes in the current depth pass. */
 		void renderSurfaceNodes();

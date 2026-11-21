@@ -7,6 +7,7 @@
 #include <danikk_space_engine/assets/human_skin.h>
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/systems/faction/faction.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/math/ray.h>
 
 namespace danikk_space_engine
@@ -60,6 +61,13 @@ namespace danikk_space_engine
 			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_position = inverse_rotation * (hit.position - body.position);
+			ChunkId chunk_id = hit.chunk_id;
+			if(!world.chunks.isChunkActive(chunk_id) && world.planets.isPlanet(body_id))
+			{
+				const glm::ivec3 coordinate(glm::floor(local_position / planet_chunk_width));
+				chunk_id = world.planets.getOrCreateSpatialChunk(body_id, coordinate);
+			}
+			if(!world.chunks.isChunkActive(chunk_id)) return;
 			vec3 up = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			if(world.planets.isPlanet(body_id))
 			{
@@ -71,7 +79,7 @@ namespace danikk_space_engine
 			const vec3 local_normal = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			if(glm::dot(up, local_normal) < 0.5f) return;
 			const vec3 forward = vec3(inverse_rotation * (world.camera.getWorldPosition() - hit.position));
-			const PointComponentSlotId human_id = createNpc(world, hit.chunk_id,
+			const PointComponentSlotId human_id = createNpc(world, chunk_id,
 				local_position + glm::dvec3(up * 0.02f), up, forward, faction_id);
 			HumanComponent& human = *static_cast<HumanComponent*>(world.point_data.getPointComponentSlot(human_id).getData());
 			human.appearance.skin_id = skin_id;

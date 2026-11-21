@@ -94,8 +94,7 @@ namespace danikk_space_engine
 				world, hit, shape, build_part_size, build_part_size_axis, build_part_rotation_step);
 		}
 		else if(show_event_spawn_preview) drawEventSpawnPreview(world, hit, selected_tool_action);
-		else if(hit.hit && world.world_body_data.isWorldBodyActive(hit.body_id)
-			&& world.chunks.isChunkActive(hit.chunk_id))
+		else if(hit.hit && world.world_body_data.isWorldBodyActive(hit.body_id))
 		{
 			const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);

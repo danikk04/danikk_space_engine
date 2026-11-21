@@ -98,14 +98,24 @@ namespace danikk_space_engine
 		 */
 		void createMachinegunAtHit(World& world, const RaycastHit& hit)
 		{
+			ChunkId chunk_id = hit.chunk_id;
+			if(!world.chunks.isChunkActive(chunk_id) && world.planets.isPlanet(hit.body_id))
+			{
+				const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
+				const glm::dvec3 local_position = glm::conjugate(body.rotation)
+					* (hit.position - body.position);
+				const glm::ivec3 coordinate(glm::floor(local_position / planet_chunk_width));
+				chunk_id = world.planets.getOrCreateSpatialChunk(hit.body_id, coordinate);
+			}
+			if(!world.chunks.isChunkActive(chunk_id)) return;
 			const PointId point_id = world.point_data.createPoint();
 			Point& point = world.point_data.getPoint(point_id);
-			const Chunk& chunk = world.chunks.getChunk(hit.chunk_id);
+			const Chunk& chunk = world.chunks.getChunk(chunk_id);
 			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 			const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
 			point.position = vec3(inverse_body_rotation
 				* (hit.position + glm::dvec3(hit.normal * 0.03f)
-				- world.chunks.getChunkWorldPosition(hit.chunk_id)));
+				- world.chunks.getChunkWorldPosition(chunk_id)));
 
 			MachinegunComponent machinegun;
 			machinegun.forward = vec3(inverse_body_rotation * glm::dvec3(world.camera.getFront()));
@@ -113,7 +123,7 @@ namespace danikk_space_engine
 			machinegun.right = vec3(inverse_body_rotation * glm::dvec3(world.camera.getRight()));
 			const PointComponentSlotId slot_id = world.point_data.createPointComponentSlot(
 				point_id, PointComponentTypeId::machine_gun, &machinegun);
-			world.chunks.addPointComponentSlotToChunk(hit.chunk_id, slot_id);
+			world.chunks.addPointComponentSlotToChunk(chunk_id, slot_id);
 		}
 
 	}

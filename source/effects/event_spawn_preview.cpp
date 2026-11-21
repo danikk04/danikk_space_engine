@@ -10,13 +10,12 @@ namespace danikk_space_engine
 	{
 		EventSpawnPlacement placements[5];
 		const uint8 placement_count = collectEventSpawnPlacements(world, hit, action, placements);
+		if(!world.world_body_data.isWorldBodyActive(hit.body_id)) return;
+		const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
 		const vec4 preview_color(0.08f, 0.35f, 1.0f, 0.55f);
 		for(uint8 index = 0; index < placement_count; ++index)
 		{
 			const EventSpawnPlacement& placement = placements[index];
-			if(!world.chunks.isChunkActive(placement.chunk_id)) continue;
-			const Chunk& chunk = world.chunks.getChunk(placement.chunk_id);
-			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 			const vec3 local_up = glm::normalize(placement.up);
 			vec3 local_forward = placement.forward - local_up * glm::dot(placement.forward, local_up);
 			if(glm::length(local_forward) <= 1e-6f)
