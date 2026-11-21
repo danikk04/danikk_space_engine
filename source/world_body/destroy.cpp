@@ -49,6 +49,8 @@ namespace danikk_space_engine
 		WorldBody& body = world_bodies[id];
 		while(body.chunk_ids.size() > 0)
 			chunks.destroyChunk(body.chunk_ids[body.chunk_ids.size() - 1]);
+		if(body.point_ids.size() > 0)
+			danikk_engine::formatFatalError("World body % still owns points after destroying its chunks", id);
 		while(body.component_slot_ids.size() > 0)
 			destroyWorldBodyComponentSlot(body.component_slot_ids[body.component_slot_ids.size() - 1]);
 		world_bodies.free(id);
@@ -72,8 +74,8 @@ namespace danikk_space_engine
 		destroyLastUntilEmpty(world_body_components.usedIds(),
 			[this](WorldBodyComponentSlotId id) { destroyWorldBodyComponentSlot(id); });
 		for(WorldBodyId id : world_bodies.usedIds())
-			if(world_bodies[id].chunk_ids.size() > 0)
-				danikk_engine::formatFatalError("World body % still owns chunks during WorldBodyData clear", id);
+			if(world_bodies[id].chunk_ids.size() > 0 || world_bodies[id].point_ids.size() > 0)
+				danikk_engine::formatFatalError("World body % still owns chunks or points during WorldBodyData clear", id);
 		clearPools(world_body_components, world_bodies);
 	}
 

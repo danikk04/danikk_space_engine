@@ -42,10 +42,10 @@ namespace danikk_space_engine
 		};
 
 		/**
-		 * @brief Resolves penetration of a moving chunk's mesh and BuildPart vertices into a planet scalar field.
+		 * @brief Resolves body point and BuildPart geometry penetration into a planet scalar field.
 		 * @param world World providing point data and planet/body transforms.
 		 * @param moving_body Non-planet body that receives position and velocity corrections.
-		 * @param moving_chunk Active chunk whose unique points are sampled.
+		 * @param moving_body Body whose indexed points and BuildParts are sampled.
 		 * @param mass_properties Approximate mass and scalar inertia for contact impulses.
 		 * @param target Planet body and scalar-field settings used for sampling.
 		 * For each point inside terrain, estimates the field gradient with central
@@ -54,14 +54,19 @@ namespace danikk_space_engine
 		 * discarded; remaining contacts with normals having dot product >= 0.98
 		 * are grouped. Four positional and four velocity passes resolve the groups.
 		 */
-		void collideChunkSurfaceWithPlanet(World& world, WorldBody& moving_body,
-			const Chunk& moving_chunk, const BodyMassProperties& mass_properties,
+		void collideBodySurfaceWithPlanet(World& world, WorldBodyId moving_body_id,
+			WorldBody& moving_body,
+			const BodyMassProperties& mass_properties,
 			const PlanetCollisionTarget& target)
 		{
 			const WorldBody& planet_body = world.world_body_data.getWorldBody(target.body_id);
 			const glm::dquat inverse_planet_rotation = glm::conjugate(planet_body.rotation);
 			DynamicArray<SurfaceContact> point_contacts;
-			point_contacts.reserve(moving_chunk.point_ids.size() + moving_chunk.build_part_component_slot_ids.size() * 8);
+			size_t build_part_count = 0;
+			for(ChunkId chunk_id : moving_body.chunk_ids)
+				if(world.chunks.isChunkActive(chunk_id))
+					build_part_count += world.chunks.getChunk(chunk_id).build_part_component_slot_ids.size();
+			point_contacts.reserve(moving_body.point_ids.size() + build_part_count * 8);
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
 				return world.planets.getPlanetDensity(target.body_id, position,
@@ -69,26 +74,39 @@ namespace danikk_space_engine
 			};
 			constexpr double gradient_step = planet_voxel_size * 0.25;
 			DynamicArray<glm::dvec3> local_points;
-			local_points.reserve(moving_chunk.point_ids.size() + moving_chunk.build_part_component_slot_ids.size() * 8);
-			for(PointId point_id : moving_chunk.point_ids)
+			local_points.reserve(moving_body.point_ids.size() + build_part_count * 8);
+			for(PointId point_id : moving_body.point_ids)
 			{
 				if(!world.point_data.isPointActive(point_id)) continue;
-				local_points.push(moving_chunk.position + glm::dvec3(world.point_data.getPoint(point_id).position));
-			}
-			for(PointComponentSlotId slot_id : moving_chunk.build_part_component_slot_ids)
-			{
-				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-				if(slot.type_id != PointComponentTypeId::build_part
-					|| !world.point_data.isPointActive(slot.point_id)) continue;
-				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
-				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
-				const glm::dvec3 anchor = moving_chunk.position
-					+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
-				for(const vec3& vertex : geometry.positions)
+				const Point& point = world.point_data.getPoint(point_id);
+				if(point.world_body_id != moving_body_id) continue;
+				for(ChunkId chunk_id : point.referencing_chunk_ids)
 				{
-					local_points.push(anchor
-						+ glm::dvec3(part.rotation * vec4(vertex * part.size, 0.0f)));
+					if(!world.chunks.isChunkActive(chunk_id)) continue;
+					const Chunk& chunk = world.chunks.getChunk(chunk_id);
+					if(chunk.world_body_id != moving_body_id) continue;
+					local_points.push(chunk.position + glm::dvec3(point.position));
+				}
+			}
+			for(ChunkId chunk_id : moving_body.chunk_ids)
+			{
+				if(!world.chunks.isChunkActive(chunk_id)) continue;
+				const Chunk& chunk = world.chunks.getChunk(chunk_id);
+				for(PointComponentSlotId slot_id : chunk.build_part_component_slot_ids)
+				{
+					if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
+					const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
+					if(slot.type_id != PointComponentTypeId::build_part
+						|| !world.point_data.isPointActive(slot.point_id)) continue;
+					const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
+					const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
+					const glm::dvec3 anchor = chunk.position
+						+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
+					for(const vec3& vertex : geometry.positions)
+					{
+						local_points.push(anchor
+							+ glm::dvec3(part.rotation * vec4(vertex * part.size, 0.0f)));
+					}
 				}
 			}
 			for(const glm::dvec3& local_point : local_points)
@@ -229,11 +247,11 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Collects planets, then resolves each eligible body's scalar-field contacts.
+		 * @brief Collects planets, then resolves each eligible body's scalar-field contacts.
 	 * @param world World containing planet components, loaded chunks, and moving bodies.
 	 * A body with a positive collision radius and no active triangle mesh uses the
-	 * spherical fallback. Otherwise each active chunk is tested through its mesh
-	 * points. Planet bodies, unloaded bodies, and bodies with invalid mass
+		 * spherical fallback. Otherwise the body's points and BuildPart vertices are tested.
+		 * Planet bodies, unloaded bodies, and bodies with invalid mass
 	 * properties are skipped; planets remain static during contact resolution.
 	 */
 	void PhysicsSystem::resolvePlanetCollisions()
@@ -294,16 +312,9 @@ namespace danikk_space_engine
 				}
 			}
 
-			for(ChunkId chunk_id : moving_body.chunk_ids)
-			{
-				if(!world.chunks.isChunkActive(chunk_id)) continue;
-				const Chunk& chunk = world.chunks.getChunk(chunk_id);
-				for(const PlanetCollisionTarget& target : planets)
-				{
-					if(target.body_id == moving_body_id) continue;
-					collideChunkSurfaceWithPlanet(world, moving_body, chunk, mass_properties, target);
-				}
-			}
+			for(const PlanetCollisionTarget& target : planets)
+				if(target.body_id != moving_body_id)
+					collideBodySurfaceWithPlanet(world, moving_body_id, moving_body, mass_properties, target);
 		}
 	}
 }

@@ -16,6 +16,8 @@ namespace danikk_space_engine
 		DSE_PROFILE_CONTROLLER()
 		const PointId point_id = world.point_data.createPoint();
 		world.point_data.getPoint(point_id) = source_point;
+		world.point_data.getPoint(point_id).world_body_id = static_cast<WorldBodyId>(-1);
+		world.point_data.getPoint(point_id).world_body_point_index = static_cast<size_t>(-1);
 		world.point_data.getPoint(point_id).referencing_chunk_ids.clear();
 		world.point_data.getPoint(point_id).component_slot_ids.clear();
 		MachinegunComponent machinegun;

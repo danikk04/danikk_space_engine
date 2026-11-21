@@ -13,7 +13,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Represents a positioned world body and indexes its chunks and components.
 	 *
-	 * `chunk_ids` and `component_slot_ids` contain pooled resource IDs managed by
+	 * `chunk_ids`, `point_ids`, and `component_slot_ids` contain pooled resource IDs managed by
 	 * WorldBodyData; destroying the body releases its component slots. Body
 	 * destruction is coordinated by WorldBodyData with ChunkSystem and PlanetSystem. The lists avoid
 	 * duplicate IDs and preserve insertion order. Position, orientation, and
@@ -42,6 +42,8 @@ namespace danikk_space_engine
 		 * The IDs are membership/index data; chunk objects live in ChunkSystem.
 		 */
 		DynamicArray<ChunkId> chunk_ids;
+		/** @brief Point IDs stored in this body's local coordinate frame. */
+		DynamicArray<PointId> point_ids;
 		/**
 		 * @brief IDs of component slots attached to this body.
 		 * The slots and payloads live in WorldBodyData's component pool.

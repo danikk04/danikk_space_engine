@@ -16,6 +16,43 @@ namespace danikk_space_engine
 	 */
 	void drawChunkBoundaries(World& world)
 	{
+		struct ChunkPointBounds
+		{
+			vec3 minimum = vec3(0.0f);
+			vec3 maximum = vec3(0.0f);
+			bool found = false;
+		};
+		DynamicArray<ChunkPointBounds> chunk_bounds;
+		chunk_bounds.resize(world.chunks.getChunkSlotCount());
+		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
+		{
+			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
+			for(PointId point_id : body.point_ids)
+			{
+				if(!world.point_data.isPointActive(point_id)) continue;
+				const Point& point = world.point_data.getPoint(point_id);
+				if(point.world_body_id != body_id) continue;
+				for(ChunkId chunk_id : point.referencing_chunk_ids)
+				{
+					if(!world.chunks.isChunkActive(chunk_id)
+						|| chunk_id >= chunk_bounds.size()) continue;
+					const Chunk& chunk = world.chunks.getChunk(chunk_id);
+					if(chunk.world_body_id != body_id) continue;
+					ChunkPointBounds& bounds = chunk_bounds[chunk_id];
+					if(!bounds.found)
+					{
+						bounds.minimum = point.position;
+						bounds.maximum = point.position;
+						bounds.found = true;
+					}
+					else
+					{
+						bounds.minimum = glm::min(bounds.minimum, point.position);
+						bounds.maximum = glm::max(bounds.maximum, point.position);
+					}
+				}
+			}
+		}
 		constexpr uint8 edge_indices[12][2]
 		{
 			{0, 1}, {1, 2}, {2, 3}, {3, 0},
@@ -39,28 +76,12 @@ namespace danikk_space_engine
 			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			for(ChunkId chunk_id : body.chunk_ids)
 			{
+				if(chunk_id >= chunk_bounds.size()) continue;
 				const Chunk& chunk = world.chunks.getChunk(chunk_id);
-				vec3 minimum(0.0f);
-				vec3 maximum(0.0f);
-				bool bounds_found = false;
-
-				for(PointId point_id : chunk.point_ids)
-				{
-					if(!world.point_data.isPointActive(point_id)) continue;
-					const vec3 position = world.point_data.getPoint(point_id).position;
-					if(!bounds_found)
-					{
-						minimum = position;
-						maximum = position;
-						bounds_found = true;
-					}
-					else
-					{
-						minimum = glm::min(minimum, position);
-						maximum = glm::max(maximum, position);
-					}
-				}
-				if(!bounds_found) continue;
+				const ChunkPointBounds& bounds = chunk_bounds[chunk_id];
+				if(!bounds.found) continue;
+				const vec3& minimum = bounds.minimum;
+				const vec3& maximum = bounds.maximum;
 
 				const vec3 corners[8]
 				{

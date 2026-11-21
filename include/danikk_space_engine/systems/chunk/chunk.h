@@ -52,8 +52,6 @@ namespace danikk_space_engine
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		/** @brief Chunk origin relative to its WorldBody origin, in double precision. */
 		glm::dvec3 position = glm::dvec3(0.0);
-		/** @brief Point IDs referenced by this chunk and its point components. */
-		DynamicArray<PointId> point_ids;
 		/** @brief BuildPart components whose combined geometry belongs to this chunk. */
 		DynamicArray<PointComponentSlotId> build_part_component_slot_ids;
 

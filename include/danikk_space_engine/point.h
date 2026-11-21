@@ -11,17 +11,21 @@ namespace danikk_space_engine
 	/**
 	 * @brief Stores a chunk-local mesh or placement position and its chunk reference count.
 	 *
-	 * A point is stored once in PointData and can be shared by multiple chunks.
-	 * Its reverse chunk index lists the distinct chunk `point_ids` arrays that
-	 * reference it. It does not count how many components use it.
+	 * A point is stored once in PointData and owned by one WorldBody. Its position
+	 * remains local to each referencing chunk; the reverse chunk index records
+	 * those spatial cells and does not count how many components use it.
 	 */
 	struct Point
 	{
+		/** @brief WorldBody whose local frame owns this point, or invalid before attachment. */
+		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
+		/** @brief Slot of this point in WorldBody::point_ids, or invalid before attachment. */
+		size_t world_body_point_index = static_cast<size_t>(-1);
 		/** @brief Position relative to the referencing chunk origin, stored in single precision. */
 		vec3 position = vec3(0.0f);
 		/** @brief Components attached to this point, independent of chunk membership. */
 		DynamicArray<PointComponentSlotId> component_slot_ids;
-		/** @brief Sorted IDs of chunks whose `point_ids` lists reference this point. */
+		/** @brief Sorted IDs of spatial chunks that reference this point. */
 		DynamicArray<ChunkId> referencing_chunk_ids;
 	};
 

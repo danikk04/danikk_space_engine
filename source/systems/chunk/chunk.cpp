@@ -33,7 +33,6 @@ namespace danikk_space_engine
 		bounds_center(other.bounds_center), bounds_radius(other.bounds_radius),
 		chunk_id(other.chunk_id), world_body_id(other.world_body_id),
 		grid_coordinate(other.grid_coordinate), position(other.position),
-		point_ids(static_cast<DynamicArray<PointId>&&>(other.point_ids)),
 		build_part_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.build_part_component_slot_ids))
 	{
 	}
@@ -55,7 +54,6 @@ namespace danikk_space_engine
 		world_body_id = other.world_body_id;
 		grid_coordinate = other.grid_coordinate;
 		position = other.position;
-		point_ids = static_cast<DynamicArray<PointId>&&>(other.point_ids);
 		build_part_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.build_part_component_slot_ids);
 		return *this;
 	}
