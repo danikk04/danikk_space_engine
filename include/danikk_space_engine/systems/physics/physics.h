@@ -35,8 +35,8 @@ namespace danikk_space_engine
 		 * @brief Destroys loaded non-planet bodies and point entities inside a planet's 5 m core radius.
 		 *
 		 * Planet centers are snapshotted first. IDs are collected before pool
-		 * destruction to avoid invalidating iteration. The camera point and planet
-		 * bodies are exempt; point components in unpoint-owned entities are not examined.
+		 * destruction to avoid invalidating iteration. Planet bodies are exempt; point
+		 * components in unpoint-owned entities are not examined.
 		 */
 		void destroyEntitiesInsidePlanetCore();
 

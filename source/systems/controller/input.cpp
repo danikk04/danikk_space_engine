@@ -9,13 +9,6 @@
 
 namespace danikk_space_engine
 {
-	void ControllerSystem::validateControllerBinding() const
-	{
-		DSE_PROFILE_CONTROLLER()
-		if(world.camera.getPointId() != controlled_point_id)
-			danikk_engine::formatFatalError("Controller system point does not match the active camera point");
-	}
-
 	void ControllerSystem::handleModeInput()
 	{
 		DSE_PROFILE_CONTROLLER()
@@ -174,7 +167,6 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		if(!controls()) return;
-		validateControllerBinding();
 		if(tool_catalog_open) return;
 		validateSelectedUnits();
 		handleModeInput();

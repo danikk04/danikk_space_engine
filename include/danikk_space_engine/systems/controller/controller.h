@@ -41,14 +41,14 @@ namespace danikk_space_engine
 			float mouse_scroll_delta = 0.0f;
 		};
 
-		/** @brief Owning World whose input and controlled point this system manages. */
+		/** @brief Owning World whose input and camera this system controls. */
 		World& world;
+		/** @brief Whether local control has been enabled for the active camera. */
+		bool is_bound = false;
 		/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
 		void validateSelectedUnits();
 		/** @brief Selects the nearest visible player-faction human intersected by the camera ray. */
 		bool selectOwnHumanUnderCursor(const RaycastHit& surface_hit, bool shift_pressed);
-		/** @brief Checks that the controlled point still matches the active camera. */
-		void validateControllerBinding() const;
 		/** @brief Toggles the player interaction mode when the slash key is pressed. */
 		void handleModeInput();
 		/** @brief Samples keyboard modifiers and mouse values for the current tick. */
@@ -67,8 +67,6 @@ namespace danikk_space_engine
 		void init();
 		/** @brief Clears controller bindings and logs subsystem shutdown. */
 		void shutdown();
-		/** @brief Point currently controlled by this system, or invalid when unbound. */
-		PointId controlled_point_id = static_cast<PointId>(-1);
 		/** @brief Current interaction mode. */
 		PlayerMode mode = PlayerMode::god;
 		/** @brief Tool category assigned to the selected hotbar command. */
@@ -108,13 +106,13 @@ namespace danikk_space_engine
 		/** @brief Saved follow-ground setting restored after the human drag ends. */
 		bool dragged_human_followed_ground = true;
 
-		/** @brief Binds the controller to a point and resets transient input state. */
-		void reset(PointId point_id);
-		/** @brief Returns whether a controlled point is currently bound. */
+		/** @brief Enables local control for the active camera and resets transient input state. */
+		void reset();
+		/** @brief Returns whether this controller and its camera are bound. */
 		bool controls() const;
 		/** @brief Releases controller state and transient selections. */
 		void unbind();
-		/** @brief Processes local input and applies the selected command to the controlled point. */
+		/** @brief Processes local input and applies the selected command to the world. */
 		void tick();
 		/** @brief Draws the placement or unit-spawn preview selected by the active tool. */
 		void renderPreview() const;

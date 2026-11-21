@@ -12,16 +12,20 @@
 
 namespace danikk_space_engine
 {
-	void ControllerSystem::init() { danikk_framework::formatLogInfo("Init ControllerSystem"); }
+	void ControllerSystem::init()
+	{
+		danikk_framework::formatLogInfo("Init ControllerSystem");
+		is_bound = false;
+	}
 	void ControllerSystem::shutdown()
 	{
 		danikk_framework::formatLogInfo("Shutdown ControllerSystem");
 		unbind();
 	}
-	/** @brief Resets controller state and binds it to the supplied point in the supplied world. */
-	void ControllerSystem::reset(PointId point_id)
+	/** @brief Resets controller state and enables control of the active camera. */
+	void ControllerSystem::reset()
 	{
-		controlled_point_id = point_id;
+		is_bound = true;
 		mode = PlayerMode::god;
 		active_tool = ToolId::none;
 		selected_hotbar_slot = 0;
@@ -43,17 +47,17 @@ namespace danikk_space_engine
 		dragged_human_followed_ground = true;
 	}
 
-	/** @brief Returns whether this controller is bound to the supplied world instance. */
+	/** @brief Returns whether local control is enabled and the camera remains active. */
 	bool ControllerSystem::controls() const
 	{
-		return controlled_point_id != static_cast<PointId>(-1);
+		return is_bound && world.camera.isActive();
 	}
 
 	/** @brief Releases world ownership and transient selections before the world is destroyed. */
 	void ControllerSystem::unbind()
 	{
-		if(!controls()) return;
-		controlled_point_id = static_cast<PointId>(-1);
+		if(!is_bound) return;
+		is_bound = false;
 		selected_unit_refs.clear();
 		dragged_world_body_id = static_cast<WorldBodyId>(-1);
 		dragged_human_id = static_cast<HumanId>(-1);

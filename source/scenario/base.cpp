@@ -81,8 +81,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Clears the world data and builds the Earth planet with its camera and local controller.
 	 * @param world World whose resource pools and singleton component-slot IDs are initialized.
-	 * Creates the configured Earth body and PlanetSystem record, then a camera point
-	 * attached directly to that body. The camera's requested spawn mode comes
+	 * Creates the configured Earth body and PlanetSystem record, then binds the camera
+	 * directly to a body-local position. The camera's requested spawn mode comes
 	 * from Settings; a failed underground search warns and uses the sky spawn.
 	 * Point callbacks are handled by ComponentSystem's global slot traversal.
 	 */
@@ -105,7 +105,6 @@ namespace danikk_space_engine
 		world.world_body_data.getWorldBody(planet_body_id).faction_id = base_faction_ids::celestial_body;
 		const PlanetSettings& planet_settings = world.planets.getPlanetSettings(planet_settings_ids::earth);
 		world.planets.createPlanet(planet_body_id, planet_settings_ids::earth);
-		const PointId camera_point_id = world.point_data.createPoint();
 		constexpr double camera_altitude = 10.0;
 		const glm::dvec3 camera_direction(0.0, 0.0, 1.0);
 		glm::dvec3 camera_body_local_position = camera_direction
@@ -117,9 +116,8 @@ namespace danikk_space_engine
 			danikk_framework::formatLogWarning(
 				"Unable to find solid underground camera position; spawning above the planet");
 		}
-		world.attachPointToBody(planet_body_id, camera_point_id, camera_body_local_position);
-		world.camera.bind(camera_point_id);
+		world.camera.bind(planet_body_id, camera_body_local_position);
 		world.camera.rotation.y = -pi_half;
-		world.controller.reset(camera_point_id);
+		world.controller.reset();
 	}
 }

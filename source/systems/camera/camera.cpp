@@ -24,9 +24,8 @@ namespace danikk_space_engine
 		/** @brief Parallel-transports the camera heading as its radial up vector changes. */
 		void updateCameraSurfaceFrame(CameraSystem& camera, const World& world)
 		{
-			const Point& point = world.point_data.getPoint(camera.getPointId());
-			if(!world.world_body_data.isWorldBodyActive(point.world_body_id)) return;
-			const WorldBody& body = world.world_body_data.getWorldBody(point.world_body_id);
+			if(!world.world_body_data.isWorldBodyActive(camera.getWorldBodyId())) return;
+			const WorldBody& body = world.world_body_data.getWorldBody(camera.getWorldBodyId());
 			const glm::dvec3 radial = camera.getWorldPosition() - body.position;
 			const double radial_length = glm::length(radial);
 			if(radial_length <= 0.000001) return;
@@ -70,9 +69,10 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc CameraSystem::bind */
-	void CameraSystem::bind(PointId new_point_id)
+	void CameraSystem::bind(WorldBodyId new_body_id, const glm::dvec3& new_body_local_position)
 	{
-		point_id = new_point_id;
+		body_id = new_body_id;
+		body_local_position = new_body_local_position;
 		surface_up = vec3(0.0f, 0.0f, 1.0f);
 		yaw_reference_forward = vec3(1.0f, 0.0f, 0.0f);
 		rotation = vec3(0.0f);
@@ -84,14 +84,15 @@ namespace danikk_space_engine
 	/** @copydoc CameraSystem::unbind */
 	void CameraSystem::unbind()
 	{
-		point_id = static_cast<PointId>(-1);
+		body_id = static_cast<WorldBodyId>(-1);
+		body_local_position = glm::dvec3(0.0);
 	}
 
 	/** @copydoc CameraSystem::isActive */
 	bool CameraSystem::isActive() const
 	{
-		return point_id != static_cast<PointId>(-1) && world.point_data.isPointActive(point_id)
-			&& world.world_body_data.isWorldBodyActive(world.point_data.getPoint(point_id).world_body_id);
+		return body_id != static_cast<WorldBodyId>(-1)
+			&& world.world_body_data.isWorldBodyActive(body_id);
 	}
 
 	/** @copydoc CameraSystem::getFront */
@@ -122,7 +123,8 @@ namespace danikk_space_engine
 	/** @copydoc CameraSystem::getWorldPosition */
 	glm::dvec3 CameraSystem::getWorldPosition() const
 	{
-		return world.getPointWorldPosition(point_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(body_id);
+		return body.position + body.rotation * body_local_position;
 	}
 
 	/** @copydoc CameraSystem::tick */
@@ -168,9 +170,7 @@ namespace danikk_space_engine
 		if(getKeyboardState(keyboard_buttons::s)) direction -= getFront();
 		if(getKeyboardState(keyboard_buttons::a)) direction -= getRight();
 		if(getKeyboardState(keyboard_buttons::d)) direction += getRight();
-		Point& point = world.point_data.getPoint(point_id);
-		world.setPointBodyLocalPosition(point_id,
-			point.body_local_position + glm::dvec3(direction * speed));
+		body_local_position += glm::dvec3(direction * speed);
 		updateCameraSurfaceFrame(*this, world);
 	}
 

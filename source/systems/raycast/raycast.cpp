@@ -241,9 +241,9 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Uses the active camera point and forward vector as the ray origin and direction.
+	 * @brief Uses the active camera position and forward vector as the ray origin and direction.
 	 * @param max_distance Maximum accepted ray length.
-	 * @return Nearest hit, or a miss if the camera slot/point is not active.
+	 * @return Nearest hit, or a miss if the camera's WorldBody is not active.
 	 */
 	RaycastHit RaycastSystem::castFromCamera(float max_distance) const
 	{

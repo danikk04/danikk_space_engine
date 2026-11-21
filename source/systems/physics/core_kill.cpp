@@ -42,7 +42,7 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Destroys loaded non-planet bodies and non-camera points inside any planet core.
+	 * @brief Destroys loaded non-planet bodies and point entities inside any planet core.
 	 * @param world World whose point and body data pools are modified.
 	 * Planet centers are copied before destruction. Body and point IDs are queued
 	 * before release so pool iteration is not invalidated. Point components in
@@ -77,17 +77,13 @@ namespace danikk_space_engine
 			world.destroyWorldBody(body_id);
 		}
 
-		PointId camera_point_id = static_cast<PointId>(-1);
-
-		if(world.camera.isActive()) camera_point_id = world.camera.getPointId();
-
 		DynamicArray<PointId> points_to_destroy;
 
 		for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
 		{
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(slot.point_id == camera_point_id || !world.point_data.isPointActive(slot.point_id)
+			if(!world.point_data.isPointActive(slot.point_id)
 				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
 			const glm::dvec3 position = world.getPointWorldPosition(slot.point_id);
 			if(!isInsideAnyPlanetCore(position, planets)) continue;

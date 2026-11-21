@@ -9,17 +9,18 @@
 namespace danikk_space_engine
 {
 	/**
-	 * @brief Owns the active camera's point binding, orientation, movement, and projection.
+	 * @brief Owns the active camera's body-local position, orientation, movement, and projection.
 	 *
-	 * The camera is world-level state rather than a point component: its point remains
-	 * attached to a WorldBody for spatial positioning, while this system handles camera input and view data.
+	 * The camera is world-level state attached directly to a WorldBody through a body-local position.
 	 */
 	class CameraSystem
 	{
-		/** @brief World providing input, point storage, and coordinate transforms. */
+		/** @brief World providing input, body storage, and coordinate transforms. */
 		World& world;
-		/** @brief Point used as the camera origin, or invalid when no camera is bound. */
-		PointId point_id = static_cast<PointId>(-1);
+		/** @brief WorldBody carrying the camera, or invalid when no camera is bound. */
+		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
+		/** @brief Camera position in the owning body's local coordinate frame. */
+		glm::dvec3 body_local_position = glm::dvec3(0.0);
 
 	public:
 		/** @brief Clears the camera binding and logs subsystem initialization. */
@@ -39,23 +40,25 @@ namespace danikk_space_engine
 		/** @brief Far clipping plane distance in world units. */
 		float far_clip_distance = 10000.0f;
 
-		/** @brief Binds camera state to a point attached to a WorldBody. */
-		void bind(PointId point_id);
+		/** @brief Binds camera state to a position in a WorldBody's local frame. */
+		void bind(WorldBodyId body_id, const glm::dvec3& body_local_position);
 		/** @brief Clears the camera binding. */
 		void unbind();
-		/** @brief Returns whether the bound point and owning WorldBody are still active. */
+		/** @brief Returns whether the bound WorldBody is still active. */
 		bool isActive() const;
-		/** @brief Returns the bound point ID, or the invalid ID when unbound. */
-		PointId getPointId() const { return point_id; }
-		/** @brief Returns camera forward in the camera point's local frame. */
+		/** @brief Returns the bound WorldBody ID, or the invalid ID when unbound. */
+		WorldBodyId getWorldBodyId() const { return body_id; }
+		/** @brief Returns the camera's position in its WorldBody's local frame. */
+		const glm::dvec3& getBodyLocalPosition() const { return body_local_position; }
+		/** @brief Returns camera forward in the body-local frame. */
 		vec3 getFront() const;
-		/** @brief Returns camera up in the camera point's local frame. */
+		/** @brief Returns camera up in the body-local frame. */
 		vec3 getUp() const;
-		/** @brief Returns camera right in the camera point's local frame. */
+		/** @brief Returns camera right in the body-local frame. */
 		vec3 getRight() const;
-		/** @brief Returns the camera point position in double-precision world coordinates. */
+		/** @brief Returns the camera position in double-precision world coordinates. */
 		glm::dvec3 getWorldPosition() const;
-		/** @brief Processes camera input and moves the bound point for one simulation tick. */
+		/** @brief Processes camera input and moves its body-local position for one simulation tick. */
 		void tick();
 		/** @brief Validates projection settings and publishes the active perspective matrix. */
 		void frame() const;

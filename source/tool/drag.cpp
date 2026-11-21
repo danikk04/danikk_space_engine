@@ -19,9 +19,7 @@ namespace danikk_space_engine
 		{
 			if(!world.world_body_data.isWorldBodyActive(body_id)) return false;
 
-			const PointId camera_point_id = world.camera.getPointId();
-			if(world.point_data.isPointActive(camera_point_id)
-				&& world.point_data.getPoint(camera_point_id).world_body_id == body_id)
+			if(world.camera.isActive() && world.camera.getWorldBodyId() == body_id)
 			{
 				return false;
 			}
