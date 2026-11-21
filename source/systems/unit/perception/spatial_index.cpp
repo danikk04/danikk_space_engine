@@ -163,6 +163,31 @@ namespace danikk_space_engine::unit_system_internal
 				if(isValidEnemy(world, entry.target, faction)) agent.enemy_candidates.push(entry.target);
 			}
 		}
+
+		void collectSlotsInBox(const UnitSpatialTree& tree, uint32 node_id,
+			const glm::dvec3& center, double half_extent, DynamicArray<PointComponentSlotId>& result)
+		{
+			if(node_id >= tree.node_count) return;
+			const UnitSpatialNode& node = tree.nodes[node_id];
+			for(uint8 axis = 0; axis < 3; ++axis)
+				if(std::abs(node.center[axis] - center[axis]) > node.half_extent + half_extent) return;
+			if(node.hasChildren())
+			{
+				for(uint32 child_id : node.children)
+					if(child_id != UnitSpatialNode::invalid_child)
+						collectSlotsInBox(tree, child_id, center, half_extent, result);
+				return;
+			}
+			for(uint32 entry_id : node.entry_indices)
+			{
+				if(entry_id >= tree.entries.size()) continue;
+				const UnitSpatialEntry& entry = tree.entries[entry_id];
+				if(std::abs(entry.position.x - center.x) > half_extent
+					|| std::abs(entry.position.y - center.y) > half_extent
+					|| std::abs(entry.position.z - center.z) > half_extent) continue;
+				result.push(entry.target.slot_id);
+			}
+		}
 	}
 
 	/** @brief Rebuilds body-local sparse unit octrees, splitting cells only when occupancy exceeds capacity. */
@@ -216,6 +241,21 @@ namespace danikk_space_engine::unit_system_internal
 			if(!tree.active || tree.body_id != owner.world_body_id
 				|| tree.root_id == UnitSpatialNode::invalid_child) continue;
 			collectNearby(tree, tree.root_id, position, faction, world, agent);
+			return;
+		}
+	}
+
+	/** @brief Collects unit slots in a body-local axis-aligned query box. */
+	void collectNearbyHumanSlots(const UnitSpatialIndex& index, WorldBodyId body_id,
+		const glm::dvec3& center, double half_extent, DynamicArray<PointComponentSlotId>& result)
+	{
+		DSE_WATCH();
+		result.clear();
+		if(half_extent < 0.0) return;
+		for(const UnitSpatialTree& tree : index.trees)
+		{
+			if(!tree.active || tree.body_id != body_id || tree.root_id == UnitSpatialNode::invalid_child) continue;
+			collectSlotsInBox(tree, tree.root_id, center, half_extent, result);
 			return;
 		}
 	}

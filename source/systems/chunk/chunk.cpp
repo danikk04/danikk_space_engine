@@ -27,9 +27,6 @@ namespace danikk_space_engine
 	 */
 	Chunk::Chunk(Chunk&& other) noexcept
 		: bounds_valid(other.bounds_valid),
-		human_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids)),
-		collision_human_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.collision_human_component_slot_ids)),
-		has_active_human_collisions(other.has_active_human_collisions),
 		build_part_mesh_dirty(other.build_part_mesh_dirty),
 		render_enabled(other.render_enabled),
 		build_part_mesh_revision(other.build_part_mesh_revision),
@@ -48,7 +45,6 @@ namespace danikk_space_engine
 			return *this;
 		}
 
-		has_active_human_collisions = other.has_active_human_collisions;
 		bounds_valid = other.bounds_valid;
 		build_part_mesh_dirty = other.build_part_mesh_dirty;
 		render_enabled = other.render_enabled;
@@ -61,8 +57,6 @@ namespace danikk_space_engine
 		position = other.position;
 		point_ids = static_cast<DynamicArray<PointId>&&>(other.point_ids);
 		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
-		human_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.human_component_slot_ids);
-		collision_human_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.collision_human_component_slot_ids);
 		return *this;
 	}
 
@@ -75,35 +69,16 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc Chunk::addPointComponentSlot */
-	void Chunk::addPointComponentSlot(PointComponentSlotId slot_id, PointComponentTypeId type_id)
+	void Chunk::addPointComponentSlot(PointComponentSlotId slot_id)
 	{
 		point_component_slot_ids.push(slot_id);
-		if(type_id == PointComponentTypeId::human) human_component_slot_ids.push(slot_id);
 	}
 
 	/** @copydoc Chunk::removePointComponentSlot */
-	void Chunk::removePointComponentSlot(PointComponentSlotId slot_id, PointComponentTypeId type_id)
+	void Chunk::removePointComponentSlot(PointComponentSlotId slot_id)
 	{
 		if(!removePointComponentId(point_component_slot_ids, slot_id))
 			danikk_engine::formatFatalError("Point component % is missing from owning chunk %", slot_id, chunk_id);
-		if(type_id == PointComponentTypeId::human && !removePointComponentId(human_component_slot_ids, slot_id))
-			danikk_engine::formatFatalError("Human component % is missing from chunk % cache", slot_id, chunk_id);
-		if(type_id == PointComponentTypeId::human)
-			removePointComponentId(collision_human_component_slot_ids, slot_id);
-	}
-
-	/** @copydoc Chunk::addCollisionHumanComponentSlot */
-	void Chunk::addCollisionHumanComponentSlot(PointComponentSlotId slot_id)
-	{
-		for(PointComponentSlotId existing_id : collision_human_component_slot_ids)
-			if(existing_id == slot_id) return;
-		collision_human_component_slot_ids.push(slot_id);
-	}
-
-	/** @copydoc Chunk::removeCollisionHumanComponentSlot */
-	void Chunk::removeCollisionHumanComponentSlot(PointComponentSlotId slot_id)
-	{
-		removePointComponentId(collision_human_component_slot_ids, slot_id);
 	}
 
 	/**

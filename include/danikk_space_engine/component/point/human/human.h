@@ -120,22 +120,6 @@ namespace danikk_space_engine
 			uint64 terrain_revision = 0;
 		};
 
-		/** @brief Tracks capsule changes and pending checks for human-to-human collisions. */
-		struct CollisionActivity
-		{
-			/** @brief Capsule center at the start of the previous collision tick, in world coordinates. */
-			glm::dvec3 center = glm::dvec3(0.0);
-			/** @brief World-space up axis sampled with the center. */
-			glm::dvec3 up = glm::dvec3(0.0);
-			/** @brief Owning chunk at the previous sample, or the unattached sentinel before the first check. */
-			ChunkId chunk_id = PointComponentSlot::no_chunk;
-			/** @brief Capsule height at the previous sample. */
-			float height = 0.0f;
-			/** @brief True when this capsule needs contact checks during the current collision tick. */
-			bool active = true;
-			/** @brief Keeps contacts eligible next tick after a correction or an unresolved overlap. */
-			bool recheck_next_tick = false;
-		};
 
 		/** @brief Faction of this person, independent of the body they stand on. */
 		FactionId faction_id = static_cast<FactionId>(-1);
@@ -215,8 +199,6 @@ namespace danikk_space_engine
 		bool follow_ground = true;
 		/** @brief Reusable support query result for the planet's scalar field. */
 		GroundSupportCache ground_support;
-		/** @brief Collision activity owned by the human contact solver. */
-		CollisionActivity collision_activity;
 		/** @brief Temporary marker used by PhysicsSystem to restore ground clearance after human collisions. */
 		bool displaced_by_human_collision = false;
 	};

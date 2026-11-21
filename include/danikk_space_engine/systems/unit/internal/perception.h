@@ -8,6 +8,9 @@ namespace danikk_space_engine::unit_system_internal
 	bool isValidEnemy(World&, const UnitTarget&, FactionId);
 	/** @brief Rebuilds the body-local sparse octree used for nearby-human queries. */
 	void rebuildUnitSpatialIndex(World&, UnitSpatialIndex&);
+	/** @brief Collects indexed human slots in a body-local box. */
+	void collectNearbyHumanSlots(const UnitSpatialIndex&, WorldBodyId,
+		const glm::dvec3&, double, DynamicArray<PointComponentSlotId>&);
 	/** @brief Rebuilds a unit's hostile-human candidate list from nearby octree leaves. */
 	void collectEnemyTargets(World&, ChunkId, FactionId,
 		const UnitSpatialIndex&, UnitAgentState&);

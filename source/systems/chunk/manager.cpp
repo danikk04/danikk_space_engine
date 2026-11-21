@@ -97,10 +97,7 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Point component % already belongs to chunk %", slot_id, slot.chunk_id);
 
 		addPointReferenceToChunk(chunk_id, slot.point_id);
-		chunk.addPointComponentSlot(slot_id, slot.type_id);
-		if(slot.type_id == PointComponentTypeId::human
-			&& !static_cast<HumanComponent*>(slot.getData())->hasDeathTimestamp())
-			chunk.addCollisionHumanComponentSlot(slot_id);
+		chunk.addPointComponentSlot(slot_id);
 		if(slot.type_id == PointComponentTypeId::build_part) chunk.invalidateBuildPartMesh();
 		slot.chunk_id = chunk_id;
 	}
@@ -112,7 +109,7 @@ namespace danikk_space_engine
 		if(slot.chunk_id == PointComponentSlot::no_chunk) return;
 		Chunk& chunk = getChunk(slot.chunk_id);
 		if(slot.type_id == PointComponentTypeId::build_part) chunk.invalidateBuildPartMesh();
-		chunk.removePointComponentSlot(slot_id, slot.type_id);
+		chunk.removePointComponentSlot(slot_id);
 		slot.chunk_id = PointComponentSlot::no_chunk;
 	}
 

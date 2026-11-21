@@ -26,20 +26,13 @@ namespace danikk_space_engine
 
 		/** @brief True when bounds describe the most recently built, non-dirty mesh. */
 		bool bounds_valid = false;
-		/** @brief Subset of the point-component list containing only human slots. */
-		DynamicArray<PointComponentSlotId> human_component_slot_ids;
-		/** @brief Living humans eligible for capsule collision checks. */
-		DynamicArray<PointComponentSlotId> collision_human_component_slot_ids;
+		/** @brief Registers a unique component slot in this chunk. */
+		void addPointComponentSlot(PointComponentSlotId slot_id);
 
-		/** @brief Registers a unique slot and updates the human subset when applicable. */
-		void addPointComponentSlot(PointComponentSlotId slot_id, PointComponentTypeId type_id);
-
-		/** @brief Removes an owned slot from the update list and, for humans, from the human subset. */
-		void removePointComponentSlot(PointComponentSlotId slot_id, PointComponentTypeId type_id);
+		/** @brief Removes a component slot from this chunk. */
+		void removePointComponentSlot(PointComponentSlotId slot_id);
 
 	public:
-		/** @brief Whether at least one human in this chunk needs checks during the current collision tick. */
-		bool has_active_human_collisions = false;
 		/** @brief Whether the combined BuildPart mesh needs regeneration. */
 		bool build_part_mesh_dirty = false;
 		/** @brief Whether this mesh is currently selected for rendering. */
@@ -78,22 +71,6 @@ namespace danikk_space_engine
 
 		/** @brief Invalidates the combined BuildPart mesh and advances its source revision. */
 		void invalidateBuildPartMesh();
-
-		/** @brief Returns the human component IDs in the chunk's update order. */
-		const DynamicArray<PointComponentSlotId>& getHumanComponentSlotIds() const
-		{
-			return human_component_slot_ids;
-		}
-
-		/** @brief Adds a human slot to the collision set if it is not already present. */
-		void addCollisionHumanComponentSlot(PointComponentSlotId slot_id);
-		/** @brief Removes a human slot from collision checks; other chunk memberships are retained. */
-		void removeCollisionHumanComponentSlot(PointComponentSlotId slot_id);
-		/** @brief Returns living human slots eligible for capsule collision checks. */
-		const DynamicArray<PointComponentSlotId>& getCollisionHumanComponentSlotIds() const
-		{
-			return collision_human_component_slot_ids;
-		}
 
 		/**
 		 * @brief Builds the chunk-to-camera-relative render transform from body and chunk transforms.

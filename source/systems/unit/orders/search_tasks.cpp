@@ -1,9 +1,9 @@
+#include <cmath>
 #include <limits>
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/damageable.h>
-#include <danikk_space_engine/systems/planet/system.h>
 
 #include <danikk_space_engine/systems/unit/internal/orders.h>
 #include <danikk_space_engine/systems/unit/internal/perception.h>
@@ -19,20 +19,25 @@ namespace danikk_space_engine::unit_system_internal
 		return body.position + body.rotation * location.body_local_position;
 	}
 
-		/** @brief Checks corpses in one nearby chunk and defers destruction of visible eligible bodies. */
-		void inspectChunkCorpses(World& world, const UnitGroup& system,
-			const glm::dvec3& search_position,
-			const glm::dvec3& eye_position, double search_radius_squared, ChunkId chunk_id)
+	/** @brief Checks nearby indexed humans and defers destruction of visible eligible corpses. */
+	void inspectNearbyCorpses(World& world, const UnitGroup& system,
+		const glm::dvec3& search_position, const glm::dvec3& eye_position,
+		double search_radius_squared, WorldBodyId body_id)
 	{
-			if(!world.chunks.isChunkActive(chunk_id)) return;
-			const Chunk& chunk = world.chunks.getChunk(chunk_id);
-			for(PointComponentSlotId id : chunk.getHumanComponentSlotIds())
+		if(!world.world_body_data.isWorldBodyActive(body_id)) return;
+		const WorldBody& body = world.world_body_data.getWorldBody(body_id);
+		const glm::dvec3 local_search_position = glm::conjugate(body.rotation)
+			* (search_position - body.position);
+		DynamicArray<PointComponentSlotId> nearby_humans;
+		world.unit_system.collectNearbyHumanSlots(body_id, local_search_position,
+			std::sqrt(search_radius_squared), nearby_humans);
+		for(PointComponentSlotId id : nearby_humans)
 		{
 			if(!world.point_data.isPointComponentSlotActive(id)) continue;
 			const PointComponentSlot& corpse_slot = world.point_data.getPointComponentSlot(id);
-				if(!world.point_data.isPointActive(corpse_slot.point_id)) continue;
+			if(!world.point_data.isPointActive(corpse_slot.point_id)) continue;
 			const HumanComponent& corpse = *static_cast<const HumanComponent*>(corpse_slot.getData());
-				if(!corpse.hasDeathTimestamp()) continue;
+			if(!corpse.hasDeathTimestamp()) continue;
 			if(corpse.faction_id >= world.factions.size()
 				|| system.faction_id >= world.factions.size()) continue;
 			const bool is_ally = corpse.faction_id == system.faction_id;
@@ -42,8 +47,8 @@ namespace danikk_space_engine::unit_system_internal
 			const glm::dvec3 corpse_position = world.getPointWorldPosition(corpse_slot.chunk_id, corpse_slot.point_id);
 			const glm::dvec3 search_offset = corpse_position - search_position;
 			if(glm::dot(search_offset, search_offset) > search_radius_squared) continue;
-				const DamageableComponent* health = findDamageable(world, corpse_slot.point_id);
-				if(health == nullptr || health->getHealth() > 0.0f) continue;
+			const DamageableComponent* health = findDamageable(world, corpse_slot.point_id);
+			if(health == nullptr || health->getHealth() > 0.0f) continue;
 			const glm::dvec3 ray = corpse_position - eye_position;
 			const double ray_length = glm::length(ray);
 			if(ray_length > 0.001)
@@ -55,41 +60,19 @@ namespace danikk_space_engine::unit_system_internal
 		}
 	}
 
-		/** @brief Deletes visible allied or hostile corpses close to an inspected search location. */
-		void removeCorpsesAtSearchLocation(World& world, const UnitGroup& system,
-			const PointComponentSlot& inspector_slot, const HumanComponent& inspector,
-			const UnitSearchLocation& location, const glm::dvec3& search_position)
-		{
-			DSE_WATCH();
-			const glm::dvec3 eye_position = world.getPointWorldPosition(inspector_slot.chunk_id, inspector_slot.point_id)
-				+ glm::dvec3(inspector.up * (inspector.getHeight() * 0.25f));
-			constexpr double search_radius = 2.5;
-			constexpr double search_radius_squared = search_radius * search_radius;
-			const WorldBody& body = world.world_body_data.getWorldBody(location.body_id);
-			const PlanetData* planet = world.planets.findPlanet(location.body_id);
-
-			if(planet == nullptr)
-			{
-				for(ChunkId chunk_id : body.chunk_ids)
-					inspectChunkCorpses(world, system, search_position, eye_position, search_radius_squared, chunk_id);
-				return;
-			}
-
-			const glm::ivec3 center_coordinate = glm::ivec3(glm::floor(
-				location.body_local_position / planet_chunk_width));
-			for(int32 z = -1; z <= 1; ++z)
-				for(int32 y = -1; y <= 1; ++y)
-					for(int32 x = -1; x <= 1; ++x)
-					{
-						const glm::ivec3 coordinate = center_coordinate + glm::ivec3(x, y, z);
-						ChunkId chunk_id;
-						if(!planet->chunk_lookup.getChunk(coordinate, chunk_id)
-							|| !world.chunks.isChunkActive(chunk_id)) continue;
-						const Chunk& chunk = world.chunks.getChunk(chunk_id);
-						if(chunk.world_body_id != location.body_id || chunk.grid_coordinate != coordinate) continue;
-						inspectChunkCorpses(world, system, search_position, eye_position, search_radius_squared, chunk_id);
-					}
-		}
+	/** @brief Deletes visible allied or hostile corpses close to an inspected search location. */
+	void removeCorpsesAtSearchLocation(World& world, const UnitGroup& system,
+		const PointComponentSlot& inspector_slot, const HumanComponent& inspector,
+		const UnitSearchLocation& location, const glm::dvec3& search_position)
+	{
+		DSE_WATCH();
+		const glm::dvec3 eye_position = world.getPointWorldPosition(inspector_slot.chunk_id, inspector_slot.point_id)
+			+ glm::dvec3(inspector.up * (inspector.getHeight() * 0.25f));
+		constexpr double search_radius = 2.5;
+		constexpr double search_radius_squared = search_radius * search_radius;
+		inspectNearbyCorpses(world, system, search_position, eye_position,
+			search_radius_squared, location.body_id);
+	}
 
 	/** @brief Assigns agents to the selected category of persistent search locations. */
 	void assignSearchTasks(World& world, UnitGroup& system, UnitSearchTaskType task_type)

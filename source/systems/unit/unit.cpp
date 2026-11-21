@@ -184,6 +184,15 @@ namespace danikk_space_engine
 				unit_system_internal::tickRest(group);
 			}
 		}
+		unit_system_internal::rebuildUnitSpatialIndex(world, impl->spatial_index);
+	}
+
+	/** @copydoc UnitSystem::collectNearbyHumanSlots */
+	void UnitSystem::collectNearbyHumanSlots(WorldBodyId body_id, const glm::dvec3& center,
+		double half_extent, DynamicArray<PointComponentSlotId>& result) const
+	{
+		unit_system_internal::collectNearbyHumanSlots(
+			impl->spatial_index, body_id, center, half_extent, result);
 	}
 
 	/** @brief Registers a human in the tactical group associated with its current faction. */

@@ -3,6 +3,7 @@
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_framework/glm.h>
+#include <danikk_framework/dynamic_array.h>
 
 namespace danikk_space_engine
 {
@@ -66,6 +67,9 @@ namespace danikk_space_engine
 		/** @brief Gets a registered unit's current hierarchical tactical state. */
 		bool getState(PointComponentSlotId human_slot_id, uint64 generation_id,
 			UnitGlobalState& global_state, UnitSubstate& substate) const;
+		/** @brief Collects human slots in a body-local box using the current adaptive spatial tree. */
+		void collectNearbyHumanSlots(WorldBodyId body_id, const glm::dvec3& center,
+			double half_extent, DynamicArray<PointComponentSlotId>& result) const;
 		/** @brief Clears all faction groups when the owning world resets or shuts down. */
 		void reset();
 	};
