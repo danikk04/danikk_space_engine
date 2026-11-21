@@ -1,0 +1,187 @@
+#include <algorithm>
+#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/planet/system.h>
+
+#include "terrain_tree_internal.h"
+
+namespace danikk_space_engine::planet_terrain_tree_internal
+{
+	double getTargetHalfExtent(const UpdateContext& context, const glm::dvec3& center)
+	{
+		const double distance = glm::length(context.camera_position - center);
+		const double minimum = context.height < 0.0 ? 16.0 : 32.0;
+		return std::clamp(minimum + context.detail_scale * distance, minimum, 262144.0);
+	}
+
+	bool isNodeRelevant(const UpdateContext& context, const PlanetTerrainNode& node)
+	{
+		const double node_radius = node.half_extent * 1.7320508075688772;
+		const double center_distance = glm::length(node.center);
+		const double minimum_radius = glm::max(0.0, center_distance - node_radius);
+		const double maximum_radius = center_distance + node_radius;
+		const bool surface_intersection = context.height >= 0.0
+			&& maximum_radius >= context.settings.radius - 25000.0
+			&& minimum_radius <= context.settings.radius + 15000.0;
+		const glm::dvec3 to_node = node.center - context.camera_position;
+		const double distance = glm::length(to_node);
+		const bool local_cave_intersection = context.height < 0.0
+			&& distance <= node_radius + 384.0;
+		if(!surface_intersection && !local_cave_intersection) return false;
+
+		if(surface_intersection && context.height > 0.0 && center_distance > 1.0)
+		{
+			const double camera_distance = glm::length(context.camera_position);
+			if(camera_distance > context.settings.radius + 1.0)
+			{
+				const double horizon_cosine = context.settings.radius / camera_distance;
+				const glm::dvec3 camera_direction = context.camera_position / camera_distance;
+				const glm::dvec3 node_direction = node.center / center_distance;
+				const double angular_radius = std::min(1.0, node_radius / center_distance);
+				if(glm::dot(camera_direction, node_direction) + angular_radius < horizon_cosine)
+					return false;
+			}
+		}
+		return true;
+	}
+
+	bool isSurfaceNode(const UpdateContext& context, const PlanetTerrainNode& node)
+	{
+		const double radial_extent = node.half_extent * 1.7320508075688772;
+		const double center_radius = glm::length(node.center);
+		return center_radius + radial_extent >= context.settings.radius - 25000.0
+			&& glm::max(0.0, center_radius - radial_extent) <= context.settings.radius + 15000.0;
+	}
+
+	bool hasCurrentMesh(const UpdateContext& context, PlanetTerrainNodeId node_id)
+	{
+		const PlanetTerrainNode& node = context.tree.nodes[node_id];
+		return node.mesh_revision == context.planet.terrain_revision
+			&& node.mesh_generator == settings.planet_mesh_generator
+			&& node.mesh_surface_only == isSurfaceNode(context, node)
+			&& node.mesh.mesh != nullptr;
+	}
+
+	namespace
+	{
+		void createRoot(UpdateContext& context)
+		{
+			PlanetTerrainNode root;
+			root.center = glm::dvec3(0.0);
+			root.half_extent = PlanetTerrainTree::initial_root_half_extent;
+			root.generation_id = context.tree.next_node_generation_id++;
+			if(context.tree.next_node_generation_id == 0) context.tree.next_node_generation_id++;
+			context.tree.nodes.pushMove(root);
+			context.tree.root_id = 0;
+		}
+	}
+
+	void initialize(UpdateContext& context)
+	{
+		DSE_WATCH();
+		if(context.tree.root_id == invalid_node) createRoot(context);
+
+		if(context.planet.terrain_tree_revision != context.planet.terrain_revision)
+		{
+			for(PlanetTerrainNode& node : context.tree.nodes)
+			{
+				node.generation_pending = false;
+				node.generation_id = context.tree.next_node_generation_id++;
+				if(context.tree.next_node_generation_id == 0) context.tree.next_node_generation_id++;
+				node.render_active = false;
+			}
+			context.planet.terrain_tree_revision = context.planet.terrain_revision;
+		}
+
+		if(context.tree.nodes.size() + 8192 <= maximum_tree_nodes) return;
+		for(PlanetTerrainNode& node : context.tree.nodes)
+			if(node.mesh.mesh != nullptr) destroyMeshRenderData(node.mesh);
+		context.tree.nodes.clear();
+		context.tree.root_id = invalid_node;
+		createRoot(context);
+	}
+
+	void calculateDetailBudget(UpdateContext& context)
+	{
+		DSE_WATCH();
+		context.detail_scale = context.height < 0.0 ? 0.01 : 0.015;
+		const auto count_visible_target_nodes = [&](auto&& self, const glm::dvec3& center,
+			double half_extent, uint8 depth, size_t limit) -> size_t
+		{
+			PlanetTerrainNode candidate;
+			candidate.center = center;
+			candidate.half_extent = half_extent;
+			if(!isNodeRelevant(context, candidate)) return 0;
+			if(half_extent <= getTargetHalfExtent(context, center) || depth >= 20) return 1;
+			const double child_half_extent = half_extent * 0.5;
+			size_t count = 0;
+			for(uint8 child_index = 0; child_index < 8; ++child_index)
+			{
+				const glm::dvec3 child_center = center + glm::dvec3(
+					(child_index & 1) ? child_half_extent : -child_half_extent,
+					(child_index & 2) ? child_half_extent : -child_half_extent,
+					(child_index & 4) ? child_half_extent : -child_half_extent);
+				count += self(self, child_center, child_half_extent,
+					static_cast<uint8>(depth + 1), limit - count);
+				if(count > limit) return count;
+			}
+			return count;
+		};
+
+		const auto count_nodes = [&]()
+		{
+			return count_visible_target_nodes(count_visible_target_nodes, glm::dvec3(0.0),
+				PlanetTerrainTree::initial_root_half_extent, 0, maximum_visible_nodes);
+		};
+		context.target_node_count = count_nodes();
+		while(context.target_node_count > maximum_visible_nodes
+			&& context.detail_scale_adjustments < 32)
+		{
+			context.detail_scale *= 1.5;
+			context.detail_scale_adjustments++;
+			context.target_node_count = count_nodes();
+		}
+	}
+
+	void refine(UpdateContext& context)
+	{
+		DSE_WATCH();
+		const auto ensure_children = [&context](PlanetTerrainNodeId parent_id)
+		{
+			PlanetTerrainTree& tree = context.tree;
+			if(tree.nodes[parent_id].hasChildren()) return true;
+			if(tree.nodes.size() + 8 > maximum_tree_nodes) return false;
+			const glm::dvec3 parent_center = tree.nodes[parent_id].center;
+			const double child_half_extent = tree.nodes[parent_id].half_extent * 0.5;
+			for(uint8 child_index = 0; child_index < 8; ++child_index)
+			{
+				PlanetTerrainNode child;
+				child.center = parent_center + glm::dvec3(
+					(child_index & 1) ? child_half_extent : -child_half_extent,
+					(child_index & 2) ? child_half_extent : -child_half_extent,
+					(child_index & 4) ? child_half_extent : -child_half_extent);
+				child.half_extent = child_half_extent;
+				child.generation_id = tree.next_node_generation_id++;
+				if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
+				const PlanetTerrainNodeId child_id = static_cast<PlanetTerrainNodeId>(tree.nodes.size());
+				tree.nodes.pushMove(child);
+				tree.nodes[parent_id].children[child_index] = child_id;
+			}
+			return true;
+		};
+
+		const auto visit = [&](auto&& self, PlanetTerrainNodeId node_id, uint8 depth) -> void
+		{
+			if(node_id >= context.tree.nodes.size() || depth >= 20) return;
+			PlanetTerrainNode candidate;
+			candidate.center = context.tree.nodes[node_id].center;
+			candidate.half_extent = context.tree.nodes[node_id].half_extent;
+			if(!isNodeRelevant(context, candidate)
+				|| candidate.half_extent <= getTargetHalfExtent(context, candidate.center)) return;
+			if(!ensure_children(node_id)) return;
+			for(uint8 child_index = 0; child_index < 8; ++child_index)
+				self(self, context.tree.nodes[node_id].children[child_index],
+					static_cast<uint8>(depth + 1));
+		};
+		visit(visit, context.tree.root_id, 0);
+	}
+}
