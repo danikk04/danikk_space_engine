@@ -19,6 +19,8 @@ namespace danikk_space_engine
 		World& world;
 		/** @brief Point IDs queued until active component traversals finish. */
 		DynamicArray<PointId> deferred_point_destruction_ids;
+		/** @brief Reusable stable slot snapshot for point-component lifecycle traversal. */
+		DynamicArray<PointComponentSlotId> point_component_traversal_ids;
 
 	public:
 		/** @brief Clears deferred removals and logs subsystem initialization. */
@@ -29,20 +31,17 @@ namespace danikk_space_engine
 		explicit ComponentSystem(World& world) : world(world) {}
 
 		/**
-		 * @brief Ticks each active WorldBody's components and then that body's loaded chunks.
+		 * @brief Ticks each active WorldBody's components.
 		 */
 		void tickWorldBodyComponents();
 
-		/**
-		 * @brief Ticks active point components attached to one loaded chunk.
-		 * @param chunk_id Loaded chunk whose component slots are traversed.
-		 */
-		void tickChunkComponents(ChunkId chunk_id);
+		/** @brief Ticks all active point components from a stable PointData slot snapshot. */
+		void tickPointComponents();
 
 		/** @brief Runs frame callbacks for active components attached to WorldBody instances. */
 		void renderWorldBodyComponents();
-		/** @brief Runs frame callbacks for active point components in loaded chunks. */
-		void renderChunkComponents();
+		/** @brief Runs frame callbacks for active point components from a stable slot snapshot. */
+		void renderPointComponents();
 		/** @brief Queues a point for destruction after component traversal completes. */
 		void deferPointDestruction(PointId point_id);
 		/** @brief Destroys queued points through ChunkSystem after callback traversal. */

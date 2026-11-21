@@ -95,8 +95,7 @@ namespace danikk_space_engine
 			|| !world.point_data.isPointActive(human_slot->point_id)
 			|| !world.chunks.isChunkActive(human_slot->chunk_id)) return false;
 		human = static_cast<HumanComponent*>(human_slot->getData());
-		const DamageableComponent* health = findDamageable(
-			world, human_slot->chunk_id, human_slot->point_id);
+		const DamageableComponent* health = findDamageable(world, human_slot->point_id);
 		if(health == nullptr || health->getHealth() <= 0.0f)
 		{
 			agent.order.clear();

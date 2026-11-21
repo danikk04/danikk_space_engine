@@ -108,6 +108,7 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		components.tickWorldBodyComponents();
+		components.tickPointComponents();
 		camera.tick();
 		controller.tick();
 		components.flushDeferredPointDestruction();
@@ -142,7 +143,7 @@ namespace danikk_space_engine
 		chunks.renderWorld();
 		// Draw dynamic chunk components after the world meshes so transparent overlays
 		// do not allow later terrain draws to pass through the base mesh depth.
-		components.renderChunkComponents();
+		components.renderPointComponents();
 		if(settings.show_chunk_bounds) drawChunkBoundaries(*this);
 		drawUnitSelectionIndicators(*this);
 		drawUnitOrderIndicators(*this);

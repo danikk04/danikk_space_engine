@@ -35,8 +35,10 @@ namespace danikk_space_engine
 
 	/** @brief Returns the immutable settings at a valid definition index. */
 	const DamageableDefinition& getDamageableDefinition(DamageableDefinitionId id);
-	/** @brief Returns the damageable component on a point in the specified chunk, or null. */
-	DamageableComponent* findDamageable(World& world, ChunkId chunk_id, PointId point_id);
+	/** @brief Returns the damageable component attached to a point, or null. */
+	DamageableComponent* findDamageable(World& world, PointId point_id);
+	/** @brief Returns a read-only damageable component attached to a point, or null. */
+	const DamageableComponent* findDamageable(const World& world, PointId point_id);
 	/** @brief Applies ballistic resistance and clamps remaining health to zero. */
 	void applyBallisticDamage(DamageableComponent& damageable, float damage, PointId point_id);
 	/** @brief Constructs a damageable payload using optional initial state. */

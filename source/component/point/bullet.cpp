@@ -124,7 +124,7 @@ namespace danikk_space_engine
 				if(candidate.type_id != PointComponentTypeId::human || candidate.point_id == bullet.owner_point_id
 					|| !world.point_data.isPointActive(candidate.point_id) || !world.chunks.isChunkActive(candidate.chunk_id)) continue;
 				const HumanComponent& human = *static_cast<const HumanComponent*>(candidate.getData());
-				const DamageableComponent* health = findDamageable(world, candidate.chunk_id, candidate.point_id);
+				const DamageableComponent* health = findDamageable(world, candidate.point_id);
 				if(health == nullptr || health->getHealth() <= 0.0f) continue;
 				const Chunk& human_chunk = world.chunks.getChunk(candidate.chunk_id);
 				const glm::dvec3 up = glm::normalize(world.world_body_data.getWorldBody(human_chunk.world_body_id).rotation * glm::dvec3(human.up));
@@ -152,7 +152,7 @@ namespace danikk_space_engine
 			if(victim_id != static_cast<PointComponentSlotId>(-1))
 			{
 				const PointComponentSlot& victim = world.point_data.getPointComponentSlot(victim_id);
-				DamageableComponent* health = findDamageable(world, victim.chunk_id, victim.point_id);
+				DamageableComponent* health = findDamageable(world, victim.point_id);
 				if(health != nullptr)
 				{
 					world.unit_system.reportAttack(bullet.owner_point_id, victim.point_id);
@@ -172,7 +172,7 @@ namespace danikk_space_engine
 				if(hit.hit_build_part && world.point_data.isPointComponentSlotActive(hit.build_part_slot_id))
 				{
 					const PointComponentSlot& part = world.point_data.getPointComponentSlot(hit.build_part_slot_id);
-					DamageableComponent* health = findDamageable(world, part.chunk_id, part.point_id);
+					DamageableComponent* health = findDamageable(world, part.point_id);
 					if(health != nullptr)
 					{
 						applyBallisticDamage(*health, bullet.damage, part.point_id);

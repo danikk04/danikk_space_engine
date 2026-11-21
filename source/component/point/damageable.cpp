@@ -14,15 +14,28 @@ namespace danikk_space_engine
 		return definitions[id];
 	}
 
-	DamageableComponent* findDamageable(World& world, ChunkId chunk_id, PointId point_id)
+	DamageableComponent* findDamageable(World& world, PointId point_id)
 	{
-		if(!world.chunks.isChunkActive(chunk_id)) return nullptr;
-		for(PointComponentSlotId id : world.chunks.getChunk(chunk_id).point_component_slot_ids)
+		if(!world.point_data.isPointActive(point_id)) return nullptr;
+		for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
 		{
 			if(!world.point_data.isPointComponentSlotActive(id)) continue;
 			PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
 			if(slot.point_id == point_id && slot.type_id == PointComponentTypeId::damageable)
 				return static_cast<DamageableComponent*>(slot.getData());
+		}
+		return nullptr;
+	}
+
+	const DamageableComponent* findDamageable(const World& world, PointId point_id)
+	{
+		if(!world.point_data.isPointActive(point_id)) return nullptr;
+		for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
+		{
+			if(!world.point_data.isPointComponentSlotActive(id)) continue;
+			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
+			if(slot.type_id == PointComponentTypeId::damageable)
+				return static_cast<const DamageableComponent*>(slot.getData());
 		}
 		return nullptr;
 	}

@@ -25,8 +25,8 @@ namespace danikk_space_engine::human_internal
 		{
 			DSE_WATCH();
 			if(human.arm_pose != HumanArmPose::weapon_ready) return;
-			const Chunk& chunk = world.chunks.getChunk(human_slot.chunk_id);
-			for(PointComponentSlotId component_slot_id : chunk.point_component_slot_ids)
+			for(PointComponentSlotId component_slot_id : world.point_data.getPoint(
+				human_slot.point_id).component_slot_ids)
 			{
 				if(!world.point_data.isPointComponentSlotActive(component_slot_id)) continue;
 				const PointComponentSlot& component_slot = world.point_data.getPointComponentSlot(component_slot_id);

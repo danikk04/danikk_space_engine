@@ -118,7 +118,7 @@ namespace danikk_space_engine
 		if(glm::length(human.up) < 1e-6f) human.up = vec3(0, 0, 1);
 		human.up = glm::normalize(human.up);
 		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
-		const DamageableComponent* damageable = findDamageable(world, slot.chunk_id, slot.point_id);
+		const DamageableComponent* damageable = findDamageable(world, slot.point_id);
 		const bool was_dead = human.hasDeathTimestamp();
 		if(damageable != nullptr && damageable->getHealth() <= 0.0f)
 		{
@@ -126,7 +126,7 @@ namespace danikk_space_engine
 			{
 				human.body_pose = danikk_framework::default_random.number<uint32>(0, 2) == 0
 					? HumanBodyPose::lying_on_back : HumanBodyPose::lying_on_stomach;
-				for(PointComponentSlotId id : chunk.point_component_slot_ids)
+				for(PointComponentSlotId id : world.point_data.getPoint(slot.point_id).component_slot_ids)
 				{
 					if(!world.point_data.isPointComponentSlotActive(id)) continue;
 					PointComponentSlot& component_slot = world.point_data.getPointComponentSlot(id);

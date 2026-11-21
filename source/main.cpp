@@ -80,15 +80,7 @@ namespace danikk_engine_game
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 			++data.selected_unit_count;
-			const DamageableComponent* damageable = nullptr;
-			for(PointComponentSlotId candidate_id : world.chunks.getChunk(slot.chunk_id).point_component_slot_ids)
-			{
-				if(!world.point_data.isPointComponentSlotActive(candidate_id)) continue;
-				const PointComponentSlot& candidate = world.point_data.getPointComponentSlot(candidate_id);
-				if(candidate.point_id != slot.point_id || candidate.type_id != PointComponentTypeId::damageable) continue;
-				damageable = static_cast<const DamageableComponent*>(candidate.getData());
-				break;
-			}
+			const DamageableComponent* damageable = findDamageable(world, slot.point_id);
 			if(damageable == nullptr) continue;
 			const float maximum_health = getDamageableDefinition(damageable->definition_id).max_health;
 			if(maximum_health <= 0.0f) continue;

@@ -46,6 +46,7 @@ namespace danikk_space_engine
 		slot.generation_id = next_point_component_generation_id++;
 		if(next_point_component_generation_id == 0) next_point_component_generation_id = 1;
 		constructComponentPayload(slot, type, init_data, type_id, "point");
+		points[point_id].component_slot_ids.push(id);
 		return id;
 	}
 }

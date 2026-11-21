@@ -15,10 +15,11 @@ namespace danikk_space_engine::unit_system_internal
 	namespace
 	{
 		/** @brief Finds an inventory attached to a unit's point. */
-		InventoryComponent* findUnitInventory(World& world, ChunkId chunk_id, PointId point_id)
+		InventoryComponent* findUnitInventory(World& world, PointId point_id)
 		{
 			DSE_WATCH();
-			for(PointComponentSlotId id : world.chunks.getChunk(chunk_id).point_component_slot_ids)
+			if(!world.point_data.isPointActive(point_id)) return nullptr;
+			for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
 			{
 				if(!world.point_data.isPointComponentSlotActive(id)) continue;
 				PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
@@ -58,7 +59,7 @@ namespace danikk_space_engine::unit_system_internal
 				human.lookAtDirection(direction, static_cast<float>(glm::length(target_offset)));
 			}
 
-			InventoryComponent* inventory = findUnitInventory(world, slot.chunk_id, slot.point_id);
+			InventoryComponent* inventory = findUnitInventory(world, slot.point_id);
 			if(inventory == nullptr) return;
 			if(agent.order.has_equip_order)
 				for(InventorySlot& item : inventory->slots)
@@ -104,10 +105,8 @@ namespace danikk_space_engine::unit_system_internal
 		}
 
 		DynamicArray<PointComponentSlotId> moved_slots;
-		for(size_t i = 0; i < old_chunk.point_component_slot_ids.size();)
+		for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
 		{
-			const PointComponentSlotId id = old_chunk.point_component_slot_ids[i];
-			if(world.point_data.getPointComponentSlot(id).point_id != point_id) { ++i; continue; }
 			moved_slots.push(id);
 			world.chunks.removePointComponentSlotFromChunk(id);
 		}

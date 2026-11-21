@@ -31,28 +31,11 @@ namespace danikk_space_engine
 			return orientation;
 		}
 
-		/**
-		 * @brief Searches chunk component lists for the chunk that owns a given weapon slot.
-		 * @param slot Component slot whose address is matched against chunk membership.
-		 * @param world World whose active bodies and chunks are searched.
-		 * @return Owning chunk ID, or the invalid sentinel if the slot is not registered.
-		 */
+		/** @brief Returns the chunk recorded directly on a weapon's component slot. */
 		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
 		{
-			for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
-			{
-				const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-				for(ChunkId chunk_id : body.chunk_ids)
-				{
-					const Chunk& chunk = world.chunks.getChunk(chunk_id);
-					for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
-					{
-						if(world.point_data.isPointComponentSlotActive(slot_id)
-							&& &world.point_data.getPointComponentSlot(slot_id) == &slot) return chunk_id;
-					}
-				}
-			}
-			return static_cast<ChunkId>(-1);
+			(void)world;
+			return slot.chunk_id;
 		}
 
 		/**

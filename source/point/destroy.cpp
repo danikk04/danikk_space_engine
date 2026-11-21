@@ -79,6 +79,18 @@ namespace danikk_space_engine
 					if(child.parent_slot_id == id) child.parent_slot_id = no_build_part_parent;
 				}
 		}
+		if(isPointActive(destroyed_slot.point_id))
+		{
+			DynamicArray<PointComponentSlotId>& point_slots = points[destroyed_slot.point_id].component_slot_ids;
+			for(size_t index = 0; index < point_slots.size(); ++index)
+			{
+				if(point_slots[index] != id) continue;
+				for(size_t shift = index + 1; shift < point_slots.size(); ++shift)
+					point_slots[shift - 1] = point_slots[shift];
+				point_slots.resize(point_slots.size() - 1);
+				break;
+			}
+		}
 		PointComponentSlot& slot = point_components[id];
 		const PointComponentType& type = getPointComponentType(slot.type_id);
 		destroyComponentPayload(slot, type, id, "Point");

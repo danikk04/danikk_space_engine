@@ -19,6 +19,8 @@ namespace danikk_space_engine
 	{
 		/** @brief Position relative to the referencing chunk origin, stored in single precision. */
 		vec3 position = vec3(0.0f);
+		/** @brief Components attached to this point, independent of chunk membership. */
+		DynamicArray<PointComponentSlotId> component_slot_ids;
 		/**
 		 * @brief Number of distinct chunks whose `point_ids` lists reference this point (maximum 100).
 		 * PointData tracks this once per chunk and frees the point when the

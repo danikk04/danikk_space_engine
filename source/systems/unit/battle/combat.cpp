@@ -17,7 +17,7 @@
 
 namespace danikk_space_engine::unit_system_internal
 {
-	InventoryComponent* findInventory(World& world, ChunkId chunk_id, PointId point_id);
+	InventoryComponent* findInventory(World& world, PointId point_id);
 
 	namespace
 	{
@@ -31,9 +31,9 @@ namespace danikk_space_engine::unit_system_internal
 		};
 
 		/** @brief Finds the first weapon stack in an NPC's inventory. */
-		InventorySlot* findWeapon(World& world, ChunkId chunk_id, PointId point_id)
+		InventorySlot* findWeapon(World& world, PointId point_id)
 		{
-			InventoryComponent* inventory = findInventory(world, chunk_id, point_id);
+			InventoryComponent* inventory = findInventory(world, point_id);
 			if(inventory == nullptr) return nullptr;
 			for(InventorySlot& item : inventory->slots)
 				if(!item.isEmpty() && getItemDefinition(item.item_definition_id).category_id == item_category_ids::weapon)
@@ -52,19 +52,19 @@ namespace danikk_space_engine::unit_system_internal
 		}
 
 		/** @brief Returns expected weapon damage per second, or zero when no firearm is available. */
-		float estimateWeaponDamagePerSecond(World& world, ChunkId chunk_id, PointId point_id)
+		float estimateWeaponDamagePerSecond(World& world, PointId point_id)
 		{
-			InventorySlot* weapon = findWeapon(world, chunk_id, point_id);
+			InventorySlot* weapon = findWeapon(world, point_id);
 			if(weapon == nullptr) return 0.0f;
 			const WeaponItemParameters& parameters = getWeaponItemParameters(weapon->item_definition_id);
 			return glm::max(0.0f, parameters.damage) * glm::max(0.0f, parameters.rounds_per_minute) / 60.0f;
 		}
 
 		/** @brief Estimates damage per second after accounting for this shooter and target size. */
-		float estimateExpectedDamagePerSecond(World& world, ChunkId chunk_id, PointId point_id,
+		float estimateExpectedDamagePerSecond(World& world, PointId point_id,
 			const HumanComponent& human, float target_height, double distance)
 		{
-			InventorySlot* weapon = findWeapon(world, chunk_id, point_id);
+			InventorySlot* weapon = findWeapon(world, point_id);
 			if(weapon == nullptr) return 1.0f;
 			const WeaponItemParameters& parameters = getWeaponItemParameters(weapon->item_definition_id);
 			const float hit_probability = estimateHitProbability(target_height, distance,
@@ -94,16 +94,15 @@ namespace danikk_space_engine::unit_system_internal
 			const glm::dvec3 offset = target_position - own_position;
 			const double distance = glm::length(offset);
 			const float expected_damage = estimateExpectedDamagePerSecond(world,
-				own_slot.chunk_id, own_slot.point_id, human, target.getHeight(), distance);
+				own_slot.point_id, human, target.getHeight(), distance);
 
-			const float target_threat_dps = estimateWeaponDamagePerSecond(world,
-				target_slot.chunk_id, target_slot.point_id);
+			const float target_threat_dps = estimateWeaponDamagePerSecond(world, target_slot.point_id);
 			const float threat_hit_probability = estimateHitProbability(human.getHeight(), distance,
 				target.getSpreadDegrees() + 1.5f);
 			float score = expected_damage * (1.0f + 0.75f * glm::clamp(
 				target_threat_dps * threat_hit_probability / 20.0f, 0.0f, 1.0f));
 
-			const DamageableComponent* health = findDamageable(world, target_slot.chunk_id, target_slot.point_id);
+			const DamageableComponent* health = findDamageable(world, target_slot.point_id);
 			if(health != nullptr)
 			{
 				const float maximum_health = getDamageableDefinition(health->definition_id).max_health;
@@ -161,9 +160,10 @@ namespace danikk_space_engine::unit_system_internal
 	}
 
 	/** @brief Finds the inventory component on an NPC's point, if one is attached. */
-	InventoryComponent* findInventory(World& world, ChunkId chunk_id, PointId point_id)
+	InventoryComponent* findInventory(World& world, PointId point_id)
 	{
-		for(PointComponentSlotId id : world.chunks.getChunk(chunk_id).point_component_slot_ids)
+		if(!world.point_data.isPointActive(point_id)) return nullptr;
+		for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
 		{
 			if(!world.point_data.isPointComponentSlotActive(id)) continue;
 			PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
@@ -215,7 +215,7 @@ namespace danikk_space_engine::unit_system_internal
 		const glm::dvec3 delta = target_position - shot_origin;
 		const double distance = glm::length(delta);
 		if(distance <= 0.001) return;
-		InventorySlot* weapon = findWeapon(world, human_slot.chunk_id, human_slot.point_id);
+			InventorySlot* weapon = findWeapon(world, human_slot.point_id);
 		if(weapon != nullptr && !weapon->is_equipped)
 		{
 			agent.order.has_equip_order = true;
@@ -254,8 +254,8 @@ namespace danikk_space_engine::unit_system_internal
 			agent.order.look_target_world = best->position;
 		}
 		const HumanComponent& target_human = *static_cast<const HumanComponent*>(target_slot.getData());
-		const float assigned_damage = estimateExpectedDamagePerSecond(world, human_slot.chunk_id,
-			human_slot.point_id, human, target_human.getHeight(), distance);
+		const float assigned_damage = estimateExpectedDamagePerSecond(world, human_slot.point_id,
+			human, target_human.getHeight(), distance);
 		recordAllocation(allocations, *best, assigned_damage);
 	}
 

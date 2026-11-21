@@ -90,7 +90,7 @@ namespace danikk_space_engine
 				|| !world.point_data.isPointActive(slot.point_id)) return false;
 			HumanComponent& component = *static_cast<HumanComponent*>(slot.getData());
 			if(component.hasDeathTimestamp()) return false;
-			const DamageableComponent* health = findDamageable(world, slot.chunk_id, slot.point_id);
+			const DamageableComponent* health = findDamageable(world, slot.point_id);
 			if(health != nullptr && health->getHealth() <= 0.0f) return false;
 			const double height = component.getHeight();
 			if(height <= 0.0) return false;

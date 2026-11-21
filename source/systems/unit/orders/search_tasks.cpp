@@ -42,7 +42,7 @@ namespace danikk_space_engine::unit_system_internal
 			const glm::dvec3 corpse_position = world.getPointWorldPosition(corpse_slot.chunk_id, corpse_slot.point_id);
 			const glm::dvec3 search_offset = corpse_position - search_position;
 			if(glm::dot(search_offset, search_offset) > search_radius_squared) continue;
-				const DamageableComponent* health = findDamageable(world, corpse_slot.chunk_id, corpse_slot.point_id);
+				const DamageableComponent* health = findDamageable(world, corpse_slot.point_id);
 				if(health == nullptr || health->getHealth() > 0.0f) continue;
 			const glm::dvec3 ray = corpse_position - eye_position;
 			const double ray_length = glm::length(ray);
