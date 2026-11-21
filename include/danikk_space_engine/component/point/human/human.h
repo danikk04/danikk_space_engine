@@ -97,7 +97,7 @@ namespace danikk_space_engine
 	 * @brief Stores a human character’s state, orientation, pose, and appearance.
 	 *
 	 * The owning Point is at the vertical center of the character. `forward`, `up`, and the
-	 * one-tick `desired_velocity` are in the owning Chunk's local axes. UnitGroup or player control
+	 * one-tick `desired_velocity` are in the owning WorldBody's local axes. UnitGroup or player control
 	 * writes the velocity command; this component consumes and clears it during its tick, updates
 	 * gravity/support state, and advances the visual walking pose from actual tangential travel.
 	 */
@@ -112,8 +112,6 @@ namespace danikk_space_engine
 			vec3 up = vec3(0.0f);
 			/** @brief Height used by the support probe. */
 			float height = 0.0f;
-			/** @brief Chunk owning the supported point, or the unattached sentinel for an empty cache. */
-			ChunkId chunk_id = PointComponentSlot::no_chunk;
 			/** @brief Instance token of the planet component that supplied the field. */
 			uint64 planet_generation_id = 0;
 			/** @brief Terrain edit revision used by the support probe. */
@@ -136,12 +134,12 @@ namespace danikk_space_engine
 		/** @brief Last confirmed ground normal in owning-body coordinates, used to orient corpses to slopes. */
 		vec3 ground_normal = vec3(0.0f, 0.0f, 1.0f);
 		/**
-		 * @brief One-tick movement command in owning-chunk coordinates, in metres per second.
+		 * @brief One-tick movement command in owning-body coordinates, in metres per second.
 		 * The human tick consumes and resets this command after applying movement.
 		 */
 		vec3 desired_velocity = vec3(0.0f);
 	private:
-		/** @brief Current body orientation in chunk-local coordinates. */
+		/** @brief Current body orientation in body-local coordinates. */
 		vec3 forward = vec3(0.0f, 1.0f, 0.0f);
 		/** @brief Vertical head look angle, independent from weapon elevation. */
 		float head_pitch = 0.0f;
@@ -167,7 +165,7 @@ namespace danikk_space_engine
 		float getWeaponAimPitch() const { return weapon_aim_pitch; }
 		/** @brief Sets the initial body-facing direction before the human is spawned. */
 		void setInitialForward(const vec3& direction);
-		/** @brief Requests a chunk-local look direction and optional target distance for the next update. */
+		/** @brief Requests a body-local look direction and optional target distance for the next update. */
 		void lookAtDirection(const vec3& direction, float target_distance = 0.0f);
 		/** @brief Returns the direction in which the currently held weapon points. */
 		vec3 getWeaponDirection() const;
@@ -212,20 +210,20 @@ namespace danikk_space_engine
 	/**
 	 * @brief Creates a human at a world-body-relative position and equips it with the soldier loadout.
 	 *
-	 * Creates a point in an existing chunk and attaches the human and inventory components,
+	 * Creates a point attached to a WorldBody and attaches the human and inventory components,
 	 * selects the loaded USMC MARPAT Woodland skin, and equips the initial MG-42 stack.
-	 * @param world World whose resource pools receive the new point, chunk, and component slots.
-	 * @param chunk_id Existing chunk that owns the new point and components.
+	 * @param world World whose resource pools receive the new point and component slots.
+	 * @param body_id WorldBody that owns the new point and components.
 	 * @param position Feet position in world-body-local coordinates.
 	 * @param up Initial local up direction.
 	 * @param forward Initial local facing direction.
 	 * @return ID of the new human component slot.
 	 */
-	PointComponentSlotId createHumanSoldier(World& world, ChunkId chunk_id,
+	PointComponentSlotId createHumanSoldier(World& world, WorldBodyId body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward, FactionId faction_id);
 
-	/** @brief Creates and registers a faction-controlled human soldier in an existing chunk. */
-	PointComponentSlotId createNpc(World& world, ChunkId chunk_id,
+	/** @brief Creates and registers a faction-controlled human soldier on a WorldBody. */
+	PointComponentSlotId createNpc(World& world, WorldBodyId body_id,
 		const glm::dvec3& position, const vec3& up, const vec3& forward, FactionId faction_id);
 
 	/**
@@ -250,14 +248,14 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Consumes the movement command, applies ground/gravity motion, and updates facing/animation.
-	 * @param slot Human component slot, including its point and owning chunk IDs.
+	 * @param slot Human component slot, including its point and owning body IDs.
 	 * @param world World used for gravity, terrain support tests, and coordinate conversion.
 	 */
 	void tickHumanComponent(PointComponentSlot& slot, World& world);
 
 	/**
 	 * @brief Draws the human appearance and any equipped item using the current pose.
-	 * @param slot Human component slot used to locate the point, chunk, and inventory.
+	 * @param slot Human component slot used to locate the point, owning body, and inventory.
 	 * @param world World used to build camera-relative transforms.
 	 */
 	void frameHumanComponent(PointComponentSlot& slot, World& world);

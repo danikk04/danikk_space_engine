@@ -11,14 +11,13 @@
 namespace danikk_space_engine
 {
 	void ControllerSystem::duplicateControllerPointWithMachinegun(const Point& source_point,
-		const CameraSystem& camera, ChunkId chunk_id)
+		const CameraSystem& camera, WorldBodyId body_id)
 	{
 		DSE_PROFILE_CONTROLLER()
 		const PointId point_id = world.point_data.createPoint();
 		world.point_data.getPoint(point_id) = source_point;
 		world.point_data.getPoint(point_id).world_body_id = static_cast<WorldBodyId>(-1);
 		world.point_data.getPoint(point_id).world_body_point_index = static_cast<size_t>(-1);
-		world.point_data.getPoint(point_id).referencing_chunk_ids.clear();
 		world.point_data.getPoint(point_id).component_slot_ids.clear();
 		MachinegunComponent machinegun;
 		machinegun.forward = camera.getFront();
@@ -26,7 +25,7 @@ namespace danikk_space_engine
 		machinegun.right = camera.getRight();
 		const PointComponentSlotId slot_id = world.point_data.createPointComponentSlot(
 			point_id, PointComponentTypeId::machine_gun, &machinegun);
-		world.chunks.addPointComponentSlotToChunk(chunk_id, slot_id);
+		world.attachPointComponentToBody(body_id, point_id, slot_id, source_point.body_local_position);
 	}
 
 	void ControllerSystem::validateControllerBinding() const
@@ -36,24 +35,24 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Controller system point does not match the active camera point");
 	}
 
-	bool ControllerSystem::captureDebugSpawn(Point& source_point, ChunkId& owner_chunk_id) const
+	bool ControllerSystem::captureDebugSpawn(Point& source_point, WorldBodyId& owner_body_id) const
 	{
 		DSE_PROFILE_CONTROLLER()
 		if(getKeyboardState(keyboard_buttons::m) != button_states::press) return false;
 		if(!world.point_data.isPointActive(controlled_point_id))
 			danikk_engine::formatFatalError("Controller system references invalid point %", controlled_point_id);
 		source_point = world.point_data.getPoint(controlled_point_id);
-		owner_chunk_id = world.camera.getChunkId();
+		owner_body_id = source_point.world_body_id;
 		return true;
 	}
 
 	bool ControllerSystem::handleToolCatalogInput(
-		bool spawn_machinegun, const Point& source_point, ChunkId owner_chunk_id)
+		bool spawn_machinegun, const Point& source_point, WorldBodyId owner_body_id)
 	{
 		DSE_PROFILE_CONTROLLER()
 		if(!tool_catalog_open) return false;
 		if(spawn_machinegun)
-			duplicateControllerPointWithMachinegun(source_point, world.camera, owner_chunk_id);
+			duplicateControllerPointWithMachinegun(source_point, world.camera, owner_body_id);
 		return true;
 	}
 
@@ -217,9 +216,9 @@ namespace danikk_space_engine
 		if(!controls()) return;
 		validateControllerBinding();
 		Point source_point;
-		ChunkId owner_chunk_id = world.camera.getChunkId();
-		const bool spawn_machinegun = captureDebugSpawn(source_point, owner_chunk_id);
-		if(handleToolCatalogInput(spawn_machinegun, source_point, owner_chunk_id)) return;
+		WorldBodyId owner_body_id = static_cast<WorldBodyId>(-1);
+		const bool spawn_machinegun = captureDebugSpawn(source_point, owner_body_id);
+		if(handleToolCatalogInput(spawn_machinegun, source_point, owner_body_id)) return;
 		validateSelectedUnits();
 		handleModeInput();
 		InputState input = readInputState();
@@ -228,6 +227,6 @@ namespace danikk_space_engine
 		handleCameraInput(input);
 		handleWorldInteraction(input);
 		if(spawn_machinegun)
-			duplicateControllerPointWithMachinegun(source_point, world.camera, owner_chunk_id);
+			duplicateControllerPointWithMachinegun(source_point, world.camera, owner_body_id);
 	}
 }

@@ -12,8 +12,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Stores the nearest terrain or BuildPart hit returned by a ray query.
 	 *
-	 * A miss leaves `hit` false. The face's owning body and chunk IDs identify its
-	 * current geometry; a BuildPart hit also supplies its component slot ID.
+	 * A miss leaves `hit` false. The owning body identifies the geometry; a
+	 * BuildPart hit also supplies its component slot ID.
 	 */
 	struct RaycastHit
 	{
@@ -31,8 +31,6 @@ namespace danikk_space_engine
 		bool hit_terrain = false;
 		/** @brief WorldBody containing the hit geometry. */
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
-		/** @brief Chunk containing the hit geometry or point component. */
-		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		/** @brief BuildPart component slot, valid when `hit_build_part` is true. */
 		PointComponentSlotId build_part_slot_id = static_cast<PointComponentSlotId>(-1);
 	};

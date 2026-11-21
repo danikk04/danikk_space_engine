@@ -18,7 +18,7 @@ namespace danikk_space_engine
 			if(slot.generation_id != reference.generation_id
 				|| slot.type_id != PointComponentTypeId::human
 				|| !world.point_data.isPointActive(slot.point_id)
-				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
+				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 			selected_unit_refs[write_index++] = reference;
@@ -46,13 +46,12 @@ namespace danikk_space_engine
 			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 			if(slot.type_id != PointComponentTypeId::human
 				|| !world.point_data.isPointActive(slot.point_id)
-				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
+				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 
-			const Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
-			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
-			const glm::dvec3 center = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
+			const glm::dvec3 center = world.getPointWorldPosition(slot.point_id);
 			glm::dvec3 up = body.rotation * glm::dvec3(human.up);
 			const double up_length = glm::length(up);
 			if(up_length <= 1e-9) up = glm::dvec3(0.0, 0.0, 1.0);

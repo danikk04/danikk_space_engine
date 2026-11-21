@@ -45,13 +45,11 @@ namespace danikk_space_engine::unit_system_internal
 			if(agent.order.has_attack_target) markVisibilityChecked(system, previous_target);
 			if(agent.order.has_attack_target && isValidEnemy(world, previous_target, human->faction_id))
 			{
-				const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(previous_target.slot_id);
-				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->chunk_id, human_slot->point_id);
-				const Chunk& chunk = world.chunks.getChunk(human_slot->chunk_id);
-				const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
+				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->point_id);
+				const WorldBody& body = world.world_body_data.getWorldBody(human_slot->world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
-				const glm::dvec3 target_position = world.getPointWorldPosition(target_slot.chunk_id, previous_target.point_id);
+				const glm::dvec3 target_position = world.getPointWorldPosition(previous_target.point_id);
 				const glm::dvec3 delta = target_position - shot_origin;
 				const double distance = glm::length(delta);
 				if(distance > 0.001)
@@ -65,19 +63,17 @@ namespace danikk_space_engine::unit_system_internal
 			{
 				agent.order.has_attack_target = false;
 				if(agent.candidate_index >= agent.enemy_candidates.size())
-					collectEnemyTargets(world, human_slot->chunk_id,
+					collectEnemyTargets(world, human_slot->world_body_id,
 						human->faction_id, spatial_index, agent);
 				if(agent.candidate_index >= agent.enemy_candidates.size()) continue;
 				const UnitTarget candidate = agent.enemy_candidates[agent.candidate_index++];
 				if(!isValidEnemy(world, candidate, human->faction_id)) continue;
 				markVisibilityChecked(system, candidate);
-				const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(candidate.slot_id);
-				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->chunk_id, human_slot->point_id);
-				const Chunk& chunk = world.chunks.getChunk(human_slot->chunk_id);
-				const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
+				const glm::dvec3 origin = world.getPointWorldPosition(human_slot->point_id);
+				const WorldBody& body = world.world_body_data.getWorldBody(human_slot->world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
-				const glm::dvec3 target_position = world.getPointWorldPosition(target_slot.chunk_id, candidate.point_id);
+				const glm::dvec3 target_position = world.getPointWorldPosition(candidate.point_id);
 				const glm::dvec3 delta = target_position - shot_origin;
 				const double distance = glm::length(delta);
 				if(distance <= 0.001) continue;

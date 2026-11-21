@@ -24,7 +24,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Applies gravity and integrates position and orientation of loaded, non-planet bodies.
 		 *
-		 * Uses the engine's target frame delay. Bodies without an active chunk,
+		 * Uses the engine's target frame delay. Bodies without an point-owned entities,
 		 * planet bodies, and the body currently held by the Drag tool are skipped.
 		 * Gravity is sampled from EnvironmentSystem before linear position is
 		 * advanced; angular velocity is integrated as an axis-angle rotation.
@@ -36,14 +36,14 @@ namespace danikk_space_engine
 		 *
 		 * Planet centers are snapshotted first. IDs are collected before pool
 		 * destruction to avoid invalidating iteration. The camera point and planet
-		 * bodies are exempt; point components in unloaded chunks are not examined.
+		 * bodies are exempt; point components in unpoint-owned entities are not examined.
 		 */
 		void destroyEntitiesInsidePlanetCore();
 
 		/**
 		 * @brief Resolves contacts between loaded non-planet bodies and planet scalar fields.
 		 *
-		 * Mesh-bearing bodies use their active chunk points to build grouped terrain
+		 * Mesh-bearing bodies use their point-owned entities points to build grouped terrain
 		 * contacts from scalar-field density and gradient samples. Bodies without
 		 * surface triangles may use collision_radius as a spherical fallback.
 		 * Corrections and impulses affect the moving body; planets are immovable.
@@ -53,9 +53,9 @@ namespace danikk_space_engine
 		/**
 		 * @brief Resolves pairwise contacts between loaded non-planet mesh bodies.
 		 *
-		 * Convex chunk proxies are built once per call and tested in four solver
-		 * passes. Body and chunk bounding spheres reject distant pairs before SAT;
-		 * each chunk is treated as convex. A dragged body is assigned zero inverse
+		 * Convex BuildPart proxies are built once per call and tested in four solver
+		 * passes. Body and part bounding spheres reject distant pairs before SAT;
+		 * each BuildPart is treated as convex. A dragged body is assigned zero inverse
 		 * mass and inertia for this solver.
 		 */
 		void resolveBodyCollisions();
@@ -63,7 +63,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Separates overlapping human capsules and restores ground clearance afterward.
 		 *
-		 * Uses up to four positional-correction passes, visiting each candidate chunk pair
+		 * Uses up to four positional-correction passes, visiting each candidate part pair
 		 * once per pass. Human dimensions and up vectors define capsule axes.
 		 * Corrections are projected onto each person's
 		 * local tangent plane. A short raycast may lift a person after separation,

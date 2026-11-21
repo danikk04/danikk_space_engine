@@ -12,7 +12,7 @@ namespace danikk_space_engine
 	 * @brief Owns the active camera's point binding, orientation, movement, and projection.
 	 *
 	 * The camera is world-level state rather than a point component: its point remains
-	 * chunk-owned for spatial positioning, while this system handles camera input and view data.
+	 * attached to a WorldBody for spatial positioning, while this system handles camera input and view data.
 	 */
 	class CameraSystem
 	{
@@ -20,8 +20,6 @@ namespace danikk_space_engine
 		World& world;
 		/** @brief Point used as the camera origin, or invalid when no camera is bound. */
 		PointId point_id = static_cast<PointId>(-1);
-		/** @brief Chunk owning the camera point, or invalid when no camera is bound. */
-		ChunkId chunk_id = static_cast<ChunkId>(-1);
 
 	public:
 		/** @brief Clears the camera binding and logs subsystem initialization. */
@@ -41,16 +39,14 @@ namespace danikk_space_engine
 		/** @brief Far clipping plane distance in world units. */
 		float far_clip_distance = 10000.0f;
 
-		/** @brief Binds camera state to a chunk-owned point. */
-		void bind(PointId point_id, ChunkId chunk_id);
+		/** @brief Binds camera state to a point attached to a WorldBody. */
+		void bind(PointId point_id);
 		/** @brief Clears the camera binding. */
 		void unbind();
-		/** @brief Returns whether the bound point and owning chunk are still active. */
+		/** @brief Returns whether the bound point and owning WorldBody are still active. */
 		bool isActive() const;
 		/** @brief Returns the bound point ID, or the invalid ID when unbound. */
 		PointId getPointId() const { return point_id; }
-		/** @brief Returns the owning chunk ID, or the invalid ID when unbound. */
-		ChunkId getChunkId() const { return chunk_id; }
 		/** @brief Returns camera forward in the camera point's local frame. */
 		vec3 getFront() const;
 		/** @brief Returns camera up in the camera point's local frame. */

@@ -18,8 +18,6 @@ namespace danikk_space_engine
 	 */
 	class World;
 
-	/** @brief Owns chunk lifetimes, memberships, and render resources. */
-	class ChunkSystem;
 
 	/** @brief Runtime configuration and streaming state for one planet. */
 	struct PlanetData;
@@ -52,16 +50,16 @@ namespace danikk_space_engine
 	struct HumanComponent;
 
 	/**
-	 * @brief Holds worker-generated chunk vertices, indices, and material data before world resources are created.
+	 * @brief Holds worker-generated mesh data before main-thread resource creation.
 	 */
-	struct GeneratedChunkMesh;
+	struct GeneratedMesh;
 
 	/**
 	 * @brief Associates component data and callbacks with a world point.
 	 */
 	struct PointComponentSlot;
 
-	/** @brief Stores a point's local position and chunk-reference count. */
+	/** @brief Stores a point's local position in its owning body's frame. */
 	struct Point;
 
 	/**

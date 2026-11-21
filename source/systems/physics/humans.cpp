@@ -45,7 +45,8 @@ namespace danikk_space_engine
 		{
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) return false;
 			PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(slot.type_id != PointComponentTypeId::human || !world.chunks.isChunkActive(slot.chunk_id)
+			if(slot.type_id != PointComponentTypeId::human
+				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)
 				|| !world.point_data.isPointActive(slot.point_id)) return false;
 			HumanComponent& component = *static_cast<HumanComponent*>(slot.getData());
 			if(component.hasDeathTimestamp()) return false;
@@ -54,15 +55,14 @@ namespace danikk_space_engine
 			const double height = component.getHeight();
 			if(height <= 0.0) return false;
 
-			Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
-			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
 			const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(glm::normalize(component.up)));
 			const double radius = height * 0.14;
-			const glm::dvec3 center = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
+			const glm::dvec3 center = world.getPointWorldPosition(slot.point_id);
 			const double half_axis = height * 0.5 - radius;
 			result = HumanCollider{
 				slot.point_id,
-				chunk.world_body_id,
+				slot.world_body_id,
 				&component,
 				center,
 				up,
@@ -138,7 +138,7 @@ namespace danikk_space_engine
 
 		/**
 		 * @brief Applies a world-space displacement to a human's point in its body's local frame.
-		 * @param world World providing the owning chunk, body, and point.
+		 * @param world World providing the owning body, body, and point.
 		 * @param human Collider record whose center and point position are updated.
 		 * @param world_delta Requested displacement in world coordinates.
 		 * @return True if the change survived rounding to the point's local coordinates.
@@ -146,11 +146,9 @@ namespace danikk_space_engine
 		bool moveHuman(World& world, HumanCollider& human, const glm::dvec3& world_delta)
 		{
 			Point& point = world.point_data.getPoint(human.point_id);
-			const vec3 old_position = point.position;
-			point.position += vec3(human.world_to_body_rotation * world_delta);
-			if(point.position == old_position) return false;
-
-			const glm::dvec3 local_delta = glm::dvec3(point.position) - glm::dvec3(old_position);
+			const glm::dvec3 local_delta = glm::conjugate(human.world_to_body_rotation) * world_delta;
+			if(glm::dot(local_delta, local_delta) <= 1e-20) return false;
+			world.setPointBodyLocalPosition(human.point_id, point.body_local_position + local_delta);
 			const glm::dvec3 applied_delta = glm::conjugate(human.world_to_body_rotation) * local_delta;
 			human.component->displaced_by_human_collision = true;
 			human.center += applied_delta;
@@ -301,7 +299,7 @@ namespace danikk_space_engine
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 			PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 			if(!world.point_data.isPointActive(slot.point_id)
-				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
+				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
 			if(first_human_body_id == static_cast<WorldBodyId>(-1))
 				first_human_body_id = human_body_ids[index];
 			else has_multiple_bodies |= human_body_ids[index] != first_human_body_id;

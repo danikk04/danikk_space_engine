@@ -44,7 +44,7 @@ namespace danikk_space_engine
 		void renderPointComponents();
 		/** @brief Queues a point for destruction after component traversal completes. */
 		void deferPointDestruction(PointId point_id);
-		/** @brief Destroys queued points through ChunkSystem after callback traversal. */
+		/** @brief Destroys queued points after callback traversal. */
 		void flushDeferredPointDestruction();
 		/** @brief Drops queued point IDs during World reset or shutdown. */
 		void clearDeferredPointDestruction();

@@ -31,21 +31,14 @@ namespace danikk_space_engine
 			return orientation;
 		}
 
-		/** @brief Returns the chunk recorded directly on a weapon's component slot. */
-		ChunkId findOwningChunkId(PointComponentSlot& slot, World& world)
-		{
-			(void)world;
-			return slot.chunk_id;
-		}
-
 		/**
-		 * @brief Creates a point and bullet component at a muzzle position in the owner chunk.
-		 * @param chunk_id Chunk that will own the new projectile component.
-		 * @param position Muzzle position in chunk-local coordinates.
+		 * @param body_id WorldBody that owns the firing weapon and projectile.
+		 * @param position Muzzle position in body-local coordinates.
 		 * @param direction Unit travel direction inherited from the weapon barrel.
 		 * @param world World used to allocate and register the projectile resources.
 		 */
-		void spawnMachinegunBullet(ChunkId chunk_id, const vec3& position, const vec3& direction, World& world)
+		void spawnMachinegunBullet(WorldBodyId body_id, const glm::dvec3& position,
+			const vec3& direction, World& world)
 		{
 			const WeaponItemParameters& weapon = getWeaponItemParameters(item_definition_ids::mg42);
 			const ProjectileDefinition& projectile = getProjectileDefinition(weapon.projectile_id);
@@ -53,7 +46,7 @@ namespace danikk_space_engine
 			bullet.velocity = applyAngularSpread(direction, weapon.spread_degrees) * projectile.speed;
 			bullet.lifetime = projectile.lifetime;
 			bullet.damage = weapon.damage;
-			spawnBullet(world, chunk_id, position, bullet);
+			spawnBullet(world, body_id, position, bullet);
 		}
 	}
 
@@ -110,7 +103,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Accumulates elapsed time and spawns a bullet for every elapsed firing interval.
 	 * @param slot Machine-gun slot containing payload and attached point ID.
-	 * @param world World used to find the owning chunk and allocate projectile resources.
+	 * @param world World used to find the owning body and allocate projectile resources.
 	 * The interval is 0.25 seconds. Each elapsed interval produces one projectile;
 	 * its point is placed at the transformed muzzle and its initial velocity follows
 	 * the weapon's forward direction.
@@ -146,33 +139,31 @@ namespace danikk_space_engine
 		machinegun.shot_timer = shot_timer;
 		if(shot_count == 0) return;
 
-		const ChunkId chunk_id = findOwningChunkId(slot, world);
-		if(chunk_id == static_cast<ChunkId>(-1))
-		{
-			danikk_engine::formatFatalError("Machinegun component is not registered in a chunk");
-		}
+		const WorldBodyId body_id = slot.world_body_id;
+		if(!world.world_body_data.isWorldBodyActive(body_id))
+			danikk_engine::formatFatalError("Machinegun component is not attached to a WorldBody");
 
 		const MachinegunComponent machinegun_snapshot = machinegun;
 		const mat4 rotation_matrix = getOrientationMatrix(machinegun_snapshot);
 		const vec3 direction = machinegun_snapshot.forward;
-		const mat4 weapon_matrix = glm::translate(mat4(1.0f), world.point_data.getPoint(slot.point_id).position)
-			* rotation_matrix
+		const mat4 weapon_rotation = rotation_matrix
 			* glm::scale(mat4(1.0f), vec3(machinegun_snapshot.scale));
-		const vec3 muzzle_position = vec3(weapon_matrix * vec4(
+		const glm::dvec3 muzzle_position = world.point_data.getPoint(slot.point_id).body_local_position
+			+ glm::dvec3(weapon_rotation * vec4(
 			muzzle_forward_offset,
 			muzzle_vertical_offset,
 			0.0f,
-			1.0f));
+			0.0f));
 
 		for(uint32 shot_index = 0; shot_index < shot_count; shot_index++)
 		{
-			spawnMachinegunBullet(chunk_id, muzzle_position, direction, world);
+			spawnMachinegunBullet(body_id, muzzle_position, direction, world);
 		}
 	}
 
 	/**
 	 * @brief Draws the shared MG-42 item mesh with the component's local basis and scale.
-	 * @param slot Slot containing payload, attached point ID, and owner chunk ID.
+	 * @param slot Slot containing payload, attached point ID, and owner body ID.
 	 * @param world World used to build the body's world matrix.
 	 */
 	void frameMachinegunComponent(PointComponentSlot& slot, World& world)
@@ -189,11 +180,7 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Machinegun component references invalid point %", slot.point_id);
 		}
 		const MachinegunComponent& machinegun = *static_cast<const MachinegunComponent*>(slot.getData());
-		const Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
-		const mat4 world_matrix = chunk.createWorldMatrix(world)
-			* glm::translate(
-				mat4(1.0f),
-				world.point_data.getPoint(slot.point_id).position)
+		const mat4 world_matrix = world.getPointWorldMatrix(slot.point_id)
 			* getOrientationMatrix(machinegun)
 			* glm::scale(mat4(1.0f), vec3(machinegun.scale));
 		drawItem(item_definition_ids::mg42, world_matrix);

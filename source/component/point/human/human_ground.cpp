@@ -19,27 +19,25 @@ namespace danikk_space_engine::human_internal
 		 *
 		 * Brackets the density transition along `up`, bisects it, estimates the surface normal
 		 * from a finite-difference gradient, and rejects contacts steeper than the walkable limit.
-		 * @param chunk Chunk containing the human point.
+		 * @param body_id WorldBody owning the human point.
 		 * @param planet Scalar-field parameters and terrain edit stamps.
 		 * @param up Character's local up direction.
 		 * @param human_height Character capsule height.
-		 * @param proposed Candidate character-center position in chunk-local coordinates.
+		 * @param proposed Candidate character-center position in body-local coordinates.
 		 * @param supported Receives the adjusted center position on valid support.
 		 * @param step_height Maximum upward step probe distance.
 		 * @param maximum_drop Maximum downward support probe distance.
 		 * @return True if a walkable surface supports the character within the probe interval.
 		 */
-		bool findPlanetGroundPosition(World& world, const Chunk& chunk,
-			WorldBodyId planet_body_id,
+		bool findPlanetGroundPosition(World& world, WorldBodyId planet_body_id,
 			const vec3& up, float human_height,
-			const vec3& proposed, vec3& supported, vec3& surface_normal,
+			const glm::dvec3& proposed, glm::dvec3& supported, vec3& surface_normal,
 			float step_height, float maximum_drop)
 		{
 			DSE_WATCH();
 			const double capsule_radius = human_height * 0.14;
 			const double half_axis = human_height * 0.5 - capsule_radius;
-			const glm::dvec3 bottom_center = chunk.position
-				+ glm::dvec3(proposed - up * static_cast<float>(half_axis));
+			const glm::dvec3 bottom_center = proposed - glm::dvec3(up * static_cast<float>(half_axis));
 			const auto densityAtOffset = [&](double offset)
 			{
 				return world.planets.getPlanetDensity(planet_body_id,
@@ -82,46 +80,46 @@ namespace danikk_space_engine::human_internal
 				< minimum_ground_normal_dot) return false;
 			surface_normal = vec3(-gradient / gradient_length);
 			const glm::dvec3 supported_bottom = contact_position + glm::dvec3(up) * 0.02;
-			supported = vec3(supported_bottom - chunk.position) + up * static_cast<float>(half_axis);
+			supported = supported_bottom + glm::dvec3(up * static_cast<float>(half_axis));
 			return true;
 		}
 
 		/**
 		 * @brief Finds a walkable support position using the planet field or a raycast on the owning body.
 		 * @param world World used for scalar-field data and raycast queries.
-		 * @param chunk Chunk containing the character.
+		 * @param body_id WorldBody owning the character.
 		 * @param body Body whose terrain or mesh surfaces can support the character.
 		 * @param planet The already resolved planet component, or null for mesh support.
 		 * @param up Character-local up direction.
 		 * @param human_height Character height used to locate the feet.
-		 * @param proposed Candidate center position in chunk-local coordinates.
+		 * @param proposed Candidate center position in body-local coordinates.
 		 * @param supported Receives the corrected center position when support is found.
 		 * @param step_height Maximum upward step distance to test.
 		 * @param maximum_drop Maximum downward distance to search for support.
 		 * @return True when a sufficiently upward-facing surface is found within the interval.
 		 */
-		bool findGroundPosition(World& world, const Chunk& chunk, const WorldBody& body,
+		bool findGroundPosition(World& world, WorldBodyId body_id, const WorldBody& body,
 			const PlanetData* planet,
-			const vec3& up, float human_height, const vec3& proposed, vec3& supported,
+			const vec3& up, float human_height, const glm::dvec3& proposed, glm::dvec3& supported,
 			vec3& surface_normal, float step_height = 0.5f, float maximum_drop = 0.75f)
 		{
 			DSE_WATCH();
 			if(planet != nullptr)
-				return findPlanetGroundPosition(world, chunk, chunk.world_body_id, up, human_height,
+				return findPlanetGroundPosition(world, body_id, up, human_height,
 					proposed, supported, surface_normal, step_height, maximum_drop);
 
-			const vec3 proposed_foot = proposed - up * (human_height * 0.5f);
+			const glm::dvec3 proposed_foot = proposed - glm::dvec3(up * (human_height * 0.5f));
 			const glm::dvec3 foot = body.position
-				+ body.rotation * (chunk.position + glm::dvec3(proposed_foot));
+				+ body.rotation * proposed_foot;
 			const vec3 world_up = vec3(body.rotation * glm::dvec3(up));
-			const RaycastHit hit = world.raycasts.castBody(chunk.world_body_id,
+			const RaycastHit hit = world.raycasts.castBody(body_id,
 				foot + glm::dvec3(world_up) * static_cast<double>(step_height),
 				-world_up, step_height + maximum_drop);
 			if(!hit.hit || glm::dot(hit.normal, world_up) < minimum_ground_normal_dot) return false;
 			surface_normal = vec3(glm::normalize(glm::conjugate(body.rotation) * glm::dvec3(hit.normal)));
-			const vec3 supported_foot = vec3(glm::conjugate(body.rotation)
-				* (hit.position - body.position) - chunk.position) + up * 0.02f;
-			supported = supported_foot + up * (human_height * 0.5f);
+			const glm::dvec3 supported_foot = glm::conjugate(body.rotation)
+				* (hit.position - body.position) + glm::dvec3(up * 0.02f);
+			supported = supported_foot + glm::dvec3(up * (human_height * 0.5f));
 			return true;
 		}
 
@@ -133,7 +131,7 @@ namespace danikk_space_engine::human_internal
 		 * A nonzero step probes its destination. Without support, the helper applies gravity
 		 * and checks the full downward travel before landing.
 		 * @param world World used by support queries.
-		 * @param chunk Owning chunk used for local/world coordinate conversion.
+		 * @param body_id Owning body used for local/world coordinate conversion.
 		 * @param body Owning world body and transform.
 		 * @param human Character dimensions and grounded/fall state.
 		 * @param point Mutable point position representing the character center.
@@ -141,60 +139,62 @@ namespace danikk_space_engine::human_internal
 		 * @param gravity Gravity magnitude in units per second squared.
 		 * @param dt Simulation step duration in seconds.
 		 */
-		void moveWithGround(World& world, const Chunk& chunk, const WorldBody& body,
+		void moveWithGround(World& world, WorldBodyId body_id, const WorldBody& body,
 			HumanComponent& human, Point& point, const vec3& velocity, float gravity, float dt)
 		{
 			DSE_WATCH();
-			const vec3 step = velocity * dt;
+			const glm::dvec3 step = glm::dvec3(velocity) * static_cast<double>(dt);
+			auto& position = point.body_local_position;
 			auto& cache = human.ground_support;
 			if(!human.follow_ground)
 			{
-				point.position += step;
+				position += step;
 				human.vertical_speed = 0.0f;
 				human.grounded = false;
-				cache.chunk_id = PointComponentSlot::no_chunk;
 				return;
 			}
 
-			const PlanetData* planet = world.planets.findPlanet(chunk.world_body_id);
+			const PlanetData* planet = world.planets.findPlanet(body_id);
 			const float height = human.getHeight();
 			const bool cached_support = planet != nullptr && human.grounded && human.vertical_speed == 0.0f
-				&& cache.chunk_id == chunk.chunk_id && cache.planet_generation_id == planet->generation_id
+				&& cache.planet_generation_id == planet->generation_id
 				&& cache.terrain_revision == planet->terrain_revision && cache.height == height
-				&& cache.up == human.up && cache.center == chunk.position + glm::dvec3(point.position);
+				&& cache.up == human.up && cache.center == position;
 
-			if(cached_support && point.position + step == point.position) return;
+			if(cached_support && position + step == position) return;
 
 			const auto setGrounded = [&](const vec3& supported_position, const vec3& surface_normal)
 			{
-				point.position = supported_position;
+				position = supported_position;
 				human.ground_normal = glm::length(surface_normal) > 1e-6f
 					? glm::normalize(surface_normal) : human.up;
 				human.vertical_speed = 0.0f;
 				human.grounded = true;
-				if(planet == nullptr) cache.chunk_id = PointComponentSlot::no_chunk;
-				else cache = {chunk.position + glm::dvec3(supported_position), human.up, height,
-					chunk.chunk_id, planet->generation_id, planet->terrain_revision};
+				cache.center = position;
+				cache.up = human.up;
+				cache.height = height;
+				cache.planet_generation_id = planet == nullptr ? 0 : planet->generation_id;
+				cache.terrain_revision = planet == nullptr ? 0 : planet->terrain_revision;
 			};
 
-			vec3 support;
+			glm::dvec3 support;
 			vec3 support_normal = human.ground_normal;
-			vec3 supported_position = point.position;
+			glm::dvec3 supported_position = position;
 			bool has_support = cached_support;
 			if(!has_support && human.vertical_speed <= 0.0f
-				&& findGroundPosition(world, chunk, body, planet, human.up, height,
-					point.position, support, support_normal))
+				&& findGroundPosition(world, body_id, body, planet, human.up, height,
+					position, support, support_normal))
 			{
-				const float lift = glm::dot(support - point.position, human.up);
+				const double lift = glm::dot(support - position, glm::dvec3(human.up));
 				has_support = lift >= -0.08f && lift <= 2.0f;
 				if(has_support) supported_position = support;
 			}
 
 			if(has_support)
 			{
-				const vec3 proposed = supported_position + step;
+				const glm::dvec3 proposed = supported_position + step;
 				if(proposed != supported_position
-					&& findGroundPosition(world, chunk, body, planet, human.up, height,
+					&& findGroundPosition(world, body_id, body, planet, human.up, height,
 						proposed, support, support_normal))
 					supported_position = support;
 				setGrounded(supported_position, support_normal);
@@ -202,18 +202,17 @@ namespace danikk_space_engine::human_internal
 			}
 
 			human.grounded = false;
-			cache.chunk_id = PointComponentSlot::no_chunk;
 			const float vertical_displacement = human.vertical_speed * dt - 0.5f * gravity * dt * dt;
 			human.vertical_speed -= gravity * dt;
 			if(vertical_displacement <= 0.0f
-				&& findGroundPosition(world, chunk, body, planet, human.up, height, point.position,
+				&& findGroundPosition(world, body_id, body, planet, human.up, height, position,
 					support, support_normal, 0.0f, -vertical_displacement + 0.02f))
 			{
 				setGrounded(support, support_normal);
 			}
 			else
 			{
-				point.position += human.up * vertical_displacement;
+				position += glm::dvec3(human.up * vertical_displacement);
 			}
 		}
 

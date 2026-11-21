@@ -39,7 +39,6 @@ namespace danikk_space_engine
 		dragged_body_distance = 0.0;
 		dragged_hit_offset = glm::dvec3(0.0);
 		dragged_human_point_id = static_cast<PointId>(-1);
-		dragged_human_chunk_id = static_cast<ChunkId>(-1);
 		dragged_human_slot_id = static_cast<PointComponentSlotId>(-1);
 		dragged_human_distance = 0.0;
 		dragged_human_followed_ground = true;
@@ -59,7 +58,6 @@ namespace danikk_space_engine
 		selected_unit_refs.clear();
 		dragged_world_body_id = static_cast<WorldBodyId>(-1);
 		dragged_human_point_id = static_cast<PointId>(-1);
-		dragged_human_chunk_id = static_cast<ChunkId>(-1);
 		dragged_human_slot_id = static_cast<PointComponentSlotId>(-1);
 	}
 

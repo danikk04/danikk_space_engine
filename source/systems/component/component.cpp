@@ -30,7 +30,7 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		for(PointId point_id : deferred_point_destruction_ids)
-			if(world.point_data.isPointActive(point_id)) world.chunks.destroyPoint(point_id);
+			if(world.point_data.isPointActive(point_id)) world.destroyPoint(point_id);
 		deferred_point_destruction_ids.clear();
 	}
 

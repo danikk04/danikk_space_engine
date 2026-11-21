@@ -2,25 +2,25 @@
 #include <cmath>
 
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 
-namespace danikk_space_engine::chunk_mesh_generation_internal
+namespace danikk_space_engine::mesh_generation_internal
 {
 	/**
 	 * @brief Extracts a planet isosurface with the Surface Nets algorithm.
 	 * @param world World providing live planet terrain data.
-	 * @param request Chunk coordinate and generator settings.
-	 * @return Chunk-local vertices and triangle indices, including halo-cell vertices needed
-	 *         to connect faces across chunk boundaries.
+	 * @param request Node bounds and generator settings.
+	 * @return Node-local vertices and triangle indices, including halo-cell vertices needed
+	 *         to connect faces across adjacent terrain-node boundaries.
 	 * The scalar field is sampled on a regular lattice expanded by one cell around the
-	 * chunk. Each sign-changing cell receives one vertex at the average of its edge
+	 * node. Each sign-changing cell receives one vertex at the average of its edge
 	 * intersections. Every sign-changing lattice edge then connects the four adjacent
 	 * cell vertices into a quad, split along its shorter diagonal. Edge ownership uses
-	 * the half-open chunk lattice range, so neighboring chunks emit each quad once.
+	 * the half-open node lattice range, so adjacent nodes emit each shared quad once.
 	 */
-	GeneratedChunkMesh generatePlanetTerrainChunkMeshSurfaceNets(World& world, const ChunkMeshGenerationRequest& request)
+	GeneratedMesh generatePlanetTerrainNodeSurfaceNets(World& world, const MeshGenerationRequest& request)
 	{
-		GeneratedChunkMesh result;
+		GeneratedMesh result;
 		result.generation_id = request.generation_id;
 		result.world_body_id = request.world_body_id;
 		result.planet_generation_id = request.planet_generation_id;
@@ -31,10 +31,9 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		result.terrain_node_generation_id = request.terrain_node_generation_id;
 		result.surface_only = request.surface_only;
 		result.planet_mesh_generator = request.planet_mesh_generator;
-		result.grid_coordinate = request.grid_coordinate;
-		result.chunk_position = request.chunk_position;
+		result.node_minimum = request.node_minimum;
 
-		const size_t cells_per_axis = static_cast<size_t>(std::ceil(request.chunk_width / request.voxel_size));
+		const size_t cells_per_axis = static_cast<size_t>(std::ceil(request.node_width / request.voxel_size));
 		const size_t sample_side = cells_per_axis + 3;
 		const size_t cell_side = cells_per_axis + 1;
 		const auto sampleIndex = [sample_side](int x, int y, int z)
@@ -49,7 +48,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		};
 		const auto samplePosition = [&request](int x, int y, int z)
 		{
-			return request.chunk_position + glm::dvec3(
+			return request.node_minimum + glm::dvec3(
 				static_cast<double>(x) * request.voxel_size,
 				static_cast<double>(y) * request.voxel_size,
 				static_cast<double>(z) * request.voxel_size);
@@ -110,7 +109,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 
 					const uint32 vertex_index = static_cast<uint32>(result.point_positions.size());
 					result.point_positions.push(vec3(
-						intersection_sum / static_cast<double>(intersection_count) - request.chunk_position));
+						intersection_sum / static_cast<double>(intersection_count) - request.node_minimum));
 					cell_vertices[cellIndex(x, y, z)] = vertex_index;
 				}
 			}

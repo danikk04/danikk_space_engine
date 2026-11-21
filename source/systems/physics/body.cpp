@@ -12,8 +12,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Builds convex mesh proxies and resolves body pairs in four sequential passes.
 	 * @param world World whose loaded mesh bodies may be moved and have velocities changed.
-	 * Planet bodies and bodies without active chunks are excluded. Each unordered
-	 * body pair is broadphase-tested by its aggregate radius, then each chunk pair
+	 * Planet bodies and bodies without BuildParts are excluded. Each unordered
+	 * body pair is broadphase-tested by its aggregate radius, then each part pair
 	 * is tested by a bounding sphere and SAT. The Drag-held body has zero inverse
 	 * mass and inertia, so the other body receives the pair correction and impulse.
 	 */
@@ -30,9 +30,9 @@ namespace danikk_space_engine
 		for(WorldBodyId id : world.world_body_data.getUsedWorldBodyIds())
 		{
 			const WorldBody& body = world.world_body_data.getWorldBody(id);
-			if(world.planets.isPlanet(id) || !hasLoadedChunk(world, body)) continue;
+			if(world.planets.isPlanet(id) || !hasSpatialPoints(body)) continue;
 			BodyCollider collider = createCollider(world, id, dragged_id);
-			if(collider.chunks.size() > 0) colliders.push(static_cast<BodyCollider&&>(collider));
+			if(collider.parts.size() > 0) colliders.push(static_cast<BodyCollider&&>(collider));
 		}
 		for(uint8 iteration = 0; iteration < 4; iteration++)
 		{
@@ -48,12 +48,12 @@ namespace danikk_space_engine
 					const glm::dvec3 delta = body_b.position - body_a.position;
 					const double radius = a.radius + b.radius;
 					if(glm::dot(delta, delta) > radius * radius) continue;
-					for(const ConvexChunkCollider& chunk_a : a.chunks)
+					for(const BuildPartCollider& part_a : a.parts)
 					{
-						for(const ConvexChunkCollider& chunk_b : b.chunks)
+						for(const BuildPartCollider& part_b : b.parts)
 						{
 							BodyContact contact;
-							if(findContact(chunk_a, chunk_b, body_b.position - body_a.position, contact))
+							if(findContact(part_a, part_b, body_b.position - body_a.position, contact))
 								resolvePair(body_a, body_b, a, b, contact);
 						}
 					}

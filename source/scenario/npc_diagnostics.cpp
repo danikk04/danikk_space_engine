@@ -39,15 +39,14 @@ namespace danikk_space_engine
 		/** @brief Reads the point center in planet coordinates without adding profiler scopes. */
 		glm::dvec3 getNpcPosition(const World& world, const PointComponentSlot& slot)
 		{
-			return world.chunks.getChunk(slot.chunk_id).position
-				+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
+			return world.getPointWorldPosition(slot.point_id);
 		}
 
 		/**
 		 * @brief Attaches a human and health component, then registers a disabled central agent.
 		 * Movement comes from the scenario so faction combat and input cannot change the test.
 		 */
-		PointComponentSlotId spawnDiagnosticNpc(World& world, ChunkId chunk_id, FactionId faction_id,
+		PointComponentSlotId spawnDiagnosticNpc(World& world, WorldBodyId body_id, FactionId faction_id,
 			const glm::dvec3& feet)
 		{
 			PointData& data = world.point_data;
@@ -56,12 +55,12 @@ namespace danikk_space_engine
 			human.faction_id = faction_id;
 			human.up = vec3(glm::normalize(feet));
 			const glm::dvec3 center = feet + glm::dvec3(human.up) * (human.getHeight() * 0.5);
-			data.getPoint(point_id).position = vec3(center - world.chunks.getChunk(chunk_id).position);
+			data.getPoint(point_id).body_local_position = center;
 
 			const PointComponentSlotId human_id = data.createPointComponentSlot(point_id, PointComponentTypeId::human, &human);
-			world.chunks.addPointComponentSlotToChunk(chunk_id, human_id);
+			world.attachPointComponentToBody(body_id, point_id, human_id, center);
 			const PointComponentSlotId health_id = data.createPointComponentSlot(point_id, PointComponentTypeId::damageable);
-			world.chunks.addPointComponentSlotToChunk(chunk_id, health_id);
+			world.attachPointComponentToBody(body_id, point_id, health_id, center);
 
 			world.unit_system.registerAgent(human_id, false);
 			return human_id;
@@ -70,7 +69,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Creates a small loaded region around an in-memory hill and spawns a grid of NPCs.
 		 * The hill sits above the surrounding procedural terrain so cave placement and player saves
-		 * cannot affect the initial support. Chunks retain the normal planet grid ownership.
+		 * cannot affect the initial support. Actors are attached directly to the body's octree.
 		 */
 		void createNpcFixture(World& world, WorldBodyId body_id, PlanetData& planet,
 			DiagnosticNpc (&npcs)[npc_count])
@@ -80,28 +79,14 @@ namespace danikk_space_engine
 			planet.terrain_edits.append(
 				PlanetTerrainEdit{hill_center, hill_radius, default_materials::stone});
 			++planet.terrain_revision;
-			const int32 top_chunk_z = static_cast<int32>(std::floor((hill_center.z + hill_radius) / planet_chunk_width));
-			for(int32 z = top_chunk_z - 1; z <= top_chunk_z + 1; ++z)
-				for(int32 y = -1; y <= 1; ++y)
-					for(int32 x = -1; x <= 1; ++x)
-					{
-						Chunk& chunk = world.chunks.createChunk(body_id);
-						chunk.grid_coordinate = glm::ivec3(x, y, z);
-						chunk.position = glm::dvec3(chunk.grid_coordinate) * planet_chunk_width;
-						planet.chunk_lookup.setChunk(chunk.grid_coordinate, chunk.chunk_id);
-					}
-
 			for(size_t i = 0; i < npc_count; ++i)
 			{
 				const double x = (static_cast<double>(i % npc_columns) - (npc_columns - 1) * 0.5) * spacing;
 				const double y = (static_cast<double>(i / npc_columns) - (npc_rows - 1) * 0.5) * spacing;
 				const double z = hill_center.z + std::sqrt(hill_radius * hill_radius - x * x - y * y);
 				const glm::dvec3 feet(x, y, z + 0.03);
-				const glm::ivec3 coord(glm::floor((feet + glm::dvec3(0.0, 0.0, 0.9)) / planet_chunk_width));
-				ChunkId chunk_id;
-				if(!planet.chunk_lookup.getChunk(coord, chunk_id)) formatFatalError("NPC diagnostics spawn chunk is missing");
 				const FactionId faction = i % 2 == 0 ? base_faction_ids::player : base_faction_ids::pirates;
-				npcs[i].slot_id = spawnDiagnosticNpc(world, chunk_id, faction, feet);
+				npcs[i].slot_id = spawnDiagnosticNpc(world, body_id, faction, feet);
 			}
 		}
 
@@ -191,14 +176,8 @@ namespace danikk_space_engine
 			&& walking.grounded == npc_count && walking.moved == npc_count && lost_support;
 		formatLogInfo("NPC diagnostics excavation lost_support=% drop_m=%", lost_support, drop);
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
-		scene.chunks.clear();
+		scene.destroyWorldBody(body_id);
 		scene.point_data.release();
-		while(scene.world_body_data.getUsedWorldBodyIds().size() > 0)
-		{
-			const DynamicArray<WorldBodyId>& body_ids = scene.world_body_data.getUsedWorldBodyIds();
-			scene.world_body_data.destroyWorldBody(
-				body_ids[body_ids.size() - 1], scene.chunks, scene.planets);
-		}
 		scene.world_body_data.release();
 		scene.factions.release();
 		return passed ? EXIT_SUCCESS : EXIT_FAILURE;

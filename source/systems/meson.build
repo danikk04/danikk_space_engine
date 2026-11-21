@@ -1,6 +1,5 @@
 subdir('camera')
-subdir('chunk')
-subdir('chunk_mesh_generation')
+subdir('mesh_generation')
 subdir('component')
 subdir('controller')
 subdir('environment')

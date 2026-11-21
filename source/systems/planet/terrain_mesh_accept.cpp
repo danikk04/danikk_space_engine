@@ -7,10 +7,10 @@
 
 namespace danikk_space_engine
 {
-	void PlanetSystem::acceptGeneratedSurfaceNode(const GeneratedChunkMesh& generated_mesh)
+	void PlanetSystem::acceptGeneratedSurfaceNode(const GeneratedMesh& generated_mesh)
 	{
 		DSE_WATCH();
-		if(generated_mesh.source != ChunkMeshSource::planet_terrain_node) return;
+		if(generated_mesh.source != MeshGenerationSource::planet_terrain_node) return;
 		constexpr bool log_planet_mesh_acceptance_diagnostics = true;
 		static uint32 report_timestamp_ms = 0;
 		static size_t accepted = 0;
@@ -84,7 +84,7 @@ namespace danikk_space_engine
 			return;
 		}
 		node.generation_pending = false;
-		node.mesh_position = generated_mesh.chunk_position;
+		node.mesh_position = generated_mesh.node_minimum;
 		createMeshRenderData(node.mesh,
 			generated_mesh.point_positions.data(), generated_mesh.point_positions.size(),
 			generated_mesh.triangle_point_indices.data(), generated_mesh.triangle_point_indices.size(),

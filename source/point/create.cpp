@@ -41,7 +41,6 @@ namespace danikk_space_engine
 		const PointComponentSlotId id = point_components.create();
 		PointComponentSlot& slot = point_components[id];
 		slot.point_id = point_id;
-		slot.chunk_id = PointComponentSlot::no_chunk;
 		slot.type_id = type_id;
 		slot.generation_id = next_point_component_generation_id++;
 		if(next_point_component_generation_id == 0) next_point_component_generation_id = 1;

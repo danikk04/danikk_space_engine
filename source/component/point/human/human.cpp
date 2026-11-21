@@ -82,19 +82,19 @@ namespace danikk_space_engine
 	 *
 	 * The movement command is cleared after reading. Ground following delegates to support tests;
 	 * walking phase and facing are advanced from actual tangential displacement.
-	 * @param slot Human component slot containing point and chunk ownership.
+	 * @param slot Human component slot containing point and body ownership.
 	 * @param world World supplying gravity samples and collision/support queries.
 	 */
 	void tickHumanComponent(PointComponentSlot& slot, World& world)
 	{
 		DSE_WATCH();
-		if(!world.point_data.isPointActive(slot.point_id) || !world.chunks.isChunkActive(slot.chunk_id))
-			formatFatalError("Human references an invalid point or chunk");
+		if(!world.point_data.isPointActive(slot.point_id)
+			|| !world.world_body_data.isWorldBodyActive(slot.world_body_id))
+			formatFatalError("Human references an invalid point or WorldBody");
 		HumanComponent& human = *static_cast<HumanComponent*>(slot.getData());
 		Point& point = world.point_data.getPoint(slot.point_id);
-		Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
-		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
-		const glm::dvec3 world_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
+		WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
+		const glm::dvec3 world_position = world.getPointWorldPosition(slot.point_id);
 		const glm::dvec3 gravity_world = world.environment.sampleGravityAt(world_position);
 		const double gravity_magnitude = glm::length(gravity_world);
 		const float gravity = static_cast<float>(gravity_magnitude);
@@ -135,7 +135,10 @@ namespace danikk_space_engine
 			human.startDeathTimestamp(danikk_engine::getMsTimestamp());
 			human.desired_velocity = vec3(0.0f);
 			human.walk_amplitude = 0.0f;
-			moveWithGround(world, chunk, body, human, point, vec3(0.0f), gravity, dt);
+			const glm::dvec3 old_position = point.body_local_position;
+			moveWithGround(world, slot.world_body_id, body, human, point, vec3(0.0f), gravity, dt);
+			if(point.body_local_position != old_position)
+				world.setPointBodyLocalPosition(slot.point_id, point.body_local_position);
 			return;
 		}
 		human.clearDeathTimestamp();
@@ -151,9 +154,11 @@ namespace danikk_space_engine
 		const float speed = glm::length(velocity);
 		const float max_speed = glm::max(human.getMovementSpeed(), 0.0f);
 		if(speed > max_speed && speed > 0.0f) velocity *= max_speed / speed;
-		const vec3 old_position = point.position;
-		moveWithGround(world, chunk, body, human, point, velocity, gravity, dt);
-		vec3 displacement = point.position - old_position;
+		const glm::dvec3 old_position = point.body_local_position;
+		moveWithGround(world, slot.world_body_id, body, human, point, velocity, gravity, dt);
+		if(point.body_local_position != old_position)
+			world.setPointBodyLocalPosition(slot.point_id, point.body_local_position);
+		vec3 displacement = vec3(point.body_local_position - old_position);
 		displacement -= human.up * glm::dot(displacement, human.up);
 		const float distance = glm::length(displacement);
 		human.updateOrientation(displacement, dt);
@@ -168,16 +173,16 @@ namespace danikk_space_engine
 	 *
 	 * The visible model root is shifted down by half the character height, while the point remains
 	 * at the body's vertical center. Rendering is camera-relative and uses the body's rotation.
-	 * @param slot Human component slot, containing point and owning chunk IDs.
+	 * @param slot Human component slot, containing point and owning body IDs.
 	 * @param world World used for world transforms, camera origin, and equipped inventory lookup.
 	 */
 	void frameHumanComponent(PointComponentSlot& slot, World& world)
 	{
 		DSE_WATCH();
-		if(!world.point_data.isPointActive(slot.point_id) || !world.chunks.isChunkActive(slot.chunk_id)) return;
+		if(!world.point_data.isPointActive(slot.point_id)
+			|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) return;
 		const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
-		const Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
-		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
 		vec3 local_up = human.body_pose == HumanBodyPose::standing ? human.up : human.ground_normal;
 		if(glm::length(local_up) <= 1e-6f) local_up = human.up;
 		local_up = glm::normalize(local_up);
@@ -200,7 +205,7 @@ namespace danikk_space_engine
 		orientation[0] = vec4(right, 0);
 		orientation[1] = vec4(forward, 0);
 		orientation[2] = vec4(up, 0);
-		const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
+		const glm::dvec3 position = world.getPointWorldPosition(slot.point_id);
 		mat4 body_matrix = glm::translate(mat4(1.0f), vec3(position - world.camera.getWorldPosition()))
 			* orientation;
 		if(human.body_pose != HumanBodyPose::standing)

@@ -70,7 +70,6 @@ namespace danikk_space_engine
 		: path(danikk_framework::getExecutableDirectory())
 	{
 		path.setFileName("settings.cfg");
-		values.bind("show_chunk_bounds", settings.show_chunk_bounds);
 		values.bind("show_world_body_preview", settings.show_world_body_preview);
 		values.bind("default_camera_position", &settings.default_camera_position, &parseDefaultCameraPosition);
 		values.bind("planet_mesh_generator", &settings.planet_mesh_generator, &parsePlanetMeshGenerator);
@@ -140,7 +139,6 @@ namespace danikk_space_engine
 	bool Config::save() const
 	{
 		danikk_framework::String contents;
-		contents << "show_chunk_bounds=" << (settings.show_chunk_bounds ? "true" : "false") << '\n';
 		contents << "show_world_body_preview=" << (settings.show_world_body_preview ? "true" : "false") << '\n';
 		contents << "default_camera_position="
 			<< (settings.default_camera_position == DefaultCameraPosition::ground ? "ground" : "sky") << '\n';

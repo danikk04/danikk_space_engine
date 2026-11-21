@@ -96,15 +96,14 @@ namespace danikk_space_engine
 			if(human_slot.generation_id != reference.generation_id
 				|| human_slot.type_id != PointComponentTypeId::human
 				|| !world.point_data.isPointActive(human_slot.point_id)
-				|| !world.chunks.isChunkActive(human_slot.chunk_id)) continue;
+				|| !world.world_body_data.isWorldBodyActive(human_slot.world_body_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(human_slot.getData());
 			if(human.hasDeathTimestamp()) continue;
 
 			glm::dvec3 move_target_world;
 			if(!world.unit_system.getMoveTarget(reference.slot_id, reference.generation_id, move_target_world)) continue;
 
-			const glm::dvec3 start_world = world.getPointWorldPosition(
-				human_slot.chunk_id, human_slot.point_id);
+			const glm::dvec3 start_world = world.getPointWorldPosition(human_slot.point_id);
 			const glm::dvec3 start = start_world - camera_position;
 			const glm::dvec3 target = move_target_world - camera_position;
 			appendMovementArrow(arrow_vertices, arrow_indices, vec3(start), vec3(target), camera_up);

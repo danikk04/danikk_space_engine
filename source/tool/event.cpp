@@ -34,13 +34,12 @@ namespace danikk_space_engine
 			const glm::dvec3 spawn_world_position = hit.position
 				+ glm::dvec3(tangent * tangent_offset + surface_up * 0.02f);
 			const glm::dvec3 local_position = inverse_rotation * (spawn_world_position - body_position);
-			if(!world.chunks.isChunkActive(hit.chunk_id) && !world.planets.isPlanet(body_id)) return 0;
 			const glm::dvec3 gravity = world.environment.sampleGravityAt(spawn_world_position);
 			const glm::dvec3 world_up = glm::length(gravity) > 1e-8
 				? -glm::normalize(gravity) : glm::normalize(glm::dvec3(surface_up));
 			const vec3 local_up = vec3(inverse_rotation * world_up);
 			const vec3 forward = vec3(inverse_rotation * (world.camera.getWorldPosition() - spawn_world_position));
-			placements[index] = {hit.chunk_id, local_position, local_up, forward};
+			placements[index] = {body_id, local_position, local_up, forward};
 		}
 		return 5;
 	}
@@ -55,13 +54,7 @@ namespace danikk_space_engine
 		for(uint8 index = 0; index < placement_count; ++index)
 		{
 			EventSpawnPlacement& placement = placements[index];
-			if(!world.chunks.isChunkActive(placement.chunk_id) && world.planets.isPlanet(hit.body_id))
-			{
-				const glm::ivec3 coordinate(glm::floor(placement.feet_position / planet_chunk_width));
-				placement.chunk_id = world.planets.getOrCreateSpatialChunk(hit.body_id, coordinate);
-			}
-			if(!world.chunks.isChunkActive(placement.chunk_id)) continue;
-			createNpc(world, placement.chunk_id, placement.feet_position,
+			createNpc(world, placement.body_id, placement.feet_position,
 				placement.up, placement.forward, faction_id);
 		}
 		return {};

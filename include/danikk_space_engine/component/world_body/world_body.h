@@ -44,21 +44,11 @@ namespace danikk_space_engine
 	 */
 	using WorldBodyComponentUpdateFunction = void (*)(WorldBodyComponentSlot& slot, World& world);
 	/**
-	 * @brief Delivers generated chunk data to the component that requested it.
-	 * @param slot Component instance receiving the result.
-	 * @param world World that validates and dispatches the completed result.
-	 * @param generated_chunk Completed worker-produced chunk payload.
-	 */
-	using WorldBodyComponentChunkFunction = void (*)(
-		WorldBodyComponentSlot& slot, World& world, const GeneratedChunkMesh& generated_chunk);
-
-	/**
 	 * @brief Describes payload layout and callbacks registered for a world-body component type.
 	 *
 	 * The descriptor is static registry metadata; instances store only a type ID
 	 * and payload. `World::tick()` and `World::frame()` dispatch their respective
-	 * callbacks when present. The optional chunk callback handles asynchronous
-	 * generation results. Null callbacks mean that the type does not participate
+	 * callbacks when present. Null callbacks mean that the type does not participate
 	 * in that stage. Payload storage must satisfy `data_size` and `data_alignment`;
 	 * non-inline-relocatable types require a move callback when their slot moves.
 	 */
@@ -80,8 +70,6 @@ namespace danikk_space_engine
 		WorldBodyComponentUpdateFunction tick = nullptr;
 		/** @brief Updates visible component state or submits rendering during World::frame(). */
 		WorldBodyComponentUpdateFunction frame = nullptr;
-		/** @brief Accepts a completed asynchronous chunk-generation result. */
-		WorldBodyComponentChunkFunction accept_generated_chunk = nullptr;
 	};
 
 	/**

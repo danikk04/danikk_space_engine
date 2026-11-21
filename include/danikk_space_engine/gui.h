@@ -20,9 +20,9 @@ namespace danikk_space_engine
 		/** @brief Whether a planet was available for the nearest-surface height sample. */
 		bool nearest_planet_height_available = false;
 		/** @brief Average time in milliseconds for the most recent group of 50 generated meshes. */
-		float average_chunk_generation_time_ms = 0.0f;
+		float average_mesh_generation_time_ms = 0.0f;
 		/** @brief Whether at least one complete group of 50 mesh-generation samples is available. */
-		bool average_chunk_generation_time_available = false;
+		bool average_mesh_generation_time_available = false;
 		/** @brief Camera forward axis used to orient catalog previews. */
 		vec3 preview_camera_front = vec3(0.0f, 0.0f, -1.0f);
 		/** @brief Camera up axis used to orient catalog previews. */

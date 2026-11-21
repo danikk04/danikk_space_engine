@@ -8,25 +8,17 @@
 namespace danikk_space_engine
 {
 
-	/**
-	 * @brief Stores a chunk-local mesh or placement position and its chunk reference count.
-	 *
-	 * A point is stored once in PointData and owned by one WorldBody. Its position
-	 * remains local to each referencing chunk; the reverse chunk index records
-	 * those spatial cells and does not count how many components use it.
-	 */
+	/** @brief Point stored in the double-precision local frame of its owning WorldBody. */
 	struct Point
 	{
 		/** @brief WorldBody whose local frame owns this point, or invalid before attachment. */
 		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
 		/** @brief Slot of this point in WorldBody::point_ids, or invalid before attachment. */
 		size_t world_body_point_index = static_cast<size_t>(-1);
-		/** @brief Position relative to the referencing chunk origin, stored in single precision. */
-		vec3 position = vec3(0.0f);
-		/** @brief Components attached to this point, independent of chunk membership. */
+		/** @brief Canonical double-precision position in the owning body's local frame. */
+		glm::dvec3 body_local_position = glm::dvec3(0.0);
+		/** @brief Components attached to this point. */
 		DynamicArray<PointComponentSlotId> component_slot_ids;
-		/** @brief Sorted IDs of spatial chunks that reference this point. */
-		DynamicArray<ChunkId> referencing_chunk_ids;
 	};
 
 	/** @brief Owns points and their attached point-component slots. */
@@ -45,7 +37,7 @@ namespace danikk_space_engine
 		/** @brief Creates and initializes a component slot attached to a point. */
 		PointComponentSlotId createPointComponentSlot(PointId point_id, PointComponentTypeId type_id,
 			const void* init_data = nullptr);
-		/** @brief Destroys a point after its chunk references have been detached. */
+		/** @brief Destroys a point and its attached component slots. */
 		void destroyPoint(PointId id);
 		/** @brief Destroys a detached point-component slot and its payload. */
 		void destroyPointComponentSlot(PointComponentSlotId id);

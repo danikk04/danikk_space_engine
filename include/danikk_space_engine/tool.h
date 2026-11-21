@@ -60,7 +60,7 @@ namespace danikk_space_engine
 	/** @brief Body-local placement data shared by event execution and its visual preview. */
 	struct EventSpawnPlacement
 	{
-		ChunkId chunk_id = static_cast<ChunkId>(-1); ///< Loaded chunk receiving this human.
+		WorldBodyId body_id = static_cast<WorldBodyId>(-1); ///< WorldBody receiving this human.
 		glm::dvec3 feet_position = glm::dvec3(0.0); ///< Feet position relative to the owning WorldBody.
 		vec3 up = vec3(0.0f, 0.0f, 1.0f); ///< Body-local surface normal.
 		vec3 forward = vec3(0.0f, 1.0f, 0.0f); ///< Body-local initial facing direction.
@@ -77,8 +77,6 @@ namespace danikk_space_engine
 		mat4 world_rotation = mat4(1.0f);
 		/** @brief Existing body to attach to, or invalid when placement creates a new body. */
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
-		/** @brief Existing chunk to attach to, or invalid when placement creates a new body. */
-		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		/** @brief Hit BuildPart used as the parent and local grid origin, if present. */
 		PointComponentSlotId parent_slot_id = static_cast<PointComponentSlotId>(-1);
 	};

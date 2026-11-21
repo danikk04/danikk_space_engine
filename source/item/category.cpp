@@ -32,23 +32,24 @@ namespace danikk_space_engine
 			HumanComponent* human = getHumanAtPoint(world, owner_point_id);
 			if(human == nullptr || !world.point_data.isPointActive(owner_point_id)) return false;
 
-			ChunkId chunk_id = static_cast<ChunkId>(-1);
+			WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 			for(PointComponentSlotId id : world.point_data.getUsedPointComponentSlotIds())
 			{
 				const PointComponentSlot& owner = world.point_data.getPointComponentSlot(id);
 				if(owner.point_id == owner_point_id && owner.type_id == PointComponentTypeId::human)
 				{
-					chunk_id = owner.chunk_id;
+					body_id = owner.world_body_id;
 					break;
 				}
 			}
-			if(!world.chunks.isChunkActive(chunk_id)) return false;
+			if(!world.world_body_data.isWorldBodyActive(body_id)) return false;
 
 			const ProjectileDefinition& projectile = getProjectileDefinition(definition.parameters.weapon.projectile_id);
 			const vec3 up = glm::normalize(human->up);
 			const vec3 direction = human->getWeaponDirection();
-			const vec3 muzzle = world.point_data.getPoint(owner_point_id).position
-				+ up * (human->getHeight() * 0.2f) + direction * (human->getHeight() * 0.6f);
+			const glm::dvec3 muzzle = world.point_data.getPoint(owner_point_id).body_local_position
+				+ glm::dvec3(up * (human->getHeight() * 0.2f)
+					+ direction * (human->getHeight() * 0.6f));
 			BulletComponent bullet;
 			const vec3 weapon_direction = applyAngularSpread(direction, definition.parameters.weapon.spread_degrees);
 			bullet.velocity = applyAngularSpread(weapon_direction, human->getSpreadDegrees()) * projectile.speed;
@@ -57,7 +58,7 @@ namespace danikk_space_engine
 			bullet.damage = definition.parameters.weapon.damage;
 			const float rate = definition.parameters.weapon.rounds_per_minute;
 			slot.instance_state.weapon.cooldown = rate > 0.0f ? 60.0f / rate : 0.25f;
-			spawnBullet(world, chunk_id, muzzle, bullet);
+			spawnBullet(world, body_id, muzzle, bullet);
 			return true;
 		}
 

@@ -1,6 +1,5 @@
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world_body.h>
-#include <danikk_space_engine/systems/chunk/manager.h>
 #include <danikk_space_engine/systems/planet/system.h>
 
 #include <cstdlib>
@@ -41,16 +40,16 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @copydoc WorldBodyData::destroyWorldBody(WorldBodyId, ChunkSystem&, PlanetSystem&) */
-	void WorldBodyData::destroyWorldBody(WorldBodyId id, ChunkSystem& chunks, PlanetSystem& planets)
+	/** @copydoc WorldBodyData::destroyWorldBody */
+	void WorldBodyData::destroyWorldBody(WorldBodyId id, PlanetSystem& planets)
 	{
 		if(!isWorldBodyActive(id)) return;
 		planets.destroyPlanet(id);
 		WorldBody& body = world_bodies[id];
-		while(body.chunk_ids.size() > 0)
-			chunks.destroyChunk(body.chunk_ids[body.chunk_ids.size() - 1]);
+		destroyMeshRenderData(body.detail_mesh);
+		body.detail_mesh_bounds_valid = false;
 		if(body.point_ids.size() > 0)
-			danikk_engine::formatFatalError("World body % still owns points after destroying its chunks", id);
+			danikk_engine::formatFatalError("World body % still owns points during destruction", id);
 		while(body.component_slot_ids.size() > 0)
 			destroyWorldBodyComponentSlot(body.component_slot_ids[body.component_slot_ids.size() - 1]);
 		world_bodies.free(id);
@@ -74,8 +73,10 @@ namespace danikk_space_engine
 		destroyLastUntilEmpty(world_body_components.usedIds(),
 			[this](WorldBodyComponentSlotId id) { destroyWorldBodyComponentSlot(id); });
 		for(WorldBodyId id : world_bodies.usedIds())
-			if(world_bodies[id].chunk_ids.size() > 0 || world_bodies[id].point_ids.size() > 0)
-				danikk_engine::formatFatalError("World body % still owns chunks or points during WorldBodyData clear", id);
+			destroyMeshRenderData(world_bodies[id].detail_mesh);
+		for(WorldBodyId id : world_bodies.usedIds())
+			if(world_bodies[id].point_ids.size() > 0)
+				danikk_engine::formatFatalError("World body % still owns points during WorldBodyData clear", id);
 		clearPools(world_body_components, world_bodies);
 	}
 

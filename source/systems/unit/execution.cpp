@@ -34,16 +34,14 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			DSE_WATCH();
 			const float dt = glm::max(getTargetFrameDelay(), 0.0f);
-			const Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
-			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
-			const glm::dvec3 own_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
+			const glm::dvec3 own_position = world.getPointWorldPosition(slot.point_id);
 			human.desired_velocity = vec3(0.0f);
 			if(agent.order.has_move_target)
 			{
 				const glm::dvec3 body_local_target = glm::conjugate(body.rotation)
 					* (agent.order.move_target_world - body.position);
-				const vec3 target_in_chunk = vec3(body_local_target - chunk.position);
-				vec3 offset = target_in_chunk - world.point_data.getPoint(slot.point_id).position;
+				vec3 offset = vec3(body_local_target - world.point_data.getPoint(slot.point_id).body_local_position);
 				offset -= human.up * glm::dot(offset, human.up);
 				const float distance = glm::length(offset);
 				if(distance > 0.02f && dt > 0.0f)
@@ -83,40 +81,7 @@ namespace danikk_space_engine::unit_system_internal
 		}
 	}
 
-	/** @brief Moves a unit and all its component slots into the loaded chunk containing its point. */
-	void updateUnitChunk(World& world, PointComponentSlot& human_slot)
-	{
-		DSE_WATCH();
-		if(!world.point_data.isPointActive(human_slot.point_id)) return;
-		Chunk& old_chunk = world.chunks.getChunk(human_slot.chunk_id);
-		const PointId point_id = human_slot.point_id;
-		const glm::dvec3 position = old_chunk.position + glm::dvec3(world.point_data.getPoint(point_id).position);
-		const glm::ivec3 coordinate = glm::ivec3(glm::floor(position / planet_chunk_width));
-		ChunkId new_chunk_id = static_cast<ChunkId>(-1);
-		PlanetData* planet = world.planets.findPlanet(old_chunk.world_body_id);
-		if(planet != nullptr && planet->chunk_lookup.isDesired(coordinate))
-			new_chunk_id = world.planets.getOrCreateSpatialChunk(old_chunk.world_body_id, coordinate);
-		if(planet == nullptr || new_chunk_id == human_slot.chunk_id) return;
-		if(!world.chunks.isChunkActive(new_chunk_id))
-		{
-			const glm::dvec3 minimum = glm::dvec3(old_chunk.grid_coordinate) * planet_chunk_width;
-			const glm::dvec3 maximum = minimum + glm::dvec3(planet_chunk_width - 0.001);
-			world.point_data.getPoint(point_id).position = vec3(glm::clamp(position, minimum, maximum) - old_chunk.position);
-			return;
-		}
-
-		DynamicArray<PointComponentSlotId> moved_slots;
-		for(PointComponentSlotId id : world.point_data.getPoint(point_id).component_slot_ids)
-		{
-			moved_slots.push(id);
-			world.chunks.removePointComponentSlotFromChunk(id);
-		}
-		world.chunks.removePointReferenceFromChunk(human_slot.chunk_id, point_id);
-		world.point_data.getPoint(point_id).position = vec3(position - world.chunks.getChunk(new_chunk_id).position);
-		for(PointComponentSlotId id : moved_slots) world.chunks.addPointComponentSlotToChunk(new_chunk_id, id);
-	}
-
-	/** @brief Executes current unit orders and then updates each unit's chunk ownership. */
+	/** @brief Executes current unit orders against body-local positions. */
 	void executeUnitOrders(World& world, UnitGroup& system)
 	{
 		DSE_WATCH();
@@ -127,7 +92,6 @@ namespace danikk_space_engine::unit_system_internal
 			if(!getActiveUnit(world, agent, slot, human)) continue;
 			if(human->faction_id != system.faction_id) continue;
 			executeOrder(world, *slot, agent, *human);
-			updateUnitChunk(world, *slot);
 		}
 	}
 }

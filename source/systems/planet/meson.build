@@ -1,8 +1,7 @@
 sources += files(
 	'planet.cpp',
-	'chunk_accept.cpp',
-	'chunk_lookup.cpp',
-	'chunk_update.cpp',
+	'terrain_mesh_accept.cpp',
+	'terrain_mesh_requests.cpp',
 	'terrain_tree.cpp',
 	'render.cpp',
 	'edit.cpp',

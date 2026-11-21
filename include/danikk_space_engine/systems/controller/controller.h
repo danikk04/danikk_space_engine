@@ -45,7 +45,7 @@ namespace danikk_space_engine
 		World& world;
 		/** @brief Creates a machinegun point copy using the owning world's component pools. */
 		void duplicateControllerPointWithMachinegun(const Point& source_point,
-			const CameraSystem& camera, ChunkId chunk_id);
+			const CameraSystem& camera, WorldBodyId body_id);
 		/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
 		void validateSelectedUnits();
 		/** @brief Selects the nearest visible player-faction human intersected by the camera ray. */
@@ -54,9 +54,9 @@ namespace danikk_space_engine
 		void validateControllerBinding() const;
 		/** @brief Handles the modal tool catalog and reports whether it consumed this tick. */
 		bool handleToolCatalogInput(bool spawn_machinegun,
-			const Point& source_point, ChunkId owner_chunk_id);
+			const Point& source_point, WorldBodyId owner_body_id);
 		/** @brief Captures the debug machinegun request and source point before world interaction. */
-		bool captureDebugSpawn(Point& source_point, ChunkId& owner_chunk_id) const;
+		bool captureDebugSpawn(Point& source_point, WorldBodyId& owner_body_id) const;
 		/** @brief Toggles the player interaction mode when the slash key is pressed. */
 		void handleModeInput();
 		/** @brief Samples keyboard modifiers and mouse values for the current tick. */
@@ -111,8 +111,6 @@ namespace danikk_space_engine
 		glm::dvec3 dragged_hit_offset = glm::dvec3(0.0);
 		/** @brief Point ID of the human captured by the drag action. */
 		PointId dragged_human_point_id = static_cast<PointId>(-1);
-		/** @brief Chunk expected to own the captured human point. */
-		ChunkId dragged_human_chunk_id = static_cast<ChunkId>(-1);
 		/** @brief Human component slot validated before each drag update. */
 		PointComponentSlotId dragged_human_slot_id = static_cast<PointComponentSlotId>(-1);
 		/** @brief Camera-to-human distance retained while dragging. */

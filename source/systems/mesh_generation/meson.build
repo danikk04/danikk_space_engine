@@ -1,5 +1,5 @@
 sources += files(
-	'chunk_mesh_generation.cpp',
+	'mesh_generation.cpp',
 	'worker.cpp',
 	'planet_terrain.cpp',
 	'marching_tetrahedra.cpp',

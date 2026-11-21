@@ -7,7 +7,7 @@
 
 #include "internal.h"
 
-namespace danikk_space_engine::chunk_mesh_generation_internal
+namespace danikk_space_engine::mesh_generation_internal
 {
 	namespace
 	{
@@ -15,7 +15,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		constexpr size_t max_worker_count = 4;
 		constexpr bool log_planet_mesh_queue_diagnostics = true;
 
-		bool sameRequestKey(const ChunkMeshGenerationRequest& a, const ChunkMeshGenerationRequest& b)
+		bool sameRequestKey(const MeshGenerationRequest& a, const MeshGenerationRequest& b)
 		{
 			return a.generation_id == b.generation_id
 				&& a.source == b.source
@@ -23,26 +23,22 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				&& a.planet_generation_id == b.planet_generation_id
 				&& a.terrain_revision == b.terrain_revision
 				&& a.world_body_id == b.world_body_id
-				&& a.chunk_id == b.chunk_id
-				&& a.grid_coordinate == b.grid_coordinate
 				&& a.planet_mesh_generator == b.planet_mesh_generator
 				&& a.terrain_node_id == b.terrain_node_id
 				&& a.terrain_node_generation_id == b.terrain_node_generation_id
 				&& a.surface_only == b.surface_only;
 		}
 
-		bool requestHasCompletedResult(const ChunkMeshGenerationRequest& request,
-			const DynamicArray<GeneratedChunkMesh>& completed)
+		bool requestHasCompletedResult(const MeshGenerationRequest& request,
+			const DynamicArray<GeneratedMesh>& completed)
 		{
-			for(const GeneratedChunkMesh& result : completed)
+			for(const GeneratedMesh& result : completed)
 				if(result.generation_id == request.generation_id
 					&& result.source == request.source
 					&& result.source_revision == request.source_revision
 					&& result.planet_generation_id == request.planet_generation_id
 					&& result.terrain_revision == request.terrain_revision
 					&& result.world_body_id == request.world_body_id
-					&& result.chunk_id == request.chunk_id
-					&& result.grid_coordinate == request.grid_coordinate
 					&& result.planet_mesh_generator == request.planet_mesh_generator
 					&& result.terrain_node_id == request.terrain_node_id
 					&& result.terrain_node_generation_id == request.terrain_node_generation_id
@@ -50,28 +46,28 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			return false;
 		}
 
-		GeneratedChunkMesh generateChunkMesh(World& world, const ChunkMeshGenerationRequest& request)
+		GeneratedMesh generateMesh(World& world, const MeshGenerationRequest& request)
 		{
 			switch(request.source)
 			{
-				case ChunkMeshSource::planet_terrain_node:
+				case MeshGenerationSource::planet_terrain_node:
 					return generatePlanetTerrainNodeMesh(world, request);
-				case ChunkMeshSource::build_parts:
-					return generateBuildPartChunkMesh(world, request);
+				case MeshGenerationSource::build_parts:
+					return generateBuildPartMesh(world, request);
 			}
-			danikk_engine::formatFatalError("Unsupported chunk mesh source %", static_cast<uint32>(request.source));
+			danikk_engine::formatFatalError("Unsupported mesh source %", static_cast<uint32>(request.source));
 			return {};
 		}
 	}
 
-	size_t Worker::findActiveRequest(const ChunkMeshGenerationRequest& request) const
+	size_t Worker::findActiveRequest(const MeshGenerationRequest& request) const
 	{
 		for(size_t index = 0; index < active_requests.size(); ++index)
 			if(sameRequestKey(active_requests[index].request, request)) return index;
 		return active_requests.size();
 	}
 
-	bool Worker::isActive(const ChunkMeshGenerationRequest& request) const
+	bool Worker::isActive(const MeshGenerationRequest& request) const
 	{
 		return findActiveRequest(request) < active_requests.size();
 	}
@@ -87,20 +83,20 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 	{
 		while(true)
 		{
-			ChunkMeshGenerationRequest request;
+			MeshGenerationRequest request;
 			{
 				std::unique_lock<std::mutex> lock(mutex);
 				request_available.wait(lock, [this] { return stopping || !requests.empty(); });
 				if(stopping) return;
-				request = static_cast<ChunkMeshGenerationRequest&&>(requests[0]);
+				request = static_cast<MeshGenerationRequest&&>(requests[0]);
 				for(size_t index = 1; index < requests.size(); ++index)
-					requests[index - 1] = static_cast<ChunkMeshGenerationRequest&&>(requests[index]);
+					requests[index - 1] = static_cast<MeshGenerationRequest&&>(requests[index]);
 				requests.resize(requests.size() - 1);
 				active_requests.push(ActiveRequest{request, false});
 			}
 
 			const auto generation_start_time = std::chrono::steady_clock::now();
-			GeneratedChunkMesh result = generateChunkMesh(world, request);
+			GeneratedMesh result = generateMesh(world, request);
 			const uint64 generation_nanoseconds = static_cast<uint64>(std::chrono::duration_cast<std::chrono::nanoseconds>(
 				std::chrono::steady_clock::now() - generation_start_time).count());
 			bool report_generation_sample = false;
@@ -145,11 +141,11 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				if(!stopping && !cancelled && request.generation_id == current_generation_id)
 					completed.pushMove(result);
 			}
-			if constexpr(log_chunk_mesh_generation_statistics)
+			if constexpr(log_mesh_generation_statistics)
 			{
 				if(report_generation_sample)
 					danikk_framework::formatLogInfo(
-						"Chunk mesh generation (last 50): avg % ms, min % ms, max % ms",
+						"Mesh generation (last 50): avg % ms, min % ms, max % ms",
 						average_generation_milliseconds,
 						minimum_generation_milliseconds,
 						maximum_generation_milliseconds);
@@ -199,7 +195,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		stopping = false;
 	}
 
-	void Worker::update(uint64 generation_id, const DynamicArray<ChunkMeshGenerationRequest>& new_requests)
+	void Worker::update(uint64 generation_id, const DynamicArray<MeshGenerationRequest>& new_requests)
 	{
 		{
 			std::lock_guard<std::mutex> guard(mutex);
@@ -229,25 +225,25 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 					size_t active_fine = 0;
 					size_t active_not_requested = 0;
 					size_t completed_planet = 0;
-					for(const ChunkMeshGenerationRequest& request : new_requests)
+					for(const MeshGenerationRequest& request : new_requests)
 					{
-						if(request.source != ChunkMeshSource::planet_terrain_node) continue;
+						if(request.source != MeshGenerationSource::planet_terrain_node) continue;
 						desired_planet++;
-						if(request.chunk_width <= 128.0) desired_fine++;
+						if(request.node_width <= 128.0) desired_fine++;
 					}
-					for(const ChunkMeshGenerationRequest& request : requests)
+					for(const MeshGenerationRequest& request : requests)
 					{
-						if(request.source != ChunkMeshSource::planet_terrain_node) continue;
+						if(request.source != MeshGenerationSource::planet_terrain_node) continue;
 						queued_planet++;
-						if(request.chunk_width <= 128.0) queued_fine++;
+						if(request.node_width <= 128.0) queued_fine++;
 					}
 					for(const ActiveRequest& active : active_requests)
 					{
-						if(active.request.source != ChunkMeshSource::planet_terrain_node) continue;
+						if(active.request.source != MeshGenerationSource::planet_terrain_node) continue;
 						active_planet++;
-						if(active.request.chunk_width <= 128.0) active_fine++;
+						if(active.request.node_width <= 128.0) active_fine++;
 						bool requested = false;
-						for(const ChunkMeshGenerationRequest& request : new_requests)
+						for(const MeshGenerationRequest& request : new_requests)
 							if(sameRequestKey(active.request, request))
 							{
 								requested = true;
@@ -255,8 +251,8 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 							}
 						if(!requested) active_not_requested++;
 					}
-					for(const GeneratedChunkMesh& result : completed)
-						if(result.source == ChunkMeshSource::planet_terrain_node) completed_planet++;
+					for(const GeneratedMesh& result : completed)
+						if(result.source == MeshGenerationSource::planet_terrain_node) completed_planet++;
 					danikk_framework::formatLogInfo(
 						"Planet mesh queue: desired=% fine_desired=% queued=% fine_queued=% active=% fine_active=% active_not_desired=% completed=%",
 						desired_planet, desired_fine, queued_planet, queued_fine,
@@ -267,7 +263,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 
 			size_t queue_index = 0;
 			bool same_queue = true;
-			for(const ChunkMeshGenerationRequest& request : new_requests)
+			for(const MeshGenerationRequest& request : new_requests)
 			{
 				if(request.generation_id != current_generation_id
 					|| isActive(request)
@@ -282,7 +278,7 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 			if(same_queue && queue_index == requests.size()) return;
 
 			requests.clear();
-			for(const ChunkMeshGenerationRequest& request : new_requests)
+			for(const MeshGenerationRequest& request : new_requests)
 			{
 				if(request.generation_id != current_generation_id
 					|| isActive(request)
@@ -293,17 +289,17 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		request_available.notify_all();
 	}
 
-	bool Worker::tryTake(GeneratedChunkMesh& result)
+	bool Worker::tryTake(GeneratedMesh& result)
 	{
 		std::lock_guard<std::mutex> guard(mutex);
 		while(!completed.empty())
 		{
-			GeneratedChunkMesh candidate = static_cast<GeneratedChunkMesh&&>(completed[0]);
+			GeneratedMesh candidate = static_cast<GeneratedMesh&&>(completed[0]);
 			for(size_t index = 1; index < completed.size(); ++index)
-				completed[index - 1] = static_cast<GeneratedChunkMesh&&>(completed[index]);
+				completed[index - 1] = static_cast<GeneratedMesh&&>(completed[index]);
 			completed.resize(completed.size() - 1);
 			if(candidate.generation_id != current_generation_id) continue;
-			result = static_cast<GeneratedChunkMesh&&>(candidate);
+			result = static_cast<GeneratedMesh&&>(candidate);
 			result_space_available.notify_one();
 			return true;
 		}
@@ -315,8 +311,8 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		std::lock_guard<std::mutex> guard(mutex);
 		for(size_t index = 0; index < requests.size();)
 		{
-			const ChunkMeshGenerationRequest& request = requests[index];
-			if(request.source != ChunkMeshSource::planet_terrain_node
+			const MeshGenerationRequest& request = requests[index];
+			if(request.source != MeshGenerationSource::planet_terrain_node
 				|| request.world_body_id != world_body_id
 				|| request.planet_generation_id != planet_generation_id)
 			{
@@ -324,13 +320,13 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				continue;
 			}
 			for(size_t shift = index + 1; shift < requests.size(); ++shift)
-				requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(requests[shift]);
+				requests[shift - 1] = static_cast<MeshGenerationRequest&&>(requests[shift]);
 			requests.resize(requests.size() - 1);
 		}
 		for(size_t index = 0; index < completed.size();)
 		{
-			const GeneratedChunkMesh& result = completed[index];
-			if(result.source != ChunkMeshSource::planet_terrain_node
+			const GeneratedMesh& result = completed[index];
+			if(result.source != MeshGenerationSource::planet_terrain_node
 				|| result.world_body_id != world_body_id
 				|| result.planet_generation_id != planet_generation_id)
 			{
@@ -338,11 +334,11 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				continue;
 			}
 			for(size_t shift = index + 1; shift < completed.size(); ++shift)
-				completed[shift - 1] = static_cast<GeneratedChunkMesh&&>(completed[shift]);
+				completed[shift - 1] = static_cast<GeneratedMesh&&>(completed[shift]);
 			completed.resize(completed.size() - 1);
 		}
 		for(ActiveRequest& active : active_requests)
-			if(active.request.source == ChunkMeshSource::planet_terrain_node
+			if(active.request.source == MeshGenerationSource::planet_terrain_node
 				&& active.request.world_body_id == world_body_id
 				&& active.request.planet_generation_id == planet_generation_id)
 				active.cancelled = true;

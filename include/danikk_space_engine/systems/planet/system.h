@@ -15,9 +15,7 @@ namespace danikk_space_engine
 		void updatePlanetTerrainTree(PlanetData& planet, const glm::dvec3& camera_position,
 			double height);
 		void destroyPlanetTerrainTree(PlanetData& planet);
-		void updatePlanetSpatialChunks(PlanetData& planet, const glm::dvec3& chunk_center_position);
 		void queuePlanetRequests(PlanetData& planet);
-		void unloadChunksOutsideDesiredSet(PlanetData& planet);
 		void removeQueuedRequests(const PlanetData& planet);
 
 	public:
@@ -36,11 +34,9 @@ namespace danikk_space_engine
 		const PlanetData& getPlanet(WorldBodyId world_body_id) const;
 		const DynamicArray<PlanetData>& getPlanets() const { return planets; }
 
-		/** @brief Updates planet chunk streaming once for the current world frame. */
+		/** @brief Updates adaptive terrain-tree streaming once for the current world frame. */
 		void update();
-		/** @brief Returns or creates an object-storage chunk at a desired planet grid coordinate. */
-		ChunkId getOrCreateSpatialChunk(WorldBodyId world_body_id, const glm::ivec3& grid_coordinate);
-		void acceptGeneratedSurfaceNode(const GeneratedChunkMesh& generated_mesh);
+		void acceptGeneratedSurfaceNode(const GeneratedMesh& generated_mesh);
 		/** @brief Draws active adaptive surface-node meshes in the current depth pass. */
 		void renderSurfaceNodes();
 		/**

@@ -32,9 +32,9 @@ namespace danikk_engine_game
 	{
 		GUIFrameData data;
 		data.camera_position = world.camera.getWorldPosition();
-		data.average_chunk_generation_time_available =
-			world.chunk_mesh_generation.getAverageGenerationTimeMilliseconds(
-				data.average_chunk_generation_time_ms);
+		data.average_mesh_generation_time_available =
+			world.mesh_generation.getAverageGenerationTimeMilliseconds(
+				data.average_mesh_generation_time_ms);
 		double nearest_surface_distance = std::numeric_limits<double>::max();
 		for(const PlanetData& planet : world.planets.getPlanets())
 		{
@@ -76,7 +76,7 @@ namespace danikk_engine_game
 			if(slot.generation_id != reference.generation_id
 				|| slot.type_id != PointComponentTypeId::human
 				|| !world.point_data.isPointActive(slot.point_id)
-				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
+				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 			++data.selected_unit_count;
@@ -133,7 +133,7 @@ namespace danikk_engine_game
 	/**
 	 * @brief Saves configuration and shuts down world-owned resources.
 	 *
-	 * Configuration is persisted before World::shutdown() stops and joins the chunk worker, rejects
+	 * Configuration is persisted before World::shutdown() stops and joins the mesh worker, rejects
 	 * outstanding generation results, and releases meshes while the graphics context is still alive.
 	 */
 	void end()

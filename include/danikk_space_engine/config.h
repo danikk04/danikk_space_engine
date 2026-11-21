@@ -7,8 +7,6 @@
 
 namespace danikk_space_engine
 {
-	/** @brief Enables per-chunk generation, unload, and render diagnostic logs at compile time. */
-	inline constexpr bool log_chunk_diagnostics = false;
 
 	/** @brief Selects the default camera spawn location relative to the configured planet. */
 	enum class DefaultCameraPosition : uint8
@@ -33,8 +31,6 @@ namespace danikk_space_engine
 	 */
 	struct Settings
 	{
-		/** @brief Enables the chunk boundary overlay; defaults to true. */
-		bool show_chunk_bounds = true;
 		/** @brief Enables the translucent cube shown by Place -> Body; defaults to true. */
 		bool show_world_body_preview = true;
 		/** @brief Initial camera placement mode; defaults to sky for a fresh application start. */
@@ -51,7 +47,7 @@ namespace danikk_space_engine
 	 * The file uses one `key=value` entry per line. `load()` leaves current field
 	 * values unchanged for absent keys and creates a zero-byte file when none exists;
 	 * on the normal first application start those values are the Settings defaults.
-	 * The keys are `show_chunk_bounds`, `show_world_body_preview`,
+	 * The keys are `show_world_body_preview`,
 	 * `default_camera_position` (`sky` or `ground`), and
 	 * `planet_mesh_generator` (`marching_tetrahedra` or `surface_nets`), and
 	 * `minimum_average_profile_time_ms` (defaults to 1.0). `save()` rewrites the file with all supported keys

@@ -34,7 +34,7 @@ namespace danikk_space_engine
 		 * @brief Describes payload layout and callbacks registered for one point-component type.
 		 *
 		 * The table entry controls how PointData allocates and relocates the payload, and which
-		 * callbacks Chunk invokes during simulation ticks and rendered frames. A null callback
+			 * callbacks ComponentSystem invokes during simulation ticks and rendered frames. A null callback
 		 * means that the type has no behavior for that lifecycle stage.
 		 */
 	struct PointComponentType
@@ -51,9 +51,9 @@ namespace danikk_space_engine
 		PointComponentMoveFunction move = nullptr;
 		/** @brief Runs the payload destructor before its storage is reclaimed. */
 		PointComponentDestroyFunction destroy = nullptr;
-		/** @brief Advances gameplay state; called from the owning chunk's tick traversal. */
+		/** @brief Advances gameplay state; called by ComponentSystem::tickPointComponents(). */
 		PointComponentUpdateFunction tick = nullptr;
-		/** @brief Submits rendering work; called from the owning chunk's frame traversal. */
+		/** @brief Submits rendering work; called by ComponentSystem::renderPointComponents(). */
 		PointComponentUpdateFunction frame = nullptr;
 	};
 
@@ -65,7 +65,7 @@ namespace danikk_space_engine
 	const PointComponentType& getPointComponentType(PointComponentTypeId type_id);
 
 	/**
-	 * @brief Stores one component instance attached to a point and its owning chunk.
+	 * @brief Stores one component instance attached to a point and its owning WorldBody.
 	 *
 	 * Payloads up to `inline_data_capacity` bytes use the inline buffer. Larger or
 	 * non-relocatable payloads use `external_data`, whose lifetime is managed through
@@ -75,13 +75,12 @@ namespace danikk_space_engine
 	{
 		/** @brief Maximum payload size stored directly inside a slot. */
 		static constexpr size_t inline_data_capacity = 32;
-		/** @brief Owner ID for a slot that has not been attached to a chunk. */
-		static constexpr ChunkId no_chunk = static_cast<ChunkId>(-1);
+		static constexpr WorldBodyId no_world_body = static_cast<WorldBodyId>(-1);
 
 		/** @brief Point whose behavior and data this slot represents. */
 		PointId point_id = 0;
-		/** @brief Chunk that owns and schedules this component slot. */
-		ChunkId chunk_id = no_chunk;
+		/** @brief WorldBody that owns and schedules this component slot. */
+		WorldBodyId world_body_id = no_world_body;
 		/** @brief Type-table entry used to interpret the payload and dispatch callbacks. */
 		PointComponentTypeId type_id = PointComponentTypeId::none;
 		/** @brief Incarnation token used to distinguish reused component slots. */

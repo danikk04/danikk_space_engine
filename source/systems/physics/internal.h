@@ -7,20 +7,10 @@
 namespace danikk_space_engine::collision_internal
 {
 
-	/**
-	 * @brief Reports whether a body has at least one currently active chunk.
-	 * @param world World providing the chunk resource pool.
-	 * @param body Body whose chunk IDs are inspected.
-	 * @return True as soon as an active chunk ID is found; false if every ID is inactive.
-	 */
-	inline bool hasLoadedChunk(const World& world, const WorldBody& body)
+	/** @brief Reports whether a body owns any points. */
+	inline bool hasSpatialPoints(const WorldBody& body)
 	{
-		for(ChunkId chunk_id : body.chunk_ids)
-		{
-
-			if(world.chunks.isChunkActive(chunk_id)) return true;
-		}
-		return false;
+		return body.point_ids.size() > 0;
 	}
 
 	/**
@@ -34,9 +24,9 @@ namespace danikk_space_engine::collision_internal
 	};
 
 	/**
-	 * @brief Stores a convex chunk’s transformed vertices, face normals, edges, and broadphase radius.
+	 * @brief Stores one BuildPart's transformed vertices, face normals, edges, and broadphase radius.
 	 */
-	struct ConvexChunkCollider
+	struct BuildPartCollider
 	{
 		/** @brief Vertices are body-relative rotated offsets to preserve precision at large world positions. */
 		DynamicArray<glm::dvec3> vertices;
@@ -47,12 +37,12 @@ namespace danikk_space_engine::collision_internal
 	};
 
 	/**
-	 * @brief Groups a world body’s convex chunk colliders and derived mass properties for collision tests.
+	 * @brief Groups a body's convex BuildPart colliders and derived mass properties for collision tests.
 	 */
 	struct BodyCollider
 	{
 		WorldBodyId id;
-		DynamicArray<ConvexChunkCollider> chunks;
+		DynamicArray<BuildPartCollider> parts;
 		double radius = 0.0;
 		double inverse_mass = 0.0;
 		double inverse_inertia = 0.0;
@@ -102,11 +92,11 @@ namespace danikk_space_engine::collision_internal
 		const glm::dvec3& outward_direction, const glm::dvec3& support_point_local);
 
 	/**
-	 * @brief Builds convex per-chunk proxies and aggregate inverse mass/inertia for a body.
-	 * @param world World supplying active chunks, triangles, and points.
+	 * @brief Builds convex per-part proxies and aggregate inverse mass/inertia for a body.
+	 * @param world World supplying BuildPart triangles and point positions.
 	 * @param id Body ID to convert into collision proxies.
 	 * @param dragged_id Body treated as kinematic by assigning zero inverse mass and inertia.
-	 * @return Proxies for chunks with at least four unique valid vertices, plus a
+	 * @return Proxies for parts with at least four unique valid vertices, plus a
 	 *         bounding radius about the body origin for broadphase rejection.
 	 * Mesh vertices are rotated offsets from the body origin, avoiding addition of
 	 * large world-space coordinates during SAT tests.
@@ -114,15 +104,15 @@ namespace danikk_space_engine::collision_internal
 	BodyCollider createCollider(const World& world, WorldBodyId id, WorldBodyId dragged_id);
 
 	/**
-	 * @brief Tests two convex chunk proxies with bounding spheres and the separating-axis theorem.
+	 * @brief Tests two convex BuildPart proxies with bounding spheres and the separating-axis theorem.
 	 * @param a First proxy, expressed relative to its body's origin.
 	 * @param b Second proxy, expressed relative to its body's origin.
 	 * @param translation Current offset from a's body origin to b's body origin.
 	 * @param contact Receives the minimum-penetration axis and approximate support contact.
-	 * @return False if the bounding spheres or any SAT axis separates the chunks;
+	 * @return False if the bounding spheres or any SAT axis separates the parts;
 	 *         otherwise true when a finite overlap axis was found.
 	 */
-	bool findContact(const ConvexChunkCollider& a, const ConvexChunkCollider& b,
+	bool findContact(const BuildPartCollider& a, const BuildPartCollider& b,
 		const glm::dvec3& translation, BodyContact& contact);
 
 	/**

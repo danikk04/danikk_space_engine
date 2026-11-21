@@ -1,5 +1,5 @@
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 #include "internal.h"
@@ -12,17 +12,17 @@ namespace danikk_space_engine
 	{
 		/**
 		 * @brief Dispatches scalar-field meshing to the generator selected by the request.
-		 * @param request Immutable chunk-generation settings and generator selection.
+		 * @param request Immutable node-mesh settings and generator selection.
 		 * @return Geometry produced by the selected mesh algorithm.
 		 */
-		GeneratedChunkMesh generatePlanetChunkGeometry(World& world, const ChunkMeshGenerationRequest& request)
+		GeneratedMesh generatePlanetNodeGeometry(World& world, const MeshGenerationRequest& request)
 		{
 			switch(request.planet_mesh_generator)
 			{
 				case PlanetMeshGenerator::marching_tetrahedra:
-					return chunk_mesh_generation_internal::generatePlanetChunkMarchingTetrahedra(world, request);
+					return mesh_generation_internal::generatePlanetTerrainNodeMarchingTetrahedra(world, request);
 				case PlanetMeshGenerator::surface_nets:
-					return chunk_mesh_generation_internal::generatePlanetTerrainChunkMeshSurfaceNets(world, request);
+					return mesh_generation_internal::generatePlanetTerrainNodeSurfaceNets(world, request);
 			}
 			danikk_engine::formatFatalError("Unsupported planet mesh generator %",
 				static_cast<uint32>(request.planet_mesh_generator));
@@ -31,15 +31,15 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Generates a planet chunk and assigns each surface triangle its material.
-	 * @param request Immutable generation identity, settings, edits, and chunk coordinate.
+	 * @brief Generates a planet terrain node and assigns each surface triangle its material.
+	 * @param request Immutable generation identity, settings, edits, and node bounds.
 	 * @return Worker result containing request identity, local geometry, and a
 	 *         material ID for each triangle; geometry arrays may be empty when the
-	 *         sampled field contains no surface in this chunk.
+	 *         sampled field contains no surface in this node.
 	 * This worker-side function does not allocate World resources or upload a mesh.
 	 */
-	GeneratedChunkMesh chunk_mesh_generation_internal::generatePlanetTerrainNodeMesh(
-		World& world, const ChunkMeshGenerationRequest& request)
+	GeneratedMesh mesh_generation_internal::generatePlanetTerrainNodeMesh(
+		World& world, const MeshGenerationRequest& request)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
@@ -48,7 +48,7 @@ namespace danikk_space_engine
 		const PlanetData* planet = world.planets.findPlanet(request.world_body_id);
 		if(planet == nullptr || planet->generation_id != request.planet_generation_id
 			|| planet->terrain_revision != request.terrain_revision) return {};
-		GeneratedChunkMesh result = generatePlanetChunkGeometry(world, request);
+		GeneratedMesh result = generatePlanetNodeGeometry(world, request);
 
 		const size_t triangle_count = result.triangle_point_indices.size() / 3;
 		result.triangle_material_ids.reserve(triangle_count);
@@ -58,7 +58,7 @@ namespace danikk_space_engine
 			const vec3 a = result.point_positions[result.triangle_point_indices[first_index]];
 			const vec3 b = result.point_positions[result.triangle_point_indices[first_index + 1]];
 			const vec3 c = result.point_positions[result.triangle_point_indices[first_index + 2]];
-			const glm::dvec3 center = request.chunk_position
+			const glm::dvec3 center = request.node_minimum
 				+ (glm::dvec3(a) + glm::dvec3(b) + glm::dvec3(c)) / 3.0;
 			result.triangle_material_ids.push(world.planets.getPlanetMaterial(request.world_body_id,
 				center, request.surface_only

@@ -73,7 +73,8 @@ namespace danikk_space_engine
 				if(!world.point_data.isPointComponentSlotActive(id)) continue;
 				PointComponentSlot& slot = world.point_data.getPointComponentSlot(id);
 				if(slot.type_id == PointComponentTypeId::human && slot.point_id == point_id
-					&& world.point_data.isPointActive(point_id) && world.chunks.isChunkActive(slot.chunk_id))
+					&& world.point_data.isPointActive(point_id)
+					&& world.world_body_data.isWorldBodyActive(slot.world_body_id))
 				{
 					if(found_id != nullptr) *found_id = id;
 					return &slot;
@@ -93,7 +94,7 @@ namespace danikk_space_engine
 		if(human_slot->type_id != PointComponentTypeId::human
 			|| human_slot->generation_id != agent.human_generation_id
 			|| !world.point_data.isPointActive(human_slot->point_id)
-			|| !world.chunks.isChunkActive(human_slot->chunk_id)) return false;
+			|| !world.world_body_data.isWorldBodyActive(human_slot->world_body_id)) return false;
 		human = static_cast<HumanComponent*>(human_slot->getData());
 		const DamageableComponent* health = findDamageable(world, human_slot->point_id);
 		if(health == nullptr || health->getHealth() <= 0.0f)
@@ -128,10 +129,8 @@ namespace danikk_space_engine
 		ensureUnitGroupCount(impl->groups, world.factions.size());
 		UnitGroup& group = impl->groups[victim.faction_id];
 		const uint32 now = danikk_engine::getMsTimestamp();
-		const Chunk& attacker_chunk = world.chunks.getChunk(attacker_slot->chunk_id);
-		const glm::dvec3 attacker_position = world.getPointWorldPosition(attacker_slot->chunk_id, attacker_point_id);
-		const glm::dvec3 local_position = attacker_chunk.position
-			+ glm::dvec3(world.point_data.getPoint(attacker_point_id).position);
+		const glm::dvec3 attacker_position = world.getPointWorldPosition(attacker_point_id);
+		const glm::dvec3 local_position = world.point_data.getPoint(attacker_point_id).body_local_position;
 		UnitSighting* contact = nullptr;
 		for(UnitSighting& sighting : group.known_sightings)
 			if(sighting.target_slot_id == attacker_slot_id
@@ -148,13 +147,13 @@ namespace danikk_space_engine
 			sighting.target_point_id = attacker_point_id;
 			sighting.target_generation_id = attacker_slot->generation_id;
 			sighting.position = attacker_position;
-			sighting.body_id = attacker_chunk.world_body_id;
+			sighting.body_id = attacker_slot->world_body_id;
 			sighting.body_local_position = local_position;
 			group.known_sightings.push(sighting);
 			contact = &group.known_sightings[group.known_sightings.size() - 1];
 		}
 		contact->position = attacker_position;
-		contact->body_id = attacker_chunk.world_body_id;
+		contact->body_id = attacker_slot->world_body_id;
 		contact->body_local_position = local_position;
 		contact->last_seen_timestamp_ms = now;
 		contact->last_attack_timestamp_ms = now;
@@ -191,7 +190,7 @@ namespace danikk_space_engine
 		double half_extent, DynamicArray<PointComponentSlotId>& result) const
 	{
 		unit_system_internal::collectNearbyHumanSlots(
-			impl->spatial_index, body_id, center, half_extent, result);
+			world, impl->spatial_index, body_id, center, half_extent, result);
 	}
 
 	/** @copydoc UnitSystem::collectHumanSlots */
@@ -262,6 +261,6 @@ namespace danikk_space_engine
 	void UnitSystem::reset()
 	{
 		impl->groups.clear();
-		impl->spatial_index.trees.clear();
+		impl->spatial_index.entries.clear();
 	}
 }

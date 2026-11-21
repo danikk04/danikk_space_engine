@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	 * @param world World containing the target planet.
 	 * @param action Terrain action; only extrude and erase are recognized.
 	 * @param hit Raycast result defining the triangle-centered edit.
-	 * @return Empty selection result; misses, non-planet chunks, and unsupported actions do nothing.
+	 * @return Empty selection result; misses, non-planet bodies, and unsupported actions do nothing.
 	 */
 	ToolApplyResult applyTerrainTool(World& world, ToolActionId action, const RaycastHit& hit)
 	{

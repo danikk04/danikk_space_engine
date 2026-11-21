@@ -12,7 +12,7 @@
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/mesh_render_data.h>
 #include <danikk_space_engine/systems/planet/edit.h>
-#include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 
 namespace danikk_space_engine
 {
@@ -24,10 +24,7 @@ namespace danikk_space_engine
 
 	inline constexpr double default_planet_radius = 6371000.0;
 	inline constexpr double default_planet_core_radius = 3480000.0;
-	inline constexpr double planet_chunk_load_radius = 150.0;
-	inline constexpr double planet_chunk_width = 32.0;
 	inline constexpr double planet_voxel_size = 2.0;
-	inline constexpr int32 planet_volume_chunk_half_width = 6;
 
 	/** @brief Immutable settings used when registering a planet for a WorldBody. */
 	struct PlanetSettings
@@ -35,7 +32,6 @@ namespace danikk_space_engine
 		const char* name = "Earth";
 		double radius = default_planet_radius;
 		double core_radius = default_planet_core_radius;
-		double chunk_load_radius = planet_chunk_load_radius;
 		double surface_gravity = 9.8;
 		/** @brief RGB color of the atmosphere near the planet surface. */
 		glm::vec3 atmosphere_color = glm::vec3(0.2f, 0.4f, 0.8f);
@@ -51,32 +47,6 @@ namespace danikk_space_engine
 		heightmap_with_edits, ///< Procedural surface plus terrain edits; excludes caves.
 		cave_field, ///< Procedural terrain with caves; excludes terrain edits.
 		cave_field_with_edits ///< Full volumetric terrain with caves and terrain edits.
-	};
-
-	struct PlanetChunkLookupEntry
-	{
-		glm::ivec3 grid_coordinate = glm::ivec3(0);
-		ChunkId chunk_id = static_cast<ChunkId>(-1);
-		uint8 state = 0;
-		bool desired = false;
-		bool has_record = false;
-
-		bool isOccupied() const;
-	};
-
-	/** @brief Per-planet hash lookup of local equal-sized spatial buckets for points and units. */
-	struct PlanetChunkLookup
-	{
-		DynamicArray<PlanetChunkLookupEntry> entries;
-		size_t entry_count = 0;
-		size_t used_bucket_count = 0;
-
-		void clearDesired();
-		void markDesired(const glm::ivec3& grid_coordinate);
-		void setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id);
-		void remove(const glm::ivec3& grid_coordinate);
-		bool isDesired(const glm::ivec3& grid_coordinate) const;
-		bool getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const;
 	};
 
 	/** @brief One edit reference held by the octree node containing its full bounds. */
@@ -277,15 +247,12 @@ namespace danikk_space_engine
 		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
 		PlanetSettingsId settings_id = planet_settings_ids::earth;
 		uint64 generation_id = 0;
-		glm::ivec3 last_chunk_update_grid_coordinate = glm::ivec3(0);
 		uint64 terrain_revision = 0;
 		uint64 terrain_tree_revision = 0;
 		bool terrain_edits_loaded = false;
-		bool chunk_set_initialized = false;
 		PlanetTerrainEdits terrain_edits;
 		PlanetTerrainTree terrain_tree;
-		PlanetChunkLookup chunk_lookup;
-		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
+		DynamicArray<MeshGenerationRequest> pending_requests;
 
 	};
 }

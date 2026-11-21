@@ -63,9 +63,12 @@ namespace danikk_space_engine
 			const glm::dquat inverse_planet_rotation = glm::conjugate(planet_body.rotation);
 			DynamicArray<SurfaceContact> point_contacts;
 			size_t build_part_count = 0;
-			for(ChunkId chunk_id : moving_body.chunk_ids)
-				if(world.chunks.isChunkActive(chunk_id))
-					build_part_count += world.chunks.getBuildPartSlotIds(chunk_id).size();
+			for(PointId point_id : moving_body.point_ids)
+				if(world.point_data.isPointActive(point_id))
+					for(PointComponentSlotId slot_id : world.point_data.getPoint(point_id).component_slot_ids)
+						if(world.point_data.isPointComponentSlotActive(slot_id)
+							&& world.point_data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
+							build_part_count++;
 			point_contacts.reserve(moving_body.point_ids.size() + build_part_count * 8);
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
@@ -80,19 +83,13 @@ namespace danikk_space_engine
 				if(!world.point_data.isPointActive(point_id)) continue;
 				const Point& point = world.point_data.getPoint(point_id);
 				if(point.world_body_id != moving_body_id) continue;
-				for(ChunkId chunk_id : point.referencing_chunk_ids)
-				{
-					if(!world.chunks.isChunkActive(chunk_id)) continue;
-					const Chunk& chunk = world.chunks.getChunk(chunk_id);
-					if(chunk.world_body_id != moving_body_id) continue;
-					local_points.push(chunk.position + glm::dvec3(point.position));
-				}
+				local_points.push(point.body_local_position);
 			}
-			for(ChunkId chunk_id : moving_body.chunk_ids)
+			for(PointId point_id : moving_body.point_ids)
 			{
-				if(!world.chunks.isChunkActive(chunk_id)) continue;
-				const Chunk& chunk = world.chunks.getChunk(chunk_id);
-				for(PointComponentSlotId slot_id : world.chunks.getBuildPartSlotIds(chunk_id))
+				if(!world.point_data.isPointActive(point_id)) continue;
+				const Point& point = world.point_data.getPoint(point_id);
+				for(PointComponentSlotId slot_id : point.component_slot_ids)
 				{
 					if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 					const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
@@ -100,8 +97,7 @@ namespace danikk_space_engine
 						|| !world.point_data.isPointActive(slot.point_id)) continue;
 					const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 					const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
-					const glm::dvec3 anchor = chunk.position
-						+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
+					const glm::dvec3 anchor = point.body_local_position;
 					for(const vec3& vertex : geometry.positions)
 					{
 						local_points.push(anchor
@@ -248,7 +244,7 @@ namespace danikk_space_engine
 
 	/**
 		 * @brief Collects planets, then resolves each eligible body's scalar-field contacts.
-	 * @param world World containing planet components, loaded chunks, and moving bodies.
+	 * @param world World containing planet components, point-owned entities, and moving bodies.
 	 * A body with a positive collision radius and no active triangle mesh uses the
 		 * spherical fallback. Otherwise the body's points and BuildPart vertices are tested.
 		 * Planet bodies, unloaded bodies, and bodies with invalid mass
@@ -273,14 +269,14 @@ namespace danikk_space_engine
 			if(!world.world_body_data.isWorldBodyActive(moving_body_id)) continue;
 			WorldBody& moving_body = world.world_body_data.getWorldBody(moving_body_id);
 			if(world.planets.isPlanet(moving_body_id)) continue;
-			if(!hasLoadedChunk(world, moving_body)) continue;
+			if(!hasSpatialPoints(moving_body)) continue;
 			const BodyMassProperties mass_properties = calculateMassProperties(moving_body);
 			if(mass_properties.mass <= 0.0) continue;
 			bool has_surface_geometry = false;
-			for(ChunkId chunk_id : moving_body.chunk_ids)
+			for(PointId point_id : moving_body.point_ids)
 			{
-				if(!world.chunks.isChunkActive(chunk_id)) continue;
-				for(PointComponentSlotId slot_id : world.chunks.getBuildPartSlotIds(chunk_id))
+				if(!world.point_data.isPointActive(point_id)) continue;
+				for(PointComponentSlotId slot_id : world.point_data.getPoint(point_id).component_slot_ids)
 				{
 					if(world.point_data.isPointComponentSlotActive(slot_id)
 						&& world.point_data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)

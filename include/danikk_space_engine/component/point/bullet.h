@@ -10,10 +10,10 @@ namespace danikk_space_engine
 	 */
 	struct BulletComponent
 	{
-		/** @brief Projectile velocity in the owning chunk's local frame, measured in units per second. */
+		/** @brief Projectile velocity in the owning WorldBody's local frame, measured in units per second. */
 		vec3 velocity = vec3(0.0f);
-		/** @brief Previous local position used to draw the current camera-facing tracer segment. */
-		vec3 previous_position = vec3(0.0f);
+		/** @brief Previous body-local position used to draw the current camera-facing tracer segment. */
+		glm::dvec3 previous_position = glm::dvec3(0.0);
 		/** @brief Shooter point; excluded from projectile collision. */
 		PointId owner_point_id = static_cast<PointId>(-1);
 		/** @brief Damage dealt to a human on impact. */
@@ -26,8 +26,9 @@ namespace danikk_space_engine
 		bool destruction_queued = false;
 	};
 
-	/** @brief Creates a projectile point and attaches its component to a chunk. */
-	void spawnBullet(World& world, ChunkId chunk_id, const vec3& position, const BulletComponent& bullet);
+	/** @brief Creates a projectile point and attaches its component to a WorldBody. */
+	void spawnBullet(World& world, WorldBodyId body_id, const glm::dvec3& body_local_position,
+		const BulletComponent& bullet);
 
 	/**
 	 * @brief Placement-constructs a bullet, copying optional initial velocity and lifetime.
@@ -55,14 +56,14 @@ namespace danikk_space_engine
 	 * The segment raycast covers the full per-tick displacement to avoid tunneling. On impact,
 	 * the point is moved to the hit position and deferred for destruction; expired bullets are
 	 * deferred in the same way.
-	 * @param slot Slot containing the projectile payload and attached point/chunk IDs.
+	 * @param slot Slot containing the projectile payload and attached point/point IDs.
 	 * @param world World used for world-space conversion, raycasting, and deferred cleanup.
 	 */
 	void tickBulletComponent(PointComponentSlot& slot, World& world);
 
 	/**
 	 * @brief Draws the travelled projectile segment as a narrow camera-facing tracer quad.
-	 * @param slot Slot containing the projectile payload and attached point/chunk IDs.
+	 * @param slot Slot containing the projectile payload and attached point/point IDs.
 	 * @param world World used to transform the local point into render coordinates.
 	 */
 	void frameBulletComponent(PointComponentSlot& slot, World& world);

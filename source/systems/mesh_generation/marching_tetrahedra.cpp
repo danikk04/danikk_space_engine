@@ -3,7 +3,7 @@
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/systems/chunk_mesh_generation/chunk_mesh_generation.h>
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 #include "internal.h"
 
 #include <danikk_engine/danikk_engine.h>
@@ -29,7 +29,7 @@ namespace danikk_space_engine
 		}
 
 		/**
-		 * @brief Holds a scalar-field sample on the chunk's regular 3D lattice.
+		 * @brief Holds a scalar-field sample on the terrain node's regular 3D lattice.
 		 * `id` is the flattened lattice index used to form shared edge-cache keys;
 		 * `position` is planet-local and `density` is positive inside solid terrain.
 		 */
@@ -67,13 +67,13 @@ namespace danikk_space_engine
 
 	}
 
-	namespace chunk_mesh_generation_internal
+	namespace mesh_generation_internal
 	{
 		/**
-		 * @brief Samples and polygonizes one regular 3D chunk of the planetary scalar field.
+		 * @brief Samples and polygonizes one regular 3D terrain-tree node.
 		 * @param world World providing live planet terrain data.
-		 * @param request Chunk coordinate, origin, and generator settings.
-		 * @return Request identity plus chunk-local surface vertices and triangle indices.
+		 * @param request Node bounds, origin, and generator settings.
+		 * @return Request identity plus body-local surface vertices and triangle indices.
 		 * The field is sampled at every lattice corner. Each lattice cube is split
 		 * into six tetrahedra; sign-changing tetrahedron edges are refined against
 		 * the original scalar field by bisection and cached by an unordered endpoint key so adjacent
@@ -82,9 +82,9 @@ namespace danikk_space_engine
 		 * toward air. Terrain samples are read directly from World; this helper creates
 		 * no GPU resources.
 		 */
-		GeneratedChunkMesh generatePlanetChunkMarchingTetrahedra(World& world, const ChunkMeshGenerationRequest& request)
+		GeneratedMesh generatePlanetTerrainNodeMarchingTetrahedra(World& world, const MeshGenerationRequest& request)
 		{
-			GeneratedChunkMesh result;
+			GeneratedMesh result;
 			result.generation_id = request.generation_id;
 			result.world_body_id = request.world_body_id;
 			result.planet_generation_id = request.planet_generation_id;
@@ -95,10 +95,9 @@ namespace danikk_space_engine
 			result.terrain_node_generation_id = request.terrain_node_generation_id;
 			result.surface_only = request.surface_only;
 			result.planet_mesh_generator = request.planet_mesh_generator;
-			result.grid_coordinate = request.grid_coordinate;
-			result.chunk_position = request.chunk_position;
+			result.node_minimum = request.node_minimum;
 
-			const size_t cells_per_axis = static_cast<size_t>(std::ceil(request.chunk_width / request.voxel_size));
+			const size_t cells_per_axis = static_cast<size_t>(std::ceil(request.node_width / request.voxel_size));
 			const size_t points_per_axis = cells_per_axis + 1;
 			const size_t lattice_point_count = points_per_axis * points_per_axis * points_per_axis;
 			const auto pointId = [points_per_axis](size_t x, size_t y, size_t z)
@@ -107,7 +106,7 @@ namespace danikk_space_engine
 			};
 			const auto pointPosition = [&request](size_t x, size_t y, size_t z)
 			{
-				return request.chunk_position + glm::dvec3(
+				return request.node_minimum + glm::dvec3(
 					static_cast<double>(x) * request.voxel_size,
 					static_cast<double>(y) * request.voxel_size,
 					static_cast<double>(z) * request.voxel_size);
@@ -180,7 +179,7 @@ namespace danikk_space_engine
 					position = inside;
 				}
 				const uint32 vertex_index = static_cast<uint32>(result.point_positions.size());
-				result.point_positions.push(vec3(position - request.chunk_position));
+				result.point_positions.push(vec3(position - request.node_minimum));
 				edge_keys[slot_index] = key;
 				edge_values[slot_index] = vertex_index;
 				return vertex_index;

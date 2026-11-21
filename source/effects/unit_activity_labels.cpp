@@ -96,7 +96,7 @@ namespace danikk_space_engine
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 			if(slot.type_id != PointComponentTypeId::human || !world.point_data.isPointActive(slot.point_id)
-				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
+				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
 			const HumanComponent& human = *static_cast<const HumanComponent*>(slot.getData());
 			if(human.hasDeathTimestamp() || human.faction_id >= world.factions.size()
 				|| world.factions.getRelation(base_faction_ids::player, human.faction_id).type
@@ -111,9 +111,8 @@ namespace danikk_space_engine
 				+ (character_count - 1) * glyph_spacing;
 			const float panel_width = text_width + panel_padding_x * 2.0f;
 
-			const glm::dvec3 human_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
-			const Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
-			const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
+			const glm::dvec3 human_position = world.getPointWorldPosition(slot.point_id);
+			const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
 			vec3 human_up = vec3(body.rotation * glm::dvec3(human.up));
 			if(glm::length(human_up) <= 1e-6f) human_up = vec3(0.0f, 0.0f, 1.0f);
 			human_up = glm::normalize(human_up);

@@ -41,7 +41,7 @@ namespace danikk_space_engine::collision_internal
 		 * @return False if the projected intervals are disjoint; true if they overlap or the
 		 *         candidate axis is degenerate.
 		 */
-		bool testAxis(const ConvexChunkCollider& a, const ConvexChunkCollider& b,
+		bool testAxis(const BuildPartCollider& a, const BuildPartCollider& b,
 			const glm::dvec3& translation, glm::dvec3 axis, BodyContact& contact)
 		{
 			const double length = glm::length(axis);
@@ -74,11 +74,11 @@ namespace danikk_space_engine::collision_internal
 
 		/**
 		 * @brief Averages vertices lying on the collider's extreme support plane.
-		 * @param shape Convex chunk proxy whose relative vertices are inspected.
+		 * @param shape Convex BuildPart proxy whose relative vertices are inspected.
 		 * @param normal Direction defining the support plane.
 		 * @return Average of vertices within 1e-5 projection units of the maximum.
 		 */
-		glm::dvec3 supportCenter(const ConvexChunkCollider& shape, const glm::dvec3& normal)
+		glm::dvec3 supportCenter(const BuildPartCollider& shape, const glm::dvec3& normal)
 		{
 			double maximum = -std::numeric_limits<double>::max();
 			for(const glm::dvec3& vertex : shape.vertices) maximum = glm::max(maximum, glm::dot(vertex, normal));
@@ -95,10 +95,10 @@ namespace danikk_space_engine::collision_internal
 
 	/**
 	 * @brief Builds body-relative convex proxies from active BuildPart components.
-	 * @param world World supplying active chunks and component data.
+	 * @param world World supplying point-owned entitiess and component data.
 	 * @param id ID of the body to prepare.
 	 * @param dragged_id Body whose proxy must be kinematic during pair resolution.
-	 * @return One proxy for each chunk with at least four unique valid vertices.
+	 * @return One proxy for each BuildPart with at least four unique valid vertices.
 	 * BuildPart faces contribute candidate SAT normals and edge directions. The
 	 * returned body radius encloses all collected vertices around the body's origin.
 	 */
@@ -107,11 +107,11 @@ namespace danikk_space_engine::collision_internal
 		BodyCollider collider;
 		collider.id = id;
 		const WorldBody& body = world.world_body_data.getWorldBody(id);
-		for(ChunkId chunk_id : body.chunk_ids)
+		for(PointId point_id : body.point_ids)
 		{
-			if(!world.chunks.isChunkActive(chunk_id)) continue;
-			const Chunk& chunk = world.chunks.getChunk(chunk_id);
-			for(PointComponentSlotId slot_id : world.chunks.getBuildPartSlotIds(chunk_id))
+			if(!world.point_data.isPointActive(point_id)) continue;
+			const Point& point = world.point_data.getPoint(point_id);
+			for(PointComponentSlotId slot_id : point.component_slot_ids)
 			{
 				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
@@ -119,9 +119,8 @@ namespace danikk_space_engine::collision_internal
 					|| !world.point_data.isPointActive(slot.point_id)) continue;
 				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
-				ConvexChunkCollider part_shape;
-				const glm::dvec3 anchor = chunk.position
-					+ glm::dvec3(world.point_data.getPoint(slot.point_id).position);
+				BuildPartCollider part_shape;
+				const glm::dvec3 anchor = point.body_local_position;
 				part_shape.vertices.reserve(geometry.positions.size());
 				for(const vec3& local_position : geometry.positions)
 				{
@@ -149,7 +148,7 @@ namespace danikk_space_engine::collision_internal
 					part_shape.radius = glm::max(part_shape.radius,
 						glm::length(vertex - part_shape.center));
 				}
-				collider.chunks.push(static_cast<ConvexChunkCollider&&>(part_shape));
+				collider.parts.push(static_cast<BuildPartCollider&&>(part_shape));
 			}
 		}
 		if(id != dragged_id && body.mass > 0.0)
@@ -168,7 +167,7 @@ namespace danikk_space_engine::collision_internal
 		const WorldBody& body = world.world_body_data.getWorldBody(body_id);
 		const BodyCollider existing = createCollider(world, body_id, static_cast<WorldBodyId>(-1));
 		const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
-		ConvexChunkCollider candidate;
+		BuildPartCollider candidate;
 		candidate.vertices.reserve(geometry.positions.size());
 		const glm::dvec3 anchor_body_position = glm::conjugate(body.rotation)
 			* (world_position - body.position);
@@ -195,7 +194,7 @@ namespace danikk_space_engine::collision_internal
 		for(const glm::dvec3& vertex : candidate.vertices)
 			candidate.radius = glm::max(candidate.radius, glm::length(vertex - candidate.center));
 
-		for(const ConvexChunkCollider& other : existing.chunks)
+		for(const BuildPartCollider& other : existing.parts)
 		{
 			BodyContact contact;
 			if(findContact(other, candidate, glm::dvec3(0.0), contact)
@@ -206,17 +205,17 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	/**
-	 * @brief Rejects separated convex chunks or returns their minimum-penetration SAT contact.
-	 * @param a First chunk proxy.
-	 * @param b Second chunk proxy.
+	 * @brief Rejects separated convex BuildParts or returns their minimum-penetration SAT contact.
+	 * @param a First BuildPart proxy.
+	 * @param b Second BuildPart proxy.
 	 * @param translation Current body-origin displacement from a to b.
 	 * @param contact Output for the overlap normal, penetration, and approximate offsets.
 	 * @return False when bounding spheres or an SAT axis separate the proxies;
 	 *         true when all tested axes overlap and a finite minimum penetration exists.
-	 * Face normals from both chunks and cross products of edge directions form the
+	 * Face normals from both BuildParts and cross products of edge directions form the
 	 * candidate axes. The contact point is approximated from opposing support centers.
 	 */
-	bool findContact(const ConvexChunkCollider& a, const ConvexChunkCollider& b,
+	bool findContact(const BuildPartCollider& a, const BuildPartCollider& b,
 		const glm::dvec3& translation, BodyContact& contact)
 	{
 		const double radius = a.radius + b.radius;

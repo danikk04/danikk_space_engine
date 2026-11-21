@@ -10,6 +10,4 @@ namespace danikk_space_engine::unit_system_internal
 	void assignSearchTasks(World&, UnitGroup&, UnitSearchTaskType);
 	/** @brief Executes stored orders and migrates units after component traversal. */
 	void executeUnitOrders(World&, UnitGroup&);
-	/** @brief Moves a unit and its attached component slots to its new loaded chunk. */
-	void updateUnitChunk(World&, PointComponentSlot&);
 }

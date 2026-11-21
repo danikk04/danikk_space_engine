@@ -42,14 +42,12 @@ namespace danikk_space_engine
 
 		const PointComponentSlot& parent_slot = world.point_data.getPointComponentSlot(hit.build_part_slot_id);
 		if(parent_slot.type_id != PointComponentTypeId::build_part
-			|| !world.chunks.isChunkActive(parent_slot.chunk_id)) return placement;
+			|| !world.world_body_data.isWorldBodyActive(parent_slot.world_body_id)) return placement;
 
-		const Chunk& chunk = world.chunks.getChunk(parent_slot.chunk_id);
-		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(parent_slot.world_body_id);
 		const BuildPartComponent& parent_part = *static_cast<const BuildPartComponent*>(parent_slot.getData());
 		const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
-		const glm::dvec3 parent_center = chunk.position
-			+ glm::dvec3(world.point_data.getPoint(parent_slot.point_id).position);
+		const glm::dvec3 parent_center = world.point_data.getPoint(parent_slot.point_id).body_local_position;
 		const glm::dvec3 hit_in_body = inverse_body_rotation * (hit.position - body.position);
 		const vec3 body_normal = glm::normalize(vec3(inverse_body_rotation * glm::dvec3(hit_normal)));
 
@@ -74,8 +72,7 @@ namespace danikk_space_engine
 			+ glm::dvec3(tangent_right) * snapped_right
 			+ glm::dvec3(tangent_forward) * snapped_forward
 			+ glm::dvec3(body_normal) * (surface_distance + support_extent);
-		placement.body_id = chunk.world_body_id;
-		placement.chunk_id = chunk.chunk_id;
+		placement.body_id = parent_slot.world_body_id;
 		placement.parent_slot_id = hit.build_part_slot_id;
 		placement.world_position = body.position + body.rotation * snapped_center;
 		placement.world_rotation = placement.body_local_rotation;

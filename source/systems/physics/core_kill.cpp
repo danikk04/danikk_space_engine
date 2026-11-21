@@ -46,7 +46,7 @@ namespace danikk_space_engine
 	 * @param world World whose point and body data pools are modified.
 	 * Planet centers are copied before destruction. Body and point IDs are queued
 	 * before release so pool iteration is not invalidated. Point components in
-	 * inactive chunks are ignored; each point ID is queued at most once.
+	 * each point ID is queued at most once.
 	 */
 	void PhysicsSystem::destroyEntitiesInsidePlanetCore()
 	{
@@ -69,12 +69,12 @@ namespace danikk_space_engine
 		{
 			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
 			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			if(world.planets.isPlanet(body_id) || !collision_internal::hasLoadedChunk(world, body)) continue;
+			if(world.planets.isPlanet(body_id) || !collision_internal::hasSpatialPoints(body)) continue;
 			if(isInsideAnyPlanetCore(body.position, planets)) bodies_to_destroy.push(body_id);
 		}
 		for(WorldBodyId body_id : bodies_to_destroy)
 		{
-			world.world_body_data.destroyWorldBody(body_id, world.chunks, world.planets);
+			world.destroyWorldBody(body_id);
 		}
 
 		PointId camera_point_id = static_cast<PointId>(-1);
@@ -88,8 +88,8 @@ namespace danikk_space_engine
 			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 			if(slot.point_id == camera_point_id || !world.point_data.isPointActive(slot.point_id)
-				|| !world.chunks.isChunkActive(slot.chunk_id)) continue;
-			const glm::dvec3 position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
+				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
+			const glm::dvec3 position = world.getPointWorldPosition(slot.point_id);
 			if(!isInsideAnyPlanetCore(position, planets)) continue;
 
 			bool already_queued = false;
@@ -105,7 +105,7 @@ namespace danikk_space_engine
 		}
 		for(PointId point_id : points_to_destroy)
 		{
-			world.chunks.destroyPoint(point_id);
+			world.destroyPoint(point_id);
 		}
 	}
 }

@@ -37,8 +37,8 @@ namespace danikk_space_engine::unit_system_internal
 			PointComponentSlot* slot = nullptr;
 			HumanComponent* human = nullptr;
 			if(!getActiveUnit(world, agent, slot, human) || human->faction_id != system.faction_id) continue;
-			const WorldBodyId body_id = world.chunks.getChunk(slot->chunk_id).world_body_id;
-			const glm::dvec3 position = world.getPointWorldPosition(slot->chunk_id, slot->point_id);
+			const WorldBodyId body_id = slot->world_body_id;
+			const glm::dvec3 position = world.getPointWorldPosition(slot->point_id);
 			candidates.push(UnitSearchCandidate{agent.human_slot_id, slot, &agent, human, body_id, position, false});
 		}
 
@@ -82,10 +82,8 @@ namespace danikk_space_engine::unit_system_internal
 					break;
 				}
 
-			const Chunk& chunk = world.chunks.getChunk(candidate.slot->chunk_id);
 			const WorldBody& body = world.world_body_data.getWorldBody(candidate.body_id);
-			const glm::dvec3 body_local_position = chunk.position
-				+ glm::dvec3(world.point_data.getPoint(candidate.slot->point_id).position);
+			const glm::dvec3 body_local_position = world.point_data.getPoint(candidate.slot->point_id).body_local_position;
 			if(assignment == nullptr)
 			{
 				vec3 up = human.up;

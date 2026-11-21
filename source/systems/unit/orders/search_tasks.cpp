@@ -44,7 +44,7 @@ namespace danikk_space_engine::unit_system_internal
 			const bool is_hostile = world.factions.getRelation(
 				system.faction_id, corpse.faction_id).type == FactionRelationType::hostile;
 			if(!is_ally && !is_hostile) continue;
-			const glm::dvec3 corpse_position = world.getPointWorldPosition(corpse_slot.chunk_id, corpse_slot.point_id);
+			const glm::dvec3 corpse_position = world.getPointWorldPosition(corpse_slot.point_id);
 			const glm::dvec3 search_offset = corpse_position - search_position;
 			if(glm::dot(search_offset, search_offset) > search_radius_squared) continue;
 			const DamageableComponent* health = findDamageable(world, corpse_slot.point_id);
@@ -66,7 +66,7 @@ namespace danikk_space_engine::unit_system_internal
 		const UnitSearchLocation& location, const glm::dvec3& search_position)
 	{
 		DSE_WATCH();
-		const glm::dvec3 eye_position = world.getPointWorldPosition(inspector_slot.chunk_id, inspector_slot.point_id)
+		const glm::dvec3 eye_position = world.getPointWorldPosition(inspector_slot.point_id)
 			+ glm::dvec3(inspector.up * (inspector.getHeight() * 0.25f));
 		constexpr double search_radius = 2.5;
 		constexpr double search_radius_squared = search_radius * search_radius;
@@ -98,8 +98,8 @@ namespace danikk_space_engine::unit_system_internal
 			PointComponentSlot* slot = nullptr;
 			HumanComponent* human = nullptr;
 			if(!getActiveUnit(world, agent, slot, human) || human->faction_id != system.faction_id) continue;
-			const WorldBodyId body_id = world.chunks.getChunk(slot->chunk_id).world_body_id;
-			const glm::dvec3 position = world.getPointWorldPosition(slot->chunk_id, slot->point_id);
+			const WorldBodyId body_id = slot->world_body_id;
+			const glm::dvec3 position = world.getPointWorldPosition(slot->point_id);
 			candidates.push(UnitSearchCandidate{agent.human_slot_id, slot, &agent, human, body_id, position, false});
 		}
 

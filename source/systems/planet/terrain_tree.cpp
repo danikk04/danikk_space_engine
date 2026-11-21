@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/systems/planet/system.h>
-#include <danikk_space_engine/systems/chunk/manager.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_framework/log.h>
@@ -211,8 +210,8 @@ namespace danikk_space_engine
 				&& node.mesh_surface_only == surface_only
 				&& node.mesh.mesh != nullptr) return;
 			if(planet.pending_requests.size() >= maximum_requests_per_planet_frame) return;
-			ChunkMeshGenerationRequest request;
-			request.source = ChunkMeshSource::planet_terrain_node;
+			MeshGenerationRequest request;
+			request.source = MeshGenerationSource::planet_terrain_node;
 			request.world_body_id = planet.world_body_id;
 			request.planet_generation_id = planet.generation_id;
 			request.terrain_revision = planet.terrain_revision;
@@ -220,9 +219,9 @@ namespace danikk_space_engine
 			request.terrain_node_generation_id = node.generation_id;
 			request.surface_only = surface_only;
 			request.planet_mesh_generator = settings.planet_mesh_generator;
-			request.chunk_width = node.half_extent * 2.0;
-			request.voxel_size = glm::max(2.0, request.chunk_width / 16.0);
-			request.chunk_position = node.center - glm::dvec3(node.half_extent);
+			request.node_width = node.half_extent * 2.0;
+			request.voxel_size = glm::max(2.0, request.node_width / 16.0);
+			request.node_minimum = node.center - glm::dvec3(node.half_extent);
 			planet.pending_requests.pushMove(request);
 			node.generation_pending = true;
 		};
@@ -333,11 +332,11 @@ namespace danikk_space_engine
 				}
 				size_t fine_request_count = 0;
 				double finest_request_width = 0.0;
-				for(const ChunkMeshGenerationRequest& request : planet.pending_requests)
+				for(const MeshGenerationRequest& request : planet.pending_requests)
 				{
-					if(request.chunk_width <= 128.0) fine_request_count++;
-					if(finest_request_width == 0.0 || request.chunk_width < finest_request_width)
-						finest_request_width = request.chunk_width;
+					if(request.node_width <= 128.0) fine_request_count++;
+					if(finest_request_width == 0.0 || request.node_width < finest_request_width)
+						finest_request_width = request.node_width;
 				}
 				danikk_framework::formatLogInfo(
 					"Planet surface tree: body=% height=% detail_scale=% detail_adjustments=% target_nodes=% nodes=% request_candidates=% queued=% fine_queued=% finest_request_width=% active=% finest_active_half_extent=%",

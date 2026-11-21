@@ -8,12 +8,11 @@ namespace danikk_space_engine
 	/**
 	 * @brief Resets world data pools and creates the default Earth planet, camera, and local controller.
 	 *
-	 * The scenario only assembles initial resources; planet chunk generation remains asynchronous
+	 * The scenario only assembles initial resources; planet octree mesh generation remains asynchronous
 	 * and is requested later by PlanetSystem during its frame update. The camera is stored
-	 * as a point in a dedicated chunk owned by the planet body, with the controller attached to
-	 * that same point.
+	 * as a point attached directly to the planet body.
 	 * @param world World receiving the scenario resources and component slots.
-	 * The camera point is placed in a chunk owned by the Earth planet body. Its
+	 * The camera point is attached to the Earth planet body. Its
 	 * position is above the surface by default; when configured for ground spawn,
 	 * the scenario searches for a sufficiently thick solid region and falls back
 	 * to the sky position if none is found.

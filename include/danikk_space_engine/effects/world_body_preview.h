@@ -15,7 +15,7 @@ namespace danikk_space_engine
 	 * @param axis Selected local size axis: 0 for X, 1 for Y, 2 for Z.
 	 * @param rotation_step Snapped quarter-turn angle around the placement normal.
 	 * Does nothing on a miss. The shared placement transform is rendered in camera-relative
-	 * coordinates to retain precision at large world positions; no WorldBody or Chunk is allocated.
+	 * coordinates to retain precision at large world positions; no WorldBody or point is allocated.
 	 */
 	void drawWorldBodyPlacementPreview(
 		World& world, const RaycastHit& hit, BuildPartShape shape, const vec3& size,

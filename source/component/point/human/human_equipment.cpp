@@ -18,7 +18,7 @@ namespace danikk_space_engine::human_internal
 		 * @param human_slot Human slot used to find inventory components on the same point.
 		 * @param human Character pose and height.
 		 * @param body_matrix Transform from character-local coordinates to render coordinates.
-		 * @param world World used to inspect the owning chunk's component slots.
+		 * @param world World used to inspect the owning body's component slots.
 		 */
 		void drawEquippedWeapons(const PointComponentSlot& human_slot, const HumanComponent& human,
 			const mat4& body_matrix, World& world)

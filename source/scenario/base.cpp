@@ -81,14 +81,18 @@ namespace danikk_space_engine
 	/**
 	 * @brief Clears the world data and builds the Earth planet with its camera and local controller.
 	 * @param world World whose resource pools and singleton component-slot IDs are initialized.
-	 * Creates the configured Earth body and Planet component, then a camera point
-	 * in a chunk attached to that body. The camera's requested spawn mode comes
+	 * Creates the configured Earth body and PlanetSystem record, then a camera point
+	 * attached directly to that body. The camera's requested spawn mode comes
 	 * from Settings; a failed underground search warns and uses the sky spawn.
-	 * The camera and controller slots are registered with the camera chunk so its
-	 * component callbacks participate in chunk traversal.
+	 * Point callbacks are handled by ComponentSystem's global slot traversal.
 	 */
 	void startBaseScenario(World& world)
 	{
+		while(world.world_body_data.getUsedWorldBodyIds().size() > 0)
+		{
+			const DynamicArray<WorldBodyId>& body_ids = world.world_body_data.getUsedWorldBodyIds();
+			world.destroyWorldBody(body_ids[body_ids.size() - 1]);
+		}
 		world.point_data.clear();
 		world.world_body_data.clear();
 		world.factions.create(faction_definition_ids::celestial_body);
@@ -102,25 +106,19 @@ namespace danikk_space_engine
 		const PlanetSettings& planet_settings = world.planets.getPlanetSettings(planet_settings_ids::earth);
 		world.planets.createPlanet(planet_body_id, planet_settings_ids::earth);
 		const PointId camera_point_id = world.point_data.createPoint();
-		Point& camera_point = world.point_data.getPoint(camera_point_id);
 		constexpr double camera_altitude = 10.0;
-		camera_point.position = vec3(0.0f);
 		const glm::dvec3 camera_direction(0.0, 0.0, 1.0);
-		glm::dvec3 camera_chunk_position = camera_direction
+		glm::dvec3 camera_body_local_position = camera_direction
 			* (world.planets.getPlanetSurfaceRadius(planet_body_id, camera_direction,
 				PlanetTerrainMode::heightmap_with_edits) + camera_altitude);
 		if(settings.default_camera_position == DefaultCameraPosition::ground
-			&& !findGroundCameraPosition(world, planet_body_id, planet_settings, camera_chunk_position))
+			&& !findGroundCameraPosition(world, planet_body_id, planet_settings, camera_body_local_position))
 		{
 			danikk_framework::formatLogWarning(
 				"Unable to find solid underground camera position; spawning above the planet");
 		}
-		Chunk& chunk = world.chunks.createChunk(planet_body_id);
-		const ChunkId camera_chunk_id = world.world_body_data.getWorldBody(planet_body_id).chunk_ids[
-			world.world_body_data.getWorldBody(planet_body_id).chunk_ids.size() - 1];
-		chunk.position = camera_chunk_position;
-		world.chunks.addPointReferenceToChunk(camera_chunk_id, camera_point_id);
-		world.camera.bind(camera_point_id, camera_chunk_id);
+		world.attachPointToBody(planet_body_id, camera_point_id, camera_body_local_position);
+		world.camera.bind(camera_point_id);
 		world.camera.rotation.y = -pi_half;
 		world.controller.reset(camera_point_id);
 	}

@@ -16,14 +16,15 @@
 namespace danikk_space_engine
 {
 	/** @copydoc spawnBullet */
-	void spawnBullet(World& world, ChunkId chunk_id, const vec3& position, const BulletComponent& bullet)
+	void spawnBullet(World& world, WorldBodyId body_id, const glm::dvec3& body_local_position,
+		const BulletComponent& bullet)
 	{
 		const PointId point_id = world.point_data.createPoint();
-		world.point_data.getPoint(point_id).position = position;
+		world.point_data.getPoint(point_id).body_local_position = body_local_position;
 		BulletComponent initial_bullet = bullet;
-		initial_bullet.previous_position = position;
+		initial_bullet.previous_position = body_local_position;
 		const PointComponentSlotId slot_id = world.point_data.createPointComponentSlot(point_id, PointComponentTypeId::bullet, &initial_bullet);
-		world.chunks.addPointComponentSlotToChunk(chunk_id, slot_id);
+		world.attachPointComponentToBody(body_id, point_id, slot_id, body_local_position);
 	}
 
 	/**
@@ -78,7 +79,7 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Sweeps the projectile segment for impact, advances lifetime, and queues point removal.
-	 * @param slot Slot containing projectile state and point/chunk IDs.
+	 * @param slot Slot containing projectile state and point/point IDs.
 	 * @param world World used for world-space raycasting and deferred point destruction.
 	 * Uses the target frame delay and raycasts the full displacement before moving
 	 * the point, preventing a fast projectile from skipping a surface between ticks.
@@ -102,16 +103,15 @@ namespace danikk_space_engine
 		const float delta_time = getTargetFrameDelay();
 		if(delta_time <= 0.0f) return;
 		Point& point = world.point_data.getPoint(slot.point_id);
-		const vec3 start_position = point.position;
+		WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
+		const glm::dvec3 start_position = point.body_local_position;
 		bullet.previous_position = start_position;
-		const vec3 displacement = bullet.velocity * delta_time;
-		const float step_distance = glm::length(displacement);
+		const glm::dvec3 displacement = glm::dvec3(bullet.velocity) * static_cast<double>(delta_time);
+		const double step_distance = glm::length(displacement);
 		if(step_distance > 0.000001f)
 		{
-			const glm::dvec3 start_world_position = world.getPointWorldPosition(slot.chunk_id, slot.point_id);
-			const Chunk& owner_chunk = world.chunks.getChunk(slot.chunk_id);
-			const glm::dquat body_rotation = world.world_body_data.getWorldBody(owner_chunk.world_body_id).rotation;
-			const glm::dvec3 direction = glm::normalize(body_rotation * glm::dvec3(bullet.velocity));
+			const glm::dvec3 start_world_position = world.getPointWorldPosition(slot.point_id);
+			const glm::dvec3 direction = glm::normalize(body.rotation * glm::dvec3(bullet.velocity));
 			const RaycastHit hit = world.raycasts.cast(start_world_position, vec3(direction), step_distance);
 			double nearest = hit.hit ? hit.distance : step_distance;
 			PointComponentSlotId victim_id = static_cast<PointComponentSlotId>(-1);
@@ -122,13 +122,13 @@ namespace danikk_space_engine
 				if(!world.point_data.isPointComponentSlotActive(id)) continue;
 				const PointComponentSlot& candidate = world.point_data.getPointComponentSlot(id);
 				if(candidate.type_id != PointComponentTypeId::human || candidate.point_id == bullet.owner_point_id
-					|| !world.point_data.isPointActive(candidate.point_id) || !world.chunks.isChunkActive(candidate.chunk_id)) continue;
+					|| !world.point_data.isPointActive(candidate.point_id)
+					|| candidate.world_body_id != slot.world_body_id) continue;
 				const HumanComponent& human = *static_cast<const HumanComponent*>(candidate.getData());
 				const DamageableComponent* health = findDamageable(world, candidate.point_id);
 				if(health == nullptr || health->getHealth() <= 0.0f) continue;
-				const Chunk& human_chunk = world.chunks.getChunk(candidate.chunk_id);
-				const glm::dvec3 up = glm::normalize(world.world_body_data.getWorldBody(human_chunk.world_body_id).rotation * glm::dvec3(human.up));
-				const glm::dvec3 center = world.getPointWorldPosition(candidate.chunk_id, candidate.point_id);
+				const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(human.up));
+				const glm::dvec3 center = world.getPointWorldPosition(candidate.point_id);
 				const double radius = human.getHeight() * 0.14;
 				for(int i = -2; i <= 2; ++i)
 				{
@@ -179,13 +179,13 @@ namespace danikk_space_engine
 						if(health->getHealth() <= 0.0f) world.components.deferPointDestruction(part.point_id);
 					}
 				}
-				point.position = vec3(glm::conjugate(body_rotation)
-					* (hit.position - world.chunks.getChunkWorldPosition(slot.chunk_id)));
+				world.setPointBodyLocalPosition(slot.point_id,
+					glm::conjugate(body.rotation) * (hit.position - body.position));
 				bullet.destruction_queued = true;
 				world.components.deferPointDestruction(slot.point_id);
 				return;
 			}
-			point.position = start_position + displacement;
+			world.setPointBodyLocalPosition(slot.point_id, start_position + displacement);
 		}
 
 		bullet.age += delta_time;
@@ -199,7 +199,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Renders the travelled projectile segment as a narrow quad facing the camera.
 	 * @param slot Slot containing projectile state and render transform IDs.
-	 * @param world World used to convert the camera position into chunk-local space.
+	 * @param world World used to convert the camera position into body-local space.
 	 * The quad spans the previous and current projectile positions. Its lateral axis is
 	 * perpendicular to both the segment and the view direction, with a fallback axis
 	 * for near-parallel vectors. A shared dynamic mesh is updated and drawn immediately.
@@ -215,19 +215,20 @@ namespace danikk_space_engine
 
 		const BulletComponent& bullet = *static_cast<const BulletComponent*>(slot.getData());
 		if(bullet.destruction_queued) return;
-		const vec3 current_position = world.point_data.getPoint(slot.point_id).position;
+		const Point& point = world.point_data.getPoint(slot.point_id);
+		const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
+		const vec3 current_position = vec3(point.body_local_position - body.detail_mesh_position);
 		const float velocity_length = glm::length(bullet.velocity);
 		if(velocity_length <= 0.000001f) return;
 		const vec3 forward = bullet.velocity / velocity_length;
-		const float actual_segment_length = glm::length(current_position - bullet.previous_position);
+		const vec3 previous_position = vec3(bullet.previous_position - body.detail_mesh_position);
+		const float actual_segment_length = glm::length(current_position - previous_position);
 		const float visible_trail_length = glm::min(velocity_length * bullet.age,
 			glm::max(actual_segment_length, glm::min(velocity_length * 0.12f, 12.0f)));
-		const vec3 start_position = bullet.previous_position
+		const vec3 start_position = previous_position
 			- forward * glm::max(0.0f, visible_trail_length - actual_segment_length);
-		const Chunk& chunk = world.chunks.getChunk(slot.chunk_id);
-		const WorldBody& body = world.world_body_data.getWorldBody(chunk.world_body_id);
 		const glm::dvec3 camera_local_position = glm::inverse(body.rotation)
-			* (world.camera.getWorldPosition() - body.position) - chunk.position;
+			* (world.camera.getWorldPosition() - body.position) - body.detail_mesh_position;
 		const vec3 midpoint = (start_position + current_position) * 0.5f;
 		const vec3 to_camera = vec3(camera_local_position - glm::dvec3(midpoint));
 		vec3 side = glm::cross(forward, to_camera);
@@ -270,7 +271,13 @@ namespace danikk_space_engine
 		setProjectionMatrix(projection);
 		white_texture.bind();
 		setDrawColor(vec4(1.0f, 1.0f, 0.0f, 1.0f));
-		setWorldMatrix(chunk.createWorldMatrix(world));
+		const glm::dvec3 anchor_world = body.position + body.rotation * body.detail_mesh_position
+			- world.camera.getWorldPosition();
+		mat4 body_rotation(1.0f);
+		body_rotation[0] = vec4(vec3(body.rotation * glm::dvec3(1.0, 0.0, 0.0)), 0.0f);
+		body_rotation[1] = vec4(vec3(body.rotation * glm::dvec3(0.0, 1.0, 0.0)), 0.0f);
+		body_rotation[2] = vec4(vec3(body.rotation * glm::dvec3(0.0, 0.0, 1.0)), 0.0f);
+		setWorldMatrix(glm::translate(mat4(1.0f), vec3(anchor_world)) * body_rotation);
 		tracer_mesh.draw();
 		static_asset_collection.base3d_shader.use(true);
 	}

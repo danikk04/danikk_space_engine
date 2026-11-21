@@ -27,9 +27,9 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Applies sampled gravity and integrates position and rotation of eligible bodies.
-	 * @param world World providing bodies, loaded-chunk state, and the gravity field.
+		 * @param world World providing bodies and the gravity field.
 	 * A non-positive target frame delay ends the stage. Planet bodies, the body
-	 * held by Drag, and bodies without an active chunk are skipped. Linear
+		 * held by Drag, and bodies without points are skipped. Linear
 	 * acceleration and position use semi-implicit Euler integration; rotation is
 	 * advanced from angular velocity using an axis-angle delta and normalized.
 	 */
@@ -50,7 +50,7 @@ namespace danikk_space_engine
 			WorldBody& body = world.world_body_data.getWorldBody(body_id);
 			if(world.planets.isPlanet(body_id)) continue;
 
-			if(!collision_internal::hasLoadedChunk(world, body)) continue;
+			if(!collision_internal::hasSpatialPoints(body)) continue;
 			const glm::dvec3 acceleration = world.environment.sampleGravityAt(body.position);
 			body.linear_velocity += acceleration * static_cast<double>(delta_time);
 			body.position += body.linear_velocity * static_cast<double>(delta_time);

@@ -16,7 +16,7 @@ namespace danikk_space_engine
 		const PlanetSettings planet_settings[planet_settings_ids::count] =
 		{
 			{"Earth", default_planet_radius, default_planet_core_radius,
-				planet_chunk_load_radius, 9.8, glm::vec3(0.2f, 0.4f, 0.8f), 100000.0, 0}
+				9.8, glm::vec3(0.2f, 0.4f, 0.8f), 100000.0, 0}
 		};
 
 	}
@@ -71,7 +71,7 @@ namespace danikk_space_engine
 
 	void PlanetSystem::removeQueuedRequests(const PlanetData& planet)
 	{
-		world.chunk_mesh_generation.cancelPlanetRequests(planet.world_body_id, planet.generation_id);
+		world.mesh_generation.cancelPlanetRequests(planet.world_body_id, planet.generation_id);
 	}
 
 	void PlanetSystem::destroyPlanet(WorldBodyId world_body_id)
@@ -165,20 +165,8 @@ namespace danikk_space_engine
 		const WorldBody& body = world.world_body_data.getWorldBody(planet.world_body_id);
 		const glm::dvec3 camera_position = glm::conjugate(body.rotation)
 			* (world.camera.getWorldPosition() - body.position);
-		const double distance_from_center = glm::length(camera_position);
 		const double surface_height = getPlanetHeightAboveSurface(planet.world_body_id, camera_position);
-		glm::dvec3 chunk_center_position = camera_position;
-		if(surface_height >= 0.0 && distance_from_center > 1e-9)
-			chunk_center_position -= camera_position / distance_from_center * surface_height;
 		updatePlanetTerrainTree(planet, camera_position, surface_height);
-
-		const glm::ivec3 chunk_center_grid_coordinate(
-			static_cast<int>(std::floor(chunk_center_position.x / planet_chunk_width)),
-			static_cast<int>(std::floor(chunk_center_position.y / planet_chunk_width)),
-			static_cast<int>(std::floor(chunk_center_position.z / planet_chunk_width)));
-		const bool update_chunks = !planet.chunk_set_initialized
-			|| !glm::all(glm::equal(chunk_center_grid_coordinate, planet.last_chunk_update_grid_coordinate));
-		if(update_chunks) updatePlanetSpatialChunks(planet, chunk_center_position);
 	}
 
 	bool PlanetSystem::editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,

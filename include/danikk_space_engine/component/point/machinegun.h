@@ -8,7 +8,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Stores a machine gun's local orientation and firing interval state.
 	 *
-	 * The component is attached to a Point. Its forward/up/right basis is in the owning Chunk's
+	 * The component is attached to a Point. Its forward/up/right basis is in the owning WorldBody's
 	 * local coordinates. Firing accumulates simulation time and creates one projectile for each
 	 * elapsed 0.25-second interval; rendering resolves the shared MG-42 mesh through the item catalog.
 	 */
@@ -16,7 +16,7 @@ namespace danikk_space_engine
 	{
 		/** @brief Uniform scale applied to the shared weapon mesh and muzzle offsets. */
 		float scale = 0.25f;
-		/** @brief Weapon barrel axis and bullet travel direction, in the owning chunk's local frame. */
+		/** @brief Weapon barrel axis and bullet travel direction, in the owning body's local frame. */
 		vec3 forward = vec3(1.0f, 0.0f, 0.0f);
 		/** @brief Weapon's local vertical axis. */
 		vec3 up = vec3(0.0f, 1.0f, 0.0f);
@@ -49,17 +49,17 @@ namespace danikk_space_engine
 	/**
 	 * @brief Advances the firing timer and spawns one bullet point per elapsed firing interval.
 	 *
-	 * Bullets inherit the gun's forward direction and are inserted into the same owning chunk.
+	 * Bullets inherit the gun's forward direction and are inserted into the same owning body.
 	 * The muzzle offset is transformed by the component's orientation and scale.
 	 * @param slot Slot containing the weapon payload and attached point ID.
-	 * @param world World used to resolve point/chunk ownership and create bullet components.
+	 * @param world World used to resolve point/body ownership and create bullet components.
 	 */
 	void tickMachinegunComponent(PointComponentSlot& slot, World& world);
 
 	/**
 	 * @brief Draws the catalogued MG-42 mesh at the attached point using the stored orientation.
-	 * @param slot Slot containing the weapon payload, point ID, and owning chunk ID.
-	 * @param world World used to build the chunk's world transform.
+	 * @param slot Slot containing the weapon payload, point ID, and owning body ID.
+	 * @param world World used to build the body's world transform.
 	 */
 	void frameMachinegunComponent(PointComponentSlot& slot, World& world);
 }

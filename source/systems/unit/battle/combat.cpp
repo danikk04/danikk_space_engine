@@ -182,8 +182,8 @@ namespace danikk_space_engine::unit_system_internal
 		const UnitTarget previous_target{agent.order.target_slot_id,
 			agent.order.target_point_id, agent.order.target_generation_id};
 		agent.order.clear();
-		const glm::dvec3 own_position = world.getPointWorldPosition(human_slot.chunk_id, human_slot.point_id);
-		const WorldBodyId own_body_id = world.chunks.getChunk(human_slot.chunk_id).world_body_id;
+		const glm::dvec3 own_position = world.getPointWorldPosition(human_slot.point_id);
+		const WorldBodyId own_body_id = human_slot.world_body_id;
 		const WorldBody& body = world.world_body_data.getWorldBody(own_body_id);
 		const UnitSighting* best = nullptr;
 		float best_score = -1.0f;
@@ -192,8 +192,8 @@ namespace danikk_space_engine::unit_system_internal
 			if(sighting.faction_id != human.faction_id || !isRecentSighting(sighting)
 				|| !isValidSighting(world, sighting)) continue;
 			const PointComponentSlot& sighted_slot = world.point_data.getPointComponentSlot(sighting.target_slot_id);
-			if(world.chunks.getChunk(sighted_slot.chunk_id).world_body_id != own_body_id) continue;
-			const glm::dvec3 target_position = world.getPointWorldPosition(sighted_slot.chunk_id, sighted_slot.point_id);
+			if(sighted_slot.world_body_id != own_body_id) continue;
+			const glm::dvec3 target_position = world.getPointWorldPosition(sighted_slot.point_id);
 			const float score = scoreTarget(world, sighting, human_slot, human, previous_target,
 				own_position, target_position, body, allocations);
 			if(score > best_score)
@@ -209,7 +209,7 @@ namespace danikk_space_engine::unit_system_internal
 		agent.order.target_point_id = best->target_point_id;
 		agent.order.target_generation_id = best->target_generation_id;
 		const PointComponentSlot& target_slot = world.point_data.getPointComponentSlot(best->target_slot_id);
-		const glm::dvec3 target_position = world.getPointWorldPosition(target_slot.chunk_id, target_slot.point_id);
+		const glm::dvec3 target_position = world.getPointWorldPosition(target_slot.point_id);
 		const glm::dvec3 shot_origin = own_position
 			+ body.rotation * glm::dvec3(human.up * (human.getHeight() * 0.2f));
 		const glm::dvec3 delta = target_position - shot_origin;

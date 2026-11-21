@@ -40,7 +40,7 @@ namespace danikk_space_engine
 
 	/**
 	 * @brief Logs a pool-array capacity change when the old and new capacities differ.
-	 * @param resource_name Pool's diagnostic name, such as `Chunk`.
+	 * @param resource_name Pool's diagnostic name, such as `Point`.
 	 * @param array_name Internal array whose capacity changed.
 	 * @param old_capacity Capacity captured before the operation.
 	 * @param new_capacity Capacity observed after the operation.

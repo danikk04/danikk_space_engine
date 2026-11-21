@@ -6,8 +6,6 @@ namespace danikk_space_engine
 {
 	/** @brief 32-bit handle for an entry in PointData's point pool. */
 	using PointId = uint32;
-	/** @brief 32-bit handle for a spatial chunk owned by a WorldBody. */
-	using ChunkId = uint32;
 	/** @brief 32-bit handle for a world-space body and its transform. */
 	using WorldBodyId = uint32;
 	/** @brief 32-bit index identifying a material definition. */
