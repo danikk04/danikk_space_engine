@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/unit/internal/perception.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>

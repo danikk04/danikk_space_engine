@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include "internal.h"
 
 namespace danikk_space_engine::collision_internal

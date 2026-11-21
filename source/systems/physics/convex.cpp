@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>
 #include "internal.h"

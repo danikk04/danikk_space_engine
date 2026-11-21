@@ -2,7 +2,7 @@
 #include <cmath>
 #include <limits>
 
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/gui.h>
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/assets/human_skin.h>
@@ -169,16 +169,16 @@ namespace danikk_engine_game
 
     /**
      * @brief Executes one application frame in GUI, input, simulation, and rendering order.
-	 * @details Begins the profiler tick and its outer `frame` scope, updates the GUI, checks Escape,
-	 * advances `World::tick()`, renders via `World::frame()`, then closes the scope and profiler
+	 * @details Begins the telemetry tick and its outer `frame` scope, updates the GUI, checks Escape,
+	 * advances `World::tick()`, renders via `World::frame()`, then closes the scope and telemetry report.
 	 * tick. The Escape check occurs between GUI refresh and world simulation.
      */
     void frame()
     {
-		profiler.beginTick();
+		telemetry_system.beginTick();
 		{
 			/**
-			 * @brief Measures the duration of the enclosing profiler scope.
+			 * @brief Measures the duration of the enclosing telemetry scope.
 			 */
 			DSE_WATCH();
 			gui.frame(collectGUIFrameData(world));
@@ -190,6 +190,6 @@ namespace danikk_engine_game
 			world.tick();
 			world.frame();
 		}
-		profiler.endTick();
+		telemetry_system.endTick();
     }
 }

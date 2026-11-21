@@ -1,4 +1,4 @@
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
 
 #include "terrain_tree_internal.h"
@@ -24,7 +24,7 @@ namespace danikk_space_engine
 		planet_terrain_tree_internal::refine(context);
 		planet_terrain_tree_internal::collectMeshRequests(context);
 		planet_terrain_tree_internal::activateMeshes(context);
-		planet_terrain_tree_internal::logDiagnostics(context);
+		planet_terrain_tree_internal::recordDiagnostics(context);
 		planet_terrain_tree_internal::evictCachedMeshes(context);
 		queuePlanetRequests(planet);
 	}

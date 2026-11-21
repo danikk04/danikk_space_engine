@@ -32,7 +32,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 	void refine(UpdateContext& context);
 	void collectMeshRequests(UpdateContext& context);
 	void activateMeshes(UpdateContext& context);
-	void logDiagnostics(const UpdateContext& context);
+	void recordDiagnostics(const UpdateContext& context);
 	void evictCachedMeshes(UpdateContext& context);
 	void destroyTree(PlanetData& planet);
 }

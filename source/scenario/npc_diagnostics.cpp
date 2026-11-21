@@ -4,7 +4,7 @@
 
 #include <danikk_framework/log.h>
 #include <danikk_space_engine/material.h>
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/scenario/npc_diagnostics.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/systems/planet/system.h>
@@ -36,7 +36,7 @@ namespace danikk_space_engine
 			size_t moved = 0;
 		};
 
-		/** @brief Reads the point center in planet coordinates without adding profiler scopes. */
+		/** @brief Reads the point center in planet coordinates without adding telemetry scopes. */
 		glm::dvec3 getNpcPosition(const World& world, const PointComponentSlot& slot)
 		{
 			return world.getPointWorldPosition(slot.point_id);
@@ -93,7 +93,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Measures a fixed number of simulation ticks and checks the actors at the phase boundary.
 		 * Scripts the same velocity for each live NPC before the measured tick starts. Forces a
-		 * profiler report after the final tick so short or fast phases are always logged.
+		 * telemetry report after the final tick so short or fast phases are always logged.
 		 */
 		PhaseResult measureNpcPhase(World& world, DiagnosticNpc (&npcs)[npc_count], const char* name,
 			uint32 ticks, const vec3& velocity)
@@ -111,9 +111,9 @@ namespace danikk_space_engine
 					PointComponentSlot& slot = world.point_data.getPointComponentSlot(npc.slot_id);
 					static_cast<HumanComponent*>(slot.getData())->desired_velocity = velocity;
 				}
-				profiler.beginTick();
+				telemetry_system.beginTick();
 				world.tick();
-				profiler.endTick(tick + 1 == ticks);
+				telemetry_system.endTick(tick + 1 == ticks);
 			}
 
 			PhaseResult result;
@@ -147,7 +147,7 @@ namespace danikk_space_engine
 		createNpcFixture(scene, body_id, planet, npcs);
 
 		formatLogInfo("NPC diagnostics population=% PlayerFaction=% Pirates=%", npc_count, npc_count / 2, npc_count / 2);
-		profiler.setReportIntervalMilliseconds(std::numeric_limits<uint64>::max());
+		telemetry_system.setReportIntervalMilliseconds(std::numeric_limits<uint64>::max());
 		const PhaseResult warmup = measureNpcPhase(scene, npcs, "warmup", 60, vec3(0.0f));
 		const PhaseResult idle = measureNpcPhase(scene, npcs, "idle", 120, vec3(0.0f));
 		const PhaseResult walking = measureNpcPhase(scene, npcs, "walking", 120, vec3(1.5f, 0.0f, 0.0f));

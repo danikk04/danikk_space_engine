@@ -1,4 +1,4 @@
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/world.h>

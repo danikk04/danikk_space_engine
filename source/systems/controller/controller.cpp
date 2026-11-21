@@ -6,7 +6,7 @@
 #include <danikk_space_engine/effects/world_body_preview.h>
 #include <danikk_space_engine/effects/event_spawn_preview.h>
 #include <danikk_space_engine/assets/collection.h>
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_engine/texture_methods.h>
 #include <danikk_framework/log.h>
 

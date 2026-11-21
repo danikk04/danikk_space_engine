@@ -2,7 +2,7 @@
 
 #include <danikk_framework/log.h>
 #include <danikk_engine/texture_methods.h>
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/assets/human_skin.h>
 #include <danikk_space_engine/assets/collection.h>

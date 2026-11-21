@@ -33,8 +33,6 @@ namespace danikk_space_engine::mesh_generation_internal
 		DynamicArray<ActiveRequest> active_requests;
 		uint32 generation_sample_count = 0;
 		uint64 generation_sample_total_nanoseconds = 0;
-		uint64 generation_sample_minimum_nanoseconds = 0;
-		uint64 generation_sample_maximum_nanoseconds = 0;
 		std::atomic<float> average_generation_milliseconds = 0.0f;
 		bool stopping = false;
 		uint64 current_generation_id = 0;

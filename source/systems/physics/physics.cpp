@@ -1,4 +1,4 @@
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/physics/physics.h>
 #include <danikk_framework/log.h>
 

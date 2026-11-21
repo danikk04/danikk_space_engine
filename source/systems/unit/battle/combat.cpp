@@ -1,7 +1,7 @@
 #include <cmath>
 #include <limits>
 
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/damageable.h>

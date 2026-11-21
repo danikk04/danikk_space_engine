@@ -1,4 +1,4 @@
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 
 #include <danikk_space_engine/systems/unit/internal/state.h>
 #include <danikk_space_engine/systems/unit/internal/work.h>

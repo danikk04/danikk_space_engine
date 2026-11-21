@@ -1,4 +1,4 @@
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
 
 #include "terrain_tree_internal.h"
@@ -8,8 +8,9 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 	void evictCachedMeshes(UpdateContext& context)
 	{
 		DSE_WATCH();
-		constexpr size_t maximum_cached_surface_meshes = 1024;
+		constexpr size_t maximum_cached_surface_meshes = 4096;
 		size_t cached_mesh_count = 0;
+		uint64 evicted_mesh_count = 0;
 		for(const PlanetTerrainNode& node : context.tree.nodes)
 			if(node.mesh.mesh != nullptr) cached_mesh_count++;
 
@@ -32,7 +33,14 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 			destroyMeshRenderData(node.mesh);
 			node.mesh_revision = 0;
 			cached_mesh_count--;
+			evicted_mesh_count++;
 		}
+		telemetry_system.recordPlanetMeshEviction(evicted_mesh_count);
+		uint64 active_mesh_count = 0;
+		for(const PlanetTerrainNode& node : context.tree.nodes)
+			if(node.render_active && node.mesh.mesh != nullptr) active_mesh_count++;
+		telemetry_system.recordPlanetTerrainCache(cached_mesh_count,
+			active_mesh_count, maximum_cached_surface_meshes);
 	}
 
 	void destroyTree(PlanetData& planet)

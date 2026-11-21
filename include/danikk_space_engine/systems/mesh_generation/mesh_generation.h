@@ -10,9 +10,6 @@
 
 namespace danikk_space_engine
 {
-	/** @brief Enables the periodic log of average, minimum, and maximum mesh-generation times. */
-	inline constexpr bool log_mesh_generation_statistics = false;
-
 	namespace mesh_generation_internal { class Worker; }
 
 	/** @brief Selects which world data source is converted into a mesh. */

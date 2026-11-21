@@ -1,4 +1,4 @@
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/component/point/inventory.h>
 #include <danikk_space_engine/item/item.h>
 #include <danikk_engine/danikk_engine.h>

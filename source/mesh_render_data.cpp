@@ -5,7 +5,7 @@
 
 #include <danikk_space_engine/mesh_render_data.h>
 #include <danikk_space_engine/material.h>
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_engine/texture_methods.h>

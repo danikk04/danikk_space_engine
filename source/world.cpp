@@ -8,7 +8,7 @@
 #include <danikk_space_engine/effects/unit_activity_labels.h>
 #include <danikk_space_engine/effects/unit_order_indicators.h>
 #include <danikk_space_engine/effects/unit_selection.h>
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/scenario/base.h>
 #include <danikk_space_engine/systems/component/component.h>
 #include <danikk_space_engine/systems/controller/controller.h>

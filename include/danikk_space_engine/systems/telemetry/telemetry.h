@@ -10,15 +10,72 @@ namespace danikk_space_engine
 {
 	using namespace danikk_framework;
 
+	struct TelemetryTimingStats
+	{
+		uint64 samples = 0;
+		uint64 total_nanoseconds = 0;
+		uint64 minimum_nanoseconds = 0;
+		uint64 maximum_nanoseconds = 0;
+	};
+
+	struct PlanetMeshLevelTelemetry
+	{
+		uint64 generated_meshes = 0;
+		uint64 generated_triangles = 0;
+		TelemetryTimingStats generation_time;
+	};
+
+	struct PlanetMeshQueueTelemetry
+	{
+		uint64 desired = 0;
+		uint64 fine_desired = 0;
+		uint64 queued = 0;
+		uint64 fine_queued = 0;
+		uint64 active = 0;
+		uint64 fine_active = 0;
+		uint64 active_not_desired = 0;
+		uint64 completed = 0;
+	};
+
+	struct PlanetTerrainTreeTelemetry
+	{
+		uint64 planets = 0;
+		uint64 nodes = 0;
+		uint64 active_nodes = 0;
+		uint64 target_nodes = 0;
+		uint64 detail_scale_adjustments = 0;
+		uint64 request_candidates = 0;
+		uint64 queued_requests = 0;
+		uint64 fine_queued = 0;
+		uint64 cached_meshes = 0;
+		uint64 active_meshes = 0;
+		uint64 cache_capacity = 0;
+		double finest_request_width = 0.0;
+		double finest_active_half_extent = 0.0;
+		double detail_scale_total = 0.0;
+	};
+
+	enum class PlanetMeshAcceptance : uint8
+	{
+		accepted,
+		empty,
+		missing_planet,
+		stale_planet,
+		stale_terrain,
+		invalid_node,
+		stale_generator,
+		stale_node
+	};
+
 	/**
-	 * @brief Collects hierarchical CPU timings and reports intervals containing a performance stall.
+	 * @brief Collects CPU timings and runtime metrics, then periodically reports aggregated telemetry.
 	 *
 	 * The global instance aggregates each Watcher by its name and parent scope.
 	 * At each report interval it logs only when at least one frame exceeded 30 ms
 	 * or the observed frame rate was below 40 FPS. Scope times include nested
 	 * scopes, so parent and child values are not independent costs.
 	 */
-	class Profiler
+	class TelemetrySystem
 	{
 
 		/**
@@ -56,11 +113,27 @@ namespace danikk_space_engine
 		std::chrono::steady_clock::time_point tick_start_time;
 		/** @brief Start timestamp of the current report interval. */
 		std::chrono::steady_clock::time_point report_start_time;
+		/** @brief Per-level generation totals accumulated since the previous telemetry report. */
+		danikk_framework::DynamicArray<PlanetMeshLevelTelemetry> planet_mesh_levels;
+		/** @brief Mesh acceptance outcomes accumulated since the previous report. */
+		uint64 accepted_planet_meshes = 0;
+		uint64 empty_planet_meshes = 0;
+		uint64 missing_planet_meshes = 0;
+		uint64 stale_planet_meshes = 0;
+		uint64 stale_terrain_meshes = 0;
+		uint64 invalid_planet_mesh_nodes = 0;
+		uint64 stale_planet_mesh_generators = 0;
+		uint64 stale_planet_mesh_nodes = 0;
+		uint64 evicted_planet_meshes = 0;
+		PlanetMeshQueueTelemetry mesh_queue_snapshot;
+		PlanetTerrainTreeTelemetry terrain_tree_frame;
+		PlanetTerrainTreeTelemetry terrain_tree_snapshot;
+		bool has_telemetry_updates = false;
 
 		/**
 		 * @brief Finds or creates a node beneath the current thread-local parent scope.
 		 * @param name Stable-lifetime scope name retained by the report node.
-		 * @return Profiler node ID pushed on the current thread's scope stack.
+			 * @return Telemetry node ID pushed on the current thread's scope stack.
 		 */
 		uint32 beginScope(const char* name);
 
@@ -72,11 +145,11 @@ namespace danikk_space_engine
 		void endScope(uint32 node_id, uint64 elapsed_nanoseconds);
 		friend class Watcher;
 	public:
-		Profiler();
-		/** @brief Disabled so the process-wide profiler state cannot be accidentally copied. */
-		Profiler(const Profiler&) = delete;
+		TelemetrySystem();
+		/** @brief Disabled so process-wide telemetry state cannot be accidentally copied. */
+		TelemetrySystem(const TelemetrySystem&) = delete;
 		/** @brief Disabled for the same singleton-state ownership reason as copy construction. */
-		Profiler& operator=(const Profiler&) = delete;
+		TelemetrySystem& operator=(const TelemetrySystem&) = delete;
 
 		/**
 		 * @brief Records the start time of the frame used for stall detection.
@@ -99,14 +172,26 @@ namespace danikk_space_engine
 		 * @param milliseconds Requested interval; zero is clamped to 1 ms.
 		 */
 		void setReportIntervalMilliseconds(uint64 milliseconds);
+		/** @brief Records a completed planet terrain mesh generation for its octree level. */
+		void recordPlanetMeshGeneration(uint8 level, uint64 triangle_count, uint64 elapsed_nanoseconds);
+		/** @brief Records why a generated planet terrain mesh was accepted or discarded. */
+		void recordPlanetMeshAcceptance(PlanetMeshAcceptance outcome);
+		/** @brief Records eviction of one cached planet terrain mesh. */
+		void recordPlanetMeshEviction(uint64 count = 1);
+		/** @brief Adds one planet's cached and active mesh counts to the current frame. */
+		void recordPlanetTerrainCache(uint64 cached_meshes, uint64 active_meshes, uint64 cache_capacity);
+		/** @brief Replaces the latest aggregate worker queue snapshot. */
+		void setPlanetMeshQueueSnapshot(const PlanetMeshQueueTelemetry& snapshot);
+		/** @brief Adds this planet's tree statistics to the current frame's aggregate. */
+		void recordPlanetTerrainTree(const PlanetTerrainTreeTelemetry& snapshot);
 	};
 
 	/**
-	 * @brief Measures one named profiler scope and records its elapsed duration when it is destroyed.
+	 * @brief Measures one named CPU scope and records its elapsed duration when it is destroyed.
 	 */
 	class Watcher
 	{
-		/** @brief Profiler node receiving this watcher's accumulated duration. */
+		/** @brief Telemetry node receiving this watcher's accumulated duration. */
 		uint32 node_id = static_cast<uint32>(-1);
 		/** @brief Monotonic timestamp captured when the watched scope begins. */
 		std::chrono::steady_clock::time_point start_time;
@@ -132,10 +217,10 @@ namespace danikk_space_engine
 		~Watcher();
 	};
 
-	/** @brief Process-wide profiler instance used by all Watcher objects. */
-	extern Profiler profiler;
+	/** @brief Process-wide telemetry service used by all Watcher objects and runtime metric producers. */
+	extern TelemetrySystem telemetry_system;
 
-	namespace profiler_internal
+	namespace telemetry_internal
 	{
 		/** @brief Owns the null-terminated name retained by the profiler. */
 		template<size_t capacity>
@@ -229,7 +314,7 @@ namespace danikk_space_engine
 
 /** @brief Profiles the enclosing function under its short name. Declare once per scope. */
 #define DSE_WATCH() \
-	static constexpr auto dse_watcher_name = ::danikk_space_engine::profiler_internal::makeWatcherName( \
+	static constexpr auto dse_watcher_name = ::danikk_space_engine::telemetry_internal::makeWatcherName( \
 		DSE_WATCH_SIGNATURE, __func__); \
 	[[maybe_unused]] const auto dse_watcher = ::danikk_space_engine::Watcher::create(dse_watcher_name.text)
 

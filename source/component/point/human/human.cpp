@@ -2,7 +2,7 @@
 
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_framework/random.h>
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_space_engine/component/point/damageable.h>
 #include <danikk_space_engine/component/point/inventory.h>

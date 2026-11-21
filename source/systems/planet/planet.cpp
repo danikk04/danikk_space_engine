@@ -5,7 +5,7 @@
 #include <danikk_framework/log.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/config.h>
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 

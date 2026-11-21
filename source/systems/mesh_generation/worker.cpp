@@ -2,8 +2,8 @@
 #include <chrono>
 
 #include <danikk_engine/danikk_engine.h>
-#include <danikk_framework/log.h>
-#include <danikk_space_engine/profiler.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <danikk_space_engine/systems/planet/data.h>
 
 #include "internal.h"
 
@@ -13,7 +13,18 @@ namespace danikk_space_engine::mesh_generation_internal
 	{
 		constexpr size_t max_completed_meshes = 2;
 		constexpr size_t max_worker_count = 4;
-		constexpr bool log_planet_mesh_queue_diagnostics = true;
+
+		uint8 getPlanetTerrainNodeLevel(double node_width)
+		{
+			uint8 level = 0;
+			double width = PlanetTerrainTree::initial_root_half_extent * 2.0;
+			while(level < 63 && node_width < width)
+			{
+				width *= 0.5;
+				level++;
+			}
+			return level;
+		}
 
 		bool sameRequestKey(const MeshGenerationRequest& a, const MeshGenerationRequest& b)
 		{
@@ -99,34 +110,23 @@ namespace danikk_space_engine::mesh_generation_internal
 			GeneratedMesh result = generateMesh(world, request);
 			const uint64 generation_nanoseconds = static_cast<uint64>(std::chrono::duration_cast<std::chrono::nanoseconds>(
 				std::chrono::steady_clock::now() - generation_start_time).count());
-			bool report_generation_sample = false;
-			float average_generation_milliseconds = 0.0f;
-			float minimum_generation_milliseconds = 0.0f;
-			float maximum_generation_milliseconds = 0.0f;
+			if(request.source == MeshGenerationSource::planet_terrain_node)
+				telemetry_system.recordPlanetMeshGeneration(
+					getPlanetTerrainNodeLevel(request.node_width),
+					result.triangle_point_indices.size() / 3, generation_nanoseconds);
 			{
 				std::unique_lock<std::mutex> lock(mutex);
-				if(generation_sample_count == 0 || generation_nanoseconds < generation_sample_minimum_nanoseconds)
-					generation_sample_minimum_nanoseconds = generation_nanoseconds;
-				if(generation_sample_count == 0 || generation_nanoseconds > generation_sample_maximum_nanoseconds)
-					generation_sample_maximum_nanoseconds = generation_nanoseconds;
 				generation_sample_total_nanoseconds += generation_nanoseconds;
 				generation_sample_count++;
 				if(generation_sample_count == 50)
 				{
 					constexpr float nanoseconds_per_millisecond = 1000000.0f;
-					average_generation_milliseconds = static_cast<float>(generation_sample_total_nanoseconds)
+					const float average_generation_milliseconds = static_cast<float>(generation_sample_total_nanoseconds)
 						/ 50.0f / nanoseconds_per_millisecond;
 					this->average_generation_milliseconds.store(
 						average_generation_milliseconds, std::memory_order_relaxed);
-					minimum_generation_milliseconds = static_cast<float>(generation_sample_minimum_nanoseconds)
-						/ nanoseconds_per_millisecond;
-					maximum_generation_milliseconds = static_cast<float>(generation_sample_maximum_nanoseconds)
-						/ nanoseconds_per_millisecond;
 					generation_sample_count = 0;
 					generation_sample_total_nanoseconds = 0;
-					generation_sample_minimum_nanoseconds = 0;
-					generation_sample_maximum_nanoseconds = 0;
-					report_generation_sample = true;
 				}
 				result_space_available.wait(lock, [this, &request]
 				{
@@ -140,15 +140,6 @@ namespace danikk_space_engine::mesh_generation_internal
 				if(active_index < active_requests.size()) removeActiveRequest(active_index);
 				if(!stopping && !cancelled && request.generation_id == current_generation_id)
 					completed.pushMove(result);
-			}
-			if constexpr(log_mesh_generation_statistics)
-			{
-				if(report_generation_sample)
-					danikk_framework::formatLogInfo(
-						"Mesh generation (last 50): avg % ms, min % ms, max % ms",
-						average_generation_milliseconds,
-						minimum_generation_milliseconds,
-						maximum_generation_milliseconds);
 			}
 		}
 	}
@@ -197,6 +188,8 @@ namespace danikk_space_engine::mesh_generation_internal
 
 	void Worker::update(uint64 generation_id, const DynamicArray<MeshGenerationRequest>& new_requests)
 	{
+		bool queue_changed = false;
+		PlanetMeshQueueTelemetry snapshot;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			if(current_generation_id != generation_id)
@@ -210,56 +203,6 @@ namespace danikk_space_engine::mesh_generation_internal
 			// useful as a cached parent or child when the camera returns to that region.
 			// Explicit planet cancellation and lifecycle changes still discard invalid work.
 			result_space_available.notify_all();
-			if constexpr(log_planet_mesh_queue_diagnostics)
-			{
-				static uint32 report_timestamp_ms = 0;
-				const uint32 now = danikk_engine::getMsTimestamp();
-				if(report_timestamp_ms == 0) report_timestamp_ms = now;
-				if(now - report_timestamp_ms >= 1000)
-				{
-					size_t queued_planet = 0;
-					size_t queued_fine = 0;
-					size_t desired_planet = 0;
-					size_t desired_fine = 0;
-					size_t active_planet = 0;
-					size_t active_fine = 0;
-					size_t active_not_requested = 0;
-					size_t completed_planet = 0;
-					for(const MeshGenerationRequest& request : new_requests)
-					{
-						if(request.source != MeshGenerationSource::planet_terrain_node) continue;
-						desired_planet++;
-						if(request.node_width <= 128.0) desired_fine++;
-					}
-					for(const MeshGenerationRequest& request : requests)
-					{
-						if(request.source != MeshGenerationSource::planet_terrain_node) continue;
-						queued_planet++;
-						if(request.node_width <= 128.0) queued_fine++;
-					}
-					for(const ActiveRequest& active : active_requests)
-					{
-						if(active.request.source != MeshGenerationSource::planet_terrain_node) continue;
-						active_planet++;
-						if(active.request.node_width <= 128.0) active_fine++;
-						bool requested = false;
-						for(const MeshGenerationRequest& request : new_requests)
-							if(sameRequestKey(active.request, request))
-							{
-								requested = true;
-								break;
-							}
-						if(!requested) active_not_requested++;
-					}
-					for(const GeneratedMesh& result : completed)
-						if(result.source == MeshGenerationSource::planet_terrain_node) completed_planet++;
-					danikk_framework::formatLogInfo(
-						"Planet mesh queue: desired=% fine_desired=% queued=% fine_queued=% active=% fine_active=% active_not_desired=% completed=%",
-						desired_planet, desired_fine, queued_planet, queued_fine,
-						active_planet, active_fine, active_not_requested, completed_planet);
-					report_timestamp_ms = now;
-				}
-			}
 
 			size_t queue_index = 0;
 			bool same_queue = true;
@@ -275,18 +218,50 @@ namespace danikk_space_engine::mesh_generation_internal
 				}
 				queue_index++;
 			}
-			if(same_queue && queue_index == requests.size()) return;
+			if(!same_queue || queue_index != requests.size())
+			{
+				requests.clear();
+				for(const MeshGenerationRequest& request : new_requests)
+				{
+					if(request.generation_id != current_generation_id
+						|| isActive(request)
+						|| requestHasCompletedResult(request, completed)) continue;
+					requests.push(request);
+				}
+				queue_changed = true;
+			}
 
-			requests.clear();
 			for(const MeshGenerationRequest& request : new_requests)
 			{
-				if(request.generation_id != current_generation_id
-					|| isActive(request)
-					|| requestHasCompletedResult(request, completed)) continue;
-				requests.push(request);
+				if(request.source != MeshGenerationSource::planet_terrain_node) continue;
+				snapshot.desired++;
+				if(request.node_width <= 128.0) snapshot.fine_desired++;
 			}
+			for(const MeshGenerationRequest& request : requests)
+			{
+				if(request.source != MeshGenerationSource::planet_terrain_node) continue;
+				snapshot.queued++;
+				if(request.node_width <= 128.0) snapshot.fine_queued++;
+			}
+			for(const ActiveRequest& active : active_requests)
+			{
+				if(active.request.source != MeshGenerationSource::planet_terrain_node) continue;
+				snapshot.active++;
+				if(active.request.node_width <= 128.0) snapshot.fine_active++;
+				bool requested = false;
+				for(const MeshGenerationRequest& request : new_requests)
+					if(sameRequestKey(active.request, request))
+					{
+						requested = true;
+						break;
+					}
+				if(!requested) snapshot.active_not_desired++;
+			}
+			for(const GeneratedMesh& result : completed)
+				if(result.source == MeshGenerationSource::planet_terrain_node) snapshot.completed++;
 		}
-		request_available.notify_all();
+		telemetry_system.setPlanetMeshQueueSnapshot(snapshot);
+		if(queue_changed) request_available.notify_all();
 	}
 
 	bool Worker::tryTake(GeneratedMesh& result)
