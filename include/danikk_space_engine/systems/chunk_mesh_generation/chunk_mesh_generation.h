@@ -18,8 +18,8 @@ namespace danikk_space_engine
 	/** @brief Selects which world data source is converted into a chunk mesh. */
 	enum class ChunkMeshSource : uint8
 	{
-		/** @brief Extract an isosurface from a planet scalar field. */
-		planet_terrain,
+		/** @brief Generate an adaptive planet surface or cave octree cell. */
+		planet_surface_node,
 		/** @brief Combine the structural BuildPart instances owned by a chunk. */
 		build_parts
 	};
@@ -33,7 +33,10 @@ namespace danikk_space_engine
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
-		ChunkMeshSource source = ChunkMeshSource::planet_terrain;
+		PlanetSurfaceNodeId surface_node_id = static_cast<PlanetSurfaceNodeId>(-1);
+		uint64 surface_node_generation_id = 0;
+		bool surface_only = false;
+		ChunkMeshSource source = ChunkMeshSource::build_parts;
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
 		double chunk_width = 32.0;
 		double voxel_size = 4.0;
@@ -50,7 +53,10 @@ namespace danikk_space_engine
 		ChunkId chunk_id = static_cast<ChunkId>(-1);
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
-		ChunkMeshSource source = ChunkMeshSource::planet_terrain;
+		PlanetSurfaceNodeId surface_node_id = static_cast<PlanetSurfaceNodeId>(-1);
+		uint64 surface_node_generation_id = 0;
+		bool surface_only = false;
+		ChunkMeshSource source = ChunkMeshSource::build_parts;
 		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
 		glm::ivec3 grid_coordinate = glm::ivec3(0);
 		glm::dvec3 chunk_position = glm::dvec3(0.0);
@@ -102,9 +108,6 @@ namespace danikk_space_engine
 		/** @brief Replaces the queued terrain requests for one planet incarnation. */
 		void replacePlanetRequests(WorldBodyId world_body_id, uint64 planet_generation_id,
 			const DynamicArray<ChunkMeshGenerationRequest>& planet_requests);
-		/** @brief Removes a terrain request for one planet grid coordinate. */
-		void removePlanetRequest(WorldBodyId world_body_id, uint64 planet_generation_id,
-			const glm::ivec3& grid_coordinate);
 		/** @brief Cancels all queued and worker-side requests for one planet incarnation. */
 		void cancelPlanetRequests(WorldBodyId world_body_id, uint64 planet_generation_id);
 		/** @brief Reads the latest average generation time over 50 completed mesh jobs. */

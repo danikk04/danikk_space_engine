@@ -10,169 +10,151 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		constexpr uint8 empty_edit_bucket = 0;
-		constexpr uint8 occupied_edit_bucket = 1;
-		constexpr uint8 deleted_edit_bucket = 2;
+		constexpr uint32 invalid_node_id = static_cast<uint32>(-1);
+		constexpr size_t max_edits_per_leaf = PlanetTerrainEdits::split_edit_threshold;
 
-		bool sameEditGridCoordinate(const glm::ivec3& left, const glm::ivec3& right)
+		uint8 findContainingChild(const PlanetTerrainEditNode& node, const PlanetTerrainEdit& edit)
 		{
-			return left.x == right.x && left.y == right.y && left.z == right.z;
-		}
-
-		uint64 hashEditGridCoordinate(const glm::ivec3& coordinate)
-		{
-			uint64 hash = 1469598103934665603ull;
-			for(int32 value : {coordinate.x, coordinate.y, coordinate.z})
+			const glm::dvec3 minimum = edit.getCenter() - glm::dvec3(edit.getRadius());
+			const glm::dvec3 maximum = edit.getCenter() + glm::dvec3(edit.getRadius());
+			uint8 child_index = 0;
+			for(uint8 axis = 0; axis < 3; ++axis)
 			{
-				hash ^= static_cast<uint32>(value);
-				hash *= 1099511628211ull;
+				if(maximum[axis] <= node.center[axis]) continue;
+				if(minimum[axis] >= node.center[axis]) child_index |= static_cast<uint8>(1u << axis);
+				else return static_cast<uint8>(-1);
 			}
-			hash ^= hash >> 30;
-			hash *= 0xbf58476d1ce4e5b9ull;
-			hash ^= hash >> 27;
-			hash *= 0x94d049bb133111ebull;
-			return hash ^ (hash >> 31);
+			return child_index;
 		}
 
-		size_t findEditBucketForInsert(
-			const DynamicArray<PlanetTerrainEditBucket>& buckets, const glm::ivec3& coordinate)
+		uint32 appendNode(PlanetTerrainEdits& tree, const glm::dvec3& center, double half_extent)
 		{
-			if(buckets.size() == 0) return static_cast<size_t>(-1);
-			const size_t mask = buckets.size() - 1;
-			size_t index = static_cast<size_t>(hashEditGridCoordinate(coordinate)) & mask;
-			size_t first_deleted = static_cast<size_t>(-1);
-			for(size_t checked = 0; checked < buckets.size(); ++checked)
+			const uint32 node_id = static_cast<uint32>(tree.nodes.size());
+			tree.nodes.pushCtor();
+			tree.nodes[node_id].center = center;
+			tree.nodes[node_id].half_extent = half_extent;
+			return node_id;
+		}
+
+		void createChildren(PlanetTerrainEdits& tree, uint32 node_id)
+		{
+			if(tree.nodes[node_id].hasChildren()) return;
+			const glm::dvec3 center = tree.nodes[node_id].center;
+			const double child_half_extent = tree.nodes[node_id].half_extent * 0.5;
+			uint32 child_ids[8];
+			for(uint8 index = 0; index < 8; ++index)
 			{
-				const PlanetTerrainEditBucket& bucket = buckets[index];
-				if(bucket.state == empty_edit_bucket)
-					return first_deleted == static_cast<size_t>(-1) ? index : first_deleted;
-				if(bucket.state == occupied_edit_bucket
-					&& sameEditGridCoordinate(bucket.grid_coordinate, coordinate)) return index;
-				if(bucket.state == deleted_edit_bucket && first_deleted == static_cast<size_t>(-1))
-					first_deleted = index;
-				index = (index + 1) & mask;
+				const glm::dvec3 offset(
+					(index & 1) ? child_half_extent : -child_half_extent,
+					(index & 2) ? child_half_extent : -child_half_extent,
+					(index & 4) ? child_half_extent : -child_half_extent);
+				child_ids[index] = appendNode(tree, center + offset, child_half_extent);
 			}
-			return first_deleted;
+			for(uint8 index = 0; index < 8; ++index)
+				tree.nodes[node_id].children[index] = child_ids[index];
 		}
 
-		void growEditIndex(PlanetTerrainEditIndex& index)
+		void recordReferenceLocation(PlanetTerrainEdits& tree, uint32 node_id,
+			const PlanetTerrainEditReference& reference)
 		{
-			if(index.buckets.size() != 0
-				&& (index.used_bucket_count + 1) * 10 < index.buckets.size() * 7) return;
-			const size_t new_capacity = index.buckets.size() == 0 ? 16 : index.buckets.size() * 2;
-			DynamicArray<PlanetTerrainEditBucket> new_buckets;
-			new_buckets.resize(new_capacity);
-			for(PlanetTerrainEditBucket& old_bucket : index.buckets)
+			if(tree.locations.size() <= reference.edit_id)
+				tree.locations.resize(static_cast<size_t>(reference.edit_id) + 1);
+			PlanetTerrainEditLocation& location = tree.locations[reference.edit_id];
+			location.node_id = node_id;
+			location.entry_index = tree.nodes[node_id].edits.size() - 1;
+			location.order = reference.order;
+		}
+
+		void insertReference(PlanetTerrainEdits& tree, uint32 node_id,
+			const PlanetTerrainEditReference& reference, const PlanetTerrainEdit& edit)
+		{
+			PlanetTerrainEditNode& node = tree.nodes[node_id];
+			if(node.hasChildren())
 			{
-				if(old_bucket.state != occupied_edit_bucket) continue;
-				size_t bucket_index = static_cast<size_t>(hashEditGridCoordinate(old_bucket.grid_coordinate))
-					& (new_capacity - 1);
-				while(new_buckets[bucket_index].state == occupied_edit_bucket)
-					bucket_index = (bucket_index + 1) & (new_capacity - 1);
-				new_buckets[bucket_index] = static_cast<PlanetTerrainEditBucket&&>(old_bucket);
-			}
-			index.buckets = static_cast<DynamicArray<PlanetTerrainEditBucket>&&>(new_buckets);
-			index.used_bucket_count = index.bucket_count;
-		}
-	}
-
-	/** @copydoc PlanetTerrainEdit::isLargeForChunkIndex */
-	bool PlanetTerrainEdit::isLargeForChunkIndex(double chunk_width) const
-	{
-		return radius > chunk_width * 0.5;
-	}
-
-	/** @copydoc PlanetTerrainEdit::getCenterGridCoordinate */
-	glm::ivec3 PlanetTerrainEdit::getCenterGridCoordinate(double chunk_width) const
-	{
-		return glm::ivec3(
-			static_cast<int32>(std::floor(center.x / chunk_width)),
-			static_cast<int32>(std::floor(center.y / chunk_width)),
-			static_cast<int32>(std::floor(center.z / chunk_width)));
-	}
-
-	/** @brief Returns the occupied hash-bucket index for a key, or an invalid sentinel. */
-	size_t PlanetTerrainEditIndex::findBucket(const glm::ivec3& coordinate) const
-	{
-		if(buckets.size() == 0) return static_cast<size_t>(-1);
-		const size_t mask = buckets.size() - 1;
-		size_t index = static_cast<size_t>(hashEditGridCoordinate(coordinate)) & mask;
-		for(size_t checked = 0; checked < buckets.size(); ++checked)
-		{
-			const PlanetTerrainEditBucket& bucket = buckets[index];
-			if(bucket.state == empty_edit_bucket) return static_cast<size_t>(-1);
-			if(bucket.state == occupied_edit_bucket
-				&& sameEditGridCoordinate(bucket.grid_coordinate, coordinate)) return index;
-			index = (index + 1) & mask;
-		}
-		return static_cast<size_t>(-1);
-	}
-
-	/** @brief Adds an edit to its center bucket or the separate large-edit list. */
-	void PlanetTerrainEditIndex::insert(
-		PlanetTerrainEditId edit_id, const PlanetTerrainEdit& edit, double chunk_width)
-	{
-		const PlanetTerrainEditReference reference{edit_id, next_order++};
-		if(edit.isLargeForChunkIndex(chunk_width))
-		{
-			large_edits.push(reference);
-			return;
-		}
-		growEditIndex(*this);
-		const glm::ivec3 coordinate = edit.getCenterGridCoordinate(chunk_width);
-		const size_t bucket_index = findEditBucketForInsert(buckets, coordinate);
-		PlanetTerrainEditBucket& bucket = buckets[bucket_index];
-		if(bucket.state != occupied_edit_bucket)
-		{
-			if(bucket.state == empty_edit_bucket) used_bucket_count++;
-			bucket.grid_coordinate = coordinate;
-			bucket.state = occupied_edit_bucket;
-			bucket_count++;
-		}
-		bucket.edits.push(reference);
-	}
-
-	/** @brief Removes one edit while preserving the chronological order of its bucket. */
-	bool PlanetTerrainEditIndex::remove(
-		PlanetTerrainEditId edit_id, const PlanetTerrainEdit& edit, double chunk_width)
-	{
-		DynamicArray<PlanetTerrainEditReference>* references = &large_edits;
-		size_t bucket_index = static_cast<size_t>(-1);
-		if(!edit.isLargeForChunkIndex(chunk_width))
-		{
-			bucket_index = findBucket(edit.getCenterGridCoordinate(chunk_width));
-			if(bucket_index == static_cast<size_t>(-1)) return false;
-			references = &buckets[bucket_index].edits;
-		}
-		for(size_t index = 0; index < references->size(); ++index)
-		{
-			if((*references)[index].edit_id != edit_id) continue;
-			for(size_t shift = index + 1; shift < references->size(); ++shift)
-				(*references)[shift - 1] = (*references)[shift];
-			references->resize(references->size() - 1);
-			if(bucket_index != static_cast<size_t>(-1) && references->size() == 0)
-			{
-				buckets[bucket_index].state = deleted_edit_bucket;
-				bucket_count--;
-				if(bucket_count == 0)
+				const uint8 child_index = findContainingChild(node, edit);
+				if(child_index != static_cast<uint8>(-1))
 				{
-					buckets.clear();
-					used_bucket_count = 0;
+					insertReference(tree, node.children[child_index], reference, edit);
+					return;
 				}
+				tree.nodes[node_id].edits.push(reference);
+				recordReferenceLocation(tree, node_id, reference);
+				return;
 			}
-			return true;
+			if(node.edits.size() >= max_edits_per_leaf
+				&& node.half_extent > PlanetTerrainEdits::minimum_cell_size * 0.5)
+			{
+				createChildren(tree, node_id);
+				DynamicArray<PlanetTerrainEditReference> previous_edits =
+					static_cast<DynamicArray<PlanetTerrainEditReference>&&>(tree.nodes[node_id].edits);
+				for(const PlanetTerrainEditReference& previous : previous_edits)
+					insertReference(tree, node_id, previous, (*tree.pool)[previous.edit_id]);
+				insertReference(tree, node_id, reference, edit);
+				return;
+			}
+			tree.nodes[node_id].edits.push(reference);
+			recordReferenceLocation(tree, node_id, reference);
 		}
-		return false;
+
+		void expandRootToContain(PlanetTerrainEdits& tree, const PlanetTerrainEdit& edit)
+		{
+			if(tree.root_id == invalid_node_id)
+				tree.root_id = appendNode(tree, glm::dvec3(0.0),
+					PlanetTerrainEdits::initial_root_half_extent);
+			const glm::dvec3 minimum = edit.getCenter() - glm::dvec3(edit.getRadius());
+			const glm::dvec3 maximum = edit.getCenter() + glm::dvec3(edit.getRadius());
+			while(true)
+			{
+				const PlanetTerrainEditNode& root = tree.nodes[tree.root_id];
+				const glm::dvec3 root_minimum = root.center - glm::dvec3(root.half_extent);
+				const glm::dvec3 root_maximum = root.center + glm::dvec3(root.half_extent);
+				if(glm::all(glm::greaterThanEqual(minimum, root_minimum))
+					&& glm::all(glm::lessThanEqual(maximum, root_maximum))) return;
+				const glm::dvec3 old_center = root.center;
+				const double old_half_extent = root.half_extent;
+				glm::dvec3 shift(0.0);
+				for(uint8 axis = 0; axis < 3; ++axis)
+					shift[axis] = (edit.getCenter()[axis] >= old_center[axis] ? 1.0 : -1.0) * old_half_extent;
+				const uint32 old_root_id = tree.root_id;
+				const uint32 new_root_id = appendNode(tree, old_center + shift, old_half_extent * 2.0);
+				uint8 old_child_index = 0;
+				for(uint8 axis = 0; axis < 3; ++axis)
+					if(old_center[axis] >= tree.nodes[new_root_id].center[axis])
+						old_child_index |= static_cast<uint8>(1u << axis);
+				tree.nodes[new_root_id].children[old_child_index] = old_root_id;
+				tree.root_id = new_root_id;
+			}
+		}
 	}
 
-	/** @brief Clears all edit references and resets the chronological counter. */
-	void PlanetTerrainEditIndex::clear()
+	PlanetTerrainEditId PlanetTerrainEdits::append(const PlanetTerrainEdit& edit)
 	{
-		buckets.clear();
-		large_edits.clear();
-		bucket_count = 0;
-		used_bucket_count = 0;
-		next_order = 0;
+		const PlanetTerrainEditId edit_id = pool->create();
+		(*pool)[edit_id] = edit;
+		ids.push(edit_id);
+		const uint64 order = next_order++;
+		expandRootToContain(*this, edit);
+		insertReference(*this, root_id, PlanetTerrainEditReference{edit_id, order}, edit);
+		return edit_id;
+	}
+
+	bool PlanetTerrainEdits::remove(PlanetTerrainEditId edit_id)
+	{
+		if(!pool->isActive(edit_id) || edit_id >= locations.size()) return false;
+		const PlanetTerrainEditLocation location = locations[edit_id];
+		if(location.node_id >= nodes.size() || location.entry_index >= nodes[location.node_id].edits.size())
+			return false;
+		DynamicArray<PlanetTerrainEditReference>& entries = nodes[location.node_id].edits;
+		for(size_t index = location.entry_index + 1; index < entries.size(); ++index)
+		{
+			entries[index - 1] = entries[index];
+			locations[entries[index - 1].edit_id].entry_index = index - 1;
+		}
+		entries.resize(entries.size() - 1);
+		locations[edit_id] = PlanetTerrainEditLocation{};
+		for(PlanetTerrainEditId& stored_id : ids)
+			if(stored_id == edit_id) stored_id = static_cast<PlanetTerrainEditId>(-1);
+		return pool->free(edit_id);
 	}
 
 	/** @copydoc PlanetTerrainEdit::PlanetTerrainEdit */

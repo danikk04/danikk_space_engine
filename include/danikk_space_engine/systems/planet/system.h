@@ -12,11 +12,14 @@ namespace danikk_space_engine
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
+		void updatePlanetSurfaceTree(PlanetData& planet, const glm::dvec3& camera_position,
+			const glm::dvec3& camera_front, const glm::dvec3& camera_right,
+			const glm::dvec3& camera_up, double height);
+		void destroyPlanetSurfaceTree(PlanetData& planet);
 		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position,
 			const glm::dvec3& chunk_center_position);
 		void queuePlanetRequests(PlanetData& planet);
 		void unloadChunksOutsideDesiredSet(PlanetData& planet);
-		void invalidateChunksAroundEdit(PlanetData& planet, const PlanetTerrainEdit& edit);
 		void removeQueuedRequests(const PlanetData& planet);
 
 	public:
@@ -37,7 +40,7 @@ namespace danikk_space_engine
 
 		/** @brief Updates planet chunk streaming once for the current world frame. */
 		void update();
-		void acceptGeneratedChunk(const GeneratedChunkMesh& generated_chunk);
+		void acceptGeneratedSurfaceNode(const GeneratedChunkMesh& generated_mesh);
 		/**
 		 * @brief Applies and persists a spherical terrain edit on a registered planet.
 		 * @param world_body_id Registered planet body to modify.
@@ -48,6 +51,8 @@ namespace danikk_space_engine
 		 */
 		bool editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,
 			double radius, MaterialId material_id);
+		/** @brief Removes a terrain edit by its stable planet-local ID. */
+		bool removePlanetTerrainEdit(WorldBodyId world_body_id, PlanetTerrainEditId edit_id);
 		/** @brief Returns immutable settings from the planet settings catalog. */
 		const PlanetSettings& getPlanetSettings(PlanetSettingsId id) const;
 

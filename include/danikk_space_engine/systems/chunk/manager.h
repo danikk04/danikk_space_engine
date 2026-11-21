@@ -101,7 +101,7 @@ namespace danikk_space_engine
 		void createMesh(Chunk& chunk, const vec3* positions, size_t position_count,
 			const uint32* triangle_indices, size_t index_count,
 			const MaterialId* triangle_material_ids, size_t material_count,
-			bool is_planet_terrain = true, bool is_build_part_mesh = false);
+			bool is_build_part_mesh = false);
 		/** @brief Draws the chunk's material ranges and reports why drawing did not occur. */
 		ChunkDrawResult draw(const Chunk& chunk);
 		/** @brief Draws chunk meshes using the world's one- or two-depth-pass setup. */

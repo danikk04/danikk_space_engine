@@ -55,7 +55,7 @@ namespace danikk_space_engine
 		for(size_t index = 0; index < requests.size();)
 		{
 			const ChunkMeshGenerationRequest& queued = requests[index];
-			if(queued.source != ChunkMeshSource::planet_terrain
+			if(queued.source != ChunkMeshSource::planet_surface_node
 				|| queued.world_body_id != world_body_id
 				|| queued.planet_generation_id != planet_generation_id)
 			{
@@ -75,28 +75,6 @@ namespace danikk_space_engine
 		requests_dirty = true;
 	}
 
-	/** @copydoc ChunkMeshGenerationSystem::removePlanetRequest */
-	void ChunkMeshGenerationSystem::removePlanetRequest(WorldBodyId world_body_id,
-		uint64 planet_generation_id, const glm::ivec3& grid_coordinate)
-	{
-		DSE_WATCH();
-		for(size_t index = 0; index < requests.size(); index++)
-		{
-			const ChunkMeshGenerationRequest& request = requests[index];
-			if(request.source != ChunkMeshSource::planet_terrain
-				|| request.world_body_id != world_body_id
-				|| request.planet_generation_id != planet_generation_id
-				|| request.grid_coordinate.x != grid_coordinate.x
-				|| request.grid_coordinate.y != grid_coordinate.y
-				|| request.grid_coordinate.z != grid_coordinate.z) continue;
-			for(size_t shift = index + 1; shift < requests.size(); shift++)
-				requests[shift - 1] = static_cast<ChunkMeshGenerationRequest&&>(requests[shift]);
-			requests.resize(requests.size() - 1);
-			requests_dirty = true;
-			return;
-		}
-	}
-
 	/** @copydoc ChunkMeshGenerationSystem::cancelPlanetRequests */
 	void ChunkMeshGenerationSystem::cancelPlanetRequests(WorldBodyId world_body_id,
 		uint64 planet_generation_id)
@@ -106,7 +84,7 @@ namespace danikk_space_engine
 		for(size_t index = 0; index < requests.size();)
 		{
 			const ChunkMeshGenerationRequest& request = requests[index];
-			if(request.source != ChunkMeshSource::planet_terrain
+			if(request.source != ChunkMeshSource::planet_surface_node
 				|| request.world_body_id != world_body_id
 				|| request.planet_generation_id != planet_generation_id)
 			{
@@ -198,7 +176,12 @@ namespace danikk_space_engine
 
 		GeneratedChunkMesh generated;
 		if(!worker->tryTake(generated) || generated.generation_id != generation_id) return;
-		if(generated.source == ChunkMeshSource::build_parts)
+		if(generated.source == ChunkMeshSource::planet_surface_node
+			&& world.world_body_data.isWorldBodyActive(generated.world_body_id))
+		{
+			world.planets.acceptGeneratedSurfaceNode(generated);
+		}
+		else if(generated.source == ChunkMeshSource::build_parts)
 		{
 			if(!world.world_body_data.isWorldBodyActive(generated.world_body_id)
 				|| !world.chunks.isChunkActive(generated.chunk_id)) return;
@@ -208,13 +191,8 @@ namespace danikk_space_engine
 			world.chunks.createMesh(chunk,
 				generated.point_positions.data(), generated.point_positions.size(),
 				generated.triangle_point_indices.data(), generated.triangle_point_indices.size(),
-				generated.triangle_material_ids.data(), generated.triangle_material_ids.size(), false, true);
+				generated.triangle_material_ids.data(), generated.triangle_material_ids.size(), true);
 			removeBuildPartMeshRequest(generated.chunk_id);
-		}
-		else if(generated.source == ChunkMeshSource::planet_terrain
-			&& world.world_body_data.isWorldBodyActive(generated.world_body_id))
-		{
-			world.planets.acceptGeneratedChunk(generated);
 		}
 	}
 }

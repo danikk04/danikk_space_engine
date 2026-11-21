@@ -88,8 +88,8 @@ namespace danikk_space_engine
 			return false;
 		}
 
-		DynamicArray<PlanetTerrainEditId> loaded_edit_ids;
-		loaded_edit_ids.reserve(header.edit_count);
+		DynamicArray<PlanetTerrainEdit> loaded_edits;
+		loaded_edits.reserve(header.edit_count);
 		for(uint32 index = 0; index < header.edit_count; index++)
 		{
 			PlanetTerrainEdit edit;
@@ -99,15 +99,10 @@ namespace danikk_space_engine
 				planet.processed_edit_count = planet.terrain_edits.ids.size();
 				return false;
 			}
-			const PlanetTerrainEditId edit_id = planet.terrain_edits.pool->create();
-			(*planet.terrain_edits.pool)[edit_id] = edit;
-			loaded_edit_ids.push(edit_id);
+			loaded_edits.push(edit);
 		}
-		planet.terrain_edits.ids = static_cast<DynamicArray<PlanetTerrainEditId>&&>(loaded_edit_ids);
-		planet.terrain_edits.index.clear();
-		for(PlanetTerrainEditId edit_id : planet.terrain_edits.ids)
-			planet.terrain_edits.index.insert(edit_id,
-				(*planet.terrain_edits.pool)[edit_id], planet_chunk_width);
+		for(const PlanetTerrainEdit& edit : loaded_edits)
+			planet.terrain_edits.append(edit);
 		planet.terrain_revision = header.terrain_revision;
 		if(loaded_legacy_file || header.version != terrain_edits_version)
 		{
@@ -147,10 +142,11 @@ namespace danikk_space_engine
 		}
 		const TerrainEditsHeader header{
 			terrain_edits_magic, terrain_edits_version, planet_radius, noise_seed,
-			planet.terrain_revision, static_cast<uint32>(planet.terrain_edits.ids.size())};
+			planet.terrain_revision, static_cast<uint32>(planet.terrain_edits.pool->usedIds().size())};
 		output.write(reinterpret_cast<const char*>(&header), sizeof(header));
 		for(PlanetTerrainEditId edit_id : planet.terrain_edits.ids)
-			(*planet.terrain_edits.pool)[edit_id].write(output);
+			if(planet.terrain_edits.pool->isActive(edit_id))
+				(*planet.terrain_edits.pool)[edit_id].write(output);
 		output.close();
 		if(!output) formatLogError("Unable to write terrain edits save: %", file_path.string().c_str());
 	}

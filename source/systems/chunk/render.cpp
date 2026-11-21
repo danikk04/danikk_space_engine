@@ -52,7 +52,7 @@ namespace danikk_space_engine
 	void ChunkSystem::createMesh(Chunk& chunk, const vec3* positions, size_t position_count,
 		const uint32* triangle_indices, size_t index_count,
 		const MaterialId* triangle_material_ids, size_t material_count,
-		bool is_planet_terrain, bool is_build_part_mesh)
+		bool is_build_part_mesh)
 	{
 		DSE_WATCH();
 		if(index_count % 3 != 0 || material_count != index_count / 3
@@ -131,7 +131,7 @@ namespace danikk_space_engine
 			reinterpret_cast<const float*>(vertices.data()),
 			vertices.size() * sizeof(DefaultVertex) / sizeof(float), indices.data(), indices.size());
 		DefaultVertex::setAttributes();
-		chunk.planet_terrain = is_planet_terrain;
+		chunk.render_enabled = true;
 		record.has_build_part_mesh = is_build_part_mesh;
 	}
 
@@ -139,6 +139,7 @@ namespace danikk_space_engine
 	ChunkDrawResult ChunkSystem::draw(const Chunk& chunk)
 	{
 		DSE_WATCH();
+		if(!chunk.render_enabled) return ChunkDrawResult::empty_mesh;
 		const ChunkRenderRecord* record = findRenderRecord(chunk.chunk_id);
 		if(record == nullptr || record->mesh == nullptr) return ChunkDrawResult::missing_mesh;
 		if(record->material_ranges.size() == 0) return ChunkDrawResult::empty_mesh;
@@ -185,6 +186,7 @@ namespace danikk_space_engine
 			{
 				if(!isChunkActive(chunk_id)) continue;
 				const Chunk& chunk = getChunk(chunk_id);
+				if(!chunk.render_enabled) continue;
 				if(!chunk.hasValidBounds()) continue;
 				const glm::dvec3 chunk_center = body.position
 					+ body.rotation * (chunk.position + glm::dvec3(chunk.bounds_center));
@@ -195,12 +197,13 @@ namespace danikk_space_engine
 
 		const auto draw_chunk = [this](ChunkId chunk_id)
 		{
-			render_candidates++;
 			if(!isChunkActive(chunk_id))
 			{
 				render_inactive++;
 				return;
 			}
+			if(!getChunk(chunk_id).render_enabled) return;
+			render_candidates++;
 			switch(draw(getChunk(chunk_id)))
 			{
 				case ChunkDrawResult::missing_mesh: render_missing_mesh++; break;
@@ -278,7 +281,6 @@ namespace danikk_space_engine
 		chunk.bounds_valid = false;
 		chunk.bounds_center = vec3(0.0f);
 		chunk.bounds_radius = 0.0f;
-		chunk.planet_terrain = false;
 	}
 
 	/** @copydoc ChunkSystem::clearRenderData */

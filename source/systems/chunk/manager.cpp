@@ -152,9 +152,9 @@ namespace danikk_space_engine
 		chunk.world_body_id = 0;
 		chunk.grid_coordinate = glm::ivec3(0);
 		chunk.position = glm::dvec3(0.0);
-		chunk.planet_terrain = false;
 		chunk.build_part_mesh_dirty = false;
 		chunk.build_part_mesh_revision = 0;
+		chunk.render_enabled = true;
 		chunk.bounds_valid = false;
 		chunks.free(id);
 	}

@@ -29,6 +29,21 @@ namespace danikk_space_engine
 	void PlanetSystem::shutdown()
 	{
 		danikk_framework::formatLogInfo("Shutdown PlanetSystem");
+		for(PlanetData& planet : planets)
+		{
+			removeQueuedRequests(planet);
+			destroyPlanetSurfaceTree(planet);
+		}
+	}
+
+	bool PlanetSystem::removePlanetTerrainEdit(WorldBodyId world_body_id, PlanetTerrainEditId edit_id)
+	{
+		PlanetData* planet = findPlanet(world_body_id);
+		if(planet == nullptr || !planet->terrain_edits.remove(edit_id)) return false;
+		planet->terrain_revision++;
+		if(planet->terrain_revision == 0) planet->terrain_revision++;
+		world.saves.savePlanetTerrainEdits(world_body_id);
+		return true;
 	}
 
 	const PlanetSettings& PlanetSystem::getPlanetSettings(PlanetSettingsId id) const
@@ -65,6 +80,7 @@ namespace danikk_space_engine
 		{
 			if(planets[index].world_body_id != world_body_id) continue;
 			removeQueuedRequests(planets[index]);
+			destroyPlanetSurfaceTree(planets[index]);
 			for(size_t shift = index + 1; shift < planets.size(); ++shift)
 				planets[shift - 1] = static_cast<PlanetData&&>(planets[shift]);
 			planets.resize(planets.size() - 1);
@@ -154,30 +170,16 @@ namespace danikk_space_engine
 		glm::dvec3 chunk_center_position = camera_position;
 		if(surface_height >= 0.0 && distance_from_center > 1e-9)
 			chunk_center_position -= camera_position / distance_from_center * surface_height;
-		const double chunk_streaming_limit = planet_chunk_width
-			* (planet_volume_chunk_half_width + 2.0);
-		if(surface_height > chunk_streaming_limit)
-			return;
-		if(!planet.chunk_updates_active)
-			danikk_framework::formatLogInfo(
-				"Planet chunk streaming started: body=% height_above_surface=% m center_distance=% m",
-				planet.world_body_id, surface_height, distance_from_center);
-		while(planet.processed_edit_count < planet.terrain_edits.ids.size())
-			invalidateChunksAroundEdit(planet,
-				(*planet.terrain_edits.pool)[planet.terrain_edits.ids[planet.processed_edit_count++]]);
+		updatePlanetSurfaceTree(planet, camera_position, glm::dvec3(world.camera.getFront()),
+			glm::dvec3(world.camera.getRight()), glm::dvec3(world.camera.getUp()), surface_height);
+
 		const glm::ivec3 chunk_center_grid_coordinate(
 			static_cast<int>(std::floor(chunk_center_position.x / planet_chunk_width)),
 			static_cast<int>(std::floor(chunk_center_position.y / planet_chunk_width)),
 			static_cast<int>(std::floor(chunk_center_position.z / planet_chunk_width)));
 		const bool update_chunks = !planet.chunk_set_initialized
-			|| !glm::all(glm::equal(chunk_center_grid_coordinate, planet.last_chunk_update_grid_coordinate))
-			|| planet.last_chunk_update_revision != planet.terrain_revision
-			|| planet.last_chunk_update_mesh_generator != settings.planet_mesh_generator;
-		if(update_chunks)
-		{
-			updatePlanetChunks(planet, camera_position, chunk_center_position);
-			queuePlanetRequests(planet);
-		}
+			|| !glm::all(glm::equal(chunk_center_grid_coordinate, planet.last_chunk_update_grid_coordinate));
+		if(update_chunks) updatePlanetChunks(planet, camera_position, chunk_center_position);
 	}
 
 	bool PlanetSystem::editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,
@@ -189,7 +191,7 @@ namespace danikk_space_engine
 		if(planet == nullptr) return false;
 		const WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
 		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
-		planet->terrain_edits.append(PlanetTerrainEdit{center, radius, material_id}, planet_chunk_width);
+		planet->terrain_edits.append(PlanetTerrainEdit{center, radius, material_id});
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
 		world.saves.savePlanetTerrainEdits(world_body_id);

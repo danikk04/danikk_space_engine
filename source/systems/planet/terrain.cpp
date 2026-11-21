@@ -78,8 +78,17 @@ namespace danikk_space_engine
 				if(radius_change <= surface_radius_tolerance) break;
 			}
 			if(includesEdits(mode))
-				for(PlanetTerrainEditId edit_id : edits.ids)
-					surface_radius = (*edits.pool)[edit_id].applyToSurfaceRadius(direction, surface_radius);
+			{
+				const double maximum_distance = edits.root_id < edits.nodes.size()
+					? glm::length(edits.nodes[edits.root_id].center)
+						+ edits.nodes[edits.root_id].half_extent * 1.7320508075688772
+					: radius * 2.0;
+				edits.forEachRayCandidate(glm::dvec3(0.0), direction, maximum_distance,
+					[&](PlanetTerrainEditId edit_id)
+					{
+						surface_radius = (*edits.pool)[edit_id].applyToSurfaceRadius(direction, surface_radius);
+					});
+			}
 			return surface_radius;
 		}
 
@@ -142,7 +151,7 @@ namespace danikk_space_engine
 			}
 
 			if(includesEdits(mode))
-				edits.index.forEachCandidate(position, planet_chunk_width, [&](PlanetTerrainEditId edit_id)
+				edits.forEachCandidate(position, [&](PlanetTerrainEditId edit_id)
 				{
 					density = (*edits.pool)[edit_id].applyToScalarField(position, density);
 				});
@@ -167,7 +176,7 @@ namespace danikk_space_engine
 				else if(surface_depth <= dirt_layer_depth) material_id = default_materials::dirt;
 			}
 			if(includesEdits(mode))
-				edits.index.forEachCandidate(position, planet_chunk_width, [&](PlanetTerrainEditId edit_id)
+				edits.forEachCandidate(position, [&](PlanetTerrainEditId edit_id)
 				{
 					material_id = (*edits.pool)[edit_id].applyToMaterial(position, material_id);
 				});

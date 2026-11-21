@@ -26,8 +26,6 @@ namespace danikk_space_engine
 
 		/** @brief True when bounds describe the most recently built, non-dirty mesh. */
 		bool bounds_valid = false;
-		/** @brief True when this chunk represents a streamed planet terrain cell. */
-		bool planet_terrain = false;
 		/** @brief Subset of the point-component list containing only human slots. */
 		DynamicArray<PointComponentSlotId> human_component_slot_ids;
 		/** @brief Living humans eligible for capsule collision checks. */
@@ -44,6 +42,8 @@ namespace danikk_space_engine
 		bool has_active_human_collisions = false;
 		/** @brief Whether the combined BuildPart mesh needs regeneration. */
 		bool build_part_mesh_dirty = false;
+		/** @brief Whether this mesh is currently selected for rendering. */
+		bool render_enabled = true;
 		/** @brief Revision advanced whenever a BuildPart in the chunk changes. */
 		uint64 build_part_mesh_revision = 0;
 		/** @brief Center of the local-space bounding sphere used by raycast broadphase. */
@@ -104,7 +104,5 @@ namespace danikk_space_engine
 
 		/** @brief Reports whether bounds are valid for the current, non-dirty mesh. */
 		bool hasValidBounds() const { return bounds_valid; }
-		/** @brief Reports whether this chunk stores a streamed planet-terrain mesh. */
-		bool isPlanetTerrain() const { return planet_terrain; }
 	};
 }

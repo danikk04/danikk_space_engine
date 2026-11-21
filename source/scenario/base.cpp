@@ -36,8 +36,11 @@ namespace danikk_space_engine
 			double outer_radius = planet_settings.radius + 64.0;
 			const PlanetData& planet = world.planets.getPlanet(planet_body_id);
 			for(PlanetTerrainEditId edit_id : planet.terrain_edits.ids)
+			{
+				if(!planet.terrain_edits.pool->isActive(edit_id)) continue;
 				outer_radius = glm::max(outer_radius,
 					(*planet.terrain_edits.pool)[edit_id].getMaximumRadiusFromOrigin(surface_margin));
+			}
 			const glm::dvec3 directions[] = {
 				glm::dvec3(0.0, 0.0, 1.0), glm::dvec3(0.0, 0.0, -1.0),
 				glm::dvec3(1.0, 0.0, 0.0), glm::dvec3(-1.0, 0.0, 0.0),

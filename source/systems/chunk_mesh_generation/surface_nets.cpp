@@ -27,6 +27,9 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 		result.terrain_revision = request.terrain_revision;
 		result.source_revision = request.source_revision;
 		result.source = request.source;
+		result.surface_node_id = request.surface_node_id;
+		result.surface_node_generation_id = request.surface_node_generation_id;
+		result.surface_only = request.surface_only;
 		result.planet_mesh_generator = request.planet_mesh_generator;
 		result.grid_coordinate = request.grid_coordinate;
 		result.chunk_position = request.chunk_position;
@@ -59,7 +62,9 @@ namespace danikk_space_engine::chunk_mesh_generation_internal
 				for(int x = -1; x <= static_cast<int>(cells_per_axis) + 1; ++x)
 					densities[sampleIndex(x, y, z)] = world.planets.getPlanetDensity(
 						request.world_body_id, samplePosition(x, y, z),
-						PlanetTerrainMode::cave_field_with_edits);
+						request.surface_only
+						? PlanetTerrainMode::heightmap_with_edits
+						: PlanetTerrainMode::cave_field_with_edits);
 
 		constexpr uint8 corner_offsets[8][3]{
 			{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},

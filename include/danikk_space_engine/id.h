@@ -16,6 +16,8 @@ namespace danikk_space_engine
 	using PlanetSettingsId = uint32;
 	/** @brief 32-bit handle for a terrain-edit record in a planet's edit pool. */
 	using PlanetTerrainEditId = uint32;
+	/** @brief Stable index of one spatial node in a planet terrain octree. */
+	using PlanetSurfaceNodeId = uint32;
 	/** @brief 32-bit index into the shared Minecraft skin texture catalog. */
 	using HumanSkinId = uint32;
 	/** @brief 32-bit index into the item-category definition table. */

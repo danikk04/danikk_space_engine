@@ -38,7 +38,7 @@ namespace danikk_space_engine
 	 *         sampled field contains no surface in this chunk.
 	 * This worker-side function does not allocate World resources or upload a mesh.
 	 */
-	GeneratedChunkMesh chunk_mesh_generation_internal::generatePlanetTerrainChunkMesh(
+	GeneratedChunkMesh chunk_mesh_generation_internal::generatePlanetSurfaceNodeMesh(
 		World& world, const ChunkMeshGenerationRequest& request)
 	{
 		/**
@@ -61,7 +61,9 @@ namespace danikk_space_engine
 			const glm::dvec3 center = request.chunk_position
 				+ (glm::dvec3(a) + glm::dvec3(b) + glm::dvec3(c)) / 3.0;
 			result.triangle_material_ids.push(world.planets.getPlanetMaterial(request.world_body_id,
-				center, PlanetTerrainMode::cave_field_with_edits));
+				center, request.surface_only
+					? PlanetTerrainMode::heightmap_with_edits
+					: PlanetTerrainMode::cave_field_with_edits));
 		}
 		return result;
 	}

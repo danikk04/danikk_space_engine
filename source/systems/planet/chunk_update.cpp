@@ -21,14 +21,6 @@ namespace danikk_space_engine
 				static_cast<int>(std::floor(position.z / planet_chunk_width)));
 		}
 
-		/** @brief Tests whether a chunk key belongs to an inclusive local streaming box. */
-		bool isChunkGridCoordinateInBox(const glm::ivec3& key,
-			const glm::ivec3& minimum, const glm::ivec3& maximum)
-		{
-			return key.x >= minimum.x && key.x <= maximum.x
-				&& key.y >= minimum.y && key.y <= maximum.y
-				&& key.z >= minimum.z && key.z <= maximum.z;
-		}
 	}
 
 	/**
@@ -100,138 +92,32 @@ namespace danikk_space_engine
 	void PlanetSystem::updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position,
 		const glm::dvec3& chunk_center_position)
 	{
-		/**
-		 * @brief Measures the duration of the enclosing profiler scope.
-		 */
 		DSE_WATCH();
 		const glm::ivec3 center_key = getPlanetChunkGridCoordinate(chunk_center_position);
-		const glm::ivec3 previous_center_key = planet.last_chunk_update_grid_coordinate;
-		const glm::ivec3 center_delta = center_key - previous_center_key;
-		const int32 moved_axis_count = static_cast<int32>(center_delta.x != 0)
-			+ static_cast<int32>(center_delta.y != 0) + static_cast<int32>(center_delta.z != 0);
-		const int32 moved_distance_in_cells = std::abs(center_delta.x)
-			+ std::abs(center_delta.y) + std::abs(center_delta.z);
-		const bool can_update_one_entering_slab = planet.chunk_set_initialized
-			&& planet.last_chunk_update_revision == planet.terrain_revision
-			&& planet.last_chunk_update_mesh_generator == settings.planet_mesh_generator
-			&& moved_axis_count == 1 && moved_distance_in_cells == 1;
-		planet.last_chunk_update_grid_coordinate = center_key;
-		planet.last_chunk_update_revision = planet.terrain_revision;
-		planet.last_chunk_update_mesh_generator = settings.planet_mesh_generator;
-		planet.chunk_set_initialized = true;
-		planet.chunk_updates_active = true;
-		const double chunk_width = planet_chunk_width;
 		const glm::ivec3 minimum_key = center_key - planet_volume_chunk_half_width;
 		const glm::ivec3 maximum_key = center_key + planet_volume_chunk_half_width;
-		DynamicArray<ChunkMeshGenerationRequest> requests;
-		DynamicArray<ChunkMeshGenerationRequest> previous_requests =
-			static_cast<DynamicArray<ChunkMeshGenerationRequest>&&>(planet.pending_requests);
+		planet.last_chunk_update_grid_coordinate = center_key;
+		planet.chunk_set_initialized = true;
 		planet.chunk_lookup.clearDesired();
-		const auto queue_chunk_request = [&](const glm::ivec3& key)
-		{
-			planet.chunk_lookup.markDesired(key);
-			if(planet.chunk_lookup.isGenerated(key, settings.planet_mesh_generator)) return;
 
-			ChunkMeshGenerationRequest request;
-			request.source = ChunkMeshSource::planet_terrain;
-			request.world_body_id = planet.world_body_id;
-			request.planet_generation_id = planet.generation_id;
-			request.terrain_revision = planet.terrain_revision;
-			request.chunk_width = chunk_width;
-			request.voxel_size = planet_voxel_size;
-			request.planet_mesh_generator = settings.planet_mesh_generator;
-			request.grid_coordinate = key;
-			request.chunk_position = glm::dvec3(key) * chunk_width;
-			requests.pushMove(request);
-		};
+		for(int z = minimum_key.z; z <= maximum_key.z; ++z)
+			for(int y = minimum_key.y; y <= maximum_key.y; ++y)
+				for(int x = minimum_key.x; x <= maximum_key.x; ++x)
+				{
+					const glm::ivec3 key(x, y, z);
+					planet.chunk_lookup.markDesired(key);
+					ChunkId chunk_id = static_cast<ChunkId>(-1);
+					if(planet.chunk_lookup.getChunk(key, chunk_id) && world.chunks.isChunkActive(chunk_id)) continue;
+					Chunk& chunk = world.chunks.createChunk(planet.world_body_id);
+					chunk.grid_coordinate = key;
+					chunk.position = glm::dvec3(key) * planet_chunk_width;
+					chunk.render_enabled = false;
+					chunk_id = chunk.chunk_id;
+					planet.chunk_lookup.setChunk(key, chunk_id);
+				}
 
-		if(can_update_one_entering_slab)
-		{
-			DynamicArray<glm::ivec3> retained_record_keys;
-			for(const PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
-			{
-				if(!entry.has_record
-					|| !isChunkGridCoordinateInBox(entry.grid_coordinate, minimum_key, maximum_key)) continue;
-				retained_record_keys.push(entry.grid_coordinate);
-			}
-			for(const glm::ivec3& key : retained_record_keys) planet.chunk_lookup.markDesired(key);
-			for(ChunkMeshGenerationRequest& request : previous_requests)
-			{
-				if(!isChunkGridCoordinateInBox(request.grid_coordinate, minimum_key, maximum_key)) continue;
-				planet.chunk_lookup.markDesired(request.grid_coordinate);
-				requests.pushMove(request);
-			}
-
-			if(center_delta.x != 0)
-			{
-				const int x = center_delta.x > 0 ? maximum_key.x : minimum_key.x;
-				for(int z = minimum_key.z; z <= maximum_key.z; z++)
-					for(int y = minimum_key.y; y <= maximum_key.y; y++)
-						queue_chunk_request(glm::ivec3(x, y, z));
-			}
-			else if(center_delta.y != 0)
-			{
-				const int y = center_delta.y > 0 ? maximum_key.y : minimum_key.y;
-				for(int z = minimum_key.z; z <= maximum_key.z; z++)
-					for(int x = minimum_key.x; x <= maximum_key.x; x++)
-						queue_chunk_request(glm::ivec3(x, y, z));
-			}
-			else
-			{
-				const int z = center_delta.z > 0 ? maximum_key.z : minimum_key.z;
-				for(int y = minimum_key.y; y <= maximum_key.y; y++)
-					for(int x = minimum_key.x; x <= maximum_key.x; x++)
-						queue_chunk_request(glm::ivec3(x, y, z));
-			}
-		}
-		else
-		{
-			for(int z = minimum_key.z; z <= maximum_key.z; z++)
-				for(int y = minimum_key.y; y <= maximum_key.y; y++)
-					for(int x = minimum_key.x; x <= maximum_key.x; x++)
-						queue_chunk_request(glm::ivec3(x, y, z));
-		}
-
-		std::sort(requests.begin(), requests.end(), [&camera_position, chunk_width](
-			const ChunkMeshGenerationRequest& left, const ChunkMeshGenerationRequest& right)
-		{
-			const glm::dvec3 left_center = left.chunk_position + glm::dvec3(chunk_width * 0.5);
-			const glm::dvec3 right_center = right.chunk_position + glm::dvec3(chunk_width * 0.5);
-			return glm::dot(left_center - camera_position, left_center - camera_position)
-				< glm::dot(right_center - camera_position, right_center - camera_position);
-		});
-
-		planet.pending_requests = static_cast<DynamicArray<ChunkMeshGenerationRequest>&&>(requests);
+		(void)camera_position;
 		unloadChunksOutsideDesiredSet(planet);
 	}
 
-	/**
-	 * @brief Destroys generated chunks intersecting a terrain-edit sphere plus a mesh-sampling margin.
-	 * @param planet Planet lookup containing loaded grid coordinates.
-	 * @param world World owning the affected chunk resources.
-	 * @param center Edit center relative to the planet origin.
-	 * @param radius Radius of the spherical edit stamp.
-	 */
-	void PlanetSystem::invalidateChunksAroundEdit(PlanetData& planet, const PlanetTerrainEdit& edit)
-	{
-		/**
-		 * @brief Measures the duration of the enclosing profiler scope.
-		 */
-		DSE_WATCH();
-		for(PlanetChunkLookupEntry& entry : planet.chunk_lookup.entries)
-		{
-			if(!entry.has_record) continue;
-			const glm::dvec3 minimum = glm::dvec3(entry.grid_coordinate) * planet_chunk_width;
-			const glm::dvec3 maximum = minimum + glm::dvec3(planet_chunk_width);
-			if(!edit.intersectsAabb(minimum, maximum, planet_voxel_size * 2.0))
-			{
-				continue;
-			}
-			if(entry.chunk_id != static_cast<ChunkId>(-1) && world.chunks.isChunkActive(entry.chunk_id))
-			{
-				entry.has_record = false;
-			}
-			else planet.chunk_lookup.remove(entry.grid_coordinate);
-		}
-	}
 }

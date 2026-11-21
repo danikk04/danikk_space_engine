@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <limits>
@@ -59,10 +60,9 @@ namespace danikk_space_engine
 		uint8 state = 0;
 		bool desired = false;
 		bool has_record = false;
-		PlanetMeshGenerator mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
 	};
 
-	/** @brief Per-planet hash lookup of desired, pending, generated, and loaded chunks. */
+	/** @brief Per-planet hash lookup of local equal-sized spatial buckets for points and units. */
 	struct PlanetChunkLookup
 	{
 		DynamicArray<PlanetChunkLookupEntry> entries;
@@ -71,64 +71,85 @@ namespace danikk_space_engine
 
 		void clearDesired();
 		void markDesired(const glm::ivec3& grid_coordinate);
-		void setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id,
-			PlanetMeshGenerator mesh_generator = PlanetMeshGenerator::marching_tetrahedra);
+		void setChunk(const glm::ivec3& grid_coordinate, ChunkId chunk_id);
 		void remove(const glm::ivec3& grid_coordinate);
 		bool isDesired(const glm::ivec3& grid_coordinate) const;
-		bool isGenerated(const glm::ivec3& grid_coordinate, PlanetMeshGenerator mesh_generator) const;
 		bool getChunk(const glm::ivec3& grid_coordinate, ChunkId& chunk_id) const;
 	};
 
-	/** @brief Edit handle and stable application order stored in a spatial bucket. */
+	/** @brief One edit reference held by the octree node containing its full bounds. */
 	struct PlanetTerrainEditReference
 	{
 		PlanetTerrainEditId edit_id = 0;
 		uint64 order = 0;
 	};
 
-	/** @brief Hash bucket of edits whose centers occupy one logical planet chunk. */
-	struct PlanetTerrainEditBucket
+	/** @brief Spatial node of the planet's terrain-edit octree. */
+	struct PlanetTerrainEditLocation
 	{
-		glm::ivec3 grid_coordinate = glm::ivec3(0);
-		DynamicArray<PlanetTerrainEditReference> edits;
-		uint8 state = 0;
+		uint32 node_id = static_cast<uint32>(-1);
+		size_t entry_index = static_cast<size_t>(-1);
+		uint64 order = 0;
 	};
 
-	/** @brief Spatial index for local edits and a separate list of planet-scale edits. */
-	struct PlanetTerrainEditIndex
+	struct PlanetTerrainEditNode
 	{
-		DynamicArray<PlanetTerrainEditBucket> buckets;
-		DynamicArray<PlanetTerrainEditReference> large_edits;
-		size_t bucket_count = 0;
-		size_t used_bucket_count = 0;
+		glm::dvec3 center = glm::dvec3(0.0);
+		double half_extent = 0.0;
+		uint32 children[8] = {
+			static_cast<uint32>(-1), static_cast<uint32>(-1),
+			static_cast<uint32>(-1), static_cast<uint32>(-1),
+			static_cast<uint32>(-1), static_cast<uint32>(-1),
+			static_cast<uint32>(-1), static_cast<uint32>(-1)};
+		DynamicArray<PlanetTerrainEditReference> edits;
+
+		bool hasChildren() const
+		{
+			for(uint32 child_id : children)
+				if(child_id != static_cast<uint32>(-1)) return true;
+			return false;
+		}
+	};
+
+	/** @brief Owns all edit records and a spatial octree used to query candidate edits. */
+	struct PlanetTerrainEdits
+	{
+		static constexpr double initial_root_half_extent = 8192000.0;
+		static constexpr double minimum_cell_size = 4.0;
+		static constexpr size_t split_edit_threshold = 8;
+
+		std::shared_ptr<PlanetTerrainEditPool> pool =
+			std::make_shared<PlanetTerrainEditPool>("PlanetTerrainEdit");
+		DynamicArray<PlanetTerrainEditId> ids;
+		DynamicArray<PlanetTerrainEditNode> nodes;
+		DynamicArray<PlanetTerrainEditLocation> locations;
+		uint32 root_id = static_cast<uint32>(-1);
 		uint64 next_order = 0;
 
-		void insert(PlanetTerrainEditId edit_id, const PlanetTerrainEdit& edit, double chunk_width);
-		bool remove(PlanetTerrainEditId edit_id, const PlanetTerrainEdit& edit, double chunk_width);
-		void clear();
-		size_t findBucket(const glm::ivec3& coordinate) const;
+		PlanetTerrainEditId append(const PlanetTerrainEdit& edit);
+		bool remove(PlanetTerrainEditId edit_id);
 
-		/** @brief Visits nearby local edits and large edits in original application order. */
 		template<typename callback_t>
-		void forEachCandidate(const glm::dvec3& position, double chunk_width, callback_t&& callback) const
+		void forEachCandidate(const glm::dvec3& position, callback_t&& callback) const
 		{
-			if(chunk_width <= 0.0) return;
-			const glm::ivec3 center(
-				static_cast<int32>(std::floor(position.x / chunk_width)),
-				static_cast<int32>(std::floor(position.y / chunk_width)),
-				static_cast<int32>(std::floor(position.z / chunk_width)));
-			std::array<const DynamicArray<PlanetTerrainEditReference>*, 28> sources{};
+			if(root_id == static_cast<uint32>(-1) || root_id >= nodes.size()) return;
+			std::array<const DynamicArray<PlanetTerrainEditReference>*, 64> sources{};
 			size_t source_count = 0;
-			for(int32 z = -1; z <= 1; ++z)
-				for(int32 y = -1; y <= 1; ++y)
-					for(int32 x = -1; x <= 1; ++x)
-					{
-						const size_t index = findBucket(center + glm::ivec3(x, y, z));
-						if(index != static_cast<size_t>(-1) && buckets[index].edits.size() > 0)
-							sources[source_count++] = &buckets[index].edits;
-					}
-			if(large_edits.size() > 0) sources[source_count++] = &large_edits;
-			std::array<size_t, 28> cursors{};
+			uint32 node_id = root_id;
+			while(node_id < nodes.size() && source_count < sources.size())
+			{
+				const PlanetTerrainEditNode& node = nodes[node_id];
+				if(node.edits.size() > 0) sources[source_count++] = &node.edits;
+				if(!node.hasChildren()) break;
+				const uint8 child_index = static_cast<uint8>((position.x >= node.center.x ? 1 : 0)
+					| (position.y >= node.center.y ? 2 : 0)
+					| (position.z >= node.center.z ? 4 : 0));
+				const uint32 child_id = node.children[child_index];
+				if(child_id == static_cast<uint32>(-1)) break;
+			node_id = child_id;
+			}
+
+			std::array<size_t, 64> cursors{};
 			while(true)
 			{
 				size_t best_source = source_count;
@@ -144,30 +165,108 @@ namespace danikk_space_engine
 					}
 				}
 				if(best_source == source_count) break;
-				callback((*sources[best_source])[cursors[best_source]++].edit_id);
+				const PlanetTerrainEditId edit_id = sources[best_source]->operator[](cursors[best_source]++).edit_id;
+				if(!pool->isActive(edit_id)) continue;
+				const PlanetTerrainEdit& edit = (*pool)[edit_id];
+				const glm::dvec3 delta = position - edit.getCenter();
+				if(glm::dot(delta, delta) <= edit.getRadius() * edit.getRadius()) callback(edit_id);
+			}
+		}
+
+		/** @brief Visits active edits whose spheres intersect an outward ray from the planet center. */
+		template<typename callback_t>
+		void forEachRayCandidate(const glm::dvec3& origin, const glm::dvec3& direction,
+			double maximum_distance, callback_t&& callback) const
+		{
+			if(root_id == static_cast<uint32>(-1) || root_id >= nodes.size()) return;
+			DynamicArray<uint32> stack;
+			DynamicArray<PlanetTerrainEditReference> candidates;
+			stack.push(root_id);
+			while(stack.size() > 0)
+			{
+				const uint32 node_id = stack[stack.size() - 1];
+				stack.resize(stack.size() - 1);
+				if(node_id >= nodes.size()) continue;
+				const PlanetTerrainEditNode& node = nodes[node_id];
+				const glm::dvec3 minimum = node.center - glm::dvec3(node.half_extent);
+				const glm::dvec3 maximum = node.center + glm::dvec3(node.half_extent);
+				double near_distance = 0.0;
+				double far_distance = maximum_distance;
+				bool intersects = true;
+				for(uint8 axis = 0; axis < 3; ++axis)
+				{
+					if(std::abs(direction[axis]) <= 1e-15)
+					{
+						if(origin[axis] < minimum[axis] || origin[axis] > maximum[axis]) intersects = false;
+						continue;
+					}
+					double first = (minimum[axis] - origin[axis]) / direction[axis];
+					double second = (maximum[axis] - origin[axis]) / direction[axis];
+					if(first > second)
+					{
+						const double temporary = first;
+						first = second;
+						second = temporary;
+					}
+					near_distance = glm::max(near_distance, first);
+					far_distance = glm::min(far_distance, second);
+					if(near_distance > far_distance) intersects = false;
+				}
+				if(!intersects) continue;
+				for(const PlanetTerrainEditReference& reference : node.edits) candidates.push(reference);
+				for(uint32 child_id : node.children)
+					if(child_id != static_cast<uint32>(-1)) stack.push(child_id);
+			}
+			std::sort(candidates.begin(), candidates.end(), [](const auto& left, const auto& right)
+				{ return left.order < right.order; });
+			for(const PlanetTerrainEditReference& reference : candidates)
+			{
+				if(!pool->isActive(reference.edit_id)) continue;
+				const PlanetTerrainEdit& edit = (*pool)[reference.edit_id];
+				const glm::dvec3 offset = edit.getCenter() - origin;
+				const double along = glm::dot(offset, direction);
+				if(along + edit.getRadius() < 0.0 || along - edit.getRadius() > maximum_distance) continue;
+				const glm::dvec3 closest = origin + direction * glm::clamp(along, 0.0, maximum_distance);
+				const glm::dvec3 delta = edit.getCenter() - closest;
+				if(glm::dot(delta, delta) <= edit.getRadius() * edit.getRadius()) callback(reference.edit_id);
 			}
 		}
 	};
 
-	/** @brief Owns a planet's terrain edits and their chronological and spatial indexes. */
-	struct PlanetTerrainEdits
+	/** @brief One adaptive spatial cell in a planet's render/streaming octree. */
+	struct PlanetSurfaceNode
 	{
-		std::shared_ptr<PlanetTerrainEditPool> pool =
-			std::make_shared<PlanetTerrainEditPool>("PlanetTerrainEdit");
-		DynamicArray<PlanetTerrainEditId> ids;
-		PlanetTerrainEditIndex index;
+		glm::dvec3 center = glm::dvec3(0.0);
+		double half_extent = 0.0;
+		PlanetSurfaceNodeId children[8] = {
+			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1),
+			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1),
+			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1),
+			static_cast<PlanetSurfaceNodeId>(-1), static_cast<PlanetSurfaceNodeId>(-1)};
+		ChunkId mesh_chunk_id = static_cast<ChunkId>(-1);
+		uint64 generation_id = 1;
+		uint64 mesh_revision = 0;
+		PlanetMeshGenerator mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
+		bool mesh_surface_only = true;
+		bool generation_pending = false;
+		bool render_active = false;
 
-		/** @brief Adds an edit to storage and both indexes in application order. */
-		PlanetTerrainEditId append(const PlanetTerrainEdit& edit, double chunk_width)
+		bool hasChildren() const
 		{
-			const PlanetTerrainEditId edit_id = pool->create();
-			(*pool)[edit_id] = edit;
-			ids.push(edit_id);
-			index.insert(edit_id, edit, chunk_width);
-			return edit_id;
+			for(PlanetSurfaceNodeId child_id : children)
+				if(child_id != static_cast<PlanetSurfaceNodeId>(-1)) return true;
+			return false;
 		}
 	};
 
+	/** @brief Adaptive spatial partition and render-node pool for a planet. */
+	struct PlanetSurfaceTree
+	{
+		static constexpr double initial_root_half_extent = 8192000.0;
+		DynamicArray<PlanetSurfaceNode> nodes;
+		PlanetSurfaceNodeId root_id = static_cast<PlanetSurfaceNodeId>(-1);
+		uint64 next_node_generation_id = 1;
+	};
 
 	/** @brief Terrain, streaming, and render state owned by one planet. */
 	struct PlanetData
@@ -177,13 +276,12 @@ namespace danikk_space_engine
 		uint64 generation_id = 0;
 		glm::ivec3 last_chunk_update_grid_coordinate = glm::ivec3(0);
 		uint64 terrain_revision = 0;
-		uint64 last_chunk_update_revision = 0;
-		PlanetMeshGenerator last_chunk_update_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
+		uint64 surface_tree_revision = 0;
 		size_t processed_edit_count = 0;
 		bool terrain_edits_loaded = false;
 		bool chunk_set_initialized = false;
-		bool chunk_updates_active = false;
 		PlanetTerrainEdits terrain_edits;
+		PlanetSurfaceTree surface_tree;
 		PlanetChunkLookup chunk_lookup;
 		DynamicArray<ChunkMeshGenerationRequest> pending_requests;
 

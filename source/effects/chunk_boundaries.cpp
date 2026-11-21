@@ -1,6 +1,5 @@
 #include <danikk_space_engine/effects/chunk_boundaries.h>
 
-#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 
 #include <danikk_engine/mesh.h>
@@ -11,10 +10,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Batches visible chunk-boundary edge prisms and submits them as a single black draw.
 	 * @param world World containing the loaded chunks to inspect.
-	 * Planet terrain chunks use a fixed local box from zero to the
-	 * generation width; chunks without triangles derive bounds from active point
-	 * positions. The current branch checks triangle presence rather than the body
-	 * component type. Coordinates are transformed with each chunk's camera-relative
+	 * Chunks derive bounds from active point positions. Coordinates are transformed with each chunk's camera-relative
 	 * world matrix. The reusable mesh is overwritten each call and empty geometry
 	 * is not submitted.
 	 */
@@ -48,28 +44,20 @@ namespace danikk_space_engine
 				vec3 maximum(0.0f);
 				bool bounds_found = false;
 
-				if(chunk.isPlanetTerrain())
+				for(PointId point_id : chunk.point_ids)
 				{
-					maximum = vec3(static_cast<float>(planet_chunk_width));
-					bounds_found = true;
-				}
-				else
-				{
-					for(PointId point_id : chunk.point_ids)
+					if(!world.point_data.isPointActive(point_id)) continue;
+					const vec3 position = world.point_data.getPoint(point_id).position;
+					if(!bounds_found)
 					{
-						if(!world.point_data.isPointActive(point_id)) continue;
-						const vec3 position = world.point_data.getPoint(point_id).position;
-						if(!bounds_found)
-						{
-							minimum = position;
-							maximum = position;
-							bounds_found = true;
-						}
-						else
-						{
-							minimum = glm::min(minimum, position);
-							maximum = glm::max(maximum, position);
-						}
+						minimum = position;
+						maximum = position;
+						bounds_found = true;
+					}
+					else
+					{
+						minimum = glm::min(minimum, position);
+						maximum = glm::max(maximum, position);
 					}
 				}
 				if(!bounds_found) continue;
