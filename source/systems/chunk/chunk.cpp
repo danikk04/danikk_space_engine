@@ -34,7 +34,7 @@ namespace danikk_space_engine
 		chunk_id(other.chunk_id), world_body_id(other.world_body_id),
 		grid_coordinate(other.grid_coordinate), position(other.position),
 		point_ids(static_cast<DynamicArray<PointId>&&>(other.point_ids)),
-		point_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids))
+		build_part_component_slot_ids(static_cast<DynamicArray<PointComponentSlotId>&&>(other.build_part_component_slot_ids))
 	{
 	}
 
@@ -56,7 +56,7 @@ namespace danikk_space_engine
 		grid_coordinate = other.grid_coordinate;
 		position = other.position;
 		point_ids = static_cast<DynamicArray<PointId>&&>(other.point_ids);
-		point_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.point_component_slot_ids);
+		build_part_component_slot_ids = static_cast<DynamicArray<PointComponentSlotId>&&>(other.build_part_component_slot_ids);
 		return *this;
 	}
 
@@ -68,17 +68,17 @@ namespace danikk_space_engine
 		if(build_part_mesh_revision == 0) build_part_mesh_revision++;
 	}
 
-	/** @copydoc Chunk::addPointComponentSlot */
-	void Chunk::addPointComponentSlot(PointComponentSlotId slot_id)
+	/** @copydoc Chunk::addBuildPartComponentSlot */
+	void Chunk::addBuildPartComponentSlot(PointComponentSlotId slot_id)
 	{
-		point_component_slot_ids.push(slot_id);
+		build_part_component_slot_ids.push(slot_id);
 	}
 
-	/** @copydoc Chunk::removePointComponentSlot */
-	void Chunk::removePointComponentSlot(PointComponentSlotId slot_id)
+	/** @copydoc Chunk::removeBuildPartComponentSlot */
+	void Chunk::removeBuildPartComponentSlot(PointComponentSlotId slot_id)
 	{
-		if(!removePointComponentId(point_component_slot_ids, slot_id))
-			danikk_engine::formatFatalError("Point component % is missing from owning chunk %", slot_id, chunk_id);
+		if(!removePointComponentId(build_part_component_slot_ids, slot_id))
+			danikk_engine::formatFatalError("BuildPart component % is missing from owning chunk %", slot_id, chunk_id);
 	}
 
 	/**

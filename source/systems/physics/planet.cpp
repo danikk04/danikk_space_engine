@@ -61,7 +61,7 @@ namespace danikk_space_engine
 			const WorldBody& planet_body = world.world_body_data.getWorldBody(target.body_id);
 			const glm::dquat inverse_planet_rotation = glm::conjugate(planet_body.rotation);
 			DynamicArray<SurfaceContact> point_contacts;
-			point_contacts.reserve(moving_chunk.point_ids.size() + moving_chunk.point_component_slot_ids.size() * 8);
+			point_contacts.reserve(moving_chunk.point_ids.size() + moving_chunk.build_part_component_slot_ids.size() * 8);
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
 				return world.planets.getPlanetDensity(target.body_id, position,
@@ -69,13 +69,13 @@ namespace danikk_space_engine
 			};
 			constexpr double gradient_step = planet_voxel_size * 0.25;
 			DynamicArray<glm::dvec3> local_points;
-			local_points.reserve(moving_chunk.point_ids.size() + moving_chunk.point_component_slot_ids.size() * 8);
+			local_points.reserve(moving_chunk.point_ids.size() + moving_chunk.build_part_component_slot_ids.size() * 8);
 			for(PointId point_id : moving_chunk.point_ids)
 			{
 				if(!world.point_data.isPointActive(point_id)) continue;
 				local_points.push(moving_chunk.position + glm::dvec3(world.point_data.getPoint(point_id).position));
 			}
-			for(PointComponentSlotId slot_id : moving_chunk.point_component_slot_ids)
+			for(PointComponentSlotId slot_id : moving_chunk.build_part_component_slot_ids)
 			{
 				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
 				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
@@ -263,7 +263,7 @@ namespace danikk_space_engine
 			{
 				if(!world.chunks.isChunkActive(chunk_id)) continue;
 				const Chunk& chunk = world.chunks.getChunk(chunk_id);
-				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
+				for(PointComponentSlotId slot_id : chunk.build_part_component_slot_ids)
 				{
 					if(world.point_data.isPointComponentSlotActive(slot_id)
 						&& world.point_data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)

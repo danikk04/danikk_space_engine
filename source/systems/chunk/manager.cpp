@@ -1,10 +1,7 @@
-#include <optional>
-
 #include <danikk_space_engine/systems/chunk/manager.h>
 
 #include <danikk_space_engine/profiler.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/component/point/human/human.h>
 #include <danikk_framework/log.h>
 
 namespace danikk_space_engine
@@ -97,8 +94,11 @@ namespace danikk_space_engine
 			danikk_engine::formatFatalError("Point component % already belongs to chunk %", slot_id, slot.chunk_id);
 
 		addPointReferenceToChunk(chunk_id, slot.point_id);
-		chunk.addPointComponentSlot(slot_id);
-		if(slot.type_id == PointComponentTypeId::build_part) chunk.invalidateBuildPartMesh();
+		if(slot.type_id == PointComponentTypeId::build_part)
+		{
+			chunk.addBuildPartComponentSlot(slot_id);
+			chunk.invalidateBuildPartMesh();
+		}
 		slot.chunk_id = chunk_id;
 	}
 
@@ -108,8 +108,11 @@ namespace danikk_space_engine
 		PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
 		if(slot.chunk_id == PointComponentSlot::no_chunk) return;
 		Chunk& chunk = getChunk(slot.chunk_id);
-		if(slot.type_id == PointComponentTypeId::build_part) chunk.invalidateBuildPartMesh();
-		chunk.removePointComponentSlot(slot_id);
+		if(slot.type_id == PointComponentTypeId::build_part)
+		{
+			chunk.invalidateBuildPartMesh();
+			chunk.removeBuildPartComponentSlot(slot_id);
+		}
 		slot.chunk_id = PointComponentSlot::no_chunk;
 	}
 
@@ -136,9 +139,9 @@ namespace danikk_space_engine
 		if(world.world_body_data.isWorldBodyActive(chunk.world_body_id))
 			world.world_body_data.getWorldBody(chunk.world_body_id).removeChunk(id);
 
-		while(chunk.point_component_slot_ids.size() > 0)
+		while(chunk.build_part_component_slot_ids.size() > 0)
 		{
-			const PointComponentSlotId slot_id = chunk.point_component_slot_ids[chunk.point_component_slot_ids.size() - 1];
+			const PointComponentSlotId slot_id = chunk.build_part_component_slot_ids[chunk.build_part_component_slot_ids.size() - 1];
 			removePointComponentSlotFromChunk(slot_id);
 			world.point_data.destroyPointComponentSlot(slot_id);
 		}
@@ -149,6 +152,17 @@ namespace danikk_space_engine
 			{
 				chunk.point_ids.resize(chunk.point_ids.size() - 1);
 				continue;
+			}
+			Point& point = world.point_data.getPoint(point_id);
+			for(size_t slot_index = point.component_slot_ids.size(); slot_index > 0;)
+			{
+				--slot_index;
+				if(slot_index >= point.component_slot_ids.size()) continue;
+				const PointComponentSlotId slot_id = point.component_slot_ids[slot_index];
+				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
+				if(world.point_data.getPointComponentSlot(slot_id).chunk_id != id) continue;
+				removePointComponentSlotFromChunk(slot_id);
+				world.point_data.destroyPointComponentSlot(slot_id);
 			}
 			removePointReferenceFromChunk(id, point_id);
 			if(world.point_data.getPoint(point_id).referencing_chunk_ids.size() == 0)

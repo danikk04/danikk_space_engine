@@ -196,7 +196,7 @@ namespace danikk_space_engine
 					&& !rayIntersectsSphere(chunk_relative_position + rotated_bounds_center,
 						chunk.bounds_radius, normalized_direction, nearest_distance)) return;
 
-				for(PointComponentSlotId slot_id : chunk.point_component_slot_ids)
+				for(PointComponentSlotId slot_id : chunk.build_part_component_slot_ids)
 				{
 					if(!point_data.isPointComponentSlotActive(slot_id)) continue;
 					const PointComponentSlot& slot = point_data.getPointComponentSlot(slot_id);
