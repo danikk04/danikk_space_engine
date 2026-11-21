@@ -277,7 +277,6 @@ namespace danikk_space_engine
 		glm::ivec3 last_chunk_update_grid_coordinate = glm::ivec3(0);
 		uint64 terrain_revision = 0;
 		uint64 surface_tree_revision = 0;
-		size_t processed_edit_count = 0;
 		bool terrain_edits_loaded = false;
 		bool chunk_set_initialized = false;
 		PlanetTerrainEdits terrain_edits;

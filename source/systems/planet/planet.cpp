@@ -170,8 +170,7 @@ namespace danikk_space_engine
 		glm::dvec3 chunk_center_position = camera_position;
 		if(surface_height >= 0.0 && distance_from_center > 1e-9)
 			chunk_center_position -= camera_position / distance_from_center * surface_height;
-		updatePlanetSurfaceTree(planet, camera_position, glm::dvec3(world.camera.getFront()),
-			glm::dvec3(world.camera.getRight()), glm::dvec3(world.camera.getUp()), surface_height);
+		updatePlanetSurfaceTree(planet, camera_position, surface_height);
 
 		const glm::ivec3 chunk_center_grid_coordinate(
 			static_cast<int>(std::floor(chunk_center_position.x / planet_chunk_width)),
@@ -179,13 +178,15 @@ namespace danikk_space_engine
 			static_cast<int>(std::floor(chunk_center_position.z / planet_chunk_width)));
 		const bool update_chunks = !planet.chunk_set_initialized
 			|| !glm::all(glm::equal(chunk_center_grid_coordinate, planet.last_chunk_update_grid_coordinate));
-		if(update_chunks) updatePlanetChunks(planet, camera_position, chunk_center_position);
+		if(update_chunks) updatePlanetSpatialChunks(planet, chunk_center_position);
 	}
 
 	bool PlanetSystem::editPlanetGround(WorldBodyId world_body_id, const glm::dvec3& position,
 		double radius, MaterialId material_id)
 	{
-		if(!world.world_body_data.isWorldBodyActive(world_body_id) || radius <= 0.0
+		if(!world.world_body_data.isWorldBodyActive(world_body_id)
+			|| !std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z)
+			|| !std::isfinite(radius) || radius <= 0.0
 			|| (material_id != default_materials::void_material && material_id >= getMaterialCount())) return false;
 		PlanetData* planet = findPlanet(world_body_id);
 		if(planet == nullptr) return false;

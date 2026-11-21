@@ -72,7 +72,6 @@ namespace danikk_space_engine
 		if(!input)
 		{
 			planet.terrain_edits_loaded = true;
-			planet.processed_edit_count = planet.terrain_edits.ids.size();
 			return false;
 		}
 
@@ -84,7 +83,6 @@ namespace danikk_space_engine
 			|| header.edit_count > 1000000)
 		{
 			planet.terrain_edits_loaded = true;
-			planet.processed_edit_count = planet.terrain_edits.ids.size();
 			return false;
 		}
 
@@ -96,7 +94,6 @@ namespace danikk_space_engine
 			if(!edit.read(input, header.version))
 			{
 				planet.terrain_edits_loaded = true;
-				planet.processed_edit_count = planet.terrain_edits.ids.size();
 				return false;
 			}
 			loaded_edits.push(edit);
@@ -113,7 +110,6 @@ namespace danikk_space_engine
 				std::filesystem::remove(legacy_file_path, error);
 		}
 		planet.terrain_edits_loaded = true;
-		planet.processed_edit_count = planet.terrain_edits.ids.size();
 		return true;
 	}
 

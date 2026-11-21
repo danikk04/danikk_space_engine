@@ -1,8 +1,5 @@
 #include <algorithm>
-#include <cmath>
-
 #include <danikk_space_engine/profiler.h>
-#include <danikk_space_engine/config.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/chunk/manager.h>
 #include <danikk_space_engine/world.h>
@@ -15,33 +12,23 @@ namespace danikk_space_engine
 		constexpr size_t maximum_visible_surface_nodes = 512;
 		constexpr size_t maximum_requests_per_planet_frame = 32;
 		constexpr size_t maximum_surface_tree_nodes = 131072;
+		constexpr double maximum_fallback_size_factor = 4.0;
 
-		bool isNodeVisible(const PlanetSurfaceNode& node, const glm::dvec3& camera_position,
-			const glm::dvec3& camera_front, const glm::dvec3& camera_right,
-			const glm::dvec3& camera_up, double planet_radius, double height,
-			double vertical_tangent)
+		bool isNodeRelevant(const PlanetSurfaceNode& node, const glm::dvec3& camera_position,
+			double planet_radius, double height)
 		{
 			const double node_radius = node.half_extent * 1.7320508075688772;
 			const double center_distance = glm::length(node.center);
 			const double minimum_radius = glm::max(0.0, center_distance - node_radius);
 			const double maximum_radius = center_distance + node_radius;
-			const bool surface_intersection = maximum_radius >= planet_radius - 25000.0
+			const bool surface_intersection = height >= 0.0
+				&& maximum_radius >= planet_radius - 25000.0
 				&& minimum_radius <= planet_radius + 15000.0;
 			const glm::dvec3 to_node = node.center - camera_position;
 			const double distance = glm::length(to_node);
 			const bool local_cave_intersection = height < 0.0
 				&& distance <= node_radius + 384.0;
 			if(!surface_intersection && !local_cave_intersection) return false;
-			if(distance <= node_radius + 1.0) return true;
-
-			const double forward_distance = glm::dot(to_node, camera_front);
-			if(forward_distance + node_radius < 0.0) return false;
-			const double safe_depth = glm::max(1.0, forward_distance);
-			const double horizontal_tangent = vertical_tangent * screen_ratio_gz;
-			if(std::abs(glm::dot(to_node, camera_right)) > safe_depth * horizontal_tangent + node_radius)
-				return false;
-			if(std::abs(glm::dot(to_node, camera_up)) > safe_depth * vertical_tangent + node_radius)
-				return false;
 
 			if(surface_intersection && height > 0.0 && center_distance > 1.0)
 			{
@@ -72,8 +59,7 @@ namespace danikk_space_engine
 	}
 
 	void PlanetSystem::updatePlanetSurfaceTree(PlanetData& planet,
-		const glm::dvec3& camera_position, const glm::dvec3& camera_front,
-		const glm::dvec3& camera_right, const glm::dvec3& camera_up, double height)
+		const glm::dvec3& camera_position, double height)
 	{
 		DSE_WATCH();
 		PlanetSurfaceTree& tree = planet.surface_tree;
@@ -104,21 +90,11 @@ namespace danikk_space_engine
 		}
 
 		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
-		const glm::dquat inverse_rotation = glm::conjugate(
-			world.world_body_data.getWorldBody(planet.world_body_id).rotation);
-		const glm::dvec3 local_front = inverse_rotation * camera_front;
-		const glm::dvec3 local_right = inverse_rotation * camera_right;
-		const glm::dvec3 local_up = inverse_rotation * camera_up;
 		double detail_scale = height < 0.0 ? 0.01 : 0.015;
-		const double fov_tangent = std::tan(glm::radians(
-			static_cast<double>(world.camera.vertical_fov_degrees)) * 0.5);
-		DynamicArray<PlanetSurfaceNodeId> desired_nodes;
 		const auto target_half_extent_for = [&camera_position, height, &detail_scale](
 			const glm::dvec3& center, double half_extent)
 		{
-			const glm::dvec3 outside = glm::max(glm::abs(camera_position - center)
-				- glm::dvec3(half_extent), glm::dvec3(0.0));
-			const double distance = glm::length(outside);
+			const double distance = glm::length(camera_position - center);
 			const double minimum = height < 0.0 ? 16.0 : 32.0;
 			return std::clamp(minimum + detail_scale * distance, minimum, 262144.0);
 		};
@@ -128,8 +104,7 @@ namespace danikk_space_engine
 			PlanetSurfaceNode candidate;
 			candidate.center = center;
 			candidate.half_extent = half_extent;
-			if(!isNodeVisible(candidate, camera_position, local_front, local_right,
-				local_up, planet_settings.radius, height, fov_tangent)) return 0;
+			if(!isNodeRelevant(candidate, camera_position, planet_settings.radius, height)) return 0;
 			if(half_extent <= target_half_extent_for(center, half_extent) || depth >= 20) return 1;
 			const double child_half_extent = half_extent * 0.5;
 			size_t count = 0;
@@ -145,10 +120,14 @@ namespace danikk_space_engine
 			}
 			return count;
 		};
+		size_t detail_scale_adjustments = 0;
 		while(count_visible_target_nodes(count_visible_target_nodes, glm::dvec3(0.0),
 			PlanetSurfaceTree::initial_root_half_extent, 0, maximum_visible_surface_nodes)
-			> maximum_visible_surface_nodes)
+			> maximum_visible_surface_nodes && detail_scale_adjustments < 32)
+		{
 			detail_scale *= 1.5;
+			detail_scale_adjustments++;
+		}
 
 		if(tree.nodes.size() + 8192 > maximum_surface_tree_nodes)
 		{
@@ -195,16 +174,13 @@ namespace danikk_space_engine
 		{
 			if(node_id >= tree.nodes.size() || depth >= 20) return;
 			const PlanetSurfaceNode node_copy = tree.nodes[node_id];
-			if(!isNodeVisible(node_copy, camera_position, local_front, local_right,
-				local_up, planet_settings.radius, height, fov_tangent)) return;
+			if(!isNodeRelevant(node_copy, camera_position, planet_settings.radius, height)) return;
 			if(node_copy.half_extent <= target_half_extent_for(node_copy.center, node_copy.half_extent))
 			{
-				desired_nodes.push(node_id);
 				return;
 			}
 			if(!ensure_children(node_id))
 			{
-				desired_nodes.push(node_id);
 				return;
 			}
 			for(uint8 child_index = 0; child_index < 8; ++child_index)
@@ -221,6 +197,7 @@ namespace danikk_space_engine
 		}
 
 		planet.pending_requests.clear();
+		for(PlanetSurfaceNode& node : tree.nodes) node.generation_pending = false;
 		const auto is_surface_node = [&planet_settings](const PlanetSurfaceNode& node)
 		{
 			const double radial_extent = node.half_extent * 1.7320508075688772;
@@ -276,9 +253,8 @@ namespace danikk_space_engine
 			for(uint8 i = 0; i < 8; ++i)
 			{
 				const PlanetSurfaceNodeId child_id = node.children[i];
-				if(child_id != invalid_surface_node && isNodeVisible(tree.nodes[child_id],
-					camera_position, local_front, local_right, local_up,
-					planet_settings.radius, height, fov_tangent)) self(self, child_id);
+				if(child_id != invalid_surface_node && isNodeRelevant(tree.nodes[child_id],
+					camera_position, planet_settings.radius, height)) self(self, child_id);
 			}
 		};
 		collect_requests(collect_requests, tree.root_id);
@@ -297,8 +273,8 @@ namespace danikk_space_engine
 			for(uint8 i = 0; i < 8; ++i)
 			{
 				const PlanetSurfaceNodeId child_id = node.children[i];
-				if(child_id == invalid_surface_node || !isNodeVisible(tree.nodes[child_id],
-					camera_position, local_front, local_right, local_up, planet_settings.radius, height, fov_tangent)) continue;
+				if(child_id == invalid_surface_node || !isNodeRelevant(tree.nodes[child_id],
+					camera_position, planet_settings.radius, height)) continue;
 				if(!has_current_mesh(child_id)) return false;
 			}
 			// A parent can intersect the view while all its children are culled. In that
@@ -323,15 +299,27 @@ namespace danikk_space_engine
 				for(uint8 i = 0; i < 8; ++i)
 				{
 					const PlanetSurfaceNodeId child_id = node.children[i];
-					if(child_id != invalid_surface_node && isNodeVisible(tree.nodes[child_id],
-						camera_position, local_front, local_right, local_up, planet_settings.radius, height, fov_tangent))
+					if(child_id != invalid_surface_node && isNodeRelevant(tree.nodes[child_id],
+						camera_position, planet_settings.radius, height))
 						self(self, child_id);
 				}
 			}
-			else if(has_current_mesh(node_id))
+			else if(has_current_mesh(node_id)
+				&& node.half_extent <= target_half_extent_for(node.center, node.half_extent)
+					* maximum_fallback_size_factor)
 			{
 				node.render_active = true;
 				world.chunks.getChunk(node.mesh_chunk_id).render_enabled = true;
+			}
+			else
+			{
+				for(uint8 i = 0; i < 8; ++i)
+				{
+					const PlanetSurfaceNodeId child_id = node.children[i];
+					if(child_id != invalid_surface_node && isNodeRelevant(tree.nodes[child_id],
+						camera_position, planet_settings.radius, height))
+						self(self, child_id);
+				}
 			}
 		};
 		activate(activate, tree.root_id);

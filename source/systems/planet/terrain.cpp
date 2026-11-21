@@ -160,9 +160,12 @@ namespace danikk_space_engine
 		}
 
 		MaterialId samplePlanetMaterial(const glm::dvec3& position, double radius, uint64 noise_seed,
-			const PlanetTerrainEdits& edits,
+			const PlanetTerrainEdits& edits, double core_radius,
 			PlanetTerrainMode mode)
 		{
+			if(includesCaves(mode) && samplePlanetDensity(position, radius, noise_seed,
+				edits, core_radius, mode) <= 0.0)
+				return default_materials::void_material;
 			constexpr double grass_layer_depth = 1.0;
 			constexpr double dirt_layer_depth = 5.0;
 			const double distance_from_center = glm::length(position);
@@ -199,7 +202,7 @@ namespace danikk_space_engine
 		const PlanetData& planet = getPlanet(world_body_id);
 		const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 		return samplePlanetMaterial(position, settings.radius, settings.noise_seed,
-			planet.terrain_edits, mode);
+			planet.terrain_edits, settings.core_radius, mode);
 	}
 
 	double PlanetSystem::getPlanetSurfaceRadius(WorldBodyId world_body_id,

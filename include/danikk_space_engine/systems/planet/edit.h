@@ -35,9 +35,6 @@ namespace danikk_space_engine
 		MaterialId applyToMaterial(const glm::dvec3& position, MaterialId current_material) const;
 		/** @brief Returns the farthest radial extent contributed by this stamp. */
 		double getMaximumRadiusFromOrigin(double margin) const;
-		/** @brief Tests whether this stamp intersects an expanded axis-aligned chunk box. */
-		bool intersectsAabb(const glm::dvec3& minimum, const glm::dvec3& maximum,
-			double expansion) const;
 		/** @brief Reads and validates one serialized edit record in the given save format. */
 		bool read(std::istream& input, uint32 format_version);
 		/** @brief Writes this edit in the terrain-save record format. */

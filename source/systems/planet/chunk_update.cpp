@@ -80,16 +80,14 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Maintains the 13x13x13 volume chunk set around its selected center and queues missing meshes.
+	 * @brief Maintains the 13x13x13 spatial-cell set around the camera or projected surface point.
 	 *
-	 * When the camera crosses one chunk boundary, retains the overlapping chunk records and pending
-	 * requests, then generates only the newly entered 13x13 face. Larger jumps or terrain/generator
-	 * revisions rebuild the complete local set. Empty results remain recorded to avoid regeneration.
-	 * @param planet Planet state used to update the desired chunk set and manage loaded chunks.
-	 * @param camera_position Camera position relative to the planet center, used to prioritize generation.
+	 * The cells provide spatial buckets for points and units; planet surface meshes are managed by
+	 * the adaptive surface tree independently.
+	 * @param planet Planet state used to update the desired spatial-cell set.
 	 * @param chunk_center_position Position relative to the planet center used to center the loaded chunk volume.
 	 */
-	void PlanetSystem::updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position,
+	void PlanetSystem::updatePlanetSpatialChunks(PlanetData& planet,
 		const glm::dvec3& chunk_center_position)
 	{
 		DSE_WATCH();
@@ -116,7 +114,6 @@ namespace danikk_space_engine
 					planet.chunk_lookup.setChunk(key, chunk_id);
 				}
 
-		(void)camera_position;
 		unloadChunksOutsideDesiredSet(planet);
 	}
 

@@ -13,11 +13,9 @@ namespace danikk_space_engine
 
 		void updatePlanet(PlanetData& planet);
 		void updatePlanetSurfaceTree(PlanetData& planet, const glm::dvec3& camera_position,
-			const glm::dvec3& camera_front, const glm::dvec3& camera_right,
-			const glm::dvec3& camera_up, double height);
+			double height);
 		void destroyPlanetSurfaceTree(PlanetData& planet);
-		void updatePlanetChunks(PlanetData& planet, const glm::dvec3& camera_position,
-			const glm::dvec3& chunk_center_position);
+		void updatePlanetSpatialChunks(PlanetData& planet, const glm::dvec3& chunk_center_position);
 		void queuePlanetRequests(PlanetData& planet);
 		void unloadChunksOutsideDesiredSet(PlanetData& planet);
 		void removeQueuedRequests(const PlanetData& planet);

@@ -152,8 +152,14 @@ namespace danikk_space_engine
 		}
 		entries.resize(entries.size() - 1);
 		locations[edit_id] = PlanetTerrainEditLocation{};
-		for(PlanetTerrainEditId& stored_id : ids)
-			if(stored_id == edit_id) stored_id = static_cast<PlanetTerrainEditId>(-1);
+		for(size_t index = 0; index < ids.size(); ++index)
+		{
+			if(ids[index] != edit_id) continue;
+			for(size_t shift = index + 1; shift < ids.size(); ++shift)
+				ids[shift - 1] = ids[shift];
+			ids.resize(ids.size() - 1);
+			break;
+		}
 		return pool->free(edit_id);
 	}
 
@@ -201,15 +207,6 @@ namespace danikk_space_engine
 	{
 		return material_id != default_materials::void_material
 			? glm::length(center) + radius + margin : 0.0;
-	}
-
-	/** @copydoc PlanetTerrainEdit::intersectsAabb */
-	bool PlanetTerrainEdit::intersectsAabb(
-		const glm::dvec3& minimum, const glm::dvec3& maximum, double expansion) const
-	{
-		const glm::dvec3 closest = glm::clamp(center, minimum, maximum);
-		const double expanded_radius = radius + expansion;
-		return glm::dot(center - closest, center - closest) <= expanded_radius * expanded_radius;
 	}
 
 	/** @copydoc PlanetTerrainEdit::read */
