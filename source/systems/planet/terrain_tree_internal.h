@@ -38,5 +38,6 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 	void activateMeshes(UpdateContext& context);
 	void recordDiagnostics(const UpdateContext& context);
 	void evictCachedMeshes(UpdateContext& context);
-	void destroyTree(PlanetData& planet);
+	void destroyTree(PlanetData& planet, TelemetrySystem& telemetry,
+		MeshDeletionReason reason);
 }

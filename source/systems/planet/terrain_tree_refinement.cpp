@@ -164,7 +164,12 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 
 		if(context.tree.nodes.size() + 8192 <= maximum_tree_nodes) return;
 		for(PlanetTerrainNode& node : context.tree.nodes)
-			if(node.mesh.mesh != nullptr) destroyMeshRenderData(node.mesh);
+		{
+			if(node.mesh.mesh == nullptr) continue;
+			destroyMeshRenderData(node.mesh);
+			context.telemetry.mesh_generation_telemetry.recordMeshDeletion(
+				MeshDeletionReason::tree_node_limit);
+		}
 		context.tree.clear();
 		createRoot(context);
 	}

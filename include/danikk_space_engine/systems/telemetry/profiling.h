@@ -41,7 +41,6 @@ namespace danikk_space_engine
 		std::chrono::steady_clock::time_point tick_start_time;
 		std::chrono::steady_clock::time_point report_start_time;
 
-		static ProfilingSystem* getCurrentThreadSystem();
 		uint32 beginScope(const char* name);
 		void endScope(uint32 node_id, uint64 elapsed_nanoseconds);
 		friend class Watcher;

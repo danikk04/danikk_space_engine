@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <string_view>
 
@@ -12,15 +13,18 @@ namespace danikk_space_engine
 	/** @brief Measures one named CPU scope and records its elapsed duration when destroyed. */
 	class Watcher
 	{
-		/** @brief Telemetry node receiving this watcher's accumulated duration. */
-		uint32 node_id = static_cast<uint32>(-1);
+		/** @brief Profiler currently active for Watcher scopes on the main thread. */
+		static std::atomic<ProfilingSystem*> active_profiling_system;
 		/** @brief Profiler selected by the current thread's World telemetry context. */
 		ProfilingSystem* profiling_system = nullptr;
+		/** @brief Telemetry node receiving this watcher's accumulated duration. */
+		uint32 node_id = static_cast<uint32>(-1);
 		/** @brief Monotonic timestamp captured when the watched scope begins. */
 		std::chrono::steady_clock::time_point start_time;
 
 		/** @brief Starts timing a scope and registers it beneath the current parent scope. */
 		explicit Watcher(const char* name);
+		friend class ProfilingSystem;
 
 	public:
 		/** @brief Creates a timing scope for the instrumentation macro. */

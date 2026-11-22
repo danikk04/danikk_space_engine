@@ -111,6 +111,8 @@ namespace danikk_space_engine
 		humans.destroyWorldBodyHumans(body_id);
 		while(body.point_ids.size() > 0) destroyPoint(body.point_ids[body.point_ids.size() - 1]);
 		if(body.planet_id != static_cast<PlanetId>(-1)) planets.destroyPlanet(body.planet_id);
+		if(body.detail_mesh.mesh != nullptr)
+			telemetry.mesh_generation_telemetry.recordMeshDeletion(MeshDeletionReason::world_body_destroyed);
 		world_body_data.destroyWorldBody(body_id);
 	}
 

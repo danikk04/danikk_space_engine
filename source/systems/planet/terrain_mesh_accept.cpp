@@ -10,7 +10,7 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		if(job.source != MeshGenerationSource::planet_terrain_node) return;
 		const auto record = [this](PlanetMeshAcceptance outcome)
-			{ world.telemetry.recordPlanetMeshAcceptance(outcome); };
+			{ world.telemetry.mesh_generation_telemetry.recordPlanetMeshAcceptance(outcome); };
 		PlanetData* planet = findPlanet(job.planet_id);
 		if(planet == nullptr)
 		{

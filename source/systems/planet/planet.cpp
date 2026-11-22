@@ -32,7 +32,8 @@ namespace danikk_space_engine
 		for(PlanetData& planet : planets)
 		{
 			cancelQueuedJobsForPlanet(planet);
-			destroyPlanetTerrainTree(planet);
+			destroyPlanetTerrainTree(planet,
+				MeshDeletionReason::planet_system_shutdown);
 		}
 	}
 
@@ -85,7 +86,7 @@ namespace danikk_space_engine
 		{
 			if(planets[index].id != planet_id) continue;
 			cancelQueuedJobsForPlanet(planets[index]);
-			destroyPlanetTerrainTree(planets[index]);
+			destroyPlanetTerrainTree(planets[index], MeshDeletionReason::planet_removed);
 			for(size_t shift = index + 1; shift < planets.size(); ++shift)
 				planets[shift - 1] = static_cast<PlanetData&&>(planets[shift]);
 			planets.resize(planets.size() - 1);

@@ -31,6 +31,6 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 				|| candidate.node_width < snapshot.finest_job_width)
 				snapshot.finest_job_width = candidate.node_width;
 		}
-		context.telemetry.recordPlanetTerrainTree(snapshot);
+		context.telemetry.mesh_generation_telemetry.recordPlanetTerrainTree(snapshot);
 	}
 }

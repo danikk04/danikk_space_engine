@@ -1,10 +1,10 @@
-#include <atomic>
 #include <cstring>
 
 #include <danikk_framework/log.h>
 
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/systems/telemetry/profiling.h>
+#include <danikk_space_engine/systems/telemetry/watcher.h>
 
 namespace danikk_space_engine
 {
@@ -13,7 +13,6 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr uint32 invalid_node_id = static_cast<uint32>(-1);
-		std::atomic<ProfilingSystem*> active_profiling_system = nullptr;
 	}
 
 	ProfilingSystem::ProfilingSystem()
@@ -25,15 +24,8 @@ namespace danikk_space_engine
 	ProfilingSystem::~ProfilingSystem()
 	{
 		ProfilingSystem* active = this;
-		active_profiling_system.compare_exchange_strong(active, nullptr, std::memory_order_release,
-			std::memory_order_relaxed);
-	}
-
-	ProfilingSystem* ProfilingSystem::getCurrentThreadSystem()
-	{
-		ProfilingSystem* system = active_profiling_system.load(std::memory_order_acquire);
-		return system != nullptr && std::this_thread::get_id() == system->main_thread_id
-			? system : nullptr;
+		Watcher::active_profiling_system.compare_exchange_strong(active, nullptr,
+			std::memory_order_release, std::memory_order_relaxed);
 	}
 
 	uint32 ProfilingSystem::beginScope(const char* name)
@@ -81,7 +73,7 @@ namespace danikk_space_engine
 	void ProfilingSystem::beginTick()
 	{
 		if(std::this_thread::get_id() != main_thread_id) return;
-		active_profiling_system.store(this, std::memory_order_release);
+		Watcher::active_profiling_system.store(this, std::memory_order_release);
 		tick_start_time = std::chrono::steady_clock::now();
 	}
 
@@ -89,7 +81,7 @@ namespace danikk_space_engine
 	{
 		if(std::this_thread::get_id() != main_thread_id) return;
 		ProfilingSystem* active = this;
-		active_profiling_system.compare_exchange_strong(active, nullptr,
+		Watcher::active_profiling_system.compare_exchange_strong(active, nullptr,
 			std::memory_order_release, std::memory_order_relaxed);
 		DynamicArray<Node> report_nodes;
 		uint64 ticks_in_report = 0;

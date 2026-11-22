@@ -161,6 +161,9 @@ namespace danikk_space_engine
 			if(!body.detail_mesh_dirty && !body.detail_mesh_queued) continue;
 			if(body.detail_mesh_dirty)
 			{
+				if(body.detail_mesh.mesh != nullptr)
+					world.telemetry.mesh_generation_telemetry.recordMeshDeletion(
+						MeshDeletionReason::detail_mesh_rebuild);
 				destroyMeshRenderData(body.detail_mesh);
 				body.detail_mesh_dirty = false;
 				body.detail_mesh_queued = true;
@@ -333,7 +336,7 @@ namespace danikk_space_engine
 		const uint64 generation_nanoseconds = static_cast<uint64>(std::chrono::duration_cast<std::chrono::nanoseconds>(
 			std::chrono::steady_clock::now() - generation_start_time).count());
 		if(job.source == MeshGenerationSource::planet_terrain_node)
-			world.telemetry.recordPlanetMeshGeneration(
+			world.telemetry.mesh_generation_telemetry.recordPlanetMeshGeneration(
 				mesh_generation_internal::getPlanetTerrainNodeLevel(job.node_width),
 				generation_succeeded ? job.triangle_point_indices.size() / 3 : 0,
 				generation_nanoseconds);
@@ -427,7 +430,7 @@ namespace danikk_space_engine
 			}
 		}
 		job_available.notify_all();
-		world.telemetry.setPlanetMeshQueueSnapshot(snapshot);
+		world.telemetry.mesh_generation_telemetry.setPlanetMeshQueueSnapshot(snapshot);
 	}
 
 	bool MeshGenerationSystem::tryTakeCompletedJob(MeshGenerationJob& completed_job)

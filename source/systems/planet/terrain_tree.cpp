@@ -1,14 +1,16 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/world.h>
 
 #include "terrain_tree_internal.h"
 
 namespace danikk_space_engine
 {
-	void PlanetSystem::destroyPlanetTerrainTree(PlanetData& planet)
+	void PlanetSystem::destroyPlanetTerrainTree(PlanetData& planet,
+		MeshDeletionReason reason)
 	{
 		DSE_WATCH();
-		planet_terrain_tree_internal::destroyTree(planet);
+		planet_terrain_tree_internal::destroyTree(planet, world.telemetry, reason);
 	}
 
 	void PlanetSystem::updatePlanetTerrainTree(PlanetData& planet,

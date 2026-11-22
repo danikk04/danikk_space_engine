@@ -7,6 +7,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		constexpr bool enable_mesh_generation_telemetry_logs = false;
+		constexpr bool enable_mesh_deletion_reason_logs = true;
 	}
 
 	void MeshGenerationTelemetry::beginFrame()
@@ -62,6 +63,47 @@ namespace danikk_space_engine
 		std::lock_guard<std::mutex> guard(mutex);
 		evicted_planet_meshes += count;
 		has_updates = true;
+	}
+
+	void MeshGenerationTelemetry::recordMeshDeletion(MeshDeletionReason reason)
+	{
+		MeshDeletionCounts report;
+		{
+			std::lock_guard<std::mutex> guard(mutex);
+			pending_mesh_deletions.total++;
+			switch(reason)
+			{
+				case MeshDeletionReason::cache_capacity:
+					pending_mesh_deletions.cache_capacity++;
+					break;
+				case MeshDeletionReason::tree_node_limit:
+					pending_mesh_deletions.tree_node_limit++;
+					break;
+				case MeshDeletionReason::planet_removed:
+					pending_mesh_deletions.planet_removed++;
+					break;
+				case MeshDeletionReason::planet_system_shutdown:
+					pending_mesh_deletions.planet_system_shutdown++;
+					break;
+				case MeshDeletionReason::detail_mesh_rebuild:
+					pending_mesh_deletions.detail_mesh_rebuild++;
+					break;
+				case MeshDeletionReason::world_body_destroyed:
+					pending_mesh_deletions.world_body_destroyed++;
+					break;
+			}
+
+			if(pending_mesh_deletions.total < 100) return;
+			report = pending_mesh_deletions;
+			pending_mesh_deletions = MeshDeletionCounts();
+		}
+
+		if constexpr(enable_mesh_deletion_reason_logs)
+			formatLogInfo(
+				"Mesh deletions (last 100): cache_capacity=% tree_node_limit=% planet_removed=% planet_system_shutdown=% detail_mesh_rebuild=% world_body_destroyed=%",
+				report.cache_capacity, report.tree_node_limit,
+				report.planet_removed, report.planet_system_shutdown,
+				report.detail_mesh_rebuild, report.world_body_destroyed);
 	}
 
 	void MeshGenerationTelemetry::recordPlanetTerrainCache(uint64 cached_meshes,
@@ -203,40 +245,4 @@ namespace danikk_space_engine
 		}
 	}
 
-	void TelemetrySystem::recordPlanetMeshGeneration(uint8 level, uint64 triangle_count,
-		uint64 elapsed_nanoseconds)
-	{
-		mesh_generation_telemetry.recordPlanetMeshGeneration(level, triangle_count, elapsed_nanoseconds);
-	}
-
-	void TelemetrySystem::recordPlanetMeshAcceptance(PlanetMeshAcceptance outcome)
-	{
-		mesh_generation_telemetry.recordPlanetMeshAcceptance(outcome);
-	}
-
-	void TelemetrySystem::recordPlanetMeshEviction(uint64 count)
-	{
-		mesh_generation_telemetry.recordPlanetMeshEviction(count);
-	}
-
-	void TelemetrySystem::recordPlanetTerrainCache(uint64 cached_meshes,
-		uint64 active_meshes, uint64 cache_capacity)
-	{
-		mesh_generation_telemetry.recordPlanetTerrainCache(cached_meshes, active_meshes, cache_capacity);
-	}
-
-	void TelemetrySystem::setPlanetMeshQueueSnapshot(const PlanetMeshQueueTelemetry& snapshot)
-	{
-		mesh_generation_telemetry.setPlanetMeshQueueSnapshot(snapshot);
-	}
-
-	void TelemetrySystem::recordPlanetTerrainTree(const PlanetTerrainTreeTelemetry& snapshot)
-	{
-		mesh_generation_telemetry.recordPlanetTerrainTree(snapshot);
-	}
-
-	void TelemetrySystem::reportMeshGenerationTelemetry()
-	{
-		mesh_generation_telemetry.report();
-	}
 }

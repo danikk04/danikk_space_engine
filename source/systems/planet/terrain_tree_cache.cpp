@@ -57,26 +57,33 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 				if(eviction_id == invalid_node) break;
 				PlanetTerrainNode& node = context.tree.nodes[eviction_id];
 				destroyMeshRenderData(node.mesh);
+				context.telemetry.mesh_generation_telemetry.recordMeshDeletion(
+					MeshDeletionReason::cache_capacity);
 				node.mesh_revision = 0;
 				cached_meshes_per_level[level]--;
 				cached_mesh_count--;
 				evicted_mesh_count++;
 			}
 		}
-		context.telemetry.recordPlanetMeshEviction(evicted_mesh_count);
+		context.telemetry.mesh_generation_telemetry.recordPlanetMeshEviction(evicted_mesh_count);
 		uint64 active_mesh_count = 0;
 		for(const PlanetTerrainNode& node : context.tree.nodes)
 			if(node.render_active && node.mesh.mesh != nullptr) active_mesh_count++;
-		context.telemetry.recordPlanetTerrainCache(cached_mesh_count,
+		context.telemetry.mesh_generation_telemetry.recordPlanetTerrainCache(cached_mesh_count,
 			active_mesh_count,
 			(maximum_cached_meshes_per_level * (PlanetTerrainTree::maximum_depth + 1)));
 	}
 
-	void destroyTree(PlanetData& planet)
+	void destroyTree(PlanetData& planet, TelemetrySystem& telemetry,
+		MeshDeletionReason reason)
 	{
 		DSE_WATCH();
 		for(PlanetTerrainNode& node : planet.terrain_tree.nodes)
-			if(node.mesh.mesh != nullptr) destroyMeshRenderData(node.mesh);
+		{
+			if(node.mesh.mesh == nullptr) continue;
+			destroyMeshRenderData(node.mesh);
+			telemetry.mesh_generation_telemetry.recordMeshDeletion(reason);
+		}
 		planet.terrain_tree.clear();
 	}
 }

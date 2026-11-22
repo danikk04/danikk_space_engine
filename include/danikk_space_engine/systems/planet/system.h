@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/systems/planet/data.h>
+#include <danikk_space_engine/systems/telemetry/mesh_generation.h>
 
 namespace danikk_space_engine
 {
@@ -17,7 +18,7 @@ namespace danikk_space_engine
 		void updatePlanet(PlanetData& planet);
 		void updatePlanetTerrainTree(PlanetData& planet, const glm::dvec3& camera_position,
 			double height);
-		void destroyPlanetTerrainTree(PlanetData& planet);
+		void destroyPlanetTerrainTree(PlanetData& planet, MeshDeletionReason reason);
 		void appendPlanetJobCandidates(PlanetData& planet);
 		void cancelQueuedJobsForPlanet(const PlanetData& planet);
 

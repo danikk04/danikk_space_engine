@@ -3,12 +3,17 @@
 
 namespace danikk_space_engine
 {
+	std::atomic<ProfilingSystem*> Watcher::active_profiling_system = nullptr;
+
 	Watcher::Watcher(const char* name)
-		: profiling_system(ProfilingSystem::getCurrentThreadSystem()),
-		  node_id(profiling_system == nullptr ? static_cast<uint32>(-1)
+		: profiling_system(active_profiling_system.load(std::memory_order_acquire)),
+		  node_id(profiling_system == nullptr
+			|| std::this_thread::get_id() != profiling_system->main_thread_id
+			? static_cast<uint32>(-1)
 			: profiling_system->beginScope(name == nullptr ? "(unnamed)" : name)),
 		  start_time(std::chrono::steady_clock::now())
 	{
+		if(node_id == static_cast<uint32>(-1)) profiling_system = nullptr;
 	}
 
 	Watcher::~Watcher()

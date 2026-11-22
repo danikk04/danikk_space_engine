@@ -64,9 +64,30 @@ namespace danikk_space_engine
 		stale_node
 	};
 
+	enum class MeshDeletionReason : uint8
+	{
+		cache_capacity,
+		tree_node_limit,
+		planet_removed,
+		planet_system_shutdown,
+		detail_mesh_rebuild,
+		world_body_destroyed
+	};
+
 	/** @brief Collects and explicitly reports mesh generation, streaming, and cache telemetry. */
 	class MeshGenerationTelemetry
 	{
+		struct MeshDeletionCounts
+		{
+			uint64 total = 0;
+			uint64 cache_capacity = 0;
+			uint64 tree_node_limit = 0;
+			uint64 planet_removed = 0;
+			uint64 planet_system_shutdown = 0;
+			uint64 detail_mesh_rebuild = 0;
+			uint64 world_body_destroyed = 0;
+		};
+
 		std::mutex mutex;
 		danikk_framework::DynamicArray<PlanetMeshLevelTelemetry> planet_mesh_levels;
 		uint64 accepted_planet_meshes = 0;
@@ -78,6 +99,7 @@ namespace danikk_space_engine
 		uint64 stale_planet_mesh_generators = 0;
 		uint64 stale_planet_mesh_nodes = 0;
 		uint64 evicted_planet_meshes = 0;
+		MeshDeletionCounts pending_mesh_deletions;
 		PlanetMeshQueueTelemetry mesh_queue_snapshot;
 		PlanetTerrainTreeTelemetry terrain_tree_frame;
 		PlanetTerrainTreeTelemetry terrain_tree_snapshot;
@@ -89,6 +111,7 @@ namespace danikk_space_engine
 		void recordPlanetMeshGeneration(uint8 level, uint64 triangle_count, uint64 elapsed_nanoseconds);
 		void recordPlanetMeshAcceptance(PlanetMeshAcceptance outcome);
 		void recordPlanetMeshEviction(uint64 count);
+		void recordMeshDeletion(MeshDeletionReason reason);
 		void recordPlanetTerrainCache(uint64 cached_meshes, uint64 active_meshes, uint64 cache_capacity);
 		void setPlanetMeshQueueSnapshot(const PlanetMeshQueueTelemetry& snapshot);
 		void recordPlanetTerrainTree(const PlanetTerrainTreeTelemetry& snapshot);
