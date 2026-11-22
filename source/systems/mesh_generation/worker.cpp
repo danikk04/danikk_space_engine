@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <chrono>
+#include <exception>
 
 #include <danikk_engine/danikk_engine.h>
+#include <danikk_framework/log.h>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/data.h>
 
@@ -92,59 +94,117 @@ namespace danikk_space_engine::mesh_generation_internal
 		active_requests.resize(active_requests.size() - 1);
 	}
 
-	void Worker::run()
+	void Worker::dispatchPendingRequestsLocked()
 	{
-		while(true)
+		if(stopping || thread_pool == nullptr) return;
+		const size_t worker_count = thread_pool->workerCount();
+		while(!requests.empty() && active_requests.size() < worker_count)
 		{
-			MeshGenerationRequest request;
+			const MeshGenerationRequest request = requests[0];
+			if(request.generation_id != current_generation_id || isActive(request)
+				|| requestHasCompletedResult(request, completed))
 			{
-				std::unique_lock<std::mutex> lock(mutex);
-				request_available.wait(lock, [this] { return stopping || !requests.empty(); });
-				if(stopping) return;
-				request = static_cast<MeshGenerationRequest&&>(requests[0]);
 				for(size_t index = 1; index < requests.size(); ++index)
 					requests[index - 1] = static_cast<MeshGenerationRequest&&>(requests[index]);
 				requests.resize(requests.size() - 1);
-				active_requests.push(ActiveRequest{request, false});
+				continue;
 			}
 
-			const auto generation_start_time = std::chrono::steady_clock::now();
-			GeneratedMesh result = generateMesh(world, request);
+			active_requests.push(ActiveRequest{request, false});
+			try
+			{
+				thread_pool->submit([this, request] { generateRequest(request); });
+			}
+			catch(...)
+			{
+				removeActiveRequest(active_requests.size() - 1);
+				throw;
+			}
+			for(size_t index = 1; index < requests.size(); ++index)
+				requests[index - 1] = static_cast<MeshGenerationRequest&&>(requests[index]);
+			requests.resize(requests.size() - 1);
+		}
+	}
+
+	void Worker::generateRequest(const MeshGenerationRequest& request)
+	{
+		{
+			std::lock_guard<std::mutex> guard(mutex);
+			const size_t active_index = findActiveRequest(request);
+			if(stopping || active_index >= active_requests.size()
+				|| active_requests[active_index].cancelled)
+			{
+				if(active_index < active_requests.size()) removeActiveRequest(active_index);
+				dispatchPendingRequestsLocked();
+				return;
+			}
+		}
+
+		const auto generation_start_time = std::chrono::steady_clock::now();
+		GeneratedMesh result;
+		result.generation_id = request.generation_id;
+		result.source_revision = request.source_revision;
+		result.world_body_id = request.world_body_id;
+		result.planet_id = request.planet_id;
+		result.planet_generation_id = request.planet_generation_id;
+		result.terrain_revision = request.terrain_revision;
+		result.terrain_node_id = request.terrain_node_id;
+		result.terrain_node_generation_id = request.terrain_node_generation_id;
+		result.surface_only = request.surface_only;
+		result.source = request.source;
+		result.planet_mesh_generator = request.planet_mesh_generator;
+		result.node_minimum = request.node_minimum;
+		bool generation_succeeded = false;
+		try
+		{
+			result = generateMesh(world, request);
 			if(request.source == MeshGenerationSource::planet_terrain_node)
 				result.planet_id = request.planet_id;
-			const uint64 generation_nanoseconds = static_cast<uint64>(std::chrono::duration_cast<std::chrono::nanoseconds>(
-				std::chrono::steady_clock::now() - generation_start_time).count());
-			if(request.source == MeshGenerationSource::planet_terrain_node)
-				telemetry_system.recordPlanetMeshGeneration(
-					getPlanetTerrainNodeLevel(request.node_width),
-					result.triangle_point_indices.size() / 3, generation_nanoseconds);
+			generation_succeeded = true;
+		}
+		catch(const std::exception& exception)
+		{
+			danikk_framework::formatLogError("Mesh generation task failed: %", exception.what());
+		}
+		catch(...)
+		{
+			danikk_framework::formatLogError("Mesh generation task failed with an unknown exception");
+		}
+		const uint64 generation_nanoseconds = static_cast<uint64>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+			std::chrono::steady_clock::now() - generation_start_time).count());
+		if(request.source == MeshGenerationSource::planet_terrain_node)
+			telemetry_system.recordPlanetMeshGeneration(
+				getPlanetTerrainNodeLevel(request.node_width),
+			generation_succeeded ? result.triangle_point_indices.size() / 3 : 0,
+			generation_nanoseconds);
+		{
+			std::unique_lock<std::mutex> lock(mutex);
+			generation_sample_total_nanoseconds += generation_nanoseconds;
+			generation_sample_count++;
+			if(generation_sample_count == 50)
 			{
-				std::unique_lock<std::mutex> lock(mutex);
-				generation_sample_total_nanoseconds += generation_nanoseconds;
-				generation_sample_count++;
-				if(generation_sample_count == 50)
-				{
-					constexpr float nanoseconds_per_millisecond = 1000000.0f;
-					const float average_generation_milliseconds = static_cast<float>(generation_sample_total_nanoseconds)
-						/ 50.0f / nanoseconds_per_millisecond;
-					this->average_generation_milliseconds.store(
-						average_generation_milliseconds, std::memory_order_relaxed);
-					generation_sample_count = 0;
-					generation_sample_total_nanoseconds = 0;
-				}
-				result_space_available.wait(lock, [this, &request]
-				{
-					const size_t active_index = findActiveRequest(request);
-					return stopping || completed.size() < max_completed_meshes
-						|| active_index >= active_requests.size() || active_requests[active_index].cancelled;
-				});
-				const size_t active_index = findActiveRequest(request);
-				const bool cancelled = active_index >= active_requests.size()
-					|| active_requests[active_index].cancelled;
-				if(active_index < active_requests.size()) removeActiveRequest(active_index);
-				if(!stopping && !cancelled && request.generation_id == current_generation_id)
-					completed.pushMove(result);
+				constexpr float nanoseconds_per_millisecond = 1000000.0f;
+				const float average_generation_milliseconds = static_cast<float>(generation_sample_total_nanoseconds)
+					/ 50.0f / nanoseconds_per_millisecond;
+				this->average_generation_milliseconds.store(
+					average_generation_milliseconds, std::memory_order_relaxed);
+				generation_sample_count = 0;
+				generation_sample_total_nanoseconds = 0;
 			}
+			result_space_available.wait(lock, [this, &request]
+			{
+				const size_t active_index = findActiveRequest(request);
+				return stopping || completed.size() < max_completed_meshes
+					|| active_index >= active_requests.size() || active_requests[active_index].cancelled;
+			});
+			const size_t active_index = findActiveRequest(request);
+			const bool cancelled = active_index >= active_requests.size()
+				|| active_requests[active_index].cancelled;
+			if(active_index < active_requests.size()) removeActiveRequest(active_index);
+			if(!stopping && !cancelled
+				&& request.generation_id == current_generation_id)
+				completed.pushMove(result);
+			dispatchPendingRequestsLocked();
 		}
 	}
 
@@ -153,16 +213,17 @@ namespace danikk_space_engine::mesh_generation_internal
 	void Worker::start()
 	{
 		std::lock_guard<std::mutex> guard(mutex);
-		if(!workers.empty()) return;
+		if(thread_pool != nullptr) return;
 		average_generation_milliseconds.store(0.0f, std::memory_order_relaxed);
+		generation_sample_count = 0;
+		generation_sample_total_nanoseconds = 0;
 		for(uint8 index = 0; index < static_cast<uint8>(BuildPartShape::count); ++index)
 			getBuildPartGeometry(static_cast<BuildPartShape>(index));
 		stopping = false;
 		const size_t available_threads = std::thread::hardware_concurrency();
 		const size_t worker_count = available_threads <= 1
 			? 1 : std::min(available_threads - 1, max_worker_count);
-		for(size_t index = 0; index < worker_count; ++index)
-			workers.pushMove(std::thread(&Worker::run, this));
+		thread_pool = std::make_unique<danikk_framework::ThreadPool>(worker_count);
 	}
 
 	bool Worker::getAverageGenerationTimeMilliseconds(float& average_time) const
@@ -175,24 +236,24 @@ namespace danikk_space_engine::mesh_generation_internal
 	{
 		{
 			std::lock_guard<std::mutex> guard(mutex);
-			if(workers.empty()) return;
+			if(thread_pool == nullptr) return;
 			stopping = true;
+			requests.clear();
+			completed.clear();
+			for(ActiveRequest& active : active_requests) active.cancelled = true;
 		}
-		request_available.notify_all();
 		result_space_available.notify_all();
-		for(std::thread& worker : workers)
-			if(worker.joinable()) worker.join();
-		std::lock_guard<std::mutex> guard(mutex);
-		requests.clear();
-		completed.clear();
-		active_requests.clear();
-		workers.clear();
-		stopping = false;
+		thread_pool->shutdown();
+		thread_pool.reset();
+		{
+			std::lock_guard<std::mutex> guard(mutex);
+			active_requests.clear();
+			stopping = false;
+		}
 	}
 
 	void Worker::update(uint64 generation_id, const DynamicArray<MeshGenerationRequest>& new_requests)
 	{
-		bool queue_changed = false;
 		PlanetMeshQueueTelemetry snapshot;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
@@ -232,8 +293,8 @@ namespace danikk_space_engine::mesh_generation_internal
 						|| requestHasCompletedResult(request, completed)) continue;
 					requests.push(request);
 				}
-				queue_changed = true;
 			}
+			dispatchPendingRequestsLocked();
 
 			for(const MeshGenerationRequest& request : new_requests)
 			{
@@ -265,7 +326,6 @@ namespace danikk_space_engine::mesh_generation_internal
 				if(result.source == MeshGenerationSource::planet_terrain_node) snapshot.completed++;
 		}
 		telemetry_system.setPlanetMeshQueueSnapshot(snapshot);
-		if(queue_changed) request_available.notify_all();
 	}
 
 	bool Worker::tryTake(GeneratedMesh& result)
@@ -321,7 +381,6 @@ namespace danikk_space_engine::mesh_generation_internal
 				&& active.request.planet_id == planet_id
 				&& active.request.planet_generation_id == planet_generation_id)
 				active.cancelled = true;
-		request_available.notify_all();
 		result_space_available.notify_all();
 	}
 }

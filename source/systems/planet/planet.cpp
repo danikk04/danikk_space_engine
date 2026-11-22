@@ -157,6 +157,7 @@ namespace danikk_space_engine
 	void PlanetSystem::update()
 	{
 		DSE_WATCH();
+		world.mesh_generation.beginRequestFrame();
 		for(PlanetData& planet : planets) updatePlanet(planet);
 	}
 

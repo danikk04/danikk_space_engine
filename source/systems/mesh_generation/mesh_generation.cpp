@@ -30,7 +30,6 @@ namespace danikk_space_engine
 		generation_id++;
 		if(generation_id == 0) generation_id++;
 		requests.clear();
-		requests_dirty = false;
 		worker->update(generation_id, requests);
 	}
 
@@ -44,35 +43,26 @@ namespace danikk_space_engine
 		initialized = false;
 		generation_id++;
 		requests.clear();
-		requests_dirty = false;
 	}
 
-	/** @copydoc MeshGenerationSystem::replacePlanetRequests */
-	void MeshGenerationSystem::replacePlanetRequests(PlanetId planet_id,
-		uint64 planet_generation_id, const DynamicArray<MeshGenerationRequest>& planet_requests)
+	/** @copydoc MeshGenerationSystem::beginRequestFrame */
+	void MeshGenerationSystem::beginRequestFrame()
 	{
 		DSE_WATCH();
-		for(size_t index = 0; index < requests.size();)
-		{
-			const MeshGenerationRequest& queued = requests[index];
-			if(queued.source != MeshGenerationSource::planet_terrain_node
-				|| queued.planet_id != planet_id
-				|| queued.planet_generation_id != planet_generation_id)
-			{
-				index++;
-				continue;
-			}
-			for(size_t shift = index + 1; shift < requests.size(); shift++)
-				requests[shift - 1] = static_cast<MeshGenerationRequest&&>(requests[shift]);
-			requests.resize(requests.size() - 1);
-		}
+		requests.clear();
+	}
+
+	/** @copydoc MeshGenerationSystem::appendPlanetRequests */
+	void MeshGenerationSystem::appendPlanetRequests(
+		const DynamicArray<MeshGenerationRequest>& planet_requests)
+	{
+		DSE_WATCH();
 		for(const MeshGenerationRequest& request : planet_requests)
 		{
 			MeshGenerationRequest queued = request;
 			queued.generation_id = generation_id;
 			requests.pushMove(queued);
 		}
-		requests_dirty = true;
 	}
 
 	/** @copydoc MeshGenerationSystem::cancelPlanetRequests */
@@ -94,7 +84,6 @@ namespace danikk_space_engine
 			for(size_t shift = index + 1; shift < requests.size(); shift++)
 				requests[shift - 1] = static_cast<MeshGenerationRequest&&>(requests[shift]);
 			requests.resize(requests.size() - 1);
-			requests_dirty = true;
 		}
 	}
 
@@ -108,71 +97,27 @@ namespace danikk_space_engine
 		if(++body.detail_mesh_revision == 0) ++body.detail_mesh_revision;
 	}
 
-	/** @copydoc MeshGenerationSystem::queueDirtyBuildPartMeshes */
-	void MeshGenerationSystem::queueDirtyBuildPartMeshes()
+	/** @copydoc MeshGenerationSystem::collectBuildPartRequests */
+	void MeshGenerationSystem::collectBuildPartRequests()
 	{
 		DSE_WATCH();
-		for(size_t index = 0; index < requests.size();)
-		{
-			const MeshGenerationRequest& request = requests[index];
-			if(request.source != MeshGenerationSource::build_parts
-				|| (world.world_body_data.isWorldBodyActive(request.world_body_id)
-					&& world.world_body_data.getWorldBody(request.world_body_id).detail_mesh_revision
-						== request.source_revision))
-			{
-				index++;
-				continue;
-			}
-			for(size_t shift = index + 1; shift < requests.size(); shift++)
-				requests[shift - 1] = static_cast<MeshGenerationRequest&&>(requests[shift]);
-			requests.resize(requests.size() - 1);
-			requests_dirty = true;
-		}
-
 		for(WorldBodyId world_body_id : world.world_body_data.getUsedWorldBodyIds())
 		{
 			WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
-			if(!body.detail_mesh_dirty || body.detail_mesh_queued) continue;
-			destroyMeshRenderData(body.detail_mesh);
+			if(!body.detail_mesh_dirty && !body.detail_mesh_queued) continue;
+			if(body.detail_mesh_dirty)
+			{
+				destroyMeshRenderData(body.detail_mesh);
+				body.detail_mesh_dirty = false;
+				body.detail_mesh_queued = true;
+			}
 
 			MeshGenerationRequest request;
 			request.source = MeshGenerationSource::build_parts;
 			request.generation_id = generation_id;
 			request.source_revision = body.detail_mesh_revision;
 			request.world_body_id = world_body_id;
-			for(size_t index = 0; index < requests.size();)
-			{
-				const MeshGenerationRequest& queued = requests[index];
-				if(queued.source != MeshGenerationSource::build_parts
-					|| queued.world_body_id != world_body_id)
-				{
-					index++;
-					continue;
-				}
-				for(size_t shift = index + 1; shift < requests.size(); shift++)
-					requests[shift - 1] = static_cast<MeshGenerationRequest&&>(requests[shift]);
-				requests.resize(requests.size() - 1);
-			}
 			requests.pushMove(request);
-			body.detail_mesh_dirty = false;
-			body.detail_mesh_queued = true;
-			requests_dirty = true;
-		}
-	}
-
-	/** @copydoc MeshGenerationSystem::removeBuildPartMeshRequest */
-	void MeshGenerationSystem::removeBuildPartMeshRequest(WorldBodyId world_body_id)
-	{
-		DSE_WATCH();
-		for(size_t index = 0; index < requests.size(); index++)
-		{
-			const MeshGenerationRequest& request = requests[index];
-			if(request.source != MeshGenerationSource::build_parts || request.world_body_id != world_body_id) continue;
-			for(size_t shift = index + 1; shift < requests.size(); shift++)
-				requests[shift - 1] = static_cast<MeshGenerationRequest&&>(requests[shift]);
-			requests.resize(requests.size() - 1);
-			requests_dirty = true;
-			return;
 		}
 	}
 
@@ -180,12 +125,9 @@ namespace danikk_space_engine
 	void MeshGenerationSystem::frame()
 	{
 		DSE_WATCH();
-		queueDirtyBuildPartMeshes();
-		if(requests_dirty)
-		{
-			worker->update(generation_id, requests);
-			requests_dirty = false;
-		}
+		collectBuildPartRequests();
+		worker->update(generation_id, world.planets.buildMeshGenerationRequestBuffer(
+			requests, worker->getWorkerCount()));
 
 		GeneratedMesh generated;
 		if(!worker->tryTake(generated) || generated.generation_id != generation_id) return;
@@ -221,7 +163,6 @@ namespace danikk_space_engine
 						glm::length(position - body.detail_mesh_bounds_center));
 				body.detail_mesh_bounds_valid = true;
 			}
-			removeBuildPartMeshRequest(generated.world_body_id);
 		}
 	}
 }

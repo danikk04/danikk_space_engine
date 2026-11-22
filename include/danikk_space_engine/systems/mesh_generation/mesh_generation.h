@@ -77,17 +77,13 @@ namespace danikk_space_engine
 		std::unique_ptr<mesh_generation_internal::Worker> worker;
 		/** @brief Token that rejects results submitted before the latest World lifecycle. */
 		uint64 generation_id = 0;
-		/** @brief Latest desired generation requests waiting for worker submission. */
+		/** @brief Current candidate requests collected from terrain and BuildPart systems. */
 		DynamicArray<MeshGenerationRequest> requests;
-		/** @brief True when queued request metadata differs from the worker's submitted queue. */
-		bool requests_dirty = false;
 		/** @brief True while the worker has been started for the current World lifecycle. */
 		bool initialized = false;
 
-		/** @brief Adds or replaces dirty combined BuildPart mesh requests. */
-		void queueDirtyBuildPartMeshes();
-		/** @brief Removes the queued BuildPart mesh request for one body. */
-		void removeBuildPartMeshRequest(WorldBodyId world_body_id);
+		/** @brief Rebuilds current combined BuildPart requests from body mesh state. */
+		void collectBuildPartRequests();
 
 	public:
 		explicit MeshGenerationSystem(World& world);
@@ -101,9 +97,10 @@ namespace danikk_space_engine
 		void shutdown();
 		/** @brief Submits current requests and accepts at most one completed mesh on the main thread. */
 		void frame();
-		/** @brief Replaces the queued terrain requests for one planet incarnation. */
-		void replacePlanetRequests(PlanetId planet_id, uint64 planet_generation_id,
-			const DynamicArray<MeshGenerationRequest>& planet_requests);
+		/** @brief Clears the candidate list before systems rebuild requests for a new frame. */
+		void beginRequestFrame();
+		/** @brief Appends this frame's terrain candidates to the shared candidate list. */
+		void appendPlanetRequests(const DynamicArray<MeshGenerationRequest>& planet_requests);
 		/** @brief Cancels all queued and worker-side requests for one planet incarnation. */
 		void cancelPlanetRequests(PlanetId planet_id, uint64 planet_generation_id);
 		/** @brief Marks the owning body's combined BuildPart mesh stale. */

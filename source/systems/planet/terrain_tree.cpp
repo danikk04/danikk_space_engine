@@ -26,6 +26,6 @@ namespace danikk_space_engine
 		planet_terrain_tree_internal::activateMeshes(context);
 		planet_terrain_tree_internal::recordDiagnostics(context);
 		planet_terrain_tree_internal::evictCachedMeshes(context);
-		queuePlanetRequests(planet);
+		appendPlanetRequests(planet);
 	}
 }
