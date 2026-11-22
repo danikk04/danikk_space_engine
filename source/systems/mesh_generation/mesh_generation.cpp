@@ -385,8 +385,9 @@ namespace danikk_space_engine
 			for(MeshGenerationJob& job : jobs)
 			{
 				if(job.state == MeshGenerationJobState::empty || isDesired(job)) continue;
-				if(job.state == MeshGenerationJobState::processing) job.cancelled = true;
-				else job = MeshGenerationJob();
+				// A running task cannot be interrupted, so discarding its output only
+				// forces the same node to be generated again if it becomes desired later.
+				if(job.state == MeshGenerationJobState::queued) job = MeshGenerationJob();
 			}
 
 			for(const MeshGenerationJob& candidate : desired_jobs)
