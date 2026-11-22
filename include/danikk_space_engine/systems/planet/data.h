@@ -13,6 +13,7 @@
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/mesh_render_data.h>
 #include <danikk_space_engine/systems/planet/edit.h>
+#include <danikk_space_engine/systems/planet/terrain_tree.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 
 namespace danikk_space_engine
@@ -188,38 +189,6 @@ namespace danikk_space_engine
 				if(glm::dot(delta, delta) <= edit.getRadius() * edit.getRadius()) callback(reference.edit_id);
 			}
 		}
-	};
-
-	/** @brief One adaptive spatial cell in a planet's render/streaming octree. */
-	struct PlanetTerrainNode : public danikk_framework::OctreeNode<PlanetTerrainNodeId>
-	{
-		MeshRenderData mesh;
-		glm::dvec3 mesh_position = glm::dvec3(0.0);
-		uint64 generation_id = 1;
-		uint64 mesh_revision = 0;
-		PlanetMeshGenerator mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
-		bool mesh_surface_only = true;
-		bool generation_pending = false;
-		bool render_active = false;
-	};
-
-	/** @brief Adaptive spatial partition and render-node pool for a planet. */
-	struct PlanetTerrainTree : public danikk_framework::Octree<PlanetTerrainNode, PlanetTerrainNodeId>
-	{
-		/** @brief Half the root side length; root width is exactly 2^24 metres. */
-		static constexpr double initial_root_half_extent = 8388608.0;
-		/** @brief Smallest render-node side length, matching the former 32 m chunks. */
-		static constexpr double minimum_node_width = 32.0;
-		/** @brief Number of halvings from a 2^24 m root to a 32 m leaf. */
-		static constexpr uint8 maximum_depth = 19;
-		uint64 next_node_generation_id = 1;
-	};
-
-	/** @brief Spherical terrain region whose cached meshes must be regenerated. */
-	struct PlanetTerrainDirtyRegion
-	{
-		glm::dvec3 center = glm::dvec3(0.0);
-		double radius = 0.0;
 	};
 
 	/** @brief Terrain, streaming, and render state owned by one planet. */

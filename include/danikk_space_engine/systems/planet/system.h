@@ -8,6 +8,9 @@ namespace danikk_space_engine
 	/** @brief Owns planet state and provides terrain queries, editing, streaming, and mesh acceptance. */
 	class PlanetSystem
 	{
+		static constexpr size_t maximum_visible_nodes = 2048;
+		static constexpr size_t maximum_job_candidates_per_frame = 32;
+
 		World& world;
 		DynamicArray<PlanetData> planets;
 		/** @brief Reused output batch and priority scratch for mesh-generation workers. */
@@ -18,6 +21,35 @@ namespace danikk_space_engine
 		void updatePlanet(PlanetData& planet);
 		void updatePlanetTerrainTree(PlanetData& planet, const glm::dvec3& camera_position,
 			double height);
+		double getTargetHalfExtent(const glm::dvec3& camera_position, double detail_scale,
+			const glm::dvec3& center) const;
+		void updateRenderWindow(const glm::dvec3& camera_position, double height,
+			double detail_scale, glm::dvec3& render_window_minimum,
+			glm::dvec3& render_window_maximum) const;
+		bool isNodeRelevant(const glm::dvec3& render_window_minimum,
+			const glm::dvec3& render_window_maximum, const glm::dvec3& camera_position,
+			double height, const PlanetSettings& settings,
+			const PlanetTerrainNode& node) const;
+		void synchronizeTerrainTree(PlanetData& planet);
+		void calculateDetailBudget(const glm::dvec3& camera_position, double height,
+			const PlanetSettings& settings, glm::dvec3& render_window_minimum,
+			glm::dvec3& render_window_maximum, double& detail_scale,
+			size_t& target_node_count, size_t& detail_scale_adjustments) const;
+		void refineTerrainTree(PlanetTerrainTree& tree, const glm::dvec3& camera_position,
+			double height, const PlanetSettings& settings, double detail_scale,
+			const glm::dvec3& render_window_minimum,
+			const glm::dvec3& render_window_maximum) const;
+		size_t collectMeshJobCandidates(PlanetData& planet, const glm::dvec3& camera_position,
+			double height, const PlanetSettings& settings, double detail_scale,
+			const glm::dvec3& render_window_minimum,
+			const glm::dvec3& render_window_maximum);
+		void activateMeshes(PlanetTerrainTree& tree, const glm::dvec3& camera_position,
+			double height, const PlanetSettings& settings, double detail_scale,
+			const glm::dvec3& render_window_minimum,
+			const glm::dvec3& render_window_maximum) const;
+		void recordDiagnostics(const PlanetData& planet, size_t target_node_count,
+			size_t detail_scale_adjustments, size_t candidate_count, double detail_scale);
+		void evictCachedMeshes(PlanetTerrainTree& tree, const glm::dvec3& camera_position);
 		void destroyPlanetTerrainTree(PlanetData& planet, MeshDeletionReason reason);
 		void appendPlanetJobCandidates(PlanetData& planet);
 		void cancelQueuedJobsForPlanet(const PlanetData& planet);
