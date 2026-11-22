@@ -1,6 +1,6 @@
 #pragma once
 
-#include <danikk_space_engine/gui.h>
+#include <danikk_space_engine/gui/gui.h>
 
 namespace danikk_space_engine
 {

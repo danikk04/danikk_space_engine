@@ -4,7 +4,7 @@
 #include <limits>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
-#include <danikk_space_engine/gui.h>
+#include <danikk_space_engine/gui/gui.h>
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/assets/human_skin.h>
 #include <danikk_space_engine/default.h>

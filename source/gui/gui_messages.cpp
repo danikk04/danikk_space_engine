@@ -1,4 +1,4 @@
-#include <danikk_space_engine/gui.h>
+#include <danikk_space_engine/gui/gui.h>
 
 namespace danikk_space_engine
 {
@@ -7,19 +7,20 @@ namespace danikk_space_engine
 	{
 		if(text.empty()) return;
 
-		messages.pushCtor();
-		for(size_t index = messages.size() - 1; index > 0; --index)
-			messages[index] = static_cast<Message&&>(messages[index - 1]);
-		messages[0].text = text;
-		messages[0].remaining_seconds = 10.0f;
+		message_log.messages.pushCtor();
+		for(size_t index = message_log.messages.size() - 1; index > 0; --index)
+			message_log.messages[index] = static_cast<gui_detail::MessageLog::Message&&>(
+				message_log.messages[index - 1]);
+		message_log.messages[0].text = text;
+		message_log.messages[0].remaining_seconds = 10.0f;
 	}
 
 	/** @copydoc GUI::updateMessages */
 	void GUI::updateMessages(float dt)
 	{
-		for(size_t index = 0; index < messages.size();)
+		for(size_t index = 0; index < message_log.messages.size();)
 		{
-			Message& message = messages[index];
+			gui_detail::MessageLog::Message& message = message_log.messages[index];
 			message.remaining_seconds -= dt;
 			if(message.remaining_seconds > 0.0f)
 			{
@@ -27,17 +28,18 @@ namespace danikk_space_engine
 				continue;
 			}
 
-			for(size_t shift = index + 1; shift < messages.size(); ++shift)
-				messages[shift - 1] = static_cast<Message&&>(messages[shift]);
-			messages.resize(messages.size() - 1);
+			for(size_t shift = index + 1; shift < message_log.messages.size(); ++shift)
+				message_log.messages[shift - 1] =
+					static_cast<gui_detail::MessageLog::Message&&>(message_log.messages[shift]);
+			message_log.messages.resize(message_log.messages.size() - 1);
 		}
 
 		String text;
-		for(const Message& message : messages)
+		for(const gui_detail::MessageLog::Message& message : message_log.messages)
 		{
 			text << message.text << '\n';
 		}
-		messages_label.text = static_cast<String&&>(text);
-		messages_label.flags.set(GUIElementFlags::visible, messages.size() > 0);
+		message_log.label.text = static_cast<String&&>(text);
+		message_log.label.flags.set(GUIElementFlags::visible, message_log.messages.size() > 0);
 	}
 }

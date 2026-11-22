@@ -1,4 +1,4 @@
-#include <danikk_space_engine/gui.h>
+#include <danikk_space_engine/gui/gui.h>
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
@@ -97,27 +97,27 @@ namespace danikk_space_engine
 	/** @brief Refreshes visible tool commands and category highlighting. */
 	void GUI::refreshToolCatalog()
 	{
-		for(uint32 index = 0; index < catalog_category_buttons.size(); ++index)
+		for(uint32 index = 0; index < tool_catalog.category_buttons.size(); ++index)
 		{
-			catalog_category_buttons[index].draw_style =
-				index == selected_tool_category
-					? &catalog_selected_button_style : &catalog_button_style;
+			tool_catalog.category_buttons[index].draw_style =
+				index == tool_catalog.selected_category
+					? &shared_styles.selected_button_fill : &shared_styles.button_fill;
 		}
-		const uint32 item_count = getToolCatalogEntryCount(selected_tool_category);
-		const uint32 selected_slot = selected_hotbar_slot_source == nullptr
-			? 0 : *selected_hotbar_slot_source;
-		const ToolCatalogEntryId selected_entry_id = hotbar_entry_ids_source == nullptr
-			|| selected_slot >= hotbar_column_count * hotbar_row_count
-			? no_tool_catalog_entry : hotbar_entry_ids_source[selected_slot];
-		for(uint32 index = 0; index < catalog_item_buttons.size(); ++index)
+		const uint32 item_count = getToolCatalogEntryCount(tool_catalog.selected_category);
+		const uint32 selected_slot = hotbar.selected_slot_source == nullptr
+			? 0 : *hotbar.selected_slot_source;
+		const ToolCatalogEntryId selected_entry_id = hotbar.entry_ids_source == nullptr
+			|| selected_slot >= gui_detail::Hotbar::column_count * gui_detail::Hotbar::row_count
+			? no_tool_catalog_entry : hotbar.entry_ids_source[selected_slot];
+		for(uint32 index = 0; index < tool_catalog.item_buttons.size(); ++index)
 		{
 			const bool has_item = index < item_count;
-			catalog_item_buttons[index].flags.set(GUIElementFlags::visible, has_item);
+			tool_catalog.item_buttons[index].flags.set(GUIElementFlags::visible, has_item);
 			if(!has_item) continue;
-			const ToolCatalogEntryId entry_id = getToolCatalogEntryId(selected_tool_category, index);
-			catalog_item_labels[index].text = getToolCatalogEntry(entry_id).short_name;
-			catalog_item_buttons[index].draw_style = entry_id == selected_entry_id
-				? &catalog_selected_button_style : &catalog_button_style;
+			const ToolCatalogEntryId entry_id = getToolCatalogEntryId(tool_catalog.selected_category, index);
+			tool_catalog.item_labels[index].text = getToolCatalogEntry(entry_id).short_name;
+			tool_catalog.item_buttons[index].draw_style = entry_id == selected_entry_id
+				? &shared_styles.selected_button_fill : &shared_styles.button_fill;
 		}
 	}
 }
