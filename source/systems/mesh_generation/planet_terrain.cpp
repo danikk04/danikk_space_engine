@@ -10,7 +10,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		/**
-		 * @brief Dispatches scalar-field meshing to the generator selected by the request.
+		 * @brief Dispatches scalar-field meshing using the generator selected by the job.
 		 * @param job Node-mesh settings and output arrays populated by the generator.
 		 */
 		void generatePlanetNodeGeometry(World& world, MeshGenerationJob& job)

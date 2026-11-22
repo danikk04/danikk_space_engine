@@ -56,7 +56,7 @@ namespace danikk_space_engine
 				std::lock_guard<std::mutex> guard(task_mutex);
 				stopping_tasks = true;
 			}
-			request_available.notify_all();
+			job_available.notify_all();
 			thread_pool.shutdown();
 			{
 				std::lock_guard<std::mutex> guard(task_mutex);
@@ -68,8 +68,8 @@ namespace danikk_space_engine
 		initialized = true;
 		generation_id++;
 		if(generation_id == 0) generation_id++;
-		requests.clear();
-		updateMeshGenerationRequests(generation_id, requests);
+		job_candidates.clear();
+		updateMeshGenerationJobs(generation_id, job_candidates);
 	}
 
 	/** @copydoc MeshGenerationSystem::shutdown */
@@ -87,7 +87,7 @@ namespace danikk_space_engine
 				else job = MeshGenerationJob();
 			}
 		}
-		request_available.notify_all();
+		job_available.notify_all();
 		thread_pool.shutdown();
 		{
 			std::lock_guard<std::mutex> guard(task_mutex);
@@ -96,48 +96,48 @@ namespace danikk_space_engine
 		}
 		initialized = false;
 		generation_id++;
-		requests.clear();
+		job_candidates.clear();
 	}
 
-	/** @copydoc MeshGenerationSystem::beginRequestFrame */
-	void MeshGenerationSystem::beginRequestFrame()
+	/** @copydoc MeshGenerationSystem::beginJobCandidateFrame */
+	void MeshGenerationSystem::beginJobCandidateFrame()
 	{
 		DSE_WATCH();
-		requests.clear();
+		job_candidates.clear();
 	}
 
-	/** @copydoc MeshGenerationSystem::appendPlanetRequests */
-	void MeshGenerationSystem::appendPlanetRequests(
-		const DynamicArray<MeshGenerationJob>& planet_requests)
+	/** @copydoc MeshGenerationSystem::appendPlanetJobCandidates */
+	void MeshGenerationSystem::appendPlanetJobCandidates(
+		const DynamicArray<MeshGenerationJob>& planet_job_candidates)
 	{
 		DSE_WATCH();
-		for(const MeshGenerationJob& request : planet_requests)
+		for(const MeshGenerationJob& candidate : planet_job_candidates)
 		{
-			MeshGenerationJob queued = request;
+			MeshGenerationJob queued = candidate;
 			queued.generation_id = generation_id;
-			requests.pushMove(queued);
+			job_candidates.pushMove(queued);
 		}
 	}
 
-	/** @copydoc MeshGenerationSystem::cancelPlanetRequests */
-	void MeshGenerationSystem::cancelPlanetRequests(PlanetId planet_id,
+	/** @copydoc MeshGenerationSystem::cancelPlanetJobs */
+	void MeshGenerationSystem::cancelPlanetJobs(PlanetId planet_id,
 		uint64 planet_generation_id)
 	{
 		DSE_WATCH();
-		cancelQueuedPlanetRequests(planet_id, planet_generation_id);
-		for(size_t index = 0; index < requests.size();)
+		cancelJobsForPlanet(planet_id, planet_generation_id);
+		for(size_t index = 0; index < job_candidates.size();)
 		{
-			const MeshGenerationJob& request = requests[index];
-			if(request.source != MeshGenerationSource::planet_terrain_node
-				|| request.planet_id != planet_id
-				|| request.planet_generation_id != planet_generation_id)
+			const MeshGenerationJob& candidate = job_candidates[index];
+			if(candidate.source != MeshGenerationSource::planet_terrain_node
+				|| candidate.planet_id != planet_id
+				|| candidate.planet_generation_id != planet_generation_id)
 			{
 				index++;
 				continue;
 			}
-			for(size_t shift = index + 1; shift < requests.size(); shift++)
-				requests[shift - 1] = static_cast<MeshGenerationJob&&>(requests[shift]);
-			requests.resize(requests.size() - 1);
+			for(size_t shift = index + 1; shift < job_candidates.size(); shift++)
+				job_candidates[shift - 1] = static_cast<MeshGenerationJob&&>(job_candidates[shift]);
+			job_candidates.resize(job_candidates.size() - 1);
 		}
 	}
 
@@ -151,8 +151,8 @@ namespace danikk_space_engine
 		if(++body.detail_mesh_revision == 0) ++body.detail_mesh_revision;
 	}
 
-	/** @copydoc MeshGenerationSystem::collectBuildPartRequests */
-	void MeshGenerationSystem::collectBuildPartRequests()
+	/** @copydoc MeshGenerationSystem::collectBuildPartJobCandidates */
+	void MeshGenerationSystem::collectBuildPartJobCandidates()
 	{
 		DSE_WATCH();
 		for(WorldBodyId world_body_id : world.world_body_data.getUsedWorldBodyIds())
@@ -166,12 +166,12 @@ namespace danikk_space_engine
 				body.detail_mesh_queued = true;
 			}
 
-			MeshGenerationJob request;
-			request.source = MeshGenerationSource::build_parts;
-			request.generation_id = generation_id;
-			request.source_revision = body.detail_mesh_revision;
-			request.world_body_id = world_body_id;
-			requests.pushMove(request);
+			MeshGenerationJob candidate;
+			candidate.source = MeshGenerationSource::build_parts;
+			candidate.generation_id = generation_id;
+			candidate.source_revision = body.detail_mesh_revision;
+			candidate.world_body_id = world_body_id;
+			job_candidates.pushMove(candidate);
 		}
 	}
 
@@ -179,7 +179,7 @@ namespace danikk_space_engine
 	void MeshGenerationSystem::frame()
 	{
 		DSE_WATCH();
-		collectBuildPartRequests();
+		collectBuildPartJobCandidates();
 		MeshGenerationJob generated;
 		if(tryTakeCompletedJob(generated) && generated.generation_id == generation_id
 			&& generated.source == MeshGenerationSource::planet_terrain_node)
@@ -221,8 +221,8 @@ namespace danikk_space_engine
 			}
 		}
 
-		updateMeshGenerationRequests(generation_id, world.planets.buildMeshGenerationRequestBuffer(
-			requests, thread_pool.workerCount() * 2));
+		updateMeshGenerationJobs(generation_id, world.planets.buildMeshGenerationJobBuffer(
+			job_candidates, thread_pool.workerCount() * 2));
 	}
 }
 namespace danikk_space_engine::mesh_generation_internal
@@ -241,7 +241,7 @@ namespace danikk_space_engine::mesh_generation_internal
 			return level;
 		}
 
-		bool sameRequestKey(const MeshGenerationJob& a, const MeshGenerationJob& b)
+		bool sameJobKey(const MeshGenerationJob& a, const MeshGenerationJob& b)
 		{
 			return a.generation_id == b.generation_id
 				&& a.source == b.source
@@ -257,10 +257,10 @@ namespace danikk_space_engine::mesh_generation_internal
 		}
 
 		template<typename array_t>
-		bool requestHasJob(const MeshGenerationJob& request, const array_t& jobs)
+		bool hasMatchingJob(const MeshGenerationJob& candidate, const array_t& jobs)
 		{
 			for(const MeshGenerationJob& job : jobs)
-				if(job.state != MeshGenerationJobState::empty && sameRequestKey(job, request)) return true;
+				if(job.state != MeshGenerationJobState::empty && sameJobKey(job, candidate)) return true;
 			return false;
 		}
 
@@ -291,7 +291,7 @@ namespace danikk_space_engine
 			size_t job_index = jobs.size();
 			{
 				std::unique_lock<std::mutex> lock(task_mutex);
-				request_available.wait(lock, [this]
+				job_available.wait(lock, [this]
 				{
 					if(stopping_tasks) return true;
 					for(const MeshGenerationJob& job : jobs)
@@ -359,8 +359,8 @@ namespace danikk_space_engine
 		job.state = MeshGenerationJobState::completed;
 	}
 
-	void MeshGenerationSystem::updateMeshGenerationRequests(uint64 new_generation_id,
-		const DynamicArray<MeshGenerationJob>& new_requests)
+	void MeshGenerationSystem::updateMeshGenerationJobs(uint64 new_generation_id,
+		const DynamicArray<MeshGenerationJob>& desired_jobs)
 	{
 		PlanetMeshQueueTelemetry snapshot;
 		{
@@ -377,8 +377,8 @@ namespace danikk_space_engine
 
 			const auto isDesired = [&](const MeshGenerationJob& job)
 			{
-				for(const MeshGenerationJob& request : new_requests)
-					if(request.generation_id == active_generation_id && sameRequestKey(job, request))
+				for(const MeshGenerationJob& candidate : desired_jobs)
+					if(candidate.generation_id == active_generation_id && sameJobKey(job, candidate))
 						return true;
 				return false;
 			};
@@ -389,23 +389,23 @@ namespace danikk_space_engine
 				else job = MeshGenerationJob();
 			}
 
-			for(const MeshGenerationJob& request : new_requests)
+			for(const MeshGenerationJob& candidate : desired_jobs)
 			{
-				if(request.generation_id != active_generation_id || requestHasJob(request, jobs)) continue;
+				if(candidate.generation_id != active_generation_id || hasMatchingJob(candidate, jobs)) continue;
 				for(MeshGenerationJob& job : jobs)
 					if(job.state == MeshGenerationJobState::empty)
 					{
-						job = MeshGenerationJob(request);
+						job = MeshGenerationJob(candidate);
 						job.state = MeshGenerationJobState::queued;
 						break;
 					}
 			}
 
-			for(const MeshGenerationJob& request : new_requests)
+			for(const MeshGenerationJob& candidate : desired_jobs)
 			{
-				if(request.source != MeshGenerationSource::planet_terrain_node) continue;
+				if(candidate.source != MeshGenerationSource::planet_terrain_node) continue;
 				snapshot.desired++;
-				if(request.node_width <= 128.0) snapshot.fine_desired++;
+				if(candidate.node_width <= 128.0) snapshot.fine_desired++;
 			}
 			for(const MeshGenerationJob& job : jobs)
 			{
@@ -425,11 +425,11 @@ namespace danikk_space_engine
 				else if(job.state == MeshGenerationJobState::completed) snapshot.completed++;
 			}
 		}
-		request_available.notify_all();
+		job_available.notify_all();
 		telemetry_system.setPlanetMeshQueueSnapshot(snapshot);
 	}
 
-	bool MeshGenerationSystem::tryTakeCompletedJob(MeshGenerationJob& result)
+	bool MeshGenerationSystem::tryTakeCompletedJob(MeshGenerationJob& completed_job)
 	{
 		std::lock_guard<std::mutex> guard(task_mutex);
 		for(size_t index = 0; index < jobs.size(); ++index)
@@ -440,14 +440,14 @@ namespace danikk_space_engine
 				jobs[index] = MeshGenerationJob();
 				continue;
 			}
-			result = static_cast<MeshGenerationJob&&>(jobs[index]);
+			completed_job = static_cast<MeshGenerationJob&&>(jobs[index]);
 			jobs[index] = MeshGenerationJob();
 			return true;
 		}
 		return false;
 	}
 
-	void MeshGenerationSystem::cancelQueuedPlanetRequests(PlanetId planet_id,
+	void MeshGenerationSystem::cancelJobsForPlanet(PlanetId planet_id,
 		uint64 planet_generation_id)
 	{
 		std::lock_guard<std::mutex> guard(task_mutex);
@@ -460,6 +460,6 @@ namespace danikk_space_engine
 			if(job.state == MeshGenerationJobState::processing) job.cancelled = true;
 			else job = MeshGenerationJob();
 		}
-		request_available.notify_all();
+		job_available.notify_all();
 	}
 }

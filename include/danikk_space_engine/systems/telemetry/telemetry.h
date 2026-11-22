@@ -44,13 +44,13 @@ namespace danikk_space_engine
 		uint64 active_nodes = 0;
 		uint64 target_nodes = 0;
 		uint64 detail_scale_adjustments = 0;
-		uint64 request_candidates = 0;
-		uint64 queued_requests = 0;
+		uint64 job_candidates = 0;
+		uint64 queued_jobs = 0;
 		uint64 fine_queued = 0;
 		uint64 cached_meshes = 0;
 		uint64 active_meshes = 0;
 		uint64 cache_capacity = 0;
-		double finest_request_width = 0.0;
+		double finest_job_width = 0.0;
 		double finest_active_half_extent = 0.0;
 		double detail_scale_total = 0.0;
 	};

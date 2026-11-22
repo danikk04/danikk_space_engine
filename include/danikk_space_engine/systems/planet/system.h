@@ -4,22 +4,22 @@
 
 namespace danikk_space_engine
 {
-	/** @brief Owns planet state and provides terrain queries, editing, streaming, and result acceptance. */
+	/** @brief Owns planet state and provides terrain queries, editing, streaming, and mesh acceptance. */
 	class PlanetSystem
 	{
 		World& world;
 		DynamicArray<PlanetData> planets;
 		/** @brief Reused output batch and priority scratch for mesh-generation workers. */
-		DynamicArray<MeshGenerationJob> mesh_generation_request_buffer;
-		DynamicArray<double> mesh_generation_request_distances;
+		DynamicArray<MeshGenerationJob> mesh_generation_job_candidate_buffer;
+		DynamicArray<double> mesh_generation_job_candidate_distances;
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
 		void updatePlanetTerrainTree(PlanetData& planet, const glm::dvec3& camera_position,
 			double height);
 		void destroyPlanetTerrainTree(PlanetData& planet);
-		void appendPlanetRequests(PlanetData& planet);
-		void removeQueuedRequests(const PlanetData& planet);
+		void appendPlanetJobCandidates(PlanetData& planet);
+		void cancelQueuedJobsForPlanet(const PlanetData& planet);
 
 	public:
 		explicit PlanetSystem(World& world) : world(world) {}
@@ -41,8 +41,8 @@ namespace danikk_space_engine
 
 		/** @brief Updates adaptive terrain-tree streaming once for the current world frame. */
 		void update();
-		/** @brief Builds the nearest valid mesh requests, bounded by the worker count. */
-		const DynamicArray<MeshGenerationJob>& buildMeshGenerationRequestBuffer(
+		/** @brief Builds the nearest valid mesh job candidates, bounded by the worker count. */
+		const DynamicArray<MeshGenerationJob>& buildMeshGenerationJobBuffer(
 			const DynamicArray<MeshGenerationJob>& candidates, size_t capacity);
 		void acceptGeneratedSurfaceNode(const MeshGenerationJob& job);
 		/** @brief Draws active adaptive surface-node meshes in the current depth pass. */

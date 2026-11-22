@@ -72,8 +72,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Samples and polygonizes one regular 3D terrain-tree node.
 		 * @param world World providing live planet terrain data.
-		 * @param request Node bounds, origin, and generator settings.
-		 * @return Request identity plus body-local surface vertices and triangle indices.
+		 * @param job Node bounds, origin, generator settings, and output arrays.
 		 * The field is sampled at every lattice corner. Each lattice cube is split
 		 * into six tetrahedra; sign-changing tetrahedron edges are refined against
 		 * the original scalar field by bisection and cached by an unordered endpoint key so adjacent

@@ -31,7 +31,7 @@ namespace danikk_space_engine
 		completed
 	};
 
-	/** @brief Mesh request, reusable job slot state, and generated CPU mesh payload. */
+	/** @brief Mesh job candidate, reusable slot state, and generated CPU mesh payload. */
 	struct MeshGenerationJob
 	{
 		uint64 generation_id = 0;
@@ -58,10 +58,10 @@ namespace danikk_space_engine
 	};
 
 	/**
-	 * @brief Owns asynchronous mesh requests and accepts generated CPU meshes.
+	 * @brief Owns asynchronous mesh jobs and accepts generated CPU meshes.
 	 *
-	 * PlanetData and WorldBody own their accepted meshes. This system manages requests,
-	 * task-pool lifecycle, stale-result rejection, and main-thread uploads.
+	 * PlanetData and WorldBody own their accepted meshes. This system manages candidate
+	 * collection, task-pool lifecycle, stale-job rejection, and main-thread uploads.
 	 */
 	class MeshGenerationSystem
 	{
@@ -70,29 +70,29 @@ namespace danikk_space_engine
 		/** @brief Worker threads execute jobs from the fixed reusable slot array. */
 		danikk_framework::ThreadPool thread_pool;
 		std::mutex task_mutex;
-		std::condition_variable request_available;
-		/** @brief Two reusable request/output slots per worker; all state changes use task_mutex. */
+		std::condition_variable job_available;
+		/** @brief Two reusable candidate/output slots per worker; all state changes use task_mutex. */
 		Array<MeshGenerationJob, 8> jobs;
 		uint32 generation_sample_count = 0;
 		uint64 generation_sample_total_nanoseconds = 0;
 		std::atomic<float> average_generation_milliseconds = 0.0f;
 		bool stopping_tasks = false;
 		uint64 active_generation_id = 0;
-		/** @brief Token that rejects results submitted before the latest World lifecycle. */
+		/** @brief Token that rejects jobs submitted before the latest World lifecycle. */
 		uint64 generation_id = 0;
-		/** @brief Current candidate requests collected from terrain and BuildPart systems. */
-		DynamicArray<MeshGenerationJob> requests;
+		/** @brief Current job candidates collected from terrain and BuildPart systems. */
+		DynamicArray<MeshGenerationJob> job_candidates;
 		/** @brief True while the task pool is running for the current World lifecycle. */
 		bool initialized = false;
 
-		/** @brief Rebuilds current combined BuildPart requests from body mesh state. */
-		void collectBuildPartRequests();
+		/** @brief Rebuilds current BuildPart job candidates from body mesh state. */
+		void collectBuildPartJobCandidates();
 		void runMeshGenerationTask();
 		void runMeshGenerationJob(size_t job_index);
-		void updateMeshGenerationRequests(uint64 generation_id,
-			const DynamicArray<MeshGenerationJob>& requests);
-		bool tryTakeCompletedJob(MeshGenerationJob& result);
-		void cancelQueuedPlanetRequests(PlanetId planet_id, uint64 planet_generation_id);
+		void updateMeshGenerationJobs(uint64 generation_id,
+			const DynamicArray<MeshGenerationJob>& job_candidates);
+		bool tryTakeCompletedJob(MeshGenerationJob& completed_job);
+		void cancelJobsForPlanet(PlanetId planet_id, uint64 planet_generation_id);
 
 	public:
 		explicit MeshGenerationSystem(World& world);
@@ -100,18 +100,18 @@ namespace danikk_space_engine
 		MeshGenerationSystem(const MeshGenerationSystem&) = delete;
 		MeshGenerationSystem& operator=(const MeshGenerationSystem&) = delete;
 
-		/** @brief Starts the task pool and resets request state for a fresh World lifetime. */
+		/** @brief Starts the task pool and resets candidate state for a fresh World lifetime. */
 		void init();
-		/** @brief Stops the task pool, invalidates outstanding work, and clears queued requests. */
+		/** @brief Stops the task pool, invalidates outstanding work, and clears pending jobs. */
 		void shutdown();
-		/** @brief Submits current requests and accepts at most one completed mesh on the main thread. */
+		/** @brief Schedules current job candidates and accepts at most one completed mesh per frame. */
 		void frame();
-		/** @brief Clears the candidate list before systems rebuild requests for a new frame. */
-		void beginRequestFrame();
+		/** @brief Clears the candidate list before systems rebuild it for a new frame. */
+		void beginJobCandidateFrame();
 		/** @brief Appends this frame's terrain candidates to the shared candidate list. */
-		void appendPlanetRequests(const DynamicArray<MeshGenerationJob>& planet_requests);
-		/** @brief Cancels queued and active task requests for one planet incarnation. */
-		void cancelPlanetRequests(PlanetId planet_id, uint64 planet_generation_id);
+		void appendPlanetJobCandidates(const DynamicArray<MeshGenerationJob>& planet_job_candidates);
+		/** @brief Cancels queued and active jobs for one planet incarnation. */
+		void cancelPlanetJobs(PlanetId planet_id, uint64 planet_generation_id);
 		/** @brief Marks the owning body's combined BuildPart mesh stale. */
 		void invalidateBodyDetailMesh(WorldBodyId world_body_id);
 		/** @brief Reads the latest average generation time over 50 completed mesh jobs. */

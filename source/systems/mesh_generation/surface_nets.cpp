@@ -9,7 +9,7 @@ namespace danikk_space_engine::mesh_generation_internal
 	/**
 	 * @brief Extracts a planet isosurface with the Surface Nets algorithm.
 	 * @param world World providing live planet terrain data.
-	 * @param request Node bounds and generator settings.
+	 * @param job Node bounds, generator settings, and output arrays.
 	 * @return Node-local vertices and triangle indices, including halo-cell vertices needed
 	 *         to connect faces across adjacent terrain-node boundaries.
 	 * The scalar field is sampled on a regular lattice expanded by one cell around the

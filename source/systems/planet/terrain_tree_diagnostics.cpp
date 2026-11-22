@@ -11,8 +11,8 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 		snapshot.nodes = context.tree.nodes.size();
 		snapshot.target_nodes = context.target_node_count;
 		snapshot.detail_scale_adjustments = context.detail_scale_adjustments;
-		snapshot.request_candidates = context.request_nodes.size();
-		snapshot.queued_requests = context.planet.pending_requests.size();
+		snapshot.job_candidates = context.mesh_job_candidate_node_ids.size();
+		snapshot.queued_jobs = context.planet.pending_job_candidates.size();
 		snapshot.detail_scale_total = context.detail_scale;
 		for(const PlanetTerrainNode& node : context.tree.nodes)
 		{
@@ -24,12 +24,12 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 					snapshot.finest_active_half_extent = node.half_extent;
 			}
 		}
-		for(const MeshGenerationJob& request : context.planet.pending_requests)
+		for(const MeshGenerationJob& candidate : context.planet.pending_job_candidates)
 		{
-			if(request.node_width <= 128.0) snapshot.fine_queued++;
-			if(snapshot.finest_request_width == 0.0
-				|| request.node_width < snapshot.finest_request_width)
-				snapshot.finest_request_width = request.node_width;
+			if(candidate.node_width <= 128.0) snapshot.fine_queued++;
+			if(snapshot.finest_job_width == 0.0
+				|| candidate.node_width < snapshot.finest_job_width)
+				snapshot.finest_job_width = candidate.node_width;
 		}
 		telemetry_system.recordPlanetTerrainTree(snapshot);
 	}

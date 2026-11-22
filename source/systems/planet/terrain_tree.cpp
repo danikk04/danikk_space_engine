@@ -22,10 +22,10 @@ namespace danikk_space_engine
 		planet_terrain_tree_internal::initialize(context);
 		planet_terrain_tree_internal::calculateDetailBudget(context);
 		planet_terrain_tree_internal::refine(context);
-		planet_terrain_tree_internal::collectMeshRequests(context);
+		planet_terrain_tree_internal::collectMeshJobCandidates(context);
 		planet_terrain_tree_internal::activateMeshes(context);
 		planet_terrain_tree_internal::recordDiagnostics(context);
 		planet_terrain_tree_internal::evictCachedMeshes(context);
-		appendPlanetRequests(planet);
+		appendPlanetJobCandidates(planet);
 	}
 }

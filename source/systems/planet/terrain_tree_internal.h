@@ -6,7 +6,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 {
 	inline constexpr PlanetTerrainNodeId invalid_node = static_cast<PlanetTerrainNodeId>(-1);
 	inline constexpr size_t maximum_visible_nodes = 2048;
-	inline constexpr size_t maximum_requests_per_frame = 32;
+	inline constexpr size_t maximum_job_candidates_per_frame = 32;
 	inline constexpr size_t maximum_tree_nodes = 131072;
 
 	struct UpdateContext
@@ -22,7 +22,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 		double detail_scale = 0.0;
 		size_t target_node_count = 0;
 		size_t detail_scale_adjustments = 0;
-		DynamicArray<PlanetTerrainNodeId> request_nodes;
+		DynamicArray<PlanetTerrainNodeId> mesh_job_candidate_node_ids;
 	};
 
 	double getTargetHalfExtent(const UpdateContext& context, const glm::dvec3& center);
@@ -32,7 +32,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 	void initialize(UpdateContext& context);
 	void calculateDetailBudget(UpdateContext& context);
 	void refine(UpdateContext& context);
-	void collectMeshRequests(UpdateContext& context);
+	void collectMeshJobCandidates(UpdateContext& context);
 	void activateMeshes(UpdateContext& context);
 	void recordDiagnostics(const UpdateContext& context);
 	void evictCachedMeshes(UpdateContext& context);

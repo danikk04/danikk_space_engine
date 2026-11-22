@@ -210,7 +210,7 @@ namespace danikk_space_engine
 				generated_triangles += level.generated_triangles;
 				generation_nanoseconds += level.generation_time.total_nanoseconds;
 			}
-			const uint64 stale_results = report_missing_planet + report_stale_planet
+			const uint64 stale_jobs = report_missing_planet + report_stale_planet
 				+ report_stale_terrain + report_invalid_node + report_stale_generator + report_stale_node;
 			const double average_generation_milliseconds = generated_meshes == 0 ? 0.0
 				: static_cast<double>(generation_nanoseconds) / generated_meshes / 1000000.0;
@@ -219,18 +219,18 @@ namespace danikk_space_engine
 			formatLogInfo(
 				"Telemetry mesh: generated=% triangles=% avg_ms=% accepted=% empty=% stale=% evicted=% cache=%/% active=%",
 				generated_meshes, generated_triangles, average_generation_milliseconds,
-				report_accepted, report_empty, stale_results, report_evicted,
+				report_accepted, report_empty, stale_jobs, report_evicted,
 				report_tree.cached_meshes, report_tree.cache_capacity,
 				report_tree.active_meshes);
 			formatLogInfo(
-				"Telemetry stream: queue=%/% fine=%/% active=%/% orphan_active=% completed=% planets=% tree=%/% target=% candidates=% pending=% fine_pending=% finest_request=% finest_active=% detail_scale=% scale_adjustments=%",
+				"Telemetry stream: queue=%/% fine=%/% active=%/% orphan_active=% completed=% planets=% tree=%/% target=% candidates=% pending=% fine_pending=% finest_job=% finest_active=% detail_scale=% scale_adjustments=%",
 				report_queue.queued, report_queue.desired,
 				report_queue.fine_queued, report_queue.fine_desired,
 				report_queue.active, report_queue.fine_active,
 				report_queue.active_not_desired, report_queue.completed, report_tree.planets,
 				report_tree.nodes, report_tree.active_nodes, report_tree.target_nodes,
-				report_tree.request_candidates, report_tree.queued_requests,
-				report_tree.fine_queued, report_tree.finest_request_width,
+				report_tree.job_candidates, report_tree.queued_jobs,
+				report_tree.fine_queued, report_tree.finest_job_width,
 				report_tree.finest_active_half_extent, average_detail_scale,
 				report_tree.detail_scale_adjustments);
 			for(size_t level_id = 0; level_id < report_mesh_levels.size(); ++level_id)
@@ -369,13 +369,13 @@ namespace danikk_space_engine
 		terrain_tree_frame.active_nodes += snapshot.active_nodes;
 		terrain_tree_frame.target_nodes += snapshot.target_nodes;
 		terrain_tree_frame.detail_scale_adjustments += snapshot.detail_scale_adjustments;
-		terrain_tree_frame.request_candidates += snapshot.request_candidates;
-		terrain_tree_frame.queued_requests += snapshot.queued_requests;
+		terrain_tree_frame.job_candidates += snapshot.job_candidates;
+		terrain_tree_frame.queued_jobs += snapshot.queued_jobs;
 		terrain_tree_frame.fine_queued += snapshot.fine_queued;
-		if(snapshot.finest_request_width > 0.0
-			&& (terrain_tree_frame.finest_request_width == 0.0
-				|| snapshot.finest_request_width < terrain_tree_frame.finest_request_width))
-			terrain_tree_frame.finest_request_width = snapshot.finest_request_width;
+		if(snapshot.finest_job_width > 0.0
+			&& (terrain_tree_frame.finest_job_width == 0.0
+				|| snapshot.finest_job_width < terrain_tree_frame.finest_job_width))
+			terrain_tree_frame.finest_job_width = snapshot.finest_job_width;
 		if(snapshot.finest_active_half_extent > 0.0
 			&& (terrain_tree_frame.finest_active_half_extent == 0.0
 				|| snapshot.finest_active_half_extent < terrain_tree_frame.finest_active_half_extent))

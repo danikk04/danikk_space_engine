@@ -31,7 +31,7 @@ namespace danikk_space_engine
 		danikk_framework::formatLogInfo("Shutdown PlanetSystem");
 		for(PlanetData& planet : planets)
 		{
-			removeQueuedRequests(planet);
+			cancelQueuedJobsForPlanet(planet);
 			destroyPlanetTerrainTree(planet);
 		}
 	}
@@ -74,9 +74,9 @@ namespace danikk_space_engine
 		return planets[planets.size() - 1];
 	}
 
-	void PlanetSystem::removeQueuedRequests(const PlanetData& planet)
+	void PlanetSystem::cancelQueuedJobsForPlanet(const PlanetData& planet)
 	{
-		world.mesh_generation.cancelPlanetRequests(planet.id, planet.generation_id);
+		world.mesh_generation.cancelPlanetJobs(planet.id, planet.generation_id);
 	}
 
 	void PlanetSystem::destroyPlanet(PlanetId planet_id)
@@ -84,7 +84,7 @@ namespace danikk_space_engine
 		for(size_t index = 0; index < planets.size(); ++index)
 		{
 			if(planets[index].id != planet_id) continue;
-			removeQueuedRequests(planets[index]);
+			cancelQueuedJobsForPlanet(planets[index]);
 			destroyPlanetTerrainTree(planets[index]);
 			for(size_t shift = index + 1; shift < planets.size(); ++shift)
 				planets[shift - 1] = static_cast<PlanetData&&>(planets[shift]);
@@ -157,7 +157,7 @@ namespace danikk_space_engine
 	void PlanetSystem::update()
 	{
 		DSE_WATCH();
-		world.mesh_generation.beginRequestFrame();
+		world.mesh_generation.beginJobCandidateFrame();
 		for(PlanetData& planet : planets) updatePlanet(planet);
 	}
 
