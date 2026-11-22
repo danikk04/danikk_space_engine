@@ -27,33 +27,6 @@ namespace danikk_space_engine
 			return child_index;
 		}
 
-		uint32 appendNode(PlanetTerrainEdits& tree, const glm::dvec3& center, double half_extent)
-		{
-			const uint32 node_id = static_cast<uint32>(tree.nodes.size());
-			tree.nodes.pushCtor();
-			tree.nodes[node_id].center = center;
-			tree.nodes[node_id].half_extent = half_extent;
-			return node_id;
-		}
-
-		void createChildren(PlanetTerrainEdits& tree, uint32 node_id)
-		{
-			if(tree.nodes[node_id].hasChildren()) return;
-			const glm::dvec3 center = tree.nodes[node_id].center;
-			const double child_half_extent = tree.nodes[node_id].half_extent * 0.5;
-			uint32 child_ids[8];
-			for(uint8 index = 0; index < 8; ++index)
-			{
-				const glm::dvec3 offset(
-					(index & 1) ? child_half_extent : -child_half_extent,
-					(index & 2) ? child_half_extent : -child_half_extent,
-					(index & 4) ? child_half_extent : -child_half_extent);
-				child_ids[index] = appendNode(tree, center + offset, child_half_extent);
-			}
-			for(uint8 index = 0; index < 8; ++index)
-				tree.nodes[node_id].children[index] = child_ids[index];
-		}
-
 		void recordReferenceLocation(PlanetTerrainEdits& tree, uint32 node_id,
 			const PlanetTerrainEditReference& reference)
 		{
@@ -84,7 +57,12 @@ namespace danikk_space_engine
 			if(node.edits.size() >= max_edits_per_leaf
 				&& node.half_extent > PlanetTerrainEdits::minimum_cell_size * 0.5)
 			{
-				createChildren(tree, node_id);
+				if(!tree.splitNode(node_id))
+				{
+					tree.nodes[node_id].edits.push(reference);
+					recordReferenceLocation(tree, node_id, reference);
+					return;
+				}
 				DynamicArray<PlanetTerrainEditReference> previous_edits =
 					static_cast<DynamicArray<PlanetTerrainEditReference>&&>(tree.nodes[node_id].edits);
 				for(const PlanetTerrainEditReference& previous : previous_edits)
@@ -111,9 +89,9 @@ namespace danikk_space_engine
 			if(!std::isfinite(minimum.x) || !std::isfinite(minimum.y) || !std::isfinite(minimum.z)
 				|| !std::isfinite(maximum.x) || !std::isfinite(maximum.y) || !std::isfinite(maximum.z))
 				return false;
-			if(tree.root_id == invalid_node_id)
-				tree.root_id = appendNode(tree, glm::dvec3(0.0),
-					PlanetTerrainEdits::initial_root_half_extent);
+			if(tree.root_id == invalid_node_id
+				&& tree.createRoot(glm::dvec3(0.0), PlanetTerrainEdits::initial_root_half_extent) == invalid_node_id)
+				return reject_expansion();
 			constexpr uint32 maximum_root_expansions = 64;
 			for(uint32 expansion = 0; expansion <= maximum_root_expansions; ++expansion)
 			{
@@ -131,17 +109,15 @@ namespace danikk_space_engine
 				glm::dvec3 shift(0.0);
 				for(uint8 axis = 0; axis < 3; ++axis)
 					shift[axis] = (edit.getCenter()[axis] >= old_center[axis] ? 1.0 : -1.0) * old_half_extent;
-				const uint32 old_root_id = tree.root_id;
 				const glm::dvec3 new_center = old_center + shift;
 				if(!std::isfinite(new_center.x) || !std::isfinite(new_center.y)
 					|| !std::isfinite(new_center.z)) return reject_expansion();
-				const uint32 new_root_id = appendNode(tree, new_center, new_half_extent);
 				uint8 old_child_index = 0;
 				for(uint8 axis = 0; axis < 3; ++axis)
-					if(old_center[axis] >= tree.nodes[new_root_id].center[axis])
+					if(old_center[axis] >= new_center[axis])
 						old_child_index |= static_cast<uint8>(1u << axis);
-				tree.nodes[new_root_id].children[old_child_index] = old_root_id;
-				tree.root_id = new_root_id;
+				if(tree.wrapRoot(new_center, new_half_extent, old_child_index) == invalid_node_id)
+					return reject_expansion();
 			}
 			return reject_expansion();
 		}

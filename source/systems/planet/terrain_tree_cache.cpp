@@ -77,7 +77,6 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 		DSE_WATCH();
 		for(PlanetTerrainNode& node : planet.terrain_tree.nodes)
 			if(node.mesh.mesh != nullptr) destroyMeshRenderData(node.mesh);
-		planet.terrain_tree.nodes.clear();
-		planet.terrain_tree.root_id = invalid_node;
+		planet.terrain_tree.clear();
 	}
 }

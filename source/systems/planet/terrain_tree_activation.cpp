@@ -13,7 +13,10 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 			PlanetTerrainNode& node = context.tree.nodes[node_id];
 			if(node.half_extent <= getTargetHalfExtent(context, node.center))
 			{
-				if(hasCurrentMesh(context, node_id)) node.render_active = true;
+				// Keep this node's previous mesh visible while its replacement is queued
+				// or generated. A parent node is still not used as a substitute for
+				// missing detail because traversal only reaches target-resolution nodes.
+				if(node.mesh.mesh != nullptr) node.render_active = true;
 				return;
 			}
 			if(!node.hasChildren()) return;

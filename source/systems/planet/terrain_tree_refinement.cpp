@@ -123,13 +123,11 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 	{
 		void createRoot(UpdateContext& context)
 		{
-			PlanetTerrainNode root;
-			root.center = glm::dvec3(0.0);
-			root.half_extent = PlanetTerrainTree::initial_root_half_extent;
-			root.generation_id = context.tree.next_node_generation_id++;
+			const PlanetTerrainNodeId root_id = context.tree.createRoot(
+				glm::dvec3(0.0), PlanetTerrainTree::initial_root_half_extent);
+			if(root_id == invalid_node) return;
+			context.tree.nodes[root_id].generation_id = context.tree.next_node_generation_id++;
 			if(context.tree.next_node_generation_id == 0) context.tree.next_node_generation_id++;
-			context.tree.nodes.pushMove(root);
-			context.tree.root_id = 0;
 		}
 	}
 
@@ -167,8 +165,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 		if(context.tree.nodes.size() + 8192 <= maximum_tree_nodes) return;
 		for(PlanetTerrainNode& node : context.tree.nodes)
 			if(node.mesh.mesh != nullptr) destroyMeshRenderData(node.mesh);
-		context.tree.nodes.clear();
-		context.tree.root_id = invalid_node;
+		context.tree.clear();
 		createRoot(context);
 	}
 
@@ -225,21 +222,12 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 			PlanetTerrainTree& tree = context.tree;
 			if(tree.nodes[parent_id].hasChildren()) return true;
 			if(tree.nodes.size() + 8 > maximum_tree_nodes) return false;
-			const glm::dvec3 parent_center = tree.nodes[parent_id].center;
-			const double child_half_extent = tree.nodes[parent_id].half_extent * 0.5;
+			if(!tree.splitNode(parent_id)) return false;
 			for(uint8 child_index = 0; child_index < 8; ++child_index)
 			{
-				PlanetTerrainNode child;
-				child.center = parent_center + glm::dvec3(
-					(child_index & 1) ? child_half_extent : -child_half_extent,
-					(child_index & 2) ? child_half_extent : -child_half_extent,
-					(child_index & 4) ? child_half_extent : -child_half_extent);
-				child.half_extent = child_half_extent;
-				child.generation_id = tree.next_node_generation_id++;
+				const PlanetTerrainNodeId child_id = tree.nodes[parent_id].children[child_index];
+				tree.nodes[child_id].generation_id = tree.next_node_generation_id++;
 				if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
-				const PlanetTerrainNodeId child_id = static_cast<PlanetTerrainNodeId>(tree.nodes.size());
-				tree.nodes.pushMove(child);
-				tree.nodes[parent_id].children[child_index] = child_id;
 			}
 			return true;
 		};

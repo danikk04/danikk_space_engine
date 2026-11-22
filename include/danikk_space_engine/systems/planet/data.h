@@ -8,6 +8,7 @@
 
 #include <danikk_framework/array.h>
 #include <danikk_framework/dynamic_array.h>
+#include <danikk_framework/octree.h>
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/mesh_render_data.h>
@@ -64,27 +65,13 @@ namespace danikk_space_engine
 		uint64 order = 0;
 	};
 
-	struct PlanetTerrainEditNode
+	struct PlanetTerrainEditNode : public danikk_framework::OctreeNode<uint32>
 	{
-		glm::dvec3 center = glm::dvec3(0.0);
-		double half_extent = 0.0;
-		uint32 children[8] = {
-			static_cast<uint32>(-1), static_cast<uint32>(-1),
-			static_cast<uint32>(-1), static_cast<uint32>(-1),
-			static_cast<uint32>(-1), static_cast<uint32>(-1),
-			static_cast<uint32>(-1), static_cast<uint32>(-1)};
 		DynamicArray<PlanetTerrainEditReference> edits;
-
-		bool hasChildren() const
-		{
-			for(uint32 child_id : children)
-				if(child_id != static_cast<uint32>(-1)) return true;
-			return false;
-		}
 	};
 
 	/** @brief Owns all edit records and a spatial octree used to query candidate edits. */
-	struct PlanetTerrainEdits
+	struct PlanetTerrainEdits : public danikk_framework::Octree<PlanetTerrainEditNode, uint32>
 	{
 		static constexpr double initial_root_half_extent = 8388608.0;
 		static constexpr double minimum_cell_size = 4.0;
@@ -93,9 +80,7 @@ namespace danikk_space_engine
 		std::shared_ptr<PlanetTerrainEditPool> pool =
 			std::make_shared<PlanetTerrainEditPool>("PlanetTerrainEdit");
 		DynamicArray<PlanetTerrainEditId> ids;
-		DynamicArray<PlanetTerrainEditNode> nodes;
 		DynamicArray<PlanetTerrainEditLocation> locations;
-		uint32 root_id = static_cast<uint32>(-1);
 		uint64 next_order = 0;
 
 		PlanetTerrainEditId append(const PlanetTerrainEdit& edit);
@@ -206,15 +191,8 @@ namespace danikk_space_engine
 	};
 
 	/** @brief One adaptive spatial cell in a planet's render/streaming octree. */
-	struct PlanetTerrainNode
+	struct PlanetTerrainNode : public danikk_framework::OctreeNode<PlanetTerrainNodeId>
 	{
-		glm::dvec3 center = glm::dvec3(0.0);
-		double half_extent = 0.0;
-		PlanetTerrainNodeId children[8] = {
-			static_cast<PlanetTerrainNodeId>(-1), static_cast<PlanetTerrainNodeId>(-1),
-			static_cast<PlanetTerrainNodeId>(-1), static_cast<PlanetTerrainNodeId>(-1),
-			static_cast<PlanetTerrainNodeId>(-1), static_cast<PlanetTerrainNodeId>(-1),
-			static_cast<PlanetTerrainNodeId>(-1), static_cast<PlanetTerrainNodeId>(-1)};
 		MeshRenderData mesh;
 		glm::dvec3 mesh_position = glm::dvec3(0.0);
 		uint64 generation_id = 1;
@@ -223,17 +201,10 @@ namespace danikk_space_engine
 		bool mesh_surface_only = true;
 		bool generation_pending = false;
 		bool render_active = false;
-
-		bool hasChildren() const
-		{
-			for(PlanetTerrainNodeId child_id : children)
-				if(child_id != static_cast<PlanetTerrainNodeId>(-1)) return true;
-			return false;
-		}
 	};
 
 	/** @brief Adaptive spatial partition and render-node pool for a planet. */
-	struct PlanetTerrainTree
+	struct PlanetTerrainTree : public danikk_framework::Octree<PlanetTerrainNode, PlanetTerrainNodeId>
 	{
 		/** @brief Half the root side length; root width is exactly 2^24 metres. */
 		static constexpr double initial_root_half_extent = 8388608.0;
@@ -241,8 +212,6 @@ namespace danikk_space_engine
 		static constexpr double minimum_node_width = 32.0;
 		/** @brief Number of halvings from a 2^24 m root to a 32 m leaf. */
 		static constexpr uint8 maximum_depth = 19;
-		DynamicArray<PlanetTerrainNode> nodes;
-		PlanetTerrainNodeId root_id = static_cast<PlanetTerrainNodeId>(-1);
 		uint64 next_node_generation_id = 1;
 	};
 
