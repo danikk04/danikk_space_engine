@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cmath>
+#include <cstdio>
 #include <limits>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
@@ -25,68 +26,159 @@ namespace danikk_engine_game
 	namespace
 	{
 		World world;
-	}
 
-	/** @brief Collects the World values required to render the GUI without exposing World to GUI. */
-	GUIFrameData collectGUIFrameData(const World& world)
-	{
-		GUIFrameData data;
-		data.camera_position = world.camera.getWorldPosition();
-		data.average_mesh_generation_time_available =
-			world.mesh_generation.getAverageGenerationTimeMilliseconds(
-				data.average_mesh_generation_time_ms);
-		double nearest_surface_distance = std::numeric_limits<double>::max();
-		for(const PlanetData& planet : world.planets.getPlanets())
+		/** @brief Appends a fixed two-decimal value using a dot regardless of the active locale. */
+		void appendGuiNumber(String& text, double value)
 		{
-			const glm::dvec3 planet_local_camera_position = glm::conjugate(planet.rotation)
-				* (data.camera_position - planet.position);
-			const double height = world.planets.getPlanetHeightAboveSurface(
-				planet.id, planet_local_camera_position);
-			const double surface_distance = std::abs(height);
-			if(surface_distance >= nearest_surface_distance) continue;
-			nearest_surface_distance = surface_distance;
-			data.nearest_planet_height = height;
-			data.nearest_planet_height_available = true;
+			char buffer[64];
+			const int length = std::snprintf(buffer, sizeof(buffer), "%.2f", value);
+			if(length <= 0) return;
+			for(int index = 0; index < length; ++index)
+				if(buffer[index] == ',') buffer[index] = '.';
+			text.append(buffer, static_cast<size_t>(length));
 		}
-		const CameraSystem& camera = world.camera;
-		data.preview_camera_front = camera.getFront();
-		data.preview_camera_up = camera.getUp();
-		data.preview_vertical_fov_degrees = camera.vertical_fov_degrees;
-		const ControllerSystem& controller = world.controller;
-		data.camera_speed = controller.camera_movement_speed;
-		data.commander_mode = controller.mode == PlayerMode::commander;
-		data.tool_catalog_open = controller.tool_catalog_open;
-		data.active_tool = controller.active_tool;
-		data.selected_tool_action = controller.selected_tool_action;
-		data.build_part_size = controller.build_part_size;
-		data.build_part_size_axis = controller.build_part_size_axis;
-		data.build_part_rotation_step = controller.build_part_rotation_step;
-		data.selected_hotbar_slot = controller.selected_hotbar_slot;
-		for(uint32 index = 0; index < 36; ++index)
-			data.hotbar_entry_ids[index] = controller.hotbar_entry_ids[index];
 
-		double total_health_percent = 0.0;
-		uint32 health_sample_count = 0;
-		for(const SelectedUnitRef& reference : controller.selected_unit_refs)
+		/** @brief Appends three coordinates with slash separators and fixed dot-decimal formatting. */
+		void appendGuiPosition(String& text, const glm::dvec3& position)
 		{
-			const HumanData* human_data = world.humans.findHuman(reference.human_id);
-			if(human_data == nullptr || human_data->generation_id != reference.generation_id
-				|| !world.world_body_data.isWorldBodyActive(human_data->world_body_id)) continue;
-			const HumanState& human = *human_data;
-			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
-			++data.selected_unit_count;
-			const DamageableComponent* damageable = &human_data->damageable;
-			const float maximum_health = getDamageableDefinition(damageable->definition_id).max_health;
-			if(maximum_health <= 0.0f) continue;
-			total_health_percent += glm::clamp(damageable->getHealth() / maximum_health, 0.0f, 1.0f) * 100.0;
-			++health_sample_count;
+			appendGuiNumber(text, position.x);
+			text << '/';
+			appendGuiNumber(text, position.y);
+			text << '/';
+			appendGuiNumber(text, position.z);
 		}
-		if(health_sample_count > 0)
+
+		struct SelectedUnitsSummary
 		{
-			data.selected_unit_health_available = true;
-			data.selected_unit_average_health_percent = static_cast<float>(total_health_percent / health_sample_count);
+			uint32 count = 0;
+			double total_health_percent = 0.0;
+			uint32 health_samples = 0;
+		};
+
+		/** @brief Samples the selected living allied units for the summary panel. */
+		SelectedUnitsSummary getSelectedUnitsSummary(const World& world)
+		{
+			SelectedUnitsSummary summary;
+			for(const SelectedUnitRef& reference : world.controller.selected_unit_refs)
+			{
+				const HumanData* human_data = world.humans.findHuman(reference.human_id);
+				if(human_data == nullptr || human_data->generation_id != reference.generation_id
+					|| !world.world_body_data.isWorldBodyActive(human_data->world_body_id)) continue;
+				const HumanState& human = *human_data;
+				if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
+				++summary.count;
+				const DamageableComponent& damageable = human_data->damageable;
+				const float maximum_health = getDamageableDefinition(damageable.definition_id).max_health;
+				if(maximum_health <= 0.0f) continue;
+				summary.total_health_percent += glm::clamp(
+					damageable.getHealth() / maximum_health, 0.0f, 1.0f) * 100.0;
+				++summary.health_samples;
+			}
+			return summary;
 		}
-		return data;
+
+		/** @brief Writes the values shown in the debug overlay directly from their owning systems. */
+		void writeWorldDebugInfo(const void* source, String& text)
+		{
+			if(source == nullptr)
+			{
+				text << "World: unavailable\n";
+				return;
+			}
+			const World& world = *static_cast<const World*>(source);
+			const glm::dvec3 camera_position = world.camera.getWorldPosition();
+			const ControllerSystem& controller = world.controller;
+			formatAppend(text, "MODE:%\n", controller.mode == PlayerMode::commander
+				? "COMMANDER" : "GOD");
+			float average_mesh_generation_time_ms = 0.0f;
+			text << "MESH GEN AVG (50):";
+			if(world.mesh_generation.getAverageGenerationTimeMilliseconds(
+				average_mesh_generation_time_ms))
+			{
+				appendGuiNumber(text, average_mesh_generation_time_ms);
+				text << " ms\n";
+			}
+			else text << " collecting\n";
+
+			if(controller.active_tool == ToolId::place
+				&& (controller.selected_tool_action == ToolActionId::create_body
+					|| controller.selected_tool_action == ToolActionId::create_slope))
+			{
+				const char* size_axis_name = controller.build_part_size_axis == 0 ? "X"
+					: controller.build_part_size_axis == 1 ? "Y" : "Z";
+				text << "BUILD SIZE:";
+				appendGuiNumber(text, controller.build_part_size.x);
+				text << " x ";
+				appendGuiNumber(text, controller.build_part_size.y);
+				text << " x ";
+				appendGuiNumber(text, controller.build_part_size.z);
+				text << " m\n";
+				formatAppend(text, "BUILD ROTATION:% deg (Wheel)\n",
+					static_cast<uint32>(controller.build_part_rotation_step) * 90);
+				formatAppend(text, "SIZE AXIS:% (X/Y/Z, Shift+Wheel)\n", size_axis_name);
+			}
+
+			text << "CAMERA SPEED:";
+			appendGuiNumber(text, controller.camera_movement_speed);
+			text << " m/s\n";
+			double nearest_surface_distance = std::numeric_limits<double>::max();
+			double nearest_planet_height = 0.0;
+			bool nearest_planet_height_available = false;
+			for(const PlanetData& planet : world.planets.getPlanets())
+			{
+				const glm::dvec3 planet_local_camera_position = glm::conjugate(planet.rotation)
+					* (camera_position - planet.position);
+				const double height = world.planets.getPlanetHeightAboveSurface(
+					planet.id, planet_local_camera_position);
+				const double distance = std::abs(height);
+				if(distance >= nearest_surface_distance) continue;
+				nearest_surface_distance = distance;
+				nearest_planet_height = height;
+				nearest_planet_height_available = true;
+			}
+			text << "PLANET HEIGHT:";
+			if(nearest_planet_height_available) appendGuiNumber(text, nearest_planet_height);
+			else text << " unavailable";
+			text << " m\n";
+			const glm::dvec3 truncated_camera_position = glm::trunc(camera_position * 100.0) / 100.0;
+			text << "camera pos:";
+			appendGuiPosition(text, truncated_camera_position);
+		}
+
+		/** @brief Formats the selected allied-unit count and average health. */
+		void writeSelectedUnits(const void* source, String& text)
+		{
+			if(source == nullptr) return;
+			const SelectedUnitsSummary summary = getSelectedUnitsSummary(
+				*static_cast<const World*>(source));
+			if(summary.count == 0) return;
+			formatAppend(text, "UNITS: %\nAVG HP: ", summary.count);
+			if(summary.health_samples == 0)
+			{
+				text << "--%";
+				return;
+			}
+			formatAppend(text, "%", static_cast<uint64>(
+				summary.total_health_percent / summary.health_samples + 0.5));
+			text << '%';
+		}
+
+		/** @brief Reports whether any selected living allied unit should show the panel. */
+		bool hasSelectedUnits(const void* source)
+		{
+			return source != nullptr
+				&& getSelectedUnitsSummary(*static_cast<const World*>(source)).count > 0;
+		}
+
+		/** @brief Reads camera orientation and projection settings for catalog previews. */
+		void readPreviewCamera(const void* source, vec3& front, vec3& up, float& vertical_fov_degrees)
+		{
+			if(source == nullptr) return;
+			const CameraSystem& camera = *static_cast<const CameraSystem*>(source);
+			front = camera.getFront();
+			up = camera.getUp();
+			vertical_fov_degrees = camera.vertical_fov_degrees;
+		}
 	}
 
 	/** @brief Applies actions emitted by GUI widgets to the owning World's controller. */
@@ -158,6 +250,11 @@ namespace danikk_engine_game
 		gui.addMessage("Привет, мир!");
 		danikk_space_engine::initLocaliztion();
 		world.init();
+		gui.bindDebugInfo(&world, writeWorldDebugInfo);
+		gui.bindSelectedUnits(&world, writeSelectedUnits, &world, hasSelectedUnits);
+		gui.bindHotbar(world.controller.hotbar_entry_ids,
+			&world.controller.selected_hotbar_slot, &world.controller.tool_catalog_open);
+		gui.bindPreviewCamera(&world.camera, readPreviewCamera);
     	static_asset_collection.base2d_shader.use();
     }
 
@@ -175,7 +272,7 @@ namespace danikk_engine_game
 			 * @brief Measures the duration of the enclosing telemetry scope.
 			 */
 			DSE_WATCH();
-			gui.frame(collectGUIFrameData(world));
+			gui.frame();
 			applyGUIActions(world, gui);
 			if(getKeyboardState(keyboard_buttons::escape) == button_states::press)
 			{

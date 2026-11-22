@@ -8,53 +8,6 @@
 
 namespace danikk_space_engine
 {
-	/** @brief Values needed to display one frame of the game interface. */
-	struct GUIFrameData
-	{
-		/** @brief Camera position in world coordinates. */
-		glm::dvec3 camera_position = glm::dvec3(0.0);
-		/** @brief Camera speed in metres per second. */
-		float camera_speed = 0.0f;
-		/** @brief Signed height above the nearest planet surface, in metres. */
-		double nearest_planet_height = 0.0;
-		/** @brief Whether a planet was available for the nearest-surface height sample. */
-		bool nearest_planet_height_available = false;
-		/** @brief Average time in milliseconds for the most recent group of 50 generated meshes. */
-		float average_mesh_generation_time_ms = 0.0f;
-		/** @brief Whether at least one complete group of 50 mesh-generation samples is available. */
-		bool average_mesh_generation_time_available = false;
-		/** @brief Camera forward axis used to orient catalog previews. */
-		vec3 preview_camera_front = vec3(0.0f, 0.0f, -1.0f);
-		/** @brief Camera up axis used to orient catalog previews. */
-		vec3 preview_camera_up = vec3(0.0f, 1.0f, 0.0f);
-		/** @brief Vertical field of view used to scale catalog previews. */
-		float preview_vertical_fov_degrees = 90.0f;
-		/** @brief True when the player is in Commander mode. */
-		bool commander_mode = false;
-		/** @brief Whether the tool catalog is open. */
-		bool tool_catalog_open = false;
-		/** @brief Tool assigned to the selected hotbar slot. */
-		ToolId active_tool = ToolId::none;
-		/** @brief Action assigned to the selected hotbar slot. */
-		ToolActionId selected_tool_action = ToolActionId::none;
-		/** @brief BuildPart dimensions shown while placing a body. */
-		vec3 build_part_size = vec3(1.0f);
-		/** @brief BuildPart dimension axis currently adjusted. */
-		uint8 build_part_size_axis = 2;
-		/** @brief Quarter-turn count used for BuildPart placement. */
-		uint8 build_part_rotation_step = 0;
-		/** @brief Selected hotbar index, in row-major order. */
-		uint32 selected_hotbar_slot = 0;
-		/** @brief Catalog entries assigned to the 36 hotbar slots. */
-		ToolCatalogEntryId hotbar_entry_ids[36]{};
-		/** @brief Number of currently selected living allied units. */
-		uint32 selected_unit_count = 0;
-		/** @brief Average health of selected units, as a percentage. */
-		float selected_unit_average_health_percent = 0.0f;
-		/** @brief True when at least one selected unit contributed a health value. */
-		bool selected_unit_health_available = false;
-	};
-
 	/** @brief An input requested by the GUI for the application/controller to apply. */
 	enum class GUIActionType : uint8
 	{
@@ -81,6 +34,13 @@ namespace danikk_space_engine
 	 */
 	class GUI
 	{
+		/** @brief A stable source and callback used to produce a label's current text. */
+		struct TextSource
+		{
+			const void* source = nullptr;
+			GUIElement::TextWriter writer = nullptr;
+		};
+
 		/** @brief One player-facing message and its remaining display lifetime. */
 		struct Message
 		{
@@ -149,12 +109,25 @@ namespace danikk_space_engine
 		ToolCategoryId selected_tool_category = 0;
 		/** @brief Engine GUI element used to display the game's multiline debug readout. */
 		GUIElement debug_info_label;
+		/** @brief Game-provided values appended to the locally sampled debug readout. */
+		TextSource debug_info_source;
+		/** @brief Source and predicate controlling selected-unit panel visibility. */
+		bool (*has_selected_units)(const void*) = nullptr;
+		const void* selected_units_visibility_source = nullptr;
+		/** @brief Live controller state used by the hotbar and tool catalog. */
+		const ToolCatalogEntryId* hotbar_entry_ids_source = nullptr;
+		const uint32* selected_hotbar_slot_source = nullptr;
+		const bool* tool_catalog_open_source = nullptr;
+		/** @brief Camera source used to orient previews without copying a frame snapshot. */
+		const void* preview_camera_source = nullptr;
+		void (*read_preview_camera)(const void*, vec3&, vec3&, float&) = nullptr;
+		vec3 preview_camera_front = vec3(0.0f, 0.0f, -1.0f);
+		vec3 preview_camera_up = vec3(0.0f, 1.0f, 0.0f);
+		float preview_vertical_fov_degrees = 90.0f;
 		/** @brief Most recently sampled process memory usage in bytes; zero means unavailable. */
 		size_t memory_sample_bytes = 0;
 		/** @brief Elapsed frame time since the previous process-memory sample. */
 		float memory_sample_timer = 1.0f;
-		/** @brief Latest app-provided values used to draw the GUI and catalog previews. */
-		GUIFrameData frame_data;
 		/** @brief GUI input requests waiting for the app/controller to process. */
 		DynamicArray<GUIAction> pending_actions;
 
@@ -189,12 +162,23 @@ namespace danikk_space_engine
 		 * Samples process memory when the accumulated target-frame delay reaches one second, then
 		 * builds one multiline string containing FPS, RAM in MiB, relevant BuildPart controls,
 		 * camera speed in m/s, signed nearest-planet height, and camera position truncated to hundredths. A zero memory sample is
-		 * shown as unavailable. The supplied frame snapshot controls the hotbar, catalog visibility,
-		 * player mode, placement readout, and selected-unit summary. GUI input is queued as actions for
-		 * the application to apply to the controller.
-		 * @param data Values collected by the application for this GUI frame.
+		 * shown as unavailable. Bound sources provide current world values without making the GUI
+		 * depend on World or requiring a copied per-frame data structure. GUI input is queued as actions
+		 * for the application to apply to the controller.
 		 */
-		void frame(const GUIFrameData& data);
+		void frame();
+
+		/** @brief Binds game-specific debug values appended after FPS and memory. */
+		void bindDebugInfo(const void* source, GUIElement::TextWriter writer);
+		/** @brief Binds the selected-unit label and its panel visibility predicate. */
+		void bindSelectedUnits(const void* source, GUIElement::TextWriter writer,
+			const void* visibility_source, bool (*visibility_reader)(const void*));
+		/** @brief Binds controller-owned hotbar contents and live selection/catalog state. */
+		void bindHotbar(const ToolCatalogEntryId* entries, const uint32* selected_slot,
+			const bool* catalog_open);
+		/** @brief Binds the camera reader used by tool-catalog preview drawing. */
+		void bindPreviewCamera(const void* source,
+			void (*reader)(const void*, vec3&, vec3&, float&));
 
 		/** @brief Returns queued actions for the app/controller to process. */
 		const DynamicArray<GUIAction>& getPendingActions() const { return pending_actions; }

@@ -15,6 +15,14 @@ namespace danikk_space_engine
 		constexpr float hotbar_slot_gap = 0.0045f;
 		constexpr float hotbar_bottom_margin = 0.025f;
 		TextStyle debug_info_label_style;
+
+		void writeHotbarEntryName(const void* source, String& text)
+		{
+			if(source == nullptr) return;
+			const ToolCatalogEntryId entry_id = *static_cast<const ToolCatalogEntryId*>(source);
+			if(entry_id == no_tool_catalog_entry) return;
+			text.append(getToolCatalogEntry(entry_id).short_name);
+		}
 	}
 
 	/** @copydoc GUI::define */
@@ -198,7 +206,8 @@ namespace danikk_space_engine
 			{
 				if(index >= getToolCatalogEntryCount(selected_tool_category)) return;
 				drawToolCatalogPreview(
-					frame_data, getToolCatalogEntryId(selected_tool_category, index), position, size);
+					preview_camera_front, preview_camera_up, preview_vertical_fov_degrees,
+					getToolCatalogEntryId(selected_tool_category, index), position, size);
 			};
 		}
 
@@ -240,7 +249,7 @@ namespace danikk_space_engine
 
 				slot.on_click = [this, index]()
 				{
-					if(frame_data.tool_catalog_open)
+					if(tool_catalog_open_source != nullptr && *tool_catalog_open_source)
 					{
 						queueAction(GUIActionType::select_hotbar_slot, no_tool_catalog_entry, index);
 						refreshToolCatalog();
@@ -252,6 +261,40 @@ namespace danikk_space_engine
 		{
 			slot.border_draw_style = &hotbar_slot_border_style;
 		}
+	}
+
+	void GUI::bindDebugInfo(const void* source, GUIElement::TextWriter writer)
+	{
+		debug_info_source = TextSource{source, writer};
+	}
+
+	void GUI::bindSelectedUnits(const void* source, GUIElement::TextWriter writer,
+		const void* visibility_source, bool (*visibility_reader)(const void*))
+	{
+		has_selected_units = visibility_reader;
+		selected_units_visibility_source = visibility_source;
+		selected_units_label.bind(source, writer);
+	}
+
+	void GUI::bindHotbar(const ToolCatalogEntryId* entries, const uint32* selected_slot,
+		const bool* catalog_open)
+	{
+		hotbar_entry_ids_source = entries;
+		selected_hotbar_slot_source = selected_slot;
+		tool_catalog_open_source = catalog_open;
+		for(uint32 index = 0; index < hotbar_column_count * hotbar_row_count; ++index)
+			hotbar_item_labels[index].bind(entries == nullptr ? nullptr : entries + index,
+				writeHotbarEntryName);
+	}
+
+	void GUI::bindPreviewCamera(const void* source,
+		void (*reader)(const void*, vec3&, vec3&, float&))
+	{
+		preview_camera_source = source;
+		read_preview_camera = reader;
+		if(read_preview_camera != nullptr)
+			read_preview_camera(preview_camera_source, preview_camera_front, preview_camera_up,
+				preview_vertical_fov_degrees);
 	}
 
 	/** @copydoc GUI::queueAction */

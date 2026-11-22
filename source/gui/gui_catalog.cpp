@@ -56,18 +56,19 @@ namespace danikk_space_engine
 	 * the projection or view uniforms used for the next world frame. BuildPart meshes
 	 * use shared primitive geometry.
 	 */
-	void drawToolCatalogPreview(const GUIFrameData& frame_data, ToolCatalogEntryId entry_id,
+	void drawToolCatalogPreview(const vec3& camera_front, const vec3& camera_up,
+		float vertical_fov_degrees, ToolCatalogEntryId entry_id,
 		const vec2& cell_position, const vec2& cell_size)
 	{
 		const ToolCatalogEntry& entry = getToolCatalogEntry(entry_id);
 		const float depth = 1.0f;
-		const float half_height = tan(glm::radians(frame_data.preview_vertical_fov_degrees) * 0.5f) * depth;
+		const float half_height = tan(glm::radians(vertical_fov_degrees) * 0.5f) * depth;
 		const float half_width = half_height * screen_ratio_gz;
 		const vec3 view_center(
 			(2.0f * (cell_position.x + cell_size.x * 0.5f) - 1.0f) * half_width,
 			(2.0f * (cell_position.y + cell_size.y * 0.5f) - 1.0f) * half_height,
 			-depth);
-		const mat4 view = glm::lookAt(vec3(0.0f), frame_data.preview_camera_front, frame_data.preview_camera_up);
+		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera_up);
 		const mat4 camera_world = glm::inverse(view);
 		const mat4 cell_transform = camera_world * glm::translate(mat4(1.0f), view_center);
 		static_asset_collection.base3d_shader.use();
@@ -103,8 +104,11 @@ namespace danikk_space_engine
 					? &catalog_selected_button_style : &catalog_button_style;
 		}
 		const uint32 item_count = getToolCatalogEntryCount(selected_tool_category);
-		const ToolCatalogEntryId selected_entry_id =
-			frame_data.hotbar_entry_ids[frame_data.selected_hotbar_slot];
+		const uint32 selected_slot = selected_hotbar_slot_source == nullptr
+			? 0 : *selected_hotbar_slot_source;
+		const ToolCatalogEntryId selected_entry_id = hotbar_entry_ids_source == nullptr
+			|| selected_slot >= hotbar_column_count * hotbar_row_count
+			? no_tool_catalog_entry : hotbar_entry_ids_source[selected_slot];
 		for(uint32 index = 0; index < catalog_item_buttons.size(); ++index)
 		{
 			const bool has_item = index < item_count;

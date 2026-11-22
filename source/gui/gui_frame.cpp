@@ -5,31 +5,8 @@
 #include <danikk_framework/memory.h>
 #include <danikk_engine/input.h>
 
-#include <cstdio>
-#include <cstring>
-
 namespace danikk_space_engine
 {
-	/** @brief Appends a fixed two-decimal value using a dot regardless of the active locale. */
-	static void appendGuiNumber(String& text, double value)
-	{
-		char buffer[64];
-		const int length = std::snprintf(buffer, sizeof(buffer), "%.2f", value);
-		if(length <= 0) return;
-		for(int index = 0; index < length; ++index)
-			if(buffer[index] == ',') buffer[index] = '.';
-		text.append(buffer, static_cast<size_t>(length));
-	}
-
-	/** @brief Appends three coordinates with slash separators and fixed dot-decimal formatting. */
-	static void appendGuiPosition(String& text, const glm::dvec3& position)
-	{
-		appendGuiNumber(text, position.x);
-		text << '/';
-		appendGuiNumber(text, position.y);
-		text << '/';
-		appendGuiNumber(text, position.z);
-	}
 
 	/**
 	 * @brief Refreshes the one-second memory sample and appends each debug value on its own line.
@@ -37,12 +14,11 @@ namespace danikk_space_engine
 	 * A zero memory reading is formatted as unavailable. The camera coordinates
 	 * are truncated to two decimal places before formatting. The completed
 	 * framework String replaces the label text once after all fields are appended. Values are
-	 * ordered as FPS, RAM, optional BuildPart controls, camera speed, and camera position.
+	 * ordered as FPS and RAM, followed by the game-provided debug values.
 	 */
-	void GUI::frame(const GUIFrameData& data)
+	void GUI::frame()
 	{
 		DSE_WATCH();
-		frame_data = data;
 		const float dt = glm::max(getTargetFrameDelay(), 0.0f);
 		updateMessages(dt);
 		memory_sample_timer += dt;
@@ -51,22 +27,14 @@ namespace danikk_space_engine
 			memory_sample_bytes = getProcessMemoryUsageBytes();
 			memory_sample_timer = 0.0f;
 		}
+		if(read_preview_camera != nullptr)
+			read_preview_camera(preview_camera_source, preview_camera_front, preview_camera_up,
+				preview_vertical_fov_degrees);
 
-		const glm::dvec3 camera_position = truncateTo100(data.camera_position);
-		selected_units_panel.flags.set(GUIElementFlags::visible, data.selected_unit_count > 0);
-		if(data.selected_unit_count > 0)
-		{
-			selected_units_label.text.clear();
-			formatAppend(selected_units_label.text, "UNITS: %\nAVG HP: ", data.selected_unit_count);
-			if(data.selected_unit_health_available)
-			{
-				formatAppend(selected_units_label.text, "%", static_cast<uint64>(
-					data.selected_unit_average_health_percent + 0.5f));
-				selected_units_label.text << '%';
-			}
-			else selected_units_label.text << "--%";
-		}
-		bool catalog_open = data.tool_catalog_open;
+		const bool has_selection = has_selected_units != nullptr
+			&& has_selected_units(selected_units_visibility_source);
+		selected_units_panel.flags.set(GUIElementFlags::visible, has_selection);
+		bool catalog_open = tool_catalog_open_source != nullptr && *tool_catalog_open_source;
 		if(getKeyboardState(keyboard_buttons::g) == button_states::press)
 		{
 			catalog_open = !catalog_open;
@@ -81,18 +49,22 @@ namespace danikk_space_engine
 			catalog_panel.flags.set(GUIElementFlags::visible, catalog_open);
 		}
 		refreshToolCatalog();
+		const uint32 selected_slot = selected_hotbar_slot_source == nullptr
+			? 0 : *selected_hotbar_slot_source;
 		for(uint32 index = 0; index < hotbar_column_count * hotbar_row_count; ++index)
 		{
-			const ToolCatalogEntryId entry_id = data.hotbar_entry_ids[index];
-			hotbar_item_labels[index].text = entry_id == no_tool_catalog_entry
-				? "" : getToolCatalogEntry(entry_id).short_name;
-			hotbar_slots[index].border_draw_style = index == data.selected_hotbar_slot
+			hotbar_slots[index].border_draw_style = index == selected_slot
 				? &hotbar_selected_slot_border_style
 				: &hotbar_slot_border_style;
 		}
 		String text;
 		formatAppend(text, "FPS:%\n", fps_counter.getValue());
-		formatAppend(text, "MODE:%\n", data.commander_mode ? "COMMANDER" : "GOD");
+		String world_text;
+		if(debug_info_source.writer != nullptr)
+			debug_info_source.writer(debug_info_source.source, world_text);
+		const size_t first_line_end = world_text.find('\n');
+		if(first_line_end != String::npos)
+			text.append(world_text.data(), first_line_end + 1);
 		const size_t whole_mebibytes = memory_sample_bytes / mib(1);
 		const size_t hundredths_of_mebibyte = (memory_sample_bytes % mib(1)) * 100 / mib(1);
 		if(memory_sample_bytes == 0)
@@ -103,40 +75,10 @@ namespace danikk_space_engine
 			if(hundredths_of_mebibyte < 10) text << '0';
 			formatAppend(text, "% MiB\n", hundredths_of_mebibyte);
 		}
-		text << "MESH GEN AVG (50):";
-		if(data.average_mesh_generation_time_available)
-		{
-			appendGuiNumber(text, data.average_mesh_generation_time_ms);
-			text << " ms\n";
-		}
-		else text << " collecting\n";
-
-		if(data.active_tool == ToolId::place
-			&& (data.selected_tool_action == ToolActionId::create_body
-				|| data.selected_tool_action == ToolActionId::create_slope))
-		{
-			const char* size_axis_name = data.build_part_size_axis == 0 ? "X"
-				: data.build_part_size_axis == 1 ? "Y" : "Z";
-			text << "BUILD SIZE:";
-			appendGuiNumber(text, data.build_part_size.x);
-			text << " x ";
-			appendGuiNumber(text, data.build_part_size.y);
-			text << " x ";
-			appendGuiNumber(text, data.build_part_size.z);
-			text << " m\n";
-			formatAppend(text, "BUILD ROTATION:% deg (Wheel)\n",
-				static_cast<uint32>(data.build_part_rotation_step) * 90);
-			formatAppend(text, "SIZE AXIS:% (X/Y/Z, Shift+Wheel)\n", size_axis_name);
-		}
-		text << "CAMERA SPEED:";
-		appendGuiNumber(text, data.camera_speed);
-		text << " m/s\n";
-		text << "PLANET HEIGHT:";
-		if(data.nearest_planet_height_available) appendGuiNumber(text, data.nearest_planet_height);
-		else text << " unavailable";
-		text << " m\n";
-		text << "camera pos:";
-		appendGuiPosition(text, camera_position);
+		if(first_line_end != String::npos)
+			text.append(world_text.data() + first_line_end + 1,
+				world_text.size() - first_line_end - 1);
+		else text.append(world_text);
 		debug_info_label.text = static_cast<String&&>(text);
 	}
 }
