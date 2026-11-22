@@ -6,8 +6,8 @@
 
 namespace danikk_space_engine
 {
-	const DynamicArray<MeshGenerationRequest>& PlanetSystem::buildMeshGenerationRequestBuffer(
-		const DynamicArray<MeshGenerationRequest>& candidates, size_t capacity)
+	const DynamicArray<MeshGenerationJob>& PlanetSystem::buildMeshGenerationRequestBuffer(
+		const DynamicArray<MeshGenerationJob>& candidates, size_t capacity)
 	{
 		DSE_WATCH();
 		mesh_generation_request_buffer.clear();
@@ -19,7 +19,7 @@ namespace danikk_space_engine
 		const bool has_camera = world.camera.isActive();
 		const glm::dvec3 camera_position = has_camera
 			? world.camera.getWorldPosition() : glm::dvec3(0.0);
-		for(const MeshGenerationRequest& request : candidates)
+		for(const MeshGenerationJob& request : candidates)
 		{
 			glm::dvec3 request_position(0.0);
 			bool valid = true;
@@ -60,7 +60,7 @@ namespace danikk_space_engine
 				index > insert_index; --index)
 			{
 				mesh_generation_request_buffer[index] =
-					static_cast<MeshGenerationRequest&&>(mesh_generation_request_buffer[index - 1]);
+					static_cast<MeshGenerationJob&&>(mesh_generation_request_buffer[index - 1]);
 				mesh_generation_request_distances[index] = mesh_generation_request_distances[index - 1];
 			}
 			mesh_generation_request_buffer[insert_index] = request;
@@ -73,7 +73,7 @@ namespace danikk_space_engine
 	void PlanetSystem::appendPlanetRequests(PlanetData& planet)
 	{
 		DSE_WATCH();
-		for(MeshGenerationRequest& request : planet.pending_requests)
+		for(MeshGenerationJob& request : planet.pending_requests)
 		{
 			request.planet_id = planet.id;
 			request.planet_generation_id = planet.generation_id;

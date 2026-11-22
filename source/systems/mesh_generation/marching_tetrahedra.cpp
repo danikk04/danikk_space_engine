@@ -82,34 +82,21 @@ namespace danikk_space_engine
 		 * toward air. Terrain samples are read directly from World; this helper creates
 		 * no GPU resources.
 		 */
-		GeneratedMesh generatePlanetTerrainNodeMarchingTetrahedra(World& world, const MeshGenerationRequest& request)
+		void generatePlanetTerrainNodeMarchingTetrahedra(World& world, MeshGenerationJob& job)
 		{
-			GeneratedMesh result;
-			result.generation_id = request.generation_id;
-			result.planet_id = request.planet_id;
-			result.planet_generation_id = request.planet_generation_id;
-			result.terrain_revision = request.terrain_revision;
-			result.source_revision = request.source_revision;
-			result.source = request.source;
-			result.terrain_node_id = request.terrain_node_id;
-			result.terrain_node_generation_id = request.terrain_node_generation_id;
-			result.surface_only = request.surface_only;
-			result.planet_mesh_generator = request.planet_mesh_generator;
-			result.node_minimum = request.node_minimum;
-
-			const size_t cells_per_axis = static_cast<size_t>(std::ceil(request.node_width / request.voxel_size));
+			const size_t cells_per_axis = static_cast<size_t>(std::ceil(job.node_width / job.voxel_size));
 			const size_t points_per_axis = cells_per_axis + 1;
 			const size_t lattice_point_count = points_per_axis * points_per_axis * points_per_axis;
 			const auto pointId = [points_per_axis](size_t x, size_t y, size_t z)
 			{
 				return static_cast<uint32>((z * points_per_axis + y) * points_per_axis + x);
 			};
-			const auto pointPosition = [&request](size_t x, size_t y, size_t z)
+			const auto pointPosition = [&job](size_t x, size_t y, size_t z)
 			{
-				return request.node_minimum + glm::dvec3(
-					static_cast<double>(x) * request.voxel_size,
-					static_cast<double>(y) * request.voxel_size,
-					static_cast<double>(z) * request.voxel_size);
+				return job.node_minimum + glm::dvec3(
+					static_cast<double>(x) * job.voxel_size,
+					static_cast<double>(y) * job.voxel_size,
+					static_cast<double>(z) * job.voxel_size);
 			};
 			DynamicArray<double> densities;
 			densities.resize(lattice_point_count);
@@ -121,8 +108,8 @@ namespace danikk_space_engine
 					{
 						const size_t point_index = pointId(x, y, z);
 						densities[point_index] = world.planets.getPlanetDensity(
-						request.planet_id, pointPosition(x, y, z),
-							request.surface_only
+							job.planet_id, pointPosition(x, y, z),
+							job.surface_only
 								? PlanetTerrainMode::heightmap_with_edits
 								: PlanetTerrainMode::cave_field_with_edits);
 					}
@@ -160,8 +147,8 @@ namespace danikk_space_engine
 					std::abs(density_delta) > 1e-12 ? first.density / density_delta : 0.5,
 					0.0, 1.0);
 				glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
-				if(world.planets.getPlanetDensity(request.planet_id, position,
-					request.surface_only ? PlanetTerrainMode::heightmap_with_edits
+				if(world.planets.getPlanetDensity(job.planet_id, position,
+					job.surface_only ? PlanetTerrainMode::heightmap_with_edits
 						: PlanetTerrainMode::cave_field_with_edits) < 0.0)
 				{
 					glm::dvec3 inside = first.density >= 0.0 ? first.position : second.position;
@@ -169,8 +156,8 @@ namespace danikk_space_engine
 					for(uint8 iteration = 0; iteration < 6; ++iteration)
 					{
 						const glm::dvec3 midpoint = (inside + outside) * 0.5;
-						if(world.planets.getPlanetDensity(request.planet_id, midpoint,
-							request.surface_only ? PlanetTerrainMode::heightmap_with_edits
+						if(world.planets.getPlanetDensity(job.planet_id, midpoint,
+							job.surface_only ? PlanetTerrainMode::heightmap_with_edits
 								: PlanetTerrainMode::cave_field_with_edits) >= 0.0)
 							inside = midpoint;
 						else
@@ -178,8 +165,8 @@ namespace danikk_space_engine
 					}
 					position = inside;
 				}
-				const uint32 vertex_index = static_cast<uint32>(result.point_positions.size());
-				result.point_positions.push(vec3(position - request.node_minimum));
+				const uint32 vertex_index = static_cast<uint32>(job.point_positions.size());
+				job.point_positions.push(vec3(position - job.node_minimum));
 				edge_keys[slot_index] = key;
 				edge_values[slot_index] = vertex_index;
 				return vertex_index;
@@ -191,17 +178,17 @@ namespace danikk_space_engine
 			constexpr uint8 tetrahedra[6][4]{
 				{0, 5, 1, 6}, {0, 1, 2, 6}, {0, 2, 3, 6},
 				{0, 3, 7, 6}, {0, 7, 4, 6}, {0, 4, 5, 6}};
-			result.point_positions.reserve(cell_count * 8);
-			result.triangle_point_indices.reserve(cell_count * 12);
-			const auto appendTriangle = [&result](uint32 a, uint32 b, uint32 c, const glm::dvec3& outward)
+			job.point_positions.reserve(cell_count * 8);
+			job.triangle_point_indices.reserve(cell_count * 12);
+			const auto appendTriangle = [&job](uint32 a, uint32 b, uint32 c, const glm::dvec3& outward)
 			{
-				const vec3 pa = result.point_positions[a];
-				const vec3 pb = result.point_positions[b];
-				const vec3 pc = result.point_positions[c];
+				const vec3 pa = job.point_positions[a];
+				const vec3 pb = job.point_positions[b];
+				const vec3 pc = job.point_positions[c];
 				if(glm::dot(glm::cross(pb - pa, pc - pa), vec3(outward)) < 0.0f) swapValues(b, c);
-				result.triangle_point_indices.push(a);
-				result.triangle_point_indices.push(b);
-				result.triangle_point_indices.push(c);
+				job.triangle_point_indices.push(a);
+				job.triangle_point_indices.push(b);
+				job.triangle_point_indices.push(c);
 			};
 
 			for(size_t z = 0; z < cells_per_axis; z++)
@@ -276,7 +263,7 @@ namespace danikk_space_engine
 					}
 				}
 			}
-			return result;
+			return;
 		}
 	}
 }

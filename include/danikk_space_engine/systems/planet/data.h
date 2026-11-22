@@ -236,7 +236,7 @@ namespace danikk_space_engine
 		PlanetTerrainEdits terrain_edits;
 		PlanetTerrainTree terrain_tree;
 		DynamicArray<PlanetTerrainDirtyRegion> pending_terrain_dirty_regions;
-		DynamicArray<MeshGenerationRequest> pending_requests;
+		DynamicArray<MeshGenerationJob> pending_requests;
 
 	};
 }

@@ -11,60 +11,57 @@ namespace danikk_space_engine
 	{
 		/**
 		 * @brief Dispatches scalar-field meshing to the generator selected by the request.
-		 * @param request Immutable node-mesh settings and generator selection.
-		 * @return Geometry produced by the selected mesh algorithm.
+		 * @param job Node-mesh settings and output arrays populated by the generator.
 		 */
-		GeneratedMesh generatePlanetNodeGeometry(World& world, const MeshGenerationRequest& request)
+		void generatePlanetNodeGeometry(World& world, MeshGenerationJob& job)
 		{
-			switch(request.planet_mesh_generator)
+			switch(job.planet_mesh_generator)
 			{
 				case PlanetMeshGenerator::marching_tetrahedra:
-					return mesh_generation_internal::generatePlanetTerrainNodeMarchingTetrahedra(world, request);
+					mesh_generation_internal::generatePlanetTerrainNodeMarchingTetrahedra(world, job);
+					return;
 				case PlanetMeshGenerator::surface_nets:
-					return mesh_generation_internal::generatePlanetTerrainNodeSurfaceNets(world, request);
+					mesh_generation_internal::generatePlanetTerrainNodeSurfaceNets(world, job);
+					return;
 			}
 			danikk_engine::formatFatalError("Unsupported planet mesh generator %",
-				static_cast<uint32>(request.planet_mesh_generator));
-			return {};
+				static_cast<uint32>(job.planet_mesh_generator));
 		}
 	}
 
 	/**
 	 * @brief Generates a planet terrain node and assigns each surface triangle its material.
-	 * @param request Immutable generation identity, settings, edits, and node bounds.
-	 * @return Worker result containing request identity, local geometry, and a
-	 *         material ID for each triangle; geometry arrays may be empty when the
-	 *         sampled field contains no surface in this node.
-	 * This worker-side function does not allocate World resources or upload a mesh.
+	 * @param job Generation identity, settings, edits, node bounds, and output arrays.
+	 * The arrays may remain empty when the sampled field contains no surface in this node.
+	 * This task-side function does not allocate World resources or upload a mesh.
 	 */
-	GeneratedMesh mesh_generation_internal::generatePlanetTerrainNodeMesh(
-		World& world, const MeshGenerationRequest& request)
+	void mesh_generation_internal::generatePlanetTerrainNodeMesh(
+		World& world, MeshGenerationJob& job)
 	{
 		/**
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		const PlanetData* planet = world.planets.findPlanet(request.planet_id);
-		if(planet == nullptr || planet->generation_id != request.planet_generation_id
-			|| planet->terrain_revision != request.terrain_revision) return {};
-		GeneratedMesh result = generatePlanetNodeGeometry(world, request);
+		const PlanetData* planet = world.planets.findPlanet(job.planet_id);
+		if(planet == nullptr || planet->generation_id != job.planet_generation_id
+			|| planet->terrain_revision != job.terrain_revision) return;
+		generatePlanetNodeGeometry(world, job);
 
-		const size_t triangle_count = result.triangle_point_indices.size() / 3;
-		result.triangle_material_ids.reserve(triangle_count);
+		const size_t triangle_count = job.triangle_point_indices.size() / 3;
+		job.triangle_material_ids.reserve(triangle_count);
 		for(size_t triangle = 0; triangle < triangle_count; triangle++)
 		{
 			const size_t first_index = triangle * 3;
-			const vec3 a = result.point_positions[result.triangle_point_indices[first_index]];
-			const vec3 b = result.point_positions[result.triangle_point_indices[first_index + 1]];
-			const vec3 c = result.point_positions[result.triangle_point_indices[first_index + 2]];
-			const glm::dvec3 center = request.node_minimum
+			const vec3 a = job.point_positions[job.triangle_point_indices[first_index]];
+			const vec3 b = job.point_positions[job.triangle_point_indices[first_index + 1]];
+			const vec3 c = job.point_positions[job.triangle_point_indices[first_index + 2]];
+			const glm::dvec3 center = job.node_minimum
 				+ (glm::dvec3(a) + glm::dvec3(b) + glm::dvec3(c)) / 3.0;
-			result.triangle_material_ids.push(world.planets.getPlanetMaterial(request.planet_id,
-				center, request.surface_only
+			job.triangle_material_ids.push(world.planets.getPlanetMaterial(job.planet_id,
+				center, job.surface_only
 					? PlanetTerrainMode::heightmap_with_edits
 					: PlanetTerrainMode::cave_field_with_edits));
 		}
-		return result;
 	}
 
 }

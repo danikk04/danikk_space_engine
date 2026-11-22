@@ -4,9 +4,9 @@
 
 namespace danikk_space_engine::mesh_generation_internal
 {
-	GeneratedMesh generatePlanetTerrainNodeMesh(World& world, const MeshGenerationRequest& request);
-	GeneratedMesh generatePlanetTerrainNodeMarchingTetrahedra(World& world, const MeshGenerationRequest& request);
-	GeneratedMesh generatePlanetTerrainNodeSurfaceNets(World& world, const MeshGenerationRequest& request);
-	GeneratedMesh generateBuildPartMesh(World& world, const MeshGenerationRequest& request);
+	void generatePlanetTerrainNodeMesh(World& world, MeshGenerationJob& job);
+	void generatePlanetTerrainNodeMarchingTetrahedra(World& world, MeshGenerationJob& job);
+	void generatePlanetTerrainNodeSurfaceNets(World& world, MeshGenerationJob& job);
+	void generateBuildPartMesh(World& world, MeshGenerationJob& job);
 
 }

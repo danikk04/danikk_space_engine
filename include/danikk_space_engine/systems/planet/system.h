@@ -10,7 +10,7 @@ namespace danikk_space_engine
 		World& world;
 		DynamicArray<PlanetData> planets;
 		/** @brief Reused output batch and priority scratch for mesh-generation workers. */
-		DynamicArray<MeshGenerationRequest> mesh_generation_request_buffer;
+		DynamicArray<MeshGenerationJob> mesh_generation_request_buffer;
 		DynamicArray<double> mesh_generation_request_distances;
 		uint64 next_generation_id = 1;
 
@@ -42,9 +42,9 @@ namespace danikk_space_engine
 		/** @brief Updates adaptive terrain-tree streaming once for the current world frame. */
 		void update();
 		/** @brief Builds the nearest valid mesh requests, bounded by the worker count. */
-		const DynamicArray<MeshGenerationRequest>& buildMeshGenerationRequestBuffer(
-			const DynamicArray<MeshGenerationRequest>& candidates, size_t capacity);
-		void acceptGeneratedSurfaceNode(const GeneratedMesh& generated_mesh);
+		const DynamicArray<MeshGenerationJob>& buildMeshGenerationRequestBuffer(
+			const DynamicArray<MeshGenerationJob>& candidates, size_t capacity);
+		void acceptGeneratedSurfaceNode(const MeshGenerationJob& job);
 		/** @brief Draws active adaptive surface-node meshes in the current depth pass. */
 		void renderSurfaceNodes();
 		/**

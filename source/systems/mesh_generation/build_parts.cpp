@@ -8,15 +8,10 @@
 namespace danikk_space_engine::mesh_generation_internal
 {
 	/** @brief Reads a body's BuildPart components and combines them into a body-local mesh. */
-	GeneratedMesh generateBuildPartMesh(World& world, const MeshGenerationRequest& request)
+	void generateBuildPartMesh(World& world, MeshGenerationJob& job)
 	{
-		GeneratedMesh result;
-		result.generation_id = request.generation_id;
-		result.source_revision = request.source_revision;
-		result.world_body_id = request.world_body_id;
-		result.source = MeshGenerationSource::build_parts;
-		if(!world.world_body_data.isWorldBodyActive(request.world_body_id)) return result;
-		const WorldBody& body = world.world_body_data.getWorldBody(request.world_body_id);
+		if(!world.world_body_data.isWorldBodyActive(job.world_body_id)) return;
+		const WorldBody& body = world.world_body_data.getWorldBody(job.world_body_id);
 		size_t vertex_count = 0;
 		size_t index_count = 0;
 		bool has_mesh_origin = false;
@@ -34,9 +29,9 @@ namespace danikk_space_engine::mesh_generation_internal
 				index_count += geometry.triangles.size() * 3;
 			}
 		}
-		result.point_positions.reserve(vertex_count);
-		result.triangle_point_indices.reserve(index_count);
-		result.triangle_material_ids.reserve(index_count / 3);
+		job.point_positions.reserve(vertex_count);
+		job.triangle_point_indices.reserve(index_count);
+		job.triangle_material_ids.reserve(index_count / 3);
 
 		for(PointId point_id : body.point_ids)
 		{
@@ -51,25 +46,25 @@ namespace danikk_space_engine::mesh_generation_internal
 				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
 				if(!has_mesh_origin)
 				{
-					result.mesh_position = point.body_local_position;
+					job.mesh_position = point.body_local_position;
 					has_mesh_origin = true;
 				}
-				const vec3 position = vec3(point.body_local_position - result.mesh_position);
-				const uint32 first_vertex = static_cast<uint32>(result.point_positions.size());
+				const vec3 position = vec3(point.body_local_position - job.mesh_position);
+				const uint32 first_vertex = static_cast<uint32>(job.point_positions.size());
 				for(const vec3& local_position : geometry.positions)
 				{
 					const vec3 scaled_position = local_position * part.size;
 					const vec3 rotated_position = vec3(part.rotation * vec4(scaled_position, 0.0f));
-					result.point_positions.push(position + rotated_position);
+					job.point_positions.push(position + rotated_position);
 				}
 				for(const CubeTriangle& triangle : geometry.triangles)
 				{
 					for(uint8 corner = 0; corner < 3; corner++)
-						result.triangle_point_indices.push(first_vertex + triangle.points[corner]);
-					result.triangle_material_ids.push(default_materials::build_part);
+						job.triangle_point_indices.push(first_vertex + triangle.points[corner]);
+					job.triangle_material_ids.push(default_materials::build_part);
 				}
 			}
 		}
-		return result;
+		return;
 	}
 }

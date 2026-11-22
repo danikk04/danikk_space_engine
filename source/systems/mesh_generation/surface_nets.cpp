@@ -18,22 +18,9 @@ namespace danikk_space_engine::mesh_generation_internal
 	 * cell vertices into a quad, split along its shorter diagonal. Edge ownership uses
 	 * the half-open node lattice range, so adjacent nodes emit each shared quad once.
 	 */
-	GeneratedMesh generatePlanetTerrainNodeSurfaceNets(World& world, const MeshGenerationRequest& request)
+	void generatePlanetTerrainNodeSurfaceNets(World& world, MeshGenerationJob& job)
 	{
-		GeneratedMesh result;
-		result.generation_id = request.generation_id;
-		result.planet_id = request.planet_id;
-		result.planet_generation_id = request.planet_generation_id;
-		result.terrain_revision = request.terrain_revision;
-		result.source_revision = request.source_revision;
-		result.source = request.source;
-		result.terrain_node_id = request.terrain_node_id;
-		result.terrain_node_generation_id = request.terrain_node_generation_id;
-		result.surface_only = request.surface_only;
-		result.planet_mesh_generator = request.planet_mesh_generator;
-		result.node_minimum = request.node_minimum;
-
-		const size_t cells_per_axis = static_cast<size_t>(std::ceil(request.node_width / request.voxel_size));
+		const size_t cells_per_axis = static_cast<size_t>(std::ceil(job.node_width / job.voxel_size));
 		const size_t sample_side = cells_per_axis + 3;
 		const size_t cell_side = cells_per_axis + 1;
 		const auto sampleIndex = [sample_side](int x, int y, int z)
@@ -46,12 +33,12 @@ namespace danikk_space_engine::mesh_generation_internal
 			return (static_cast<size_t>(z + 1) * cell_side + static_cast<size_t>(y + 1)) * cell_side
 				+ static_cast<size_t>(x + 1);
 		};
-		const auto samplePosition = [&request](int x, int y, int z)
+		const auto samplePosition = [&job](int x, int y, int z)
 		{
-			return request.node_minimum + glm::dvec3(
-				static_cast<double>(x) * request.voxel_size,
-				static_cast<double>(y) * request.voxel_size,
-				static_cast<double>(z) * request.voxel_size);
+			return job.node_minimum + glm::dvec3(
+				static_cast<double>(x) * job.voxel_size,
+				static_cast<double>(y) * job.voxel_size,
+				static_cast<double>(z) * job.voxel_size);
 		};
 
 		DynamicArray<double> densities;
@@ -60,8 +47,8 @@ namespace danikk_space_engine::mesh_generation_internal
 			for(int y = -1; y <= static_cast<int>(cells_per_axis) + 1; ++y)
 				for(int x = -1; x <= static_cast<int>(cells_per_axis) + 1; ++x)
 					densities[sampleIndex(x, y, z)] = world.planets.getPlanetDensity(
-						request.planet_id, samplePosition(x, y, z),
-						request.surface_only
+						job.planet_id, samplePosition(x, y, z),
+						job.surface_only
 						? PlanetTerrainMode::heightmap_with_edits
 						: PlanetTerrainMode::cave_field_with_edits);
 
@@ -75,7 +62,7 @@ namespace danikk_space_engine::mesh_generation_internal
 		const size_t cell_count = cell_side * cell_side * cell_side;
 		DynamicArray<uint32> cell_vertices;
 		cell_vertices.resize(cell_count, invalid_vertex);
-		result.point_positions.reserve(cell_count / 2);
+		job.point_positions.reserve(cell_count / 2);
 
 		for(int z = -1; z < static_cast<int>(cells_per_axis); ++z)
 		{
@@ -107,20 +94,20 @@ namespace danikk_space_engine::mesh_generation_internal
 					}
 					if(intersection_count == 0) continue;
 
-					const uint32 vertex_index = static_cast<uint32>(result.point_positions.size());
-					result.point_positions.push(vec3(
-						intersection_sum / static_cast<double>(intersection_count) - request.node_minimum));
+					const uint32 vertex_index = static_cast<uint32>(job.point_positions.size());
+					job.point_positions.push(vec3(
+						intersection_sum / static_cast<double>(intersection_count) - job.node_minimum));
 					cell_vertices[cellIndex(x, y, z)] = vertex_index;
 				}
 			}
 		}
 
-		const auto appendQuad = [&result](uint32 a, uint32 b, uint32 c, uint32 d, const vec3& outward)
+		const auto appendQuad = [&job](uint32 a, uint32 b, uint32 c, uint32 d, const vec3& outward)
 		{
-			const vec3 pa = result.point_positions[a];
-			const vec3 pb = result.point_positions[b];
-			const vec3 pc = result.point_positions[c];
-			const vec3 pd = result.point_positions[d];
+			const vec3 pa = job.point_positions[a];
+			const vec3 pb = job.point_positions[b];
+			const vec3 pc = job.point_positions[c];
+			const vec3 pd = job.point_positions[d];
 			if(glm::dot(glm::cross(pb - pa, pc - pa), outward) < 0.0f)
 			{
 				const uint32 temporary = b;
@@ -131,21 +118,21 @@ namespace danikk_space_engine::mesh_generation_internal
 			const float diagonal_bd = glm::dot(pb - pd, pb - pd);
 			if(diagonal_ac <= diagonal_bd)
 			{
-				result.triangle_point_indices.push(a);
-				result.triangle_point_indices.push(b);
-				result.triangle_point_indices.push(c);
-				result.triangle_point_indices.push(a);
-				result.triangle_point_indices.push(c);
-				result.triangle_point_indices.push(d);
+				job.triangle_point_indices.push(a);
+				job.triangle_point_indices.push(b);
+				job.triangle_point_indices.push(c);
+				job.triangle_point_indices.push(a);
+				job.triangle_point_indices.push(c);
+				job.triangle_point_indices.push(d);
 			}
 			else
 			{
-				result.triangle_point_indices.push(a);
-				result.triangle_point_indices.push(b);
-				result.triangle_point_indices.push(d);
-				result.triangle_point_indices.push(b);
-				result.triangle_point_indices.push(c);
-				result.triangle_point_indices.push(d);
+				job.triangle_point_indices.push(a);
+				job.triangle_point_indices.push(b);
+				job.triangle_point_indices.push(d);
+				job.triangle_point_indices.push(b);
+				job.triangle_point_indices.push(c);
+				job.triangle_point_indices.push(d);
 			}
 		};
 		const auto emitEdgeQuad = [&](int x, int y, int z, uint8 axis)
@@ -199,6 +186,6 @@ namespace danikk_space_engine::mesh_generation_internal
 				}
 			}
 		}
-		return result;
+		return;
 	}
 }

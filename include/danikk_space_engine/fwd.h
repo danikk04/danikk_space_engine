@@ -55,7 +55,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Holds worker-generated mesh data before main-thread resource creation.
 	 */
-	struct GeneratedMesh;
+	struct MeshGenerationJob;
 
 	/**
 	 * @brief Associates component data and callbacks with a world point.

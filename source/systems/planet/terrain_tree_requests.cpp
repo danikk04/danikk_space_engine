@@ -43,7 +43,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 			if(context.planet.pending_requests.size() >= maximum_requests_per_frame) break;
 			PlanetTerrainNode& node = context.tree.nodes[node_id];
 			if(hasCurrentMesh(context, node_id)) continue;
-			MeshGenerationRequest request;
+			MeshGenerationJob request;
 			request.source = MeshGenerationSource::planet_terrain_node;
 			request.planet_id = context.planet.id;
 			request.planet_generation_id = context.planet.generation_id;

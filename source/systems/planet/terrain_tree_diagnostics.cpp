@@ -24,7 +24,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 					snapshot.finest_active_half_extent = node.half_extent;
 			}
 		}
-		for(const MeshGenerationRequest& request : context.planet.pending_requests)
+		for(const MeshGenerationJob& request : context.planet.pending_requests)
 		{
 			if(request.node_width <= 128.0) snapshot.fine_queued++;
 			if(snapshot.finest_request_width == 0.0

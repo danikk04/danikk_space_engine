@@ -23,8 +23,16 @@ namespace danikk_space_engine
 		build_parts
 	};
 
-	/** @brief CPU-only identifiers and generation metadata consumed by a mesh task. */
-	struct MeshGenerationRequest
+	enum class MeshGenerationJobState : uint8
+	{
+		empty,
+		queued,
+		processing,
+		completed
+	};
+
+	/** @brief Mesh request, reusable job slot state, and generated CPU mesh payload. */
+	struct MeshGenerationJob
 	{
 		uint64 generation_id = 0;
 		uint64 source_revision = 0;
@@ -40,27 +48,13 @@ namespace danikk_space_engine
 		double node_width = 32.0;
 		double voxel_size = 4.0;
 		glm::dvec3 node_minimum = glm::dvec3(0.0);
-	};
 
-	/** @brief CPU mesh payload returned to the main thread for validation and GPU upload. */
-	struct GeneratedMesh
-	{
-		uint64 generation_id = 0;
-		uint64 source_revision = 0;
-		WorldBodyId world_body_id = 0;
-		PlanetId planet_id = static_cast<PlanetId>(-1);
-		uint64 planet_generation_id = 0;
-		uint64 terrain_revision = 0;
-		PlanetTerrainNodeId terrain_node_id = static_cast<PlanetTerrainNodeId>(-1);
-		uint64 terrain_node_generation_id = 0;
-		bool surface_only = false;
-		MeshGenerationSource source = MeshGenerationSource::build_parts;
-		PlanetMeshGenerator planet_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
-		glm::dvec3 node_minimum = glm::dvec3(0.0);
 		glm::dvec3 mesh_position = glm::dvec3(0.0);
 		DynamicArray<vec3> point_positions;
 		DynamicArray<uint32> triangle_point_indices;
 		DynamicArray<MaterialId> triangle_material_ids;
+		MeshGenerationJobState state = MeshGenerationJobState::empty;
+		bool cancelled = false;
 	};
 
 	/**
@@ -73,20 +67,12 @@ namespace danikk_space_engine
 	{
 		/** @brief World providing source data and receiving generated meshes. */
 		World& world;
-		struct TaskRequestSlot
-		{
-			MeshGenerationRequest request;
-			bool has_request = false;
-			bool cancelled = false;
-		};
-		/** @brief Pool tasks consume the shared request queue, one request at a time. */
+		/** @brief Worker threads execute jobs from the fixed reusable slot array. */
 		danikk_framework::ThreadPool thread_pool;
 		std::mutex task_mutex;
 		std::condition_variable request_available;
-		std::condition_variable result_space_available;
-		DynamicArray<MeshGenerationRequest> queued_requests;
-		Array<GeneratedMesh, 2> completed_meshes;
-		DynamicArray<TaskRequestSlot> task_request_slots;
+		/** @brief Two reusable request/output slots per worker; all state changes use task_mutex. */
+		Array<MeshGenerationJob, 8> jobs;
 		uint32 generation_sample_count = 0;
 		uint64 generation_sample_total_nanoseconds = 0;
 		std::atomic<float> average_generation_milliseconds = 0.0f;
@@ -95,20 +81,17 @@ namespace danikk_space_engine
 		/** @brief Token that rejects results submitted before the latest World lifecycle. */
 		uint64 generation_id = 0;
 		/** @brief Current candidate requests collected from terrain and BuildPart systems. */
-		DynamicArray<MeshGenerationRequest> requests;
+		DynamicArray<MeshGenerationJob> requests;
 		/** @brief True while the task pool is running for the current World lifecycle. */
 		bool initialized = false;
 
 		/** @brief Rebuilds current combined BuildPart requests from body mesh state. */
 		void collectBuildPartRequests();
-		size_t findActiveRequest(const MeshGenerationRequest& request) const;
-		bool isActiveRequest(const MeshGenerationRequest& request) const;
-		void clearTaskRequestSlot(size_t task_index);
-		void runMeshGenerationTask(size_t task_index);
-		void generateMeshRequest(size_t task_index, const MeshGenerationRequest& request);
+		void runMeshGenerationTask();
+		void runMeshGenerationJob(size_t job_index);
 		void updateMeshGenerationRequests(uint64 generation_id,
-			const DynamicArray<MeshGenerationRequest>& requests);
-		bool tryTakeGeneratedMesh(GeneratedMesh& result);
+			const DynamicArray<MeshGenerationJob>& requests);
+		bool tryTakeCompletedJob(MeshGenerationJob& result);
 		void cancelQueuedPlanetRequests(PlanetId planet_id, uint64 planet_generation_id);
 
 	public:
@@ -126,7 +109,7 @@ namespace danikk_space_engine
 		/** @brief Clears the candidate list before systems rebuild requests for a new frame. */
 		void beginRequestFrame();
 		/** @brief Appends this frame's terrain candidates to the shared candidate list. */
-		void appendPlanetRequests(const DynamicArray<MeshGenerationRequest>& planet_requests);
+		void appendPlanetRequests(const DynamicArray<MeshGenerationJob>& planet_requests);
 		/** @brief Cancels queued and active task requests for one planet incarnation. */
 		void cancelPlanetRequests(PlanetId planet_id, uint64 planet_generation_id);
 		/** @brief Marks the owning body's combined BuildPart mesh stale. */

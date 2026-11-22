@@ -5,55 +5,55 @@
 
 namespace danikk_space_engine
 {
-	void PlanetSystem::acceptGeneratedSurfaceNode(const GeneratedMesh& generated_mesh)
+	void PlanetSystem::acceptGeneratedSurfaceNode(const MeshGenerationJob& job)
 	{
 		DSE_WATCH();
-		if(generated_mesh.source != MeshGenerationSource::planet_terrain_node) return;
+		if(job.source != MeshGenerationSource::planet_terrain_node) return;
 		const auto record = [](PlanetMeshAcceptance outcome)
 			{ telemetry_system.recordPlanetMeshAcceptance(outcome); };
-		PlanetData* planet = findPlanet(generated_mesh.planet_id);
+		PlanetData* planet = findPlanet(job.planet_id);
 		if(planet == nullptr)
 		{
 			record(PlanetMeshAcceptance::missing_planet);
 			return;
 		}
-		if(planet->generation_id != generated_mesh.planet_generation_id)
+		if(planet->generation_id != job.planet_generation_id)
 		{
 			record(PlanetMeshAcceptance::stale_planet);
 			return;
 		}
-		if(planet->terrain_revision != generated_mesh.terrain_revision)
+		if(planet->terrain_revision != job.terrain_revision)
 		{
 			record(PlanetMeshAcceptance::stale_terrain);
 			return;
 		}
-		if(generated_mesh.terrain_node_id >= planet->terrain_tree.nodes.size())
+		if(job.terrain_node_id >= planet->terrain_tree.nodes.size())
 		{
 			record(PlanetMeshAcceptance::invalid_node);
 			return;
 		}
-		if(generated_mesh.planet_mesh_generator != settings.planet_mesh_generator)
+		if(job.planet_mesh_generator != settings.planet_mesh_generator)
 		{
 			record(PlanetMeshAcceptance::stale_generator);
 			return;
 		}
-		PlanetTerrainNode& node = planet->terrain_tree.nodes[generated_mesh.terrain_node_id];
-		if(node.generation_id != generated_mesh.terrain_node_generation_id)
+		PlanetTerrainNode& node = planet->terrain_tree.nodes[job.terrain_node_id];
+		if(node.generation_id != job.terrain_node_generation_id)
 		{
 			record(PlanetMeshAcceptance::stale_node);
 			return;
 		}
 		node.generation_pending = false;
-		node.mesh_position = generated_mesh.node_minimum;
+		node.mesh_position = job.node_minimum;
 		createMeshRenderData(node.mesh,
-			generated_mesh.point_positions.data(), generated_mesh.point_positions.size(),
-			generated_mesh.triangle_point_indices.data(), generated_mesh.triangle_point_indices.size(),
-			generated_mesh.triangle_material_ids.data(), generated_mesh.triangle_material_ids.size());
-		node.mesh_revision = generated_mesh.terrain_revision;
-		node.mesh_generator = generated_mesh.planet_mesh_generator;
-		node.mesh_surface_only = generated_mesh.surface_only;
+			job.point_positions.data(), job.point_positions.size(),
+			job.triangle_point_indices.data(), job.triangle_point_indices.size(),
+			job.triangle_material_ids.data(), job.triangle_material_ids.size());
+		node.mesh_revision = job.terrain_revision;
+		node.mesh_generator = job.planet_mesh_generator;
+		node.mesh_surface_only = job.surface_only;
 		node.render_active = false;
-		record(generated_mesh.triangle_point_indices.empty()
+		record(job.triangle_point_indices.empty()
 			? PlanetMeshAcceptance::empty : PlanetMeshAcceptance::accepted);
 	}
 }
