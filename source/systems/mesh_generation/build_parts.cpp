@@ -3,7 +3,7 @@
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/world.h>
 
-#include "mesh_algorithms.h"
+#include "internal.h"
 
 namespace danikk_space_engine::mesh_generation_internal
 {

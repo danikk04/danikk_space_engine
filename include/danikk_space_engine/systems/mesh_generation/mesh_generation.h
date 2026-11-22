@@ -2,10 +2,10 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <memory>
 #include <mutex>
 
 #include <danikk_framework/dynamic_array.h>
+#include <danikk_framework/array.h>
 #include <danikk_framework/thread.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/fwd.h>
@@ -80,12 +80,12 @@ namespace danikk_space_engine
 			bool cancelled = false;
 		};
 		/** @brief Pool tasks consume the shared request queue, one request at a time. */
-		std::unique_ptr<danikk_framework::ThreadPool> thread_pool;
+		danikk_framework::ThreadPool thread_pool;
 		std::mutex task_mutex;
 		std::condition_variable request_available;
 		std::condition_variable result_space_available;
 		DynamicArray<MeshGenerationRequest> queued_requests;
-		DynamicArray<GeneratedMesh> completed_meshes;
+		Array<GeneratedMesh, 2> completed_meshes;
 		DynamicArray<TaskRequestSlot> task_request_slots;
 		uint32 generation_sample_count = 0;
 		uint64 generation_sample_total_nanoseconds = 0;

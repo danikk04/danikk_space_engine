@@ -42,13 +42,13 @@ namespace danikk_space_engine
 			average_generation_milliseconds.store(0.0f, std::memory_order_relaxed);
 			const size_t available_threads = std::thread::hardware_concurrency();
 			const size_t worker_count = available_threads <= 1 ? 1 : std::min(available_threads - 1, size_t(4));
-			thread_pool = std::make_unique<danikk_framework::ThreadPool>(worker_count);
+			thread_pool.initialize(worker_count);
 			task_request_slots.resize(worker_count);
 		}
 		try
 		{
 			for(size_t index = 0; index < task_request_slots.size(); ++index)
-				thread_pool->submit([this, index] { runMeshGenerationTask(index); });
+				thread_pool.submit([this, index] { runMeshGenerationTask(index); });
 		}
 		catch(...)
 		{
@@ -58,8 +58,7 @@ namespace danikk_space_engine
 			}
 			request_available.notify_all();
 			result_space_available.notify_all();
-			thread_pool->shutdown();
-			thread_pool.reset();
+			thread_pool.shutdown();
 			{
 				std::lock_guard<std::mutex> guard(task_mutex);
 				task_request_slots.clear();
@@ -90,8 +89,7 @@ namespace danikk_space_engine
 		}
 		request_available.notify_all();
 		result_space_available.notify_all();
-		if(thread_pool != nullptr) thread_pool->shutdown();
-		thread_pool.reset();
+		thread_pool.shutdown();
 		{
 			std::lock_guard<std::mutex> guard(task_mutex);
 			task_request_slots.clear();
@@ -184,7 +182,7 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		collectBuildPartRequests();
 		updateMeshGenerationRequests(generation_id, world.planets.buildMeshGenerationRequestBuffer(
-			requests, thread_pool != nullptr ? thread_pool->workerCount() : 0));
+			requests, thread_pool.workerCount()));
 
 		GeneratedMesh generated;
 		if(!tryTakeGeneratedMesh(generated) || generated.generation_id != generation_id) return;
@@ -227,8 +225,6 @@ namespace danikk_space_engine::mesh_generation_internal
 {
 	namespace
 	{
-		constexpr size_t max_completed_meshes = 2;
-
 		uint8 getPlanetTerrainNodeLevel(double node_width)
 		{
 			uint8 level = 0;
@@ -256,8 +252,8 @@ namespace danikk_space_engine::mesh_generation_internal
 				&& a.surface_only == b.surface_only;
 		}
 
-		bool requestHasCompletedResult(const MeshGenerationRequest& request,
-			const DynamicArray<GeneratedMesh>& completed)
+		template<typename array_t>
+		bool requestHasCompletedResult(const MeshGenerationRequest& request, const array_t& completed)
 		{
 			for(const GeneratedMesh& result : completed)
 				if(result.generation_id == request.generation_id
@@ -391,13 +387,13 @@ namespace danikk_space_engine
 		}
 		result_space_available.wait(lock, [this, task_index]
 		{
-			return stopping_tasks || completed_meshes.size() < max_completed_meshes
+			return stopping_tasks || completed_meshes.size() < completed_meshes.capacity()
 				|| !task_request_slots[task_index].has_request || task_request_slots[task_index].cancelled;
 		});
 		const bool cancelled = task_request_slots[task_index].cancelled;
 		clearTaskRequestSlot(task_index);
 		if(!stopping_tasks && !cancelled && request.generation_id == active_generation_id)
-			completed_meshes.pushMove(result);
+			completed_meshes.push_move(static_cast<GeneratedMesh&&>(result));
 	}
 
 	void MeshGenerationSystem::updateMeshGenerationRequests(uint64 new_generation_id,
@@ -473,7 +469,7 @@ namespace danikk_space_engine
 	bool MeshGenerationSystem::tryTakeGeneratedMesh(GeneratedMesh& result)
 	{
 		std::lock_guard<std::mutex> guard(task_mutex);
-		while(!completed_meshes.empty())
+		while(!completed_meshes.isEmpty())
 		{
 			GeneratedMesh candidate = static_cast<GeneratedMesh&&>(completed_meshes[0]);
 			for(size_t index = 1; index < completed_meshes.size(); ++index)

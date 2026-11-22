@@ -3,7 +3,6 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 #include "internal.h"
-#include "mesh_algorithms.h"
 #include <danikk_engine/danikk_engine.h>
 
 namespace danikk_space_engine
