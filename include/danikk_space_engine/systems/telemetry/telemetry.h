@@ -5,70 +5,14 @@
 #include <string_view>
 
 #include <danikk_framework/dynamic_array.h>
+#include <danikk_space_engine/systems/telemetry/mesh_generation.h>
 
 namespace danikk_space_engine
 {
 	using namespace danikk_framework;
 
-	struct TelemetryTimingStats
-	{
-		uint64 samples = 0;
-		uint64 total_nanoseconds = 0;
-		uint64 minimum_nanoseconds = 0;
-		uint64 maximum_nanoseconds = 0;
-	};
-
-	struct PlanetMeshLevelTelemetry
-	{
-		uint64 generated_meshes = 0;
-		uint64 generated_triangles = 0;
-		TelemetryTimingStats generation_time;
-	};
-
-	struct PlanetMeshQueueTelemetry
-	{
-		uint64 desired = 0;
-		uint64 fine_desired = 0;
-		uint64 queued = 0;
-		uint64 fine_queued = 0;
-		uint64 active = 0;
-		uint64 fine_active = 0;
-		uint64 active_not_desired = 0;
-		uint64 completed = 0;
-	};
-
-	struct PlanetTerrainTreeTelemetry
-	{
-		uint64 planets = 0;
-		uint64 nodes = 0;
-		uint64 active_nodes = 0;
-		uint64 target_nodes = 0;
-		uint64 detail_scale_adjustments = 0;
-		uint64 job_candidates = 0;
-		uint64 queued_jobs = 0;
-		uint64 fine_queued = 0;
-		uint64 cached_meshes = 0;
-		uint64 active_meshes = 0;
-		uint64 cache_capacity = 0;
-		double finest_job_width = 0.0;
-		double finest_active_half_extent = 0.0;
-		double detail_scale_total = 0.0;
-	};
-
-	enum class PlanetMeshAcceptance : uint8
-	{
-		accepted,
-		empty,
-		missing_planet,
-		stale_planet,
-		stale_terrain,
-		invalid_node,
-		stale_generator,
-		stale_node
-	};
-
 	/**
-	 * @brief Collects CPU timings and runtime metrics, then periodically reports aggregated telemetry.
+	 * @brief Collects CPU profiler timings and owns mesh-generation telemetry.
 	 *
 	 * The global instance aggregates each Watcher by its name and parent scope.
 	 * At each report interval it logs only when at least one frame exceeded 30 ms
@@ -113,27 +57,13 @@ namespace danikk_space_engine
 		std::chrono::steady_clock::time_point tick_start_time;
 		/** @brief Start timestamp of the current report interval. */
 		std::chrono::steady_clock::time_point report_start_time;
-		/** @brief Per-level generation totals accumulated since the previous telemetry report. */
-		danikk_framework::DynamicArray<PlanetMeshLevelTelemetry> planet_mesh_levels;
-		/** @brief Mesh acceptance outcomes accumulated since the previous report. */
-		uint64 accepted_planet_meshes = 0;
-		uint64 empty_planet_meshes = 0;
-		uint64 missing_planet_meshes = 0;
-		uint64 stale_planet_meshes = 0;
-		uint64 stale_terrain_meshes = 0;
-		uint64 invalid_planet_mesh_nodes = 0;
-		uint64 stale_planet_mesh_generators = 0;
-		uint64 stale_planet_mesh_nodes = 0;
-		uint64 evicted_planet_meshes = 0;
-		PlanetMeshQueueTelemetry mesh_queue_snapshot;
-		PlanetTerrainTreeTelemetry terrain_tree_frame;
-		PlanetTerrainTreeTelemetry terrain_tree_snapshot;
-		bool has_telemetry_updates = false;
+		/** @brief Mesh-specific counters, snapshots, and event-triggered logging. */
+		MeshGenerationTelemetry mesh_generation_telemetry;
 
 		/**
 		 * @brief Finds or creates a node beneath the current thread-local parent scope.
 		 * @param name Stable-lifetime scope name retained by the report node.
-			 * @return Telemetry node ID pushed on the current thread's scope stack.
+		 * @return Telemetry node ID pushed on the current thread's scope stack.
 		 */
 		uint32 beginScope(const char* name);
 
@@ -158,14 +88,18 @@ namespace danikk_space_engine
 		void beginTick();
 
 		/**
-		 * @brief Accumulates this frame and emits a hierarchical report at interval boundaries.
+		 * @brief Accumulates this frame and emits a CPU profile at interval boundaries.
 		 * @param force_report Flushes an explicit measurement interval regardless of wall time or frame rate.
 		 *
-		 * Scope counters are aggregated under a mutex. Once the interval elapses,
+		 * Mesh telemetry is accumulated independently and can be explicitly reported
+		 * with reportMeshGenerationTelemetry(). Scope counters are aggregated under a mutex.
+		 * Once the interval elapses,
 		 * the report is suppressed unless a frame took over 30 ms or average FPS
 		 * was below 40. Interval counters reset even when logging is suppressed.
 		 */
 		void endTick(bool force_report = false);
+		/** @brief Emits the current mesh telemetry snapshot when an external condition requests it. */
+		void reportMeshGenerationTelemetry();
 
 		/**
 		 * @brief Changes the aggregation and logging interval.

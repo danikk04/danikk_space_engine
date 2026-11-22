@@ -1,1 +1,1 @@
-sources += files('telemetry.cpp')
+sources += files('telemetry.cpp', 'mesh_generation.cpp')
