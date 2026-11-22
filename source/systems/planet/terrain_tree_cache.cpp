@@ -63,11 +63,11 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 				evicted_mesh_count++;
 			}
 		}
-		telemetry_system.recordPlanetMeshEviction(evicted_mesh_count);
+		context.telemetry.recordPlanetMeshEviction(evicted_mesh_count);
 		uint64 active_mesh_count = 0;
 		for(const PlanetTerrainNode& node : context.tree.nodes)
 			if(node.render_active && node.mesh.mesh != nullptr) active_mesh_count++;
-		telemetry_system.recordPlanetTerrainCache(cached_mesh_count,
+		context.telemetry.recordPlanetTerrainCache(cached_mesh_count,
 			active_mesh_count,
 			(maximum_cached_meshes_per_level * (PlanetTerrainTree::maximum_depth + 1)));
 	}

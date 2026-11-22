@@ -17,7 +17,7 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		planet_terrain_tree_internal::UpdateContext context{
 			planet, planet.terrain_tree, camera_position, height,
-			getPlanetSettings(planet.settings_id)};
+			getPlanetSettings(planet.settings_id), world.telemetry};
 
 		planet_terrain_tree_internal::initialize(context);
 		planet_terrain_tree_internal::calculateDetailBudget(context);

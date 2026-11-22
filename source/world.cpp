@@ -20,7 +20,7 @@
 namespace danikk_space_engine
 {
 	World::World()
-		: mesh_generation(*this), environment(*this), physics(*this), controller(*this), camera(*this),
+		: telemetry(), mesh_generation(*this), environment(*this), physics(*this), controller(*this), camera(*this),
 		  components(*this), planets(*this), raycasts(*this), saves(*this), factions(), unit_system(*this), humans(*this)
 	{
 	}

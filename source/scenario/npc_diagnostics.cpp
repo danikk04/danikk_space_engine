@@ -102,9 +102,9 @@ namespace danikk_space_engine
 					if(HumanData* human = world.humans.findHuman(npc.human_id))
 						human->desired_velocity = velocity;
 				}
-				telemetry_system.beginTick();
+				world.telemetry.beginTick();
 				world.tick();
-				telemetry_system.endTick(tick + 1 == ticks);
+				world.telemetry.endTick(tick + 1 == ticks);
 			}
 
 			PhaseResult result;
@@ -138,7 +138,7 @@ namespace danikk_space_engine
 		createNpcFixture(scene, body_id, planet, npcs);
 
 		formatLogInfo("NPC diagnostics population=% PlayerFaction=% Pirates=%", npc_count, npc_count / 2, npc_count / 2);
-		telemetry_system.setReportIntervalMilliseconds(std::numeric_limits<uint64>::max());
+		scene.telemetry.setReportIntervalMilliseconds(std::numeric_limits<uint64>::max());
 		const PhaseResult warmup = measureNpcPhase(scene, npcs, "warmup", 60, vec3(0.0f));
 		const PhaseResult idle = measureNpcPhase(scene, npcs, "idle", 120, vec3(0.0f));
 		const PhaseResult walking = measureNpcPhase(scene, npcs, "walking", 120, vec3(1.5f, 0.0f, 0.0f));

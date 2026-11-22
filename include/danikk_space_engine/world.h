@@ -16,6 +16,7 @@
 #include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/systems/human/system.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 
 namespace danikk_space_engine
 {
@@ -32,6 +33,8 @@ namespace danikk_space_engine
 	class World
 	{
 	public:
+		/** @brief Owns this world's CPU profiler and runtime telemetry. */
+		TelemetrySystem telemetry;
 		/** @brief Owns point resources and their component slots. */
 		PointData point_data;
 		/** @brief Owns WorldBody resources and their component slots. */

@@ -169,7 +169,7 @@ namespace danikk_engine_game
      */
     void frame()
     {
-		telemetry_system.beginTick();
+		world.telemetry.beginTick();
 		{
 			/**
 			 * @brief Measures the duration of the enclosing telemetry scope.
@@ -184,6 +184,6 @@ namespace danikk_engine_game
 			world.tick();
 			world.frame();
 		}
-		telemetry_system.endTick();
+		world.telemetry.endTick();
     }
 }

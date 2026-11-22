@@ -4,6 +4,11 @@
 
 namespace danikk_space_engine
 {
+	namespace
+	{
+		constexpr bool enable_mesh_generation_telemetry_logs = false;
+	}
+
 	void MeshGenerationTelemetry::beginFrame()
 	{
 		std::lock_guard<std::mutex> guard(mutex);
@@ -107,6 +112,8 @@ namespace danikk_space_engine
 
 	void MeshGenerationTelemetry::report()
 	{
+		if constexpr(!enable_mesh_generation_telemetry_logs) return;
+
 		danikk_framework::DynamicArray<PlanetMeshLevelTelemetry> report_mesh_levels;
 		uint64 report_accepted = 0;
 		uint64 report_empty = 0;

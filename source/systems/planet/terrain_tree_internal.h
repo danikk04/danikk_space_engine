@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/systems/planet/data.h>
+#include <danikk_space_engine/systems/telemetry/telemetry.h>
 
 namespace danikk_space_engine::planet_terrain_tree_internal
 {
@@ -16,6 +17,7 @@ namespace danikk_space_engine::planet_terrain_tree_internal
 		const glm::dvec3& camera_position;
 		double height;
 		const PlanetSettings& settings;
+		TelemetrySystem& telemetry;
 		glm::dvec3 render_window_minimum = glm::dvec3(0.0);
 		glm::dvec3 render_window_maximum = glm::dvec3(0.0);
 		bool render_window_initialized = false;

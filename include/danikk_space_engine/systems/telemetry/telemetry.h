@@ -1,79 +1,27 @@
 #pragma once
 
-#include <chrono>
-#include <mutex>
-#include <string_view>
-
-#include <danikk_framework/dynamic_array.h>
 #include <danikk_space_engine/systems/telemetry/mesh_generation.h>
+#include <danikk_space_engine/systems/telemetry/profiling.h>
+#include <danikk_space_engine/systems/telemetry/watcher.h>
 
 namespace danikk_space_engine
 {
 	using namespace danikk_framework;
 
 	/**
-	 * @brief Collects CPU profiler timings and owns mesh-generation telemetry.
+	 * @brief Provides access to profiling and mesh-generation telemetry subsystems.
 	 *
-	 * The global instance aggregates each Watcher by its name and parent scope.
-	 * At each report interval it logs only when at least one frame exceeded 30 ms
-	 * or the observed frame rate was below 40 FPS. Scope times include nested
-	 * scopes, so parent and child values are not independent costs.
+	 * Frame lifecycle calls are forwarded to both child subsystems. CPU profile
+	 * reports are emitted only when a frame exceeds 30 ms or average FPS is below
+	 * 40; nested scope times include child scopes.
 	 */
 	class TelemetrySystem
 	{
 
-		/**
-		 * @brief Accumulates timing and call-count statistics for one profiler scope.
-		 */
-		struct Node
-		{
-			/** @brief Stable scope label; the caller must keep its storage alive for the profiler lifetime. */
-			const char* name = nullptr;
-			/** @brief Parent node ID, or uint32(-1) for a top-level scope. */
-			uint32 parent_id = static_cast<uint32>(-1);
-			/** @brief Inclusive nanoseconds accumulated since the current frame began. */
-			uint64 tick_nanoseconds = 0;
-			/** @brief Number of completed calls accumulated since the current frame began. */
-			uint64 tick_calls = 0;
-			/** @brief Inclusive nanoseconds accumulated for the current report interval. */
-			uint64 total_nanoseconds = 0;
-			/** @brief Largest inclusive duration of this scope in any frame of the current interval. */
-			uint64 maximum_tick_nanoseconds = 0;
-			/** @brief Total completed calls accumulated for the current report interval. */
-			uint64 total_calls = 0;
-		};
-
-		/** @brief Protects the shared node table and timing counters from worker-scope completion. */
-		std::mutex mutex;
-		/** @brief Scope nodes indexed by the IDs stored on thread-local scope stacks. */
-		danikk_framework::DynamicArray<Node> nodes;
-		/** @brief Number of frames accumulated since the start of the current report interval. */
-		uint64 report_tick_count = 0;
-		/** @brief Wall-clock duration that triggers an interval report, in milliseconds. */
-		uint64 report_interval_milliseconds = 1000;
-		/** @brief Whether any frame in the current interval exceeded the slow-frame threshold. */
-		bool report_has_slow_tick = false;
-		/** @brief Start timestamp of the frame currently being measured. */
-		std::chrono::steady_clock::time_point tick_start_time;
-		/** @brief Start timestamp of the current report interval. */
-		std::chrono::steady_clock::time_point report_start_time;
+		/** @brief CPU function timing and hierarchical report subsystem. */
+		ProfilingSystem profiling_system;
 		/** @brief Mesh-specific counters, snapshots, and event-triggered logging. */
 		MeshGenerationTelemetry mesh_generation_telemetry;
-
-		/**
-		 * @brief Finds or creates a node beneath the current thread-local parent scope.
-		 * @param name Stable-lifetime scope name retained by the report node.
-		 * @return Telemetry node ID pushed on the current thread's scope stack.
-		 */
-		uint32 beginScope(const char* name);
-
-		/**
-		 * @brief Adds one completed scope duration to its per-frame counters.
-		 * @param node_id Node returned by beginScope().
-		 * @param elapsed_nanoseconds Measured wall-clock duration.
-		 */
-		void endScope(uint32 node_id, uint64 elapsed_nanoseconds);
-		friend class Watcher;
 	public:
 		TelemetrySystem();
 		/** @brief Disabled so process-wide telemetry state cannot be accidentally copied. */
@@ -106,6 +54,10 @@ namespace danikk_space_engine
 		 * @param milliseconds Requested interval; zero is clamped to 1 ms.
 		 */
 		void setReportIntervalMilliseconds(uint64 milliseconds);
+		/** @brief Provides access to the CPU profiling subsystem. */
+		ProfilingSystem& getProfilingSystem() { return profiling_system; }
+		/** @brief Provides read-only access to the CPU profiling subsystem. */
+		const ProfilingSystem& getProfilingSystem() const { return profiling_system; }
 		/** @brief Records a completed planet terrain mesh generation for its octree level. */
 		void recordPlanetMeshGeneration(uint8 level, uint64 triangle_count, uint64 elapsed_nanoseconds);
 		/** @brief Records why a generated planet terrain mesh was accepted or discarded. */
@@ -120,137 +72,5 @@ namespace danikk_space_engine
 		void recordPlanetTerrainTree(const PlanetTerrainTreeTelemetry& snapshot);
 	};
 
-	/**
-	 * @brief Measures one named CPU scope and records its elapsed duration when it is destroyed.
-	 */
-	class Watcher
-	{
-		/** @brief Telemetry node receiving this watcher's accumulated duration. */
-		uint32 node_id = static_cast<uint32>(-1);
-		/** @brief Monotonic timestamp captured when the watched scope begins. */
-		std::chrono::steady_clock::time_point start_time;
-
-		/**
-		 * @brief Starts timing a named scope and registers it beneath the current parent scope.
-		 * @param name Name retained for logging; it must have static or otherwise
-		 *             sufficiently long lifetime because the profiler stores its pointer.
-		 * A null name is recorded as `"(unnamed)"`. Watcher is non-copyable so a
-		 * scope is ended exactly once by its destructor.
-		 */
-		explicit Watcher(const char* name);
-
-	public:
-		/** @brief Creates a timing scope for the instrumentation macros. */
-		[[nodiscard]] static Watcher create(const char* name) { return Watcher(name); }
-
-		/** @brief Disabled so the same timed scope cannot be ended by multiple destructors. */
-		Watcher(const Watcher&) = delete;
-		/** @brief Disabled so one measured scope cannot be ended more than once. */
-		Watcher& operator=(const Watcher&) = delete;
-		/** @brief Stops the timer and adds its elapsed duration to the global profiler. */
-		~Watcher();
-	};
-
-	/** @brief Process-wide telemetry service used by all Watcher objects and runtime metric producers. */
-	extern TelemetrySystem telemetry_system;
-
-	namespace telemetry_internal
-	{
-		/** @brief Owns the null-terminated name retained by the profiler. */
-		template<size_t capacity>
-		struct WatcherName
-		{
-			char text[capacity]{};
-		};
-
-		/** @brief Finds the function token before its parameters, including names such as operator(). */
-		constexpr size_t findFunctionName(std::string_view signature, std::string_view function)
-		{
-			for(size_t start = signature.find(function); start != std::string_view::npos;
-				start = signature.find(function, start + 1))
-			{
-				const size_t end = start + function.size();
-				if(end == signature.size() || signature[end] != '(') continue;
-				if(start == 0 || signature[start - 1] == ' '
-					|| (start >= 2 && signature.substr(start - 2, 2) == "::")) return start;
-			}
-			return std::string_view::npos;
-		}
-
-		/**
-		 * @brief Extracts the nearest named class or namespace from a decorated signature.
-		 * Anonymous namespace markers and class template arguments are dropped.
-		 */
-		constexpr std::string_view findWatcherOwner(std::string_view prefix)
-		{
-			while(prefix.ends_with("::"))
-			{
-				prefix.remove_suffix(2);
-				constexpr std::string_view gcc_anonymous = "{anonymous}";
-				constexpr std::string_view clang_anonymous = "(anonymous namespace)";
-				constexpr std::string_view msvc_anonymous = "`anonymous namespace'";
-				if(prefix.ends_with(gcc_anonymous)) prefix.remove_suffix(gcc_anonymous.size());
-				else if(prefix.ends_with(clang_anonymous)) prefix.remove_suffix(clang_anonymous.size());
-				else if(prefix.ends_with(msvc_anonymous)) prefix.remove_suffix(msvc_anonymous.size());
-				else
-				{
-					if(prefix.ends_with(">"))
-					{
-						size_t depth = 0;
-						for(size_t index = prefix.size(); index > 0;)
-						{
-							const char character = prefix[--index];
-							if(character == '>') ++depth;
-							if(character == '<' && --depth == 0)
-							{
-								prefix = prefix.substr(0, index);
-								break;
-							}
-						}
-					}
-					const size_t start = prefix.find_last_of(": \t*&");
-					return start == std::string_view::npos ? prefix : prefix.substr(start + 1);
-				}
-			}
-			return {};
-		}
-
-		/** @brief Builds a stable owner::function label entirely at compile time. */
-		template<size_t capacity>
-		consteval WatcherName<capacity> makeWatcherName(const char (&signature)[capacity], std::string_view function)
-		{
-			const std::string_view decorated(signature, capacity - 1);
-			const size_t start = findFunctionName(decorated, function);
-			const auto owner = start == std::string_view::npos
-				? std::string_view{} : findWatcherOwner(decorated.substr(0, start));
-
-			WatcherName<capacity> result;
-			size_t length = 0;
-			for(char character : owner) result.text[length++] = character;
-			if(!owner.empty())
-			{
-				result.text[length++] = ':';
-				result.text[length++] = ':';
-			}
-			for(char character : function) result.text[length++] = character;
-			return result;
-		}
-	}
 }
-
-#if defined(__clang__) || defined(__GNUC__)
-	#define DSE_WATCH_SIGNATURE __PRETTY_FUNCTION__
-#elif defined(_MSC_VER)
-	#define DSE_WATCH_SIGNATURE __FUNCSIG__
-#else
-	#define DSE_WATCH_SIGNATURE __func__
-#endif
-
-/** @brief Profiles the enclosing function under its short name. Declare once per scope. */
-#define DSE_WATCH() \
-	static constexpr auto dse_watcher_name = ::danikk_space_engine::telemetry_internal::makeWatcherName( \
-		DSE_WATCH_SIGNATURE, __func__); \
-	[[maybe_unused]] const auto dse_watcher = ::danikk_space_engine::Watcher::create(dse_watcher_name.text)
-
-#define DSE_PROFILE_CONTROLLER()
 
