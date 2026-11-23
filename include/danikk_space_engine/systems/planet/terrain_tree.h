@@ -38,6 +38,10 @@ namespace danikk_space_engine
 		bool pending_surface_only = true;
 		/** @brief Whether this node's mesh is selected for drawing or fallback coverage. */
 		bool render_active = false;
+		/** @brief Whether this node is a selected detail target, including a generated empty cell. */
+		bool render_target = false;
+		/** @brief Whether this drawable node is only a temporary ancestor fallback. */
+		bool render_fallback = false;
 
 		/** @brief Tests this node's cubic bounds against an axis-aligned box. */
 		bool intersectsBounds(const glm::dvec3& minimum, const glm::dvec3& maximum) const;

@@ -13,8 +13,30 @@ namespace danikk_space_engine
 		{
 			return node.mesh.mesh != nullptr && node.mesh.material_ranges.size() > 0;
 		};
+		const auto getNodeDepth = [this](PlanetTerrainNodeId node_id)
+		{
+			uint8 depth = 0;
+			double half_extent = PlanetTerrainTree::initial_root_half_extent;
+			while(depth < PlanetTerrainTree::maximum_depth
+				&& half_extent > nodes[node_id].half_extent)
+			{
+				half_extent *= 0.5;
+				depth++;
+			}
+			return depth;
+		};
+		for(PlanetTerrainNode& node : nodes)
+		{
+			node.render_active = false;
+			node.render_target = false;
+			node.render_fallback = false;
+		}
 		for(PlanetTerrainNodeId node_id : selected_node_ids)
-			if(node_id < target_nodes.size()) target_nodes[node_id] = 1;
+			if(node_id < target_nodes.size())
+			{
+				target_nodes[node_id] = 1;
+				nodes[node_id].render_target = true;
+			}
 
 		const auto markFallbacks = [&](auto&& self, PlanetTerrainNodeId node_id,
 			PlanetTerrainNodeId drawable_ancestor) -> void
@@ -26,7 +48,14 @@ namespace danikk_space_engine
 			{
 				if(!hasDrawableMesh(node) && drawable_ancestor != PlanetTerrainTree::invalid_node
 					&& drawable_ancestor != node_id)
-					fallback_nodes[drawable_ancestor] = 1;
+				{
+					constexpr uint8 maximum_fallback_ancestor_levels = 4;
+					const uint8 target_depth = getNodeDepth(node_id);
+					const uint8 ancestor_depth = getNodeDepth(drawable_ancestor);
+					if(target_depth >= ancestor_depth
+						&& target_depth - ancestor_depth <= maximum_fallback_ancestor_levels)
+						fallback_nodes[drawable_ancestor] = 1;
+				}
 				return;
 			}
 			for(PlanetTerrainNodeId child_id : node.children)
@@ -43,11 +72,12 @@ namespace danikk_space_engine
 			if(fallback_nodes[node_id] != 0)
 			{
 				node.render_active = hasDrawableMesh(node);
-				if(node.render_active) return;
+				node.render_fallback = node.render_active;
 			}
-			if(target_nodes[node_id] != 0)
+			else if(target_nodes[node_id] != 0)
 			{
 				node.render_active = hasDrawableMesh(node);
+				node.render_fallback = false;
 				return;
 			}
 			for(PlanetTerrainNodeId child_id : node.children)

@@ -10,6 +10,7 @@ danikk_engine_proj = subproject('danikk_engine')
 
 include = [
     danikk_engine_proj.get_variable('include'),
+    danikk_engine_proj.get_variable('gl_include'),
     include_directories('include')
 ]
 
