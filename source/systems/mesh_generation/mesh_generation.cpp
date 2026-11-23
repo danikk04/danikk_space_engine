@@ -233,56 +233,53 @@ namespace danikk_space_engine
 }
 namespace danikk_space_engine::mesh_generation_internal
 {
-	namespace
+	uint8 getPlanetTerrainNodeLevel(double node_width)
 	{
-		uint8 getPlanetTerrainNodeLevel(double node_width)
+		uint8 level = 0;
+		double width = PlanetTerrainTree::initial_root_half_extent * 2.0;
+		while(level < 63 && node_width < width)
 		{
-			uint8 level = 0;
-			double width = PlanetTerrainTree::initial_root_half_extent * 2.0;
-			while(level < 63 && node_width < width)
-			{
-				width *= 0.5;
-				level++;
-			}
-			return level;
+			width *= 0.5;
+			level++;
 		}
+		return level;
+	}
 
-		bool sameJobKey(const MeshGenerationJob& a, const MeshGenerationJob& b)
-		{
-			return a.generation_id == b.generation_id
-				&& a.source == b.source
-				&& a.source_revision == b.source_revision
-				&& a.planet_generation_id == b.planet_generation_id
-				&& a.terrain_revision == b.terrain_revision
-				&& a.world_body_id == b.world_body_id
-				&& a.planet_id == b.planet_id
-				&& a.planet_mesh_generator == b.planet_mesh_generator
-				&& a.terrain_node_id == b.terrain_node_id
-				&& a.terrain_node_generation_id == b.terrain_node_generation_id
-				&& a.surface_only == b.surface_only;
-		}
+	bool sameJobKey(const MeshGenerationJob& a, const MeshGenerationJob& b)
+	{
+		return a.generation_id == b.generation_id
+			&& a.source == b.source
+			&& a.source_revision == b.source_revision
+			&& a.planet_generation_id == b.planet_generation_id
+			&& a.terrain_revision == b.terrain_revision
+			&& a.world_body_id == b.world_body_id
+			&& a.planet_id == b.planet_id
+			&& a.planet_mesh_generator == b.planet_mesh_generator
+			&& a.terrain_node_id == b.terrain_node_id
+			&& a.terrain_node_generation_id == b.terrain_node_generation_id
+			&& a.surface_only == b.surface_only;
+	}
 
-		template<typename array_t>
-		bool hasMatchingJob(const MeshGenerationJob& candidate, const array_t& jobs)
-		{
-			for(const MeshGenerationJob& job : jobs)
-				if(job.state != MeshGenerationJobState::empty && sameJobKey(job, candidate)) return true;
-			return false;
-		}
+	bool hasMatchingJob(const MeshGenerationJob& candidate,
+		const Array<MeshGenerationJob, 8>& jobs)
+	{
+		for(const MeshGenerationJob& job : jobs)
+			if(job.state != MeshGenerationJobState::empty && sameJobKey(job, candidate)) return true;
+		return false;
+	}
 
-		void generateMesh(World& world, MeshGenerationJob& job)
+	void generateMesh(World& world, MeshGenerationJob& job)
+	{
+		switch(job.source)
 		{
-			switch(job.source)
-			{
-				case MeshGenerationSource::planet_terrain_node:
-					generatePlanetTerrainNodeMesh(world, job);
-					return;
-				case MeshGenerationSource::build_parts:
-					generateBuildPartMesh(world, job);
-					return;
-			}
-			danikk_engine::formatFatalError("Unsupported mesh source %", static_cast<uint32>(job.source));
+			case MeshGenerationSource::planet_terrain_node:
+				generatePlanetTerrainNodeMesh(world, job);
+				return;
+			case MeshGenerationSource::build_parts:
+				generateBuildPartMesh(world, job);
+				return;
 		}
+		danikk_engine::formatFatalError("Unsupported mesh source %", static_cast<uint32>(job.source));
 	}
 }
 
@@ -384,7 +381,8 @@ namespace danikk_space_engine
 			const auto isDesired = [&](const MeshGenerationJob& job)
 			{
 				for(const MeshGenerationJob& candidate : desired_jobs)
-					if(candidate.generation_id == active_generation_id && sameJobKey(job, candidate))
+					if(candidate.generation_id == active_generation_id
+						&& mesh_generation_internal::sameJobKey(job, candidate))
 						return true;
 				return false;
 			};
@@ -398,7 +396,8 @@ namespace danikk_space_engine
 
 			for(const MeshGenerationJob& candidate : desired_jobs)
 			{
-				if(candidate.generation_id != active_generation_id || hasMatchingJob(candidate, jobs)) continue;
+				if(candidate.generation_id != active_generation_id
+					|| mesh_generation_internal::hasMatchingJob(candidate, jobs)) continue;
 				for(MeshGenerationJob& job : jobs)
 					if(job.state == MeshGenerationJobState::empty)
 					{

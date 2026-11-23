@@ -9,26 +9,13 @@
 #include <danikk_engine/danikk_engine.h>
 
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/math/utility.h>
 
 namespace danikk_space_engine
 {
 	namespace
 	{
 		constexpr uint64 empty_edge_key = static_cast<uint64>(-1);
-
-		template<typename value_t>
-		/**
-		 * @brief Exchanges two values using move construction and move assignment.
-		 * @tparam value_t Value type supporting move construction and assignment.
-		 * @param left First value to exchange.
-		 * @param right Second value to exchange.
-		 */
-		void swapValues(value_t& left, value_t& right)
-		{
-			value_t temporary = static_cast<value_t&&>(left);
-			left = static_cast<value_t&&>(right);
-			right = static_cast<value_t&&>(temporary);
-		}
 
 		/**
 		 * @brief Holds a scalar-field sample on the terrain node's regular 3D lattice.
@@ -41,31 +28,6 @@ namespace danikk_space_engine
 			glm::dvec3 position;
 			double density;
 		};
-
-		/**
-		 * @brief Returns the smallest power of two not less than the requested capacity.
-		 * @param value Requested minimum capacity; zero returns one.
-		 * @return Power-of-two size used by the open-addressed edge-intersection cache.
-		 */
-		size_t nextPowerOfTwo(size_t value)
-		{
-			size_t result = 1;
-			while(result < value) result <<= 1;
-			return result;
-		}
-
-		/**
-		 * @brief Packs an unordered pair of 32-bit lattice vertex IDs into a 64-bit key.
-		 * @param a First endpoint ID.
-		 * @param b Second endpoint ID.
-		 * @return Same key for either endpoint order, allowing neighboring tetrahedra
-		 *         to reuse a single interpolated surface vertex.
-		 */
-		uint64 edgeKey(uint32 a, uint32 b)
-		{
-			if(a > b) swapValues(a, b);
-			return (static_cast<uint64>(a) << 32) | b;
-		}
 
 	}
 
@@ -120,7 +82,7 @@ namespace danikk_space_engine
 			const size_t cell_count = cells_per_axis * cells_per_axis * cells_per_axis;
 			// The tetrahedral split introduces fewer than 20 distinct edges per cell.
 			// Keep the open-addressed table below a roughly 60% load instead of reserving 64 slots per cell.
-			const size_t edge_cache_size = nextPowerOfTwo(std::max<size_t>(64, cell_count * 32));
+			const size_t edge_cache_size = math::nextPowerOfTwo(std::max<size_t>(64, cell_count * 32));
 			DynamicArray<uint64> edge_keys;
 			edge_keys.resize(edge_cache_size, empty_edge_key);
 			DynamicArray<uint32> edge_values;
@@ -128,7 +90,7 @@ namespace danikk_space_engine
 			const size_t edge_cache_mask = edge_cache_size - 1;
 			const auto getEdgeVertex = [&](const GridPoint& first, const GridPoint& second)
 			{
-				const uint64 key = edgeKey(first.id, second.id);
+				const uint64 key = math::edgeKey(first.id, second.id);
 				uint64 hash = key;
 				hash ^= hash >> 33;
 				hash *= 0xff51afd7ed558ccdULL;
@@ -189,7 +151,7 @@ namespace danikk_space_engine
 				const vec3 pa = job.point_positions[a];
 				const vec3 pb = job.point_positions[b];
 				const vec3 pc = job.point_positions[c];
-				if(glm::dot(glm::cross(pb - pa, pc - pa), vec3(outward)) < 0.0f) swapValues(b, c);
+				if(glm::dot(glm::cross(pb - pa, pc - pa), vec3(outward)) < 0.0f) std::swap(b, c);
 				job.triangle_point_indices.push(a);
 				job.triangle_point_indices.push(b);
 				job.triangle_point_indices.push(c);
