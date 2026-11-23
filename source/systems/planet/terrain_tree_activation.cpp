@@ -3,33 +3,51 @@
 
 namespace danikk_space_engine
 {
-	void PlanetSystem::activateMeshes(PlanetTerrainTree& tree, const glm::dvec3& camera_position,
-		double height, const PlanetSettings& settings, double detail_scale,
-		const glm::dvec3& render_window_minimum, const glm::dvec3& render_window_maximum) const
+	void PlanetSystem::activateMeshes(PlanetTerrainTree& tree,
+		const DynamicArray<PlanetTerrainNodeId>& selected_node_ids) const
 	{
 		DSE_WATCH();
-		const auto activate = [&](auto&& self, PlanetTerrainNodeId node_id) -> void
+		DynamicArray<uint8> target_nodes(tree.nodes.size(), 0);
+		DynamicArray<uint8> fallback_nodes(tree.nodes.size(), 0);
+		for(PlanetTerrainNodeId node_id : selected_node_ids)
+			if(node_id < target_nodes.size()) target_nodes[node_id] = 1;
+
+		const auto markFallbacks = [&](auto&& self, PlanetTerrainNodeId node_id,
+			PlanetTerrainNodeId drawable_ancestor) -> void
 		{
+			if(node_id >= tree.nodes.size()) return;
 			PlanetTerrainNode& node = tree.nodes[node_id];
-			if(node.half_extent <= getTargetHalfExtent(camera_position, detail_scale, node.center))
+			if(node.mesh.mesh != nullptr) drawable_ancestor = node_id;
+			if(target_nodes[node_id] != 0)
 			{
-				// Keep this node's previous mesh visible while its replacement is queued
-				// or generated. A parent node is still not used as a substitute for
-				// missing detail because traversal only reaches target-resolution nodes.
-				if(node.mesh.mesh != nullptr) node.render_active = true;
+				if(node.mesh.mesh == nullptr && drawable_ancestor != PlanetTerrainTree::invalid_node
+					&& drawable_ancestor != node_id)
+					fallback_nodes[drawable_ancestor] = 1;
 				return;
 			}
-			if(!node.hasChildren()) return;
+			for(PlanetTerrainNodeId child_id : node.children)
+				if(child_id != PlanetTerrainTree::invalid_node)
+					self(self, child_id, drawable_ancestor);
+		};
+		if(tree.root_id < tree.nodes.size())
+			markFallbacks(markFallbacks, tree.root_id, PlanetTerrainTree::invalid_node);
 
-			// Do not substitute a coarser parent mesh while the requested detail is
-			// still generating. Missing fine terrain should remain unrendered.
-			for(uint8 child_index = 0; child_index < 8; ++child_index)
+		const auto activate = [&](auto&& self, PlanetTerrainNodeId node_id) -> void
+		{
+			if(node_id >= tree.nodes.size()) return;
+			PlanetTerrainNode& node = tree.nodes[node_id];
+			if(fallback_nodes[node_id] != 0)
 			{
-				const PlanetTerrainNodeId child_id = node.children[child_index];
-				if(child_id != PlanetTerrainTree::invalid_node && isNodeRelevant(render_window_minimum,
-					render_window_maximum, camera_position, height, settings, tree.nodes[child_id]))
-					self(self, child_id);
+				node.render_active = node.mesh.mesh != nullptr;
+				return;
 			}
+			if(target_nodes[node_id] != 0)
+			{
+				node.render_active = node.mesh.mesh != nullptr;
+				return;
+			}
+			for(PlanetTerrainNodeId child_id : node.children)
+				if(child_id != PlanetTerrainTree::invalid_node) self(self, child_id);
 		};
 		if(tree.root_id < tree.nodes.size()) activate(activate, tree.root_id);
 	}

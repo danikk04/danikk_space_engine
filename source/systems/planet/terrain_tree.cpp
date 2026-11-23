@@ -90,6 +90,7 @@ namespace danikk_space_engine
 		double detail_scale = 0.0;
 		size_t target_node_count = 0;
 		size_t detail_scale_adjustments = 0;
+		DynamicArray<PlanetTerrainNodeId> selected_node_ids;
 
 		synchronizeTerrainTree(planet);
 		calculateDetailBudget(camera_position, height,
@@ -99,9 +100,8 @@ namespace danikk_space_engine
 			detail_scale, render_window_minimum, render_window_maximum);
 		const size_t candidate_count = collectMeshJobCandidates(
 			planet, camera_position, height, planet_settings, detail_scale,
-			render_window_minimum, render_window_maximum);
-		activateMeshes(tree, camera_position, height,
-			planet_settings, detail_scale, render_window_minimum, render_window_maximum);
+			render_window_minimum, render_window_maximum, selected_node_ids);
+		activateMeshes(tree, selected_node_ids);
 		recordDiagnostics(planet,
 			target_node_count, detail_scale_adjustments, candidate_count, detail_scale);
 		evictCachedMeshes(tree, camera_position);

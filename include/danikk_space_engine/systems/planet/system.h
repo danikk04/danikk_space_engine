@@ -8,7 +8,9 @@ namespace danikk_space_engine
 	/** @brief Owns planet state and provides terrain queries, editing, streaming, and mesh acceptance. */
 	class PlanetSystem
 	{
-		static constexpr size_t maximum_visible_nodes = 2048;
+		static constexpr size_t maximum_visible_meshes_per_level = 256;
+		static constexpr size_t maximum_visible_nodes = maximum_visible_meshes_per_level
+			* (PlanetTerrainTree::maximum_depth + 1);
 		static constexpr size_t maximum_job_candidates_per_frame = 32;
 
 		World& world;
@@ -24,7 +26,7 @@ namespace danikk_space_engine
 		double getTargetHalfExtent(const glm::dvec3& camera_position, double detail_scale,
 			const glm::dvec3& center) const;
 		void updateRenderWindow(const glm::dvec3& camera_position, double height,
-			double detail_scale, glm::dvec3& render_window_minimum,
+			const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 			glm::dvec3& render_window_maximum) const;
 		bool isNodeRelevant(const glm::dvec3& render_window_minimum,
 			const glm::dvec3& render_window_maximum, const glm::dvec3& camera_position,
@@ -42,11 +44,10 @@ namespace danikk_space_engine
 		size_t collectMeshJobCandidates(PlanetData& planet, const glm::dvec3& camera_position,
 			double height, const PlanetSettings& settings, double detail_scale,
 			const glm::dvec3& render_window_minimum,
-			const glm::dvec3& render_window_maximum);
-		void activateMeshes(PlanetTerrainTree& tree, const glm::dvec3& camera_position,
-			double height, const PlanetSettings& settings, double detail_scale,
-			const glm::dvec3& render_window_minimum,
-			const glm::dvec3& render_window_maximum) const;
+			const glm::dvec3& render_window_maximum,
+			DynamicArray<PlanetTerrainNodeId>& selected_node_ids);
+		void activateMeshes(PlanetTerrainTree& tree,
+			const DynamicArray<PlanetTerrainNodeId>& selected_node_ids) const;
 		void recordDiagnostics(const PlanetData& planet, size_t target_node_count,
 			size_t detail_scale_adjustments, size_t candidate_count, double detail_scale);
 		void evictCachedMeshes(PlanetTerrainTree& tree, const glm::dvec3& camera_position);

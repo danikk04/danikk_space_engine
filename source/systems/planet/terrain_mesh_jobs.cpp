@@ -46,9 +46,16 @@ namespace danikk_space_engine
 			}
 			if(!valid) continue;
 
-			const double distance_squared = has_camera
-				? glm::dot(candidate_position - camera_position, candidate_position - camera_position)
-				: std::numeric_limits<double>::infinity();
+			double distance_squared = std::numeric_limits<double>::infinity();
+			if(has_camera)
+			{
+				const glm::dvec3 offset = candidate_position - camera_position;
+				double distance_to_candidate = glm::length(offset);
+				if(candidate.source == MeshGenerationSource::planet_terrain_node)
+					distance_to_candidate = glm::max(0.0, distance_to_candidate
+						- candidate.node_width * 0.8660254037844386);
+				distance_squared = distance_to_candidate * distance_to_candidate;
+			}
 			size_t insert_index = 0;
 			while(insert_index < mesh_generation_job_candidate_buffer.size()
 				&& mesh_generation_job_candidate_distances[insert_index] <= distance_squared)
