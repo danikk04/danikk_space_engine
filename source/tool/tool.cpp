@@ -1,12 +1,12 @@
 #include <danikk_space_engine/tool.h>
+#include <danikk_space_engine/tool_catalog.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {
 	/**
-	 * @brief Routes the action to the selected tool-family implementation.
-	 * @param tool Active top-level category.
-	 * @param action Selected action ID.
+	 * @brief Invokes the callback registered at the selected catalog index.
+	 * @param tool_id Index of the selected catalog entry; zero is a no-op.
 	 * @param world World the handler may modify.
 	 * @param hit Current camera raycast result.
 	 * @param build_part_size Per-axis size for BuildPart placement actions.
@@ -14,30 +14,15 @@ namespace danikk_space_engine
 	 * @return Handler result for optional selection replacement; unsupported category IDs return an empty result.
 	 */
 	ToolApplyResult applyTool(
-		ToolId tool,
-		ToolActionId action,
+		ToolCatalogEntryId tool_id,
 		World& world,
 		const RaycastHit& hit,
 		const vec3& build_part_size,
 		uint8 build_part_rotation_step)
 	{
-		switch(tool)
-		{
-			case ToolId::none:
-				return ToolApplyResult();
-			case ToolId::terrain:
-				return applyTerrainTool(world, action, hit);
-			case ToolId::place:
-				return applyPlaceTool(world, hit, action, build_part_size, build_part_rotation_step);
-			case ToolId::human:
-				return applyHumanTool(world, hit, action);
-			case ToolId::event:
-				return applyEventTool(world, hit, action);
-			case ToolId::drag:
-				return ToolApplyResult();
-			case ToolId::count:
-				break;
-		}
+		const ToolCatalogEntry& entry = getToolCatalogEntry(tool_id);
+		if(entry.handler != nullptr)
+			return entry.handler(world, hit, build_part_size, build_part_rotation_step);
 		return ToolApplyResult();
 	}
 }

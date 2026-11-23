@@ -100,9 +100,7 @@ namespace danikk_engine_game
 			}
 			else text << " collecting\n";
 
-			if(controller.active_tool == ToolId::place
-				&& (controller.selected_tool_action == ToolActionId::create_body
-					|| controller.selected_tool_action == ToolActionId::create_slope))
+			if(controller.getActiveTool().input != nullptr)
 			{
 				const char* size_axis_name = controller.build_part_size_axis == 0 ? "X"
 					: controller.build_part_size_axis == 1 ? "Y" : "Z";

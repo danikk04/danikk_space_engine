@@ -21,18 +21,21 @@ namespace danikk_space_engine
 
 		const ToolCatalogEntry entries[]
 		{
-			{all_category_id, "None", "", ToolId::none, ToolActionId::none},
-			{tools_category_id, "Extrude terrain", "T-EXT", ToolId::terrain, ToolActionId::extrude},
-			{tools_category_id, "Erase terrain", "T-ERS", ToolId::terrain, ToolActionId::erase},
-			{tools_category_id, "Drag", "DRAG", ToolId::drag, ToolActionId::drag},
-			{parts_category_id, "Cube", "CUBE", ToolId::place, ToolActionId::create_body},
-			{parts_category_id, "Slope", "SLOPE", ToolId::place, ToolActionId::create_slope},
-			{human_category_id, "Create human", "HUMAN", ToolId::human, ToolActionId::create_human},
-			{human_category_id, "Reimu Hakurei", "REIMU", ToolId::human, ToolActionId::create_reimu},
-			{human_category_id, "Marisa Kirisame", "MARISA", ToolId::human, ToolActionId::create_marisa},
-			{human_category_id, "Tsumi-bukuro", "TSUMI", ToolId::human, ToolActionId::create_tsumi_bukuro},
-			{event_category_id, "Spawn 5 allies", "5ALL", ToolId::event, ToolActionId::spawn_5_allies},
-			{event_category_id, "Spawn 5 pirates", "5PIR", ToolId::event, ToolActionId::spawn_5_pirates}
+			{all_category_id, "None", "", nullptr},
+			{tools_category_id, "Extrude terrain", "T-EXT", applyTerrainExtrudeTool},
+			{tools_category_id, "Erase terrain", "T-ERS", applyTerrainEraseTool},
+			{tools_category_id, "Drag", "DRAG", nullptr, nullptr, nullptr,
+				updateDragTool, dragToolOwnsCamera},
+			{parts_category_id, "Cube", "CUBE", applyCreateBodyTool, drawCubeToolEffect,
+				updateBuildPartToolInput, nullptr, nullptr, drawCubeCatalogEffect},
+			{parts_category_id, "Slope", "SLOPE", applyCreateSlopeTool, drawSlopeToolEffect,
+				updateBuildPartToolInput, nullptr, nullptr, drawSlopeCatalogEffect},
+			{human_category_id, "Create human", "HUMAN", applyCreateHumanTool, drawHumanToolEffect},
+			{human_category_id, "Reimu Hakurei", "REIMU", applyCreateReimuTool, drawReimuToolEffect},
+			{human_category_id, "Marisa Kirisame", "MARISA", applyCreateMarisaTool, drawMarisaToolEffect},
+			{human_category_id, "Tsumi-bukuro", "TSUMI", applyCreateTsumiBukuroTool, drawTsumiBukuroToolEffect},
+			{event_category_id, "Spawn 5 allies", "5ALL", applySpawnAlliesTool, drawAlliesToolEffect},
+			{event_category_id, "Spawn 5 pirates", "5PIR", applySpawnPiratesTool, drawPiratesToolEffect}
 		};
 	}
 

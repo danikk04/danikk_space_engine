@@ -76,43 +76,21 @@ namespace danikk_space_engine
 
 	}
 
-	/**
-	 * @brief Dispatches placement of a cube or slope BuildPart at a valid ray hit.
-	 * @param world World receiving the created resources.
-	 * @param hit Raycast result defining the target body, point, and normal.
-	 * @param action Place action; unsupported values are ignored.
-	 * @return Empty selection result; a miss leaves the world unchanged.
-	 */
-	ToolApplyResult applyPlaceTool(
-		World& world, const RaycastHit& hit, ToolActionId action, const vec3& build_part_size,
-		uint8 build_part_rotation_step)
+	ToolApplyResult applyCreateBodyTool(World& world, const RaycastHit& hit,
+		const vec3& build_part_size, uint8 build_part_rotation_step)
 	{
 		if(!hit.hit) return ToolApplyResult();
-		switch(action)
-		{
-			case ToolActionId::create_body:
-				if(!createBuildPartAtHit(world, hit, BuildPartShape::cube,
-					build_part_size, build_part_rotation_step))
-					gui.addMessage("Место занято");
-				break;
-			case ToolActionId::create_slope:
-				if(!createBuildPartAtHit(world, hit, BuildPartShape::slope,
-					build_part_size, build_part_rotation_step))
-					gui.addMessage("Место занято");
-				break;
-			case ToolActionId::none:
-			case ToolActionId::extrude:
-			case ToolActionId::erase:
-			case ToolActionId::drag:
-			case ToolActionId::create_human:
-			case ToolActionId::create_reimu:
-			case ToolActionId::create_marisa:
-			case ToolActionId::create_tsumi_bukuro:
-			case ToolActionId::spawn_5_allies:
-			case ToolActionId::spawn_5_pirates:
-			case ToolActionId::count:
-				break;
-		}
+		if(!createBuildPartAtHit(world, hit, BuildPartShape::cube,
+			build_part_size, build_part_rotation_step)) gui.addMessage("Место занято");
+		return ToolApplyResult();
+	}
+
+	ToolApplyResult applyCreateSlopeTool(World& world, const RaycastHit& hit,
+		const vec3& build_part_size, uint8 build_part_rotation_step)
+	{
+		if(!hit.hit) return ToolApplyResult();
+		if(!createBuildPartAtHit(world, hit, BuildPartShape::slope,
+			build_part_size, build_part_rotation_step)) gui.addMessage("Место занято");
 		return ToolApplyResult();
 	}
 }

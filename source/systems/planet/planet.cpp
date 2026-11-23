@@ -175,17 +175,41 @@ namespace danikk_space_engine
 	bool PlanetSystem::editPlanetGround(PlanetId planet_id, const glm::dvec3& position,
 		double radius, MaterialId material_id)
 	{
+		constexpr bool enable_terrain_edit_system_logs = true;
 		if(!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z)
 			|| !std::isfinite(radius) || radius <= 0.0
-			|| (material_id != default_materials::void_material && material_id >= getMaterialCount())) return false;
+			|| (material_id != default_materials::void_material && material_id >= getMaterialCount()))
+		{
+			if constexpr(enable_terrain_edit_system_logs)
+				danikk_framework::formatLogWarning(
+					"Planet terrain edit rejected: invalid arguments planet=% radius=% material=%",
+					planet_id, radius, material_id);
+			return false;
+		}
 		PlanetData* planet = findPlanet(planet_id);
-		if(planet == nullptr) return false;
+		if(planet == nullptr)
+		{
+			if constexpr(enable_terrain_edit_system_logs)
+				danikk_framework::formatLogWarning("Planet terrain edit rejected: missing planet=%", planet_id);
+			return false;
+		}
 		const glm::dvec3 center = glm::conjugate(planet->rotation) * (position - planet->position);
 		if(planet->terrain_edits.append(PlanetTerrainEdit{center, radius, material_id})
-			== static_cast<PlanetTerrainEditId>(-1)) return false;
+			== static_cast<PlanetTerrainEditId>(-1))
+		{
+			if constexpr(enable_terrain_edit_system_logs)
+				danikk_framework::formatLogError(
+					"Planet terrain edit rejected: octree append failed planet=% center=(%,%,%) radius=%",
+					planet_id, center.x, center.y, center.z, radius);
+			return false;
+		}
 		planet->pending_terrain_dirty_regions.push(PlanetTerrainDirtyRegion{center, radius});
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
+		if constexpr(enable_terrain_edit_system_logs)
+			danikk_framework::formatLogInfo(
+				"Planet terrain edit accepted: planet=% revision=% center=(%,%,%) radius=% material=%",
+				planet_id, planet->terrain_revision, center.x, center.y, center.z, radius, material_id);
 		world.saves.savePlanetTerrainEdits(planet_id);
 		return true;
 	}

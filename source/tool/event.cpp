@@ -7,10 +7,9 @@ namespace danikk_space_engine
 {
 	/** @brief Resolves five supported, body-local positions for an allied or pirate column. */
 	uint8 collectEventSpawnPlacements(
-		World& world, const RaycastHit& hit, ToolActionId action, EventSpawnPlacement (&placements)[5])
+		World& world, const RaycastHit& hit, FactionId, EventSpawnPlacement (&placements)[5])
 	{
-		if((action != ToolActionId::spawn_5_allies && action != ToolActionId::spawn_5_pirates)
-			|| !hit.hit || !world.world_body_data.isWorldBodyActive(hit.body_id))
+		if(!hit.hit || !world.world_body_data.isWorldBodyActive(hit.body_id))
 			return 0;
 		const WorldBodyId body_id = hit.body_id;
 		const WorldBody& body = world.world_body_data.getWorldBody(body_id);
@@ -45,12 +44,10 @@ namespace danikk_space_engine
 	}
 
 	/** @brief Spawns five allied or pirate soldiers in the resolved column positions. */
-	ToolApplyResult applyEventTool(World& world, const RaycastHit& hit, ToolActionId action)
+	static ToolApplyResult spawnEventColumn(World& world, const RaycastHit& hit, FactionId faction_id)
 	{
 		EventSpawnPlacement placements[5];
-		const uint8 placement_count = collectEventSpawnPlacements(world, hit, action, placements);
-		const FactionId faction_id = action == ToolActionId::spawn_5_pirates
-			? base_faction_ids::pirates : base_faction_ids::player;
+		const uint8 placement_count = collectEventSpawnPlacements(world, hit, faction_id, placements);
 		for(uint8 index = 0; index < placement_count; ++index)
 		{
 			EventSpawnPlacement& placement = placements[index];
@@ -58,5 +55,15 @@ namespace danikk_space_engine
 				placement.up, placement.forward, faction_id);
 		}
 		return {};
+	}
+
+	ToolApplyResult applySpawnAlliesTool(World& world, const RaycastHit& hit, const vec3&, uint8)
+	{
+		return spawnEventColumn(world, hit, base_faction_ids::player);
+	}
+
+	ToolApplyResult applySpawnPiratesTool(World& world, const RaycastHit& hit, const vec3&, uint8)
+	{
+		return spawnEventColumn(world, hit, base_faction_ids::pirates);
 	}
 }

@@ -6,9 +6,15 @@
 #include <danikk_space_engine/world.h>
 
 #include <danikk_engine/input.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_space_engine
 {
+	namespace
+	{
+		constexpr bool enable_tool_use_logs = true;
+	}
+
 	void ControllerSystem::handleModeInput()
 	{
 		DSE_PROFILE_CONTROLLER()
@@ -45,51 +51,75 @@ namespace danikk_space_engine
 		return input;
 	}
 
-	void ControllerSystem::handleBuildPartInput(InputState& input)
+	bool updateBuildPartToolInput(ControllerSystem& controller, bool alt_pressed,
+		bool control_pressed, bool shift_pressed, float mouse_scroll_delta)
 	{
 		DSE_PROFILE_CONTROLLER()
-		const bool placing_build_part = active_tool == ToolId::place
-			&& (selected_tool_action == ToolActionId::create_body
-				|| selected_tool_action == ToolActionId::create_slope);
-		if(placing_build_part && !input.alt_pressed && !input.control_pressed && !input.shift_pressed)
+		if(!alt_pressed && !control_pressed && !shift_pressed)
 		{
-			if(getKeyboardState(keyboard_buttons::x) == button_states::press) build_part_size_axis = 0;
-			if(getKeyboardState(keyboard_buttons::y) == button_states::press) build_part_size_axis = 1;
-			if(getKeyboardState(keyboard_buttons::z) == button_states::press) build_part_size_axis = 2;
-			build_part_size_scroll_accumulator = 0.0f;
+			if(getKeyboardState(keyboard_buttons::x) == button_states::press) controller.build_part_size_axis = 0;
+			if(getKeyboardState(keyboard_buttons::y) == button_states::press) controller.build_part_size_axis = 1;
+			if(getKeyboardState(keyboard_buttons::z) == button_states::press) controller.build_part_size_axis = 2;
+			controller.build_part_size_scroll_accumulator = 0.0f;
 		}
-		input.adjusting_build_part_size = placing_build_part
-			&& input.shift_pressed && !input.control_pressed && !input.alt_pressed;
-		const bool rotating = placing_build_part
-			&& !input.shift_pressed && !input.control_pressed && !input.alt_pressed;
-		if(input.adjusting_build_part_size)
+		const bool adjusting = shift_pressed && !control_pressed && !alt_pressed;
+		const bool rotating = !shift_pressed && !control_pressed && !alt_pressed;
+		if(adjusting)
 		{
-			build_part_size_scroll_accumulator += input.mouse_scroll_delta;
-			while(build_part_size_scroll_accumulator >= 1.0f)
+			controller.build_part_size_scroll_accumulator += mouse_scroll_delta;
+			while(controller.build_part_size_scroll_accumulator >= 1.0f)
 			{
-				build_part_size[build_part_size_axis] = glm::min(build_part_size[build_part_size_axis] + 0.25f, 100.0f);
-				build_part_size_scroll_accumulator -= 1.0f;
+				controller.build_part_size[controller.build_part_size_axis] = glm::min(
+					controller.build_part_size[controller.build_part_size_axis] + 0.25f, 100.0f);
+				controller.build_part_size_scroll_accumulator -= 1.0f;
 			}
-			while(build_part_size_scroll_accumulator <= -1.0f)
+			while(controller.build_part_size_scroll_accumulator <= -1.0f)
 			{
-				build_part_size[build_part_size_axis] = glm::max(build_part_size[build_part_size_axis] - 0.25f, 0.25f);
-				build_part_size_scroll_accumulator += 1.0f;
+				controller.build_part_size[controller.build_part_size_axis] = glm::max(
+					controller.build_part_size[controller.build_part_size_axis] - 0.25f, 0.25f);
+				controller.build_part_size_scroll_accumulator += 1.0f;
 			}
 		}
 		if(rotating)
 		{
-			build_part_rotation_scroll_accumulator += input.mouse_scroll_delta;
-			while(build_part_rotation_scroll_accumulator >= 1.0f)
+			controller.build_part_rotation_scroll_accumulator += mouse_scroll_delta;
+			while(controller.build_part_rotation_scroll_accumulator >= 1.0f)
 			{
-				build_part_rotation_step = (build_part_rotation_step + 1) % 4;
-				build_part_rotation_scroll_accumulator -= 1.0f;
+				controller.build_part_rotation_step = (controller.build_part_rotation_step + 1) % 4;
+				controller.build_part_rotation_scroll_accumulator -= 1.0f;
 			}
-			while(build_part_rotation_scroll_accumulator <= -1.0f)
+			while(controller.build_part_rotation_scroll_accumulator <= -1.0f)
 			{
-				build_part_rotation_step = (build_part_rotation_step + 3) % 4;
-				build_part_rotation_scroll_accumulator += 1.0f;
+				controller.build_part_rotation_step = (controller.build_part_rotation_step + 3) % 4;
+				controller.build_part_rotation_scroll_accumulator += 1.0f;
 			}
 		}
+		return adjusting;
+	}
+
+	void ControllerSystem::handleBuildPartInput(InputState& input)
+	{
+		DSE_PROFILE_CONTROLLER()
+		const ToolInputHandler handler = getActiveTool().input;
+		input.adjusting_build_part_size = handler != nullptr
+			&& handler(*this, input.alt_pressed, input.control_pressed,
+				input.shift_pressed, input.mouse_scroll_delta);
+	}
+
+	void updateDragTool(World& world, ControllerSystem& controller, const RaycastHit& hit,
+		bool enabled, int mouse_state, float scroll_delta, bool alt_pressed,
+		const vec2& cursor_delta)
+	{
+		tickHumanDragTool(world, controller, hit, enabled, mouse_state,
+			alt_pressed ? scroll_delta : 0.0f, alt_pressed);
+		const bool dragging_human = controller.dragged_human_id != static_cast<HumanId>(-1);
+		tickDragTool(world, controller, hit, enabled && !dragging_human,
+			mouse_state, scroll_delta, alt_pressed, cursor_delta);
+	}
+
+	bool dragToolOwnsCamera(const ControllerSystem&, bool left_mouse_down, bool alt_pressed)
+	{
+		return left_mouse_down && alt_pressed;
 	}
 
 	void ControllerSystem::handleHotbarInput(const InputState& input)
@@ -125,34 +155,33 @@ namespace danikk_space_engine
 		DSE_PROFILE_CONTROLLER()
 		const float tool_mouse_scroll_delta = input.control_pressed || input.adjusting_build_part_size
 			? 0.0f : input.mouse_scroll_delta;
-		const bool drag_tool_selected = active_tool == ToolId::drag
-			&& selected_tool_action == ToolActionId::drag;
-		const bool drag_tool_down = mode == PlayerMode::god && drag_tool_selected && input.left_mouse_down;
+		const ToolCatalogEntry& active_tool = getActiveTool();
+		const bool has_continuous_behavior = active_tool.tick != nullptr;
 		RaycastHit hit;
 		if(input.left_mouse_state == button_states::press)
 			hit = world.raycasts.castFromCamera();
 		const bool unit_selection_click = input.left_mouse_state == button_states::press
-			&& !(mode == PlayerMode::god && drag_tool_selected)
+			&& !(mode == PlayerMode::god && has_continuous_behavior)
 			&& selectOwnHumanUnderCursor(hit, input.shift_pressed);
-		if(drag_tool_down)
-		{
-			tickHumanDragTool(world, *this, hit, true, input.left_mouse_state,
-				input.alt_pressed ? tool_mouse_scroll_delta : 0.0f, input.alt_pressed);
-			const bool dragging_human = dragged_human_id != static_cast<HumanId>(-1);
-			tickDragTool(world, *this, hit, !dragging_human, input.left_mouse_state,
-				tool_mouse_scroll_delta, input.alt_pressed, getCursorDelta() * getMouseSensivity());
-		}
+		if(active_tool.tick != nullptr)
+			active_tool.tick(world, *this, hit, mode == PlayerMode::god && input.left_mouse_down,
+				input.left_mouse_state, tool_mouse_scroll_delta, input.alt_pressed,
+				getCursorDelta() * getMouseSensivity());
 		else
 		{
-			tickDragTool(world, *this, hit, false, input.left_mouse_state, 0.0f, false, vec2(0.0f));
+			tickDragTool(world, *this, hit, false, input.left_mouse_state,
+				0.0f, false, vec2(0.0f));
 			tickHumanDragTool(world, *this, hit, false, input.left_mouse_state, 0.0f, false);
-			if(mode == PlayerMode::god && !unit_selection_click
-				&& active_tool != ToolId::none && active_tool != ToolId::drag
-				&& input.left_mouse_state == button_states::press)
-			{
-				applyTool(active_tool, selected_tool_action, world, hit,
-					build_part_size, build_part_rotation_step);
-			}
+		}
+		if(mode == PlayerMode::god && !unit_selection_click
+			&& active_tool.handler != nullptr && input.left_mouse_state == button_states::press)
+		{
+			if constexpr(enable_tool_use_logs)
+				danikk_framework::formatLogInfo(
+					"Tool used: name=% position=(%,%,%) hit=% terrain=%",
+					active_tool.name, hit.position.x, hit.position.y, hit.position.z,
+					hit.hit, hit.hit_terrain);
+			applyTool(active_tool_id, world, hit, build_part_size, build_part_rotation_step);
 		}
 	}
 

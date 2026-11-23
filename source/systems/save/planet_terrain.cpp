@@ -13,6 +13,7 @@ namespace danikk_space_engine
 {
 	namespace
 	{
+		constexpr bool enable_terrain_edit_save_logs = true;
 		constexpr uint32 terrain_edits_magic = 0x44504544u;
 		constexpr uint32 terrain_edits_version = 2;
 
@@ -86,6 +87,8 @@ namespace danikk_space_engine
 		if(!input)
 		{
 			planet.terrain_edits_loaded = true;
+			if constexpr(enable_terrain_edit_save_logs)
+				formatLogInfo("Planet terrain edits not found: planet=%", planet_id);
 			return false;
 		}
 
@@ -97,6 +100,12 @@ namespace danikk_space_engine
 			|| header.edit_count > 1000000)
 		{
 			planet.terrain_edits_loaded = true;
+			if constexpr(enable_terrain_edit_save_logs)
+				formatLogWarning(
+					"Planet terrain edits rejected: planet=% read_ok=% magic=% version=% count=% radius_match=% seed_match=%",
+					planet_id, static_cast<bool>(input), header.magic, header.version,
+					header.edit_count, header.planet_radius == planet_radius,
+					header.noise_seed == noise_seed);
 			return false;
 		}
 
@@ -108,6 +117,9 @@ namespace danikk_space_engine
 			if(!edit.read(input, header.version))
 			{
 				planet.terrain_edits_loaded = true;
+				if constexpr(enable_terrain_edit_save_logs)
+					formatLogWarning("Planet terrain edit record rejected: planet=% record=% of %",
+						planet_id, index, header.edit_count);
 				return false;
 			}
 			loaded_edits.push(edit);
@@ -130,6 +142,9 @@ namespace danikk_space_engine
 			}
 		}
 		planet.terrain_edits_loaded = true;
+		if constexpr(enable_terrain_edit_save_logs)
+			formatLogInfo("Planet terrain edits loaded: planet=% count=% revision=%",
+				planet_id, planet.terrain_edits.ids.size(), planet.terrain_revision);
 		return true;
 	}
 
@@ -165,5 +180,9 @@ namespace danikk_space_engine
 				(*planet.terrain_edits.pool)[edit_id].write(output);
 		output.close();
 		if(!output) formatLogError("Unable to write terrain edits save: %", file_path.string().c_str());
+		else if constexpr(enable_terrain_edit_save_logs)
+			formatLogInfo("Planet terrain edits saved: planet=% count=% revision=% path=%",
+				planet_id, planet.terrain_edits.ids.size(), planet.terrain_revision,
+				file_path.string().c_str());
 	}
 }

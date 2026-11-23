@@ -166,7 +166,6 @@ namespace danikk_space_engine
 		uint64 report_stale_generator = 0;
 		uint64 report_stale_node = 0;
 		uint64 report_evicted = 0;
-		PlanetMeshQueueTelemetry report_queue;
 		PlanetTerrainTreeTelemetry report_tree;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
@@ -181,7 +180,6 @@ namespace danikk_space_engine
 			report_stale_generator = stale_planet_mesh_generators;
 			report_stale_node = stale_planet_mesh_nodes;
 			report_evicted = evicted_planet_meshes;
-			report_queue = mesh_queue_snapshot;
 			report_tree = terrain_tree_snapshot;
 
 			planet_mesh_levels.clear();
@@ -211,25 +209,12 @@ namespace danikk_space_engine
 			+ report_stale_terrain + report_invalid_node + report_stale_generator + report_stale_node;
 		const double average_generation_milliseconds = generated_meshes == 0 ? 0.0
 			: static_cast<double>(generation_nanoseconds) / generated_meshes / 1000000.0;
-		const double average_detail_scale = report_tree.planets == 0 ? 0.0
-			: report_tree.detail_scale_total / static_cast<double>(report_tree.planets);
 		formatLogInfo(
 			"Telemetry mesh: generated=% triangles=% avg_ms=% accepted=% empty=% stale=% evicted=% cache=%/% active=%",
 			generated_meshes, generated_triangles, average_generation_milliseconds,
 			report_accepted, report_empty, stale_jobs, report_evicted,
 			report_tree.cached_meshes, report_tree.cache_capacity,
 			report_tree.active_meshes);
-		formatLogInfo(
-			"Telemetry stream: queue=%/% fine=%/% active=%/% orphan_active=% completed=% planets=% tree=%/% target=% candidates=% pending=% fine_pending=% finest_job=% finest_active=% detail_scale=% scale_adjustments=%",
-			report_queue.queued, report_queue.desired,
-			report_queue.fine_queued, report_queue.fine_desired,
-			report_queue.active, report_queue.fine_active,
-			report_queue.active_not_desired, report_queue.completed, report_tree.planets,
-			report_tree.nodes, report_tree.active_nodes, report_tree.target_nodes,
-			report_tree.job_candidates, report_tree.queued_jobs,
-			report_tree.fine_queued, report_tree.finest_job_width,
-			report_tree.finest_active_half_extent, average_detail_scale,
-			report_tree.detail_scale_adjustments);
 		for(size_t level_id = 0; level_id < report_mesh_levels.size(); ++level_id)
 		{
 			const PlanetMeshLevelTelemetry& level = report_mesh_levels[level_id];

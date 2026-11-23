@@ -286,6 +286,7 @@ namespace danikk_space_engine
 						result.position = origin + glm::dvec3(normalized_direction) * hit_distance;
 						result.normal = vec3(body_rotation * field_normal);
 						result.body_id = body_id;
+						result.planet_id = planet->id;
 					}
 				}
 			}

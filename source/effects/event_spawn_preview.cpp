@@ -6,10 +6,10 @@
 namespace danikk_space_engine
 {
 	/** @brief Draws five blue human silhouettes using the exact placements used by the event. */
-	void drawEventSpawnPreview(World& world, const RaycastHit& hit, ToolActionId action)
+	void drawEventSpawnPreview(World& world, const RaycastHit& hit, FactionId faction_id)
 	{
 		EventSpawnPlacement placements[5];
-		const uint8 placement_count = collectEventSpawnPlacements(world, hit, action, placements);
+		const uint8 placement_count = collectEventSpawnPlacements(world, hit, faction_id, placements);
 		if(!world.world_body_data.isWorldBodyActive(hit.body_id)) return;
 		const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
 		const vec4 preview_color(0.08f, 0.35f, 1.0f, 0.55f);

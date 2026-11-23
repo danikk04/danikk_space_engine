@@ -67,29 +67,32 @@ namespace danikk_space_engine
 		}
 	}
 
-	/**
-	 * @brief Handles Human -> Create using the current surface raycast hit.
-	 * @param world World receiving the new human resources.
-	 * @param hit Current camera raycast result.
-	 * @param action Selected Human action; drag is updated separately each tick.
-	 * @return Empty face-selection result; creation does not change face selection.
-	 */
-	ToolApplyResult applyHumanTool(World& world, const RaycastHit& hit, ToolActionId action)
+	ToolApplyResult applyCreateHumanTool(World& world, const RaycastHit& hit, const vec3&, uint8)
 	{
-		HumanSkinId skin_id = human_skin_ids::usmc_marpat_woodland;
-		FactionId faction_id = base_faction_ids::player;
-		switch(action)
-		{
-			case ToolActionId::create_human: break;
-			case ToolActionId::create_reimu: skin_id = human_skin_ids::reimu_hakurei; break;
-			case ToolActionId::create_marisa: skin_id = human_skin_ids::marisa_kirisame; break;
-			case ToolActionId::create_tsumi_bukuro:
-				skin_id = human_skin_ids::tsumi_bukuro;
-				faction_id = base_faction_ids::pirates;
-				break;
-			default: return ToolApplyResult();
-		}
-		if(hit.hit) createHumanAtHit(world, hit, skin_id, faction_id);
+		if(hit.hit) createHumanAtHit(world, hit, human_skin_ids::usmc_marpat_woodland,
+			base_faction_ids::player);
+		return ToolApplyResult();
+	}
+
+	ToolApplyResult applyCreateReimuTool(World& world, const RaycastHit& hit, const vec3&, uint8)
+	{
+		if(hit.hit) createHumanAtHit(world, hit, human_skin_ids::reimu_hakurei,
+			base_faction_ids::player);
+		return ToolApplyResult();
+	}
+
+	ToolApplyResult applyCreateMarisaTool(World& world, const RaycastHit& hit, const vec3&, uint8)
+	{
+		if(hit.hit) createHumanAtHit(world, hit, human_skin_ids::marisa_kirisame,
+			base_faction_ids::player);
+		return ToolApplyResult();
+	}
+
+	ToolApplyResult applyCreateTsumiBukuroTool(World& world, const RaycastHit& hit,
+		const vec3&, uint8)
+	{
+		if(hit.hit) createHumanAtHit(world, hit, human_skin_ids::tsumi_bukuro,
+			base_faction_ids::pirates);
 		return ToolApplyResult();
 	}
 

@@ -144,10 +144,9 @@ namespace danikk_space_engine
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
 		const bool alt_pressed = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
-		const bool drag_rotation_mode = has_controller
-			&& world.controller.active_tool == ToolId::drag
-			&& world.controller.selected_tool_action == ToolActionId::drag
-			&& left_mouse_down && alt_pressed;
+		const ToolCameraHandler camera_handler = world.controller.getActiveTool().camera;
+		const bool drag_rotation_mode = has_controller && camera_handler != nullptr
+			&& camera_handler(world.controller, left_mouse_down, alt_pressed);
 		if(!drag_rotation_mode)
 		{
 			const float roll_cos = cos(rotation.z);

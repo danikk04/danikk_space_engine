@@ -11,17 +11,20 @@ namespace danikk_space_engine
 		if(slot_index >= 36)
 			danikk_engine::formatFatalError("Hotbar slot index % is out of range", slot_index);
 		selected_hotbar_slot = slot_index;
-		const ToolCatalogEntry& entry = getToolCatalogEntry(hotbar_entry_ids[slot_index]);
-		active_tool = entry.tool;
-		selected_tool_action = entry.action;
+		active_tool_id = hotbar_entry_ids[slot_index];
 	}
 
 	/** @copydoc ControllerSystem::selectToolCatalogEntry */
 	void ControllerSystem::selectToolCatalogEntry(ToolCatalogEntryId entry_id)
 	{
-		const ToolCatalogEntry& entry = getToolCatalogEntry(entry_id);
+		getToolCatalogEntry(entry_id);
 		hotbar_entry_ids[selected_hotbar_slot] = entry_id;
-		active_tool = entry.tool;
-		selected_tool_action = entry.action;
+		active_tool_id = entry_id;
+	}
+
+	/** @copydoc ControllerSystem::getActiveTool */
+	const ToolCatalogEntry& ControllerSystem::getActiveTool() const
+	{
+		return getToolCatalogEntry(active_tool_id);
 	}
 }

@@ -15,7 +15,7 @@ namespace danikk_space_engine
 		const char* name = "";
 	};
 
-	/** @brief Selectable command shown in the tool menu and assignable to a hotbar slot. */
+	/** @brief Tool-registry entry shown in the menu and assignable to a hotbar slot. */
 	struct ToolCatalogEntry
 	{
 		/** @brief Menu category that contains this command. */
@@ -24,10 +24,18 @@ namespace danikk_space_engine
 		const char* name = "";
 		/** @brief Short label shown in hotbar and menu cells. */
 		const char* short_name = "";
-		/** @brief Existing tool dispatcher category used to execute the command. */
-		ToolId tool = ToolId::none;
-		/** @brief Existing tool dispatcher action executed by the command. */
-		ToolActionId action = ToolActionId::none;
+		/** @brief Callback invoked for this tool; null marks the inert zero entry. */
+		ToolHandler handler = nullptr;
+		/** @brief Optional world preview drawn while this tool is selected. */
+		ToolEffectHandler effect = nullptr;
+		/** @brief Optional per-frame input handler, for example BuildPart size controls. */
+		ToolInputHandler input = nullptr;
+		/** @brief Optional continuous behavior handler, for example dragging. */
+		ToolTickHandler tick = nullptr;
+		/** @brief Optional camera input ownership callback. */
+		ToolCameraHandler camera = nullptr;
+		/** @brief Optional miniature preview callback used by the catalog UI. */
+		ToolCatalogEffectHandler catalog_effect = nullptr;
 	};
 
 	/**

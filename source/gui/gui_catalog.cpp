@@ -44,6 +44,49 @@ namespace danikk_space_engine
 		}
 		build_part_preview_meshes_initialized = true;
 	}
+
+	void drawBuildPartCatalogEffect(BuildPartShape shape, const vec3& camera_front,
+		const vec3& camera_up, float vertical_fov_degrees,
+		const vec2& cell_position, const vec2& cell_size)
+	{
+		const float depth = 1.0f;
+		const float half_height = tan(glm::radians(vertical_fov_degrees) * 0.5f) * depth;
+		const float half_width = half_height * screen_ratio_gz;
+		const vec3 view_center(
+			(2.0f * (cell_position.x + cell_size.x * 0.5f) - 1.0f) * half_width,
+			(2.0f * (cell_position.y + cell_size.y * 0.5f) - 1.0f) * half_height,
+			-depth);
+		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera_up);
+		const mat4 camera_world = glm::inverse(view);
+		const mat4 cell_transform = camera_world * glm::translate(mat4(1.0f), view_center);
+		static_asset_collection.base3d_shader.use();
+		initializeBuildPartPreviewMeshes();
+		const vec3 view_size(
+			2.0f * half_width * cell_size.x * 0.76f,
+			2.0f * half_height * cell_size.y * 0.76f,
+			2.0f * half_height * cell_size.y * 0.76f);
+		const mat4 rotation = glm::rotate(mat4(1.0f), glm::radians(24.0f), vec3(1.0f, 0.0f, 0.0f))
+			* glm::rotate(mat4(1.0f), glm::radians(-32.0f), vec3(0.0f, 1.0f, 0.0f))
+			* glm::rotate(mat4(1.0f), glm::radians(28.0f), vec3(0.0f, 0.0f, 1.0f));
+		setWorldMatrix(cell_transform * glm::scale(mat4(1.0f), view_size) * rotation);
+		white_texture.bind();
+		setDrawColor(vec4(0.78f, 0.82f, 0.86f, 1.0f));
+		build_part_preview_meshes[static_cast<size_t>(shape)].draw();
+	}
+	}
+
+	void drawCubeCatalogEffect(const vec3& camera_front, const vec3& camera_up,
+		float vertical_fov_degrees, const vec2& cell_position, const vec2& cell_size)
+	{
+		drawBuildPartCatalogEffect(BuildPartShape::cube, camera_front, camera_up,
+			vertical_fov_degrees, cell_position, cell_size);
+	}
+
+	void drawSlopeCatalogEffect(const vec3& camera_front, const vec3& camera_up,
+		float vertical_fov_degrees, const vec2& cell_position, const vec2& cell_size)
+	{
+		drawBuildPartCatalogEffect(BuildPartShape::slope, camera_front, camera_up,
+			vertical_fov_degrees, cell_position, cell_size);
 	}
 
 	/**
@@ -61,37 +104,9 @@ namespace danikk_space_engine
 		const vec2& cell_position, const vec2& cell_size)
 	{
 		const ToolCatalogEntry& entry = getToolCatalogEntry(entry_id);
-		const float depth = 1.0f;
-		const float half_height = tan(glm::radians(vertical_fov_degrees) * 0.5f) * depth;
-		const float half_width = half_height * screen_ratio_gz;
-		const vec3 view_center(
-			(2.0f * (cell_position.x + cell_size.x * 0.5f) - 1.0f) * half_width,
-			(2.0f * (cell_position.y + cell_size.y * 0.5f) - 1.0f) * half_height,
-			-depth);
-		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, camera_up);
-		const mat4 camera_world = glm::inverse(view);
-		const mat4 cell_transform = camera_world * glm::translate(mat4(1.0f), view_center);
-		static_asset_collection.base3d_shader.use();
-
-		if(entry.action == ToolActionId::create_body || entry.action == ToolActionId::create_slope)
-		{
-			initializeBuildPartPreviewMeshes();
-			const BuildPartShape shape = entry.action == ToolActionId::create_slope
-				? BuildPartShape::slope : BuildPartShape::cube;
-			const vec3 view_size(
-				2.0f * half_width * cell_size.x * 0.76f,
-				2.0f * half_height * cell_size.y * 0.76f,
-				2.0f * half_height * cell_size.y * 0.76f);
-			const mat4 rotation = glm::rotate(mat4(1.0f), glm::radians(24.0f), vec3(1.0f, 0.0f, 0.0f))
-				* glm::rotate(mat4(1.0f), glm::radians(-32.0f), vec3(0.0f, 1.0f, 0.0f))
-				* glm::rotate(mat4(1.0f), glm::radians(28.0f), vec3(0.0f, 0.0f, 1.0f));
-			setWorldMatrix(cell_transform * glm::scale(mat4(1.0f), view_size) * rotation);
-			white_texture.bind();
-			setDrawColor(vec4(0.78f, 0.82f, 0.86f, 1.0f));
-			build_part_preview_meshes[static_cast<size_t>(shape)].draw();
-			return;
-		}
-
+		if(entry.catalog_effect != nullptr)
+			entry.catalog_effect(camera_front, camera_up, vertical_fov_degrees,
+				cell_position, cell_size);
 	}
 
 	/** @brief Refreshes visible tool commands and category highlighting. */

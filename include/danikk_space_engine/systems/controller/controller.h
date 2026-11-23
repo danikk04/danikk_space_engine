@@ -69,8 +69,8 @@ namespace danikk_space_engine
 		void shutdown();
 		/** @brief Current interaction mode. */
 		PlayerMode mode = PlayerMode::god;
-		/** @brief Tool category assigned to the selected hotbar command. */
-		ToolId active_tool = ToolId::none;
+		/** @brief Index of the active tool-registry entry; zero is the inert entry. */
+		ToolCatalogEntryId active_tool_id = no_tool_catalog_entry;
 		/** @brief Selected hotbar slot in row-major order, starting at the bottom-left. */
 		uint32 selected_hotbar_slot = 0;
 		/** @brief Tool-menu command assigned to each of the 36 hotbar slots. */
@@ -87,8 +87,6 @@ namespace danikk_space_engine
 		uint8 build_part_rotation_step = 0;
 		/** @brief Fractional wheel delta retained for placement rotation. */
 		float build_part_rotation_scroll_accumulator = 0.0f;
-		/** @brief Action assigned to the selected hotbar slot. */
-		ToolActionId selected_tool_action = ToolActionId::none;
 		/** @brief Selected player-faction humans in Commander mode. */
 		DynamicArray<SelectedUnitRef> selected_unit_refs;
 		/** @brief Camera travel speed in world units per second. */
@@ -108,6 +106,8 @@ namespace danikk_space_engine
 
 		/** @brief Enables local control for the active camera and resets transient input state. */
 		void reset();
+		/** @brief Returns the active tool-registry entry. */
+		const ToolCatalogEntry& getActiveTool() const;
 		/** @brief Returns whether this controller and its camera are bound. */
 		bool controls() const;
 		/** @brief Releases controller state and transient selections. */
