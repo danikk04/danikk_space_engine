@@ -1,4 +1,5 @@
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/world.h>
@@ -6,15 +7,15 @@
 #include <danikk_space_engine/systems/mesh_generation/internal.h>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine::mesh_generation_internal
 {
 	/** @brief Reads a body's BuildPart components and combines them into a body-local mesh. */
 	void generateBuildPartMesh(World& world, MeshGenerationJob& job)
 	{
-		if(!world.getWorldBodyData().isWorldBodyActive(job.world_body_id)) return;
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(job.world_body_id);
+		if(!world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)) return;
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(job.world_body_id);
 		size_t vertex_count = 0;
 		size_t index_count = 0;
 		bool has_mesh_origin = false;

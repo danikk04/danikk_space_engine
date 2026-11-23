@@ -1,10 +1,11 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/component/component.h>
 #include <danikk_framework/log.h>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 
 namespace danikk_space_engine
@@ -14,7 +15,7 @@ namespace danikk_space_engine
 	{
 		if(!world.getPointData().isPointComponentSlotActive(slot_id))
 			danikk_engine::formatFatalError("Cannot attach an inactive point component slot");
-		world.getWorldBodyData().attachPointToBody(body_id, point_id, body_local_position);
+		world.getWorldBodySystem().attachPointToBody(body_id, point_id, body_local_position);
 		PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
 		slot.world_body_id = body_id;
 		if(slot.type_id == PointComponentTypeId::build_part)

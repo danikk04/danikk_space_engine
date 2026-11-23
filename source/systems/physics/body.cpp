@@ -1,11 +1,12 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/physics/physics.h>
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/systems/physics/internal.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -29,9 +30,9 @@ namespace danikk_space_engine
 		if(world.getControllerSystem().controls()) dragged_id = world.getControllerSystem().dragged_world_body_id;
 		DynamicArray<BodyCollider> colliders;
 
-		for(WorldBodyId id : world.getWorldBodyData().getUsedWorldBodyIds())
+		for(WorldBodyId id : world.getWorldBodySystem().getUsedWorldBodyIds())
 		{
-			const WorldBody& body = world.getWorldBodyData().getWorldBody(id);
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(id);
 			if(body.planet_id != static_cast<PlanetId>(-1) || !hasSpatialPoints(body)) continue;
 			BodyCollider collider = createCollider(world, id, dragged_id);
 			if(collider.parts.size() > 0) colliders.push(static_cast<BodyCollider&&>(collider));
@@ -41,12 +42,12 @@ namespace danikk_space_engine
 			for(size_t i = 0; i < colliders.size(); i++)
 			{
 				const BodyCollider& a = colliders[i];
-				WorldBody& body_a = world.getWorldBodyData().getWorldBody(a.id);
+				WorldBody& body_a = world.getWorldBodySystem().getWorldBody(a.id);
 				for(size_t j = i + 1; j < colliders.size(); j++)
 				{
 					const BodyCollider& b = colliders[j];
 					if(a.inverse_mass + b.inverse_mass <= 0.0) continue;
-					WorldBody& body_b = world.getWorldBodyData().getWorldBody(b.id);
+					WorldBody& body_b = world.getWorldBodySystem().getWorldBody(b.id);
 					const glm::dvec3 delta = body_b.position - body_a.position;
 					const double radius = a.radius + b.radius;
 					if(glm::dot(delta, delta) > radius * radius) continue;

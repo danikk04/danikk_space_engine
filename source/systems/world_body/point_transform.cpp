@@ -1,12 +1,12 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 
 namespace danikk_space_engine
 {
-	glm::dvec3 WorldBodyData::getPointWorldPosition(PointId point_id) const
+	glm::dvec3 WorldBodySystem::getPointWorldPosition(PointId point_id) const
 	{
 		DSE_WATCH();
 		const Point& point = world.getPointData().getPoint(point_id);
@@ -14,7 +14,7 @@ namespace danikk_space_engine
 		return body.position + body.rotation * point.body_local_position;
 	}
 
-	mat4 WorldBodyData::getPointWorldMatrix(PointId point_id) const
+	mat4 WorldBodySystem::getPointWorldMatrix(PointId point_id) const
 	{
 		const Point& point = world.getPointData().getPoint(point_id);
 		const WorldBody& body = getWorldBody(point.world_body_id);
@@ -27,7 +27,7 @@ namespace danikk_space_engine
 		return glm::translate(mat4(1.0f), vec3(relative_position)) * rotation;
 	}
 
-	void WorldBodyData::setPointBodyLocalPosition(PointId point_id,
+	void WorldBodySystem::setPointBodyLocalPosition(PointId point_id,
 		const glm::dvec3& body_local_position)
 	{
 		if(!world.getPointData().isPointActive(point_id)) return;

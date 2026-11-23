@@ -1,4 +1,5 @@
 #include <danikk_framework/glm.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_engine/danikk_engine.h>
 
 #include <danikk_space_engine/assets/collection.h>
@@ -20,7 +21,7 @@
 namespace danikk_space_engine
 {
 	WorldSystemContainer::WorldSystemContainer(World& world)
-		: telemetry(), point_data(world), world_body_data(world), mesh_generation(world), environment(world),
+		: telemetry(), point_data(world), world_body(world), mesh_generation(world), environment(world),
 		  physics(world), controller(world), camera(world), components(world), planets(world),
 		  raycasts(world), saves(world), factions(), unit_system(world), humans(world)
 	{
@@ -37,8 +38,8 @@ namespace danikk_space_engine
 	const TelemetrySystem& World::getTelemetrySystem() const { return system_container->telemetry; }
 	PointData& World::getPointData() { return system_container->point_data; }
 	const PointData& World::getPointData() const { return system_container->point_data; }
-	WorldBodyData& World::getWorldBodyData() { return system_container->world_body_data; }
-	const WorldBodyData& World::getWorldBodyData() const { return system_container->world_body_data; }
+	WorldBodySystem& World::getWorldBodySystem() { return system_container->world_body; }
+	const WorldBodySystem& World::getWorldBodySystem() const { return system_container->world_body; }
 	MeshGenerationSystem& World::getMeshGenerationSystem() { return system_container->mesh_generation; }
 	const MeshGenerationSystem& World::getMeshGenerationSystem() const { return system_container->mesh_generation; }
 	EnvironmentSystem& World::getEnvironmentSystem() { return system_container->environment; }
@@ -66,9 +67,9 @@ namespace danikk_space_engine
 
 	void World::syncPlanetWorldBodyFrames()
 	{
-		for(WorldBodyId body_id : getWorldBodyData().getUsedWorldBodyIds())
+		for(WorldBodyId body_id : getWorldBodySystem().getUsedWorldBodyIds())
 		{
-			WorldBody& body = getWorldBodyData().getWorldBody(body_id);
+			WorldBody& body = getWorldBodySystem().getWorldBody(body_id);
 			const PlanetData* planet = getPlanetSystem().findPlanet(body.planet_id);
 			if(planet == nullptr) continue;
 			body.position = planet->position;
@@ -86,10 +87,10 @@ namespace danikk_space_engine
 	{
 		getCameraSystem().init();
 		getPlanetSystem().init();
-		while(getWorldBodyData().getUsedWorldBodyIds().size() > 0)
+		while(getWorldBodySystem().getUsedWorldBodyIds().size() > 0)
 		{
-			const DynamicArray<WorldBodyId>& body_ids = getWorldBodyData().getUsedWorldBodyIds();
-			getWorldBodyData().destroyWorldBody(body_ids[body_ids.size() - 1]);
+			const DynamicArray<WorldBodyId>& body_ids = getWorldBodySystem().getUsedWorldBodyIds();
+			getWorldBodySystem().destroyWorldBody(body_ids[body_ids.size() - 1]);
 		}
 		getMeshGenerationSystem().init();
 		getComponentSystem().init();
@@ -119,13 +120,13 @@ namespace danikk_space_engine
 		getRaycastSystem().shutdown();
 		getSaveSystem().shutdown();
 		clearBuildPartMeshCache();
-		while(getWorldBodyData().getUsedWorldBodyIds().size() > 0)
+		while(getWorldBodySystem().getUsedWorldBodyIds().size() > 0)
 		{
-			const DynamicArray<WorldBodyId>& body_ids = getWorldBodyData().getUsedWorldBodyIds();
-			getWorldBodyData().destroyWorldBody(body_ids[body_ids.size() - 1]);
+			const DynamicArray<WorldBodyId>& body_ids = getWorldBodySystem().getUsedWorldBodyIds();
+			getWorldBodySystem().destroyWorldBody(body_ids[body_ids.size() - 1]);
 		}
 		getPointData().release();
-		getWorldBodyData().release();
+		getWorldBodySystem().release();
 		getFactionSystem().shutdown();
 		getComponentSystem().shutdown();
 		getUnitSystem().shutdown();
@@ -205,9 +206,9 @@ namespace danikk_space_engine
 			far_render_distance = glm::max(far_render_distance,
 				glm::length(planet.position - camera_position) + settings.radius);
 		}
-		for(WorldBodyId id : getWorldBodyData().getUsedWorldBodyIds())
+		for(WorldBodyId id : getWorldBodySystem().getUsedWorldBodyIds())
 		{
-			const WorldBody& body = getWorldBodyData().getWorldBody(id);
+			const WorldBody& body = getWorldBodySystem().getWorldBody(id);
 			if(!body.detail_mesh_bounds_valid) continue;
 			const glm::dvec3 center = body.position + body.rotation
 				* (body.detail_mesh_position + glm::dvec3(body.detail_mesh_bounds_center));
@@ -217,9 +218,9 @@ namespace danikk_space_engine
 
 		const auto draw_world_geometry = [this]()
 		{
-			for(WorldBodyId id : getWorldBodyData().getUsedWorldBodyIds())
+			for(WorldBodyId id : getWorldBodySystem().getUsedWorldBodyIds())
 			{
-				const WorldBody& body = getWorldBodyData().getWorldBody(id);
+				const WorldBody& body = getWorldBodySystem().getWorldBody(id);
 				if(body.detail_mesh.mesh == nullptr) continue;
 				const glm::dvec3 relative_position = body.position
 					+ body.rotation * body.detail_mesh_position - getCameraSystem().getWorldPosition();

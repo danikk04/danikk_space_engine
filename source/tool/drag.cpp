@@ -1,4 +1,5 @@
 #include <danikk_space_engine/tool.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
@@ -6,7 +7,7 @@
 
 #include <cmath>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 
 #include <danikk_space_engine/systems/raycast/raycast.h>
@@ -22,14 +23,14 @@ namespace danikk_space_engine
 		 */
 		bool canDragWorldBody(const World& world, WorldBodyId body_id)
 		{
-			if(!world.getWorldBodyData().isWorldBodyActive(body_id)) return false;
+			if(!world.getWorldBodySystem().isWorldBodyActive(body_id)) return false;
 
 			if(world.getCameraSystem().isActive() && world.getCameraSystem().getWorldBodyId() == body_id)
 			{
 				return false;
 			}
 
-			if(world.getWorldBodyData().getWorldBody(body_id).planet_id != static_cast<PlanetId>(-1)) return false;
+			if(world.getWorldBodySystem().getWorldBody(body_id).planet_id != static_cast<PlanetId>(-1)) return false;
 			return true;
 		}
 
@@ -82,11 +83,11 @@ namespace danikk_space_engine
 		if(mouse_state == button_states::press)
 		{
 			clearDrag(controller);
-			if(hit.hit && world.getWorldBodyData().isWorldBodyActive(hit.body_id))
+			if(hit.hit && world.getWorldBodySystem().isWorldBodyActive(hit.body_id))
 			{
 				if(canDragWorldBody(world, hit.body_id))
 				{
-					const WorldBody& body = world.getWorldBodyData().getWorldBody(hit.body_id);
+					const WorldBody& body = world.getWorldBodySystem().getWorldBody(hit.body_id);
 					controller.dragged_world_body_id = hit.body_id;
 					controller.dragged_body_distance = hit.distance;
 					controller.dragged_hit_offset = glm::conjugate(body.rotation)
@@ -104,7 +105,7 @@ namespace danikk_space_engine
 			return;
 		}
 
-		WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
+		WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
 		if(alt_pressed && scroll_delta != 0.0f)
 		{
 			controller.dragged_body_distance *= std::pow(1.2, static_cast<double>(scroll_delta));

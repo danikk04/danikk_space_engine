@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/physics/physics.h>
@@ -7,7 +8,7 @@
 #include <danikk_space_engine/systems/physics/internal.h>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine::collision_internal
 {
@@ -110,7 +111,7 @@ namespace danikk_space_engine::collision_internal
 	{
 		BodyCollider collider;
 		collider.id = id;
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(id);
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(id);
 		for(PointId point_id : body.point_ids)
 		{
 			if(!world.getPointData().isPointActive(point_id)) continue;
@@ -168,7 +169,7 @@ namespace danikk_space_engine::collision_internal
 		const glm::dvec3& world_position, const mat4& body_local_rotation,
 		const vec3& size, double penetration_tolerance)
 	{
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
 		const BodyCollider existing = createCollider(world, body_id, static_cast<WorldBodyId>(-1));
 		const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
 		BuildPartCollider candidate;
@@ -248,7 +249,7 @@ namespace danikk_space_engine
 		const vec3& size, double penetration_tolerance) const
 	{
 		DSE_WATCH();
-		if(!world.getWorldBodyData().isWorldBodyActive(body_id)) return true;
+		if(!world.getWorldBodySystem().isWorldBodyActive(body_id)) return true;
 		return !collision_internal::hasOverlappingBuildPart(
 			world, body_id, shape, world_position, body_local_rotation, size, penetration_tolerance);
 	}

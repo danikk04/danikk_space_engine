@@ -1,9 +1,10 @@
 #include <danikk_space_engine/tool.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/systems/planet/system.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/environment/environment.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/human/system.h>
@@ -16,10 +17,10 @@ namespace danikk_space_engine
 	uint8 collectEventSpawnPlacements(
 		World& world, const RaycastHit& hit, FactionId, EventSpawnPlacement (&placements)[5])
 	{
-		if(!hit.hit || !world.getWorldBodyData().isWorldBodyActive(hit.body_id))
+		if(!hit.hit || !world.getWorldBodySystem().isWorldBodyActive(hit.body_id))
 			return 0;
 		const WorldBodyId body_id = hit.body_id;
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
 		const glm::dvec3 body_position = body.position;
 		const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 		if(glm::length(hit.normal) <= 1e-6f) return 0;

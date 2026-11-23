@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <cmath>
 #include <cstdio>
 #include <limits>
@@ -19,7 +20,7 @@
 #include <danikk_engine/input.h>
 #include <danikk_framework/memory.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/systems/camera/camera.h>
@@ -70,7 +71,7 @@ namespace danikk_engine_game
 			{
 				const HumanData* human_data = world.getHumanSystem().findHuman(reference.human_id);
 				if(human_data == nullptr || human_data->generation_id != reference.generation_id
-					|| !world.getWorldBodyData().isWorldBodyActive(human_data->world_body_id)) continue;
+					|| !world.getWorldBodySystem().isWorldBodyActive(human_data->world_body_id)) continue;
 				const HumanState& human = *human_data;
 				if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 				++summary.count;

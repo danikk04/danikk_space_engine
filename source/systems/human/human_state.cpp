@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_framework/random.h>
@@ -13,7 +14,7 @@
 
 #include <danikk_space_engine/systems/human/internal.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/environment/environment.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/human/system.h>
@@ -50,9 +51,9 @@ namespace danikk_space_engine
 	void tickHumanData(HumanData& human, World& world)
 	{
 		DSE_WATCH();
-		if(!world.getWorldBodyData().isWorldBodyActive(human.world_body_id))
+		if(!world.getWorldBodySystem().isWorldBodyActive(human.world_body_id))
 			formatFatalError("Human % references an invalid WorldBody", human.id);
-		WorldBody& body = world.getWorldBodyData().getWorldBody(human.world_body_id);
+		WorldBody& body = world.getWorldBodySystem().getWorldBody(human.world_body_id);
 		const glm::dvec3 world_position = world.getHumanSystem().getWorldPosition(human);
 		const glm::dvec3 gravity_world = world.getEnvironmentSystem().sampleGravityAt(world_position);
 		const double gravity_magnitude = glm::length(gravity_world);
@@ -115,8 +116,8 @@ namespace danikk_space_engine
 	void frameHumanData(const HumanData& human, World& world)
 	{
 		DSE_WATCH();
-		if(!world.getWorldBodyData().isWorldBodyActive(human.world_body_id)) return;
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(human.world_body_id);
+		if(!world.getWorldBodySystem().isWorldBodyActive(human.world_body_id)) return;
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(human.world_body_id);
 		vec3 local_up = human.body_pose == HumanBodyPose::standing ? human.up : human.ground_normal;
 		if(glm::length(local_up) <= 1e-6f) local_up = human.up;
 		local_up = glm::normalize(local_up);

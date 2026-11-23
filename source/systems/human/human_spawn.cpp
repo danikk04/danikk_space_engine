@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/assets/human_skin.h>
@@ -9,7 +10,7 @@
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/world.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -18,7 +19,7 @@ namespace danikk_space_engine
 		const vec3& up, const vec3& forward, FactionId faction_id)
 	{
 		DSE_WATCH();
-		if(!world.getWorldBodyData().isWorldBodyActive(body_id))
+		if(!world.getWorldBodySystem().isWorldBodyActive(body_id))
 			formatFatalError("Cannot create NPC on an invalid WorldBody");
 
 		HumanState initial_state;

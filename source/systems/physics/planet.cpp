@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/physics/physics.h>
@@ -8,7 +9,7 @@
 #include <danikk_space_engine/geometry/build_part.h>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -267,10 +268,10 @@ namespace danikk_space_engine
 		}
 		if(planets.size() == 0) return;
 
-		for(WorldBodyId moving_body_id : world.getWorldBodyData().getUsedWorldBodyIds())
+		for(WorldBodyId moving_body_id : world.getWorldBodySystem().getUsedWorldBodyIds())
 		{
-			if(!world.getWorldBodyData().isWorldBodyActive(moving_body_id)) continue;
-			WorldBody& moving_body = world.getWorldBodyData().getWorldBody(moving_body_id);
+			if(!world.getWorldBodySystem().isWorldBodyActive(moving_body_id)) continue;
+			WorldBody& moving_body = world.getWorldBodySystem().getWorldBody(moving_body_id);
 			if(moving_body.planet_id != static_cast<PlanetId>(-1)) continue;
 			if(!hasSpatialPoints(moving_body)) continue;
 			const BodyMassProperties mass_properties = calculateMassProperties(moving_body);
@@ -310,7 +311,7 @@ namespace danikk_space_engine
 			}
 
 			for(const PlanetCollisionTarget& target : planets)
-				if(world.getWorldBodyData().getWorldBody(moving_body_id).planet_id != target.planet_id)
+				if(world.getWorldBodySystem().getWorldBody(moving_body_id).planet_id != target.planet_id)
 					collideBodySurfaceWithPlanet(world, moving_body_id, moving_body, mass_properties, target);
 		}
 	}

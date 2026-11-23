@@ -11,7 +11,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Coordinates world state, simulation updates, physics, and geometry queries.
 	 *
-	 * PointData and WorldBodyData own point and body lifecycles. World orders component callbacks,
+	 * PointData and WorldBodySystem own point and body lifecycles. World orders component callbacks,
 	 * deferred point cleanup, simulation updates, and physics advancement.
 	 * Mesh generation runs on a worker; completed data is validated
 	 * and accepted by the main thread before mesh creation and drawing.
@@ -31,8 +31,8 @@ namespace danikk_space_engine
 		/** @brief Returns the point and WorldBody data containers. */
 		PointData& getPointData();
 		const PointData& getPointData() const;
-		WorldBodyData& getWorldBodyData();
-		const WorldBodyData& getWorldBodyData() const;
+		WorldBodySystem& getWorldBodySystem();
+		const WorldBodySystem& getWorldBodySystem() const;
 		/** @brief Returns the asynchronous mesh generation system. */
 		MeshGenerationSystem& getMeshGenerationSystem();
 		const MeshGenerationSystem& getMeshGenerationSystem() const;

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <cstdlib>
 #include <limits>
 
@@ -12,7 +13,7 @@
 #include <danikk_space_engine/world.h>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/human/system.h>
 
@@ -138,9 +139,9 @@ namespace danikk_space_engine
 		scene.getFactionSystem().create(faction_definition_ids::player);
 		scene.getFactionSystem().create(faction_definition_ids::pirates);
 
-		const WorldBodyId body_id = scene.getWorldBodyData().createWorldBody();
+		const WorldBodyId body_id = scene.getWorldBodySystem().createWorldBody();
 		PlanetData& planet = scene.getPlanetSystem().createPlanet(planet_settings_ids::earth);
-		scene.getWorldBodyData().getWorldBody(body_id).planet_id = planet.id;
+		scene.getWorldBodySystem().getWorldBody(body_id).planet_id = planet.id;
 		DiagnosticNpc npcs[npc_count]{};
 		createNpcFixture(scene, body_id, planet, npcs);
 
@@ -171,10 +172,10 @@ namespace danikk_space_engine
 			&& walking.grounded == npc_count && walking.moved == npc_count && lost_support;
 		formatLogInfo("NPC diagnostics excavation lost_support=% drop_m=%", lost_support, drop);
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
-		scene.getWorldBodyData().destroyWorldBody(body_id);
+		scene.getWorldBodySystem().destroyWorldBody(body_id);
 		scene.getHumanSystem().shutdown();
 		scene.getPointData().release();
-		scene.getWorldBodyData().release();
+		scene.getWorldBodySystem().release();
 		scene.getFactionSystem().release();
 		return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 	}

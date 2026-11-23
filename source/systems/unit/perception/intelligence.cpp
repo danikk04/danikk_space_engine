@@ -1,4 +1,5 @@
 #include <danikk_engine/danikk_engine.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/human/damageable.h>
@@ -6,7 +7,7 @@
 #include <danikk_space_engine/systems/unit/internal/perception.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/systems/human/system.h>
 
@@ -40,7 +41,7 @@ namespace danikk_space_engine::unit_system_internal
 			for(const HumanData& human : world.getHumanSystem().getHumans())
 			{
 				if(human.faction_id != system.faction_id || human.damageable.getHealth() > 0.0f
-					|| !world.getWorldBodyData().isWorldBodyActive(human.world_body_id)) continue;
+					|| !world.getWorldBodySystem().isWorldBodyActive(human.world_body_id)) continue;
 
 				UnitSighting corpse_location;
 				corpse_location.faction_id = system.faction_id;
@@ -63,7 +64,7 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		const HumanData* human = world.getHumanSystem().findHuman(target.human_id);
 		if(human == nullptr || human->generation_id != target.generation_id
-			|| !world.getWorldBodyData().isWorldBodyActive(human->world_body_id)) return false;
+			|| !world.getWorldBodySystem().isWorldBodyActive(human->world_body_id)) return false;
 		return human->damageable.getHealth() > 0.0f && faction < world.getFactionSystem().size()
 			&& human->faction_id < world.getFactionSystem().size()
 			&& world.getFactionSystem().getRelation(faction, human->faction_id).type == FactionRelationType::hostile;
@@ -74,7 +75,7 @@ namespace danikk_space_engine::unit_system_internal
 		if(sighting.faction_id >= world.getFactionSystem().size()) return false;
 		const HumanData* target = world.getHumanSystem().findHuman(sighting.target_human_id);
 		if(target == nullptr || target->generation_id != sighting.target_generation_id
-			|| !world.getWorldBodyData().isWorldBodyActive(target->world_body_id)) return false;
+			|| !world.getWorldBodySystem().isWorldBodyActive(target->world_body_id)) return false;
 		if(target->faction_id >= world.getFactionSystem().size()
 			|| world.getFactionSystem().getRelation(sighting.faction_id, target->faction_id).type != FactionRelationType::hostile)
 			return false;
@@ -87,7 +88,7 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		const HumanData* target_data = world.getHumanSystem().findHuman(target.human_id);
 		if(target_data == nullptr || target_data->generation_id != target.generation_id
-			|| !world.getWorldBodyData().isWorldBodyActive(target_data->world_body_id)) return;
+			|| !world.getWorldBodySystem().isWorldBodyActive(target_data->world_body_id)) return;
 		const glm::dvec3 body_local_position = target_data->body_local_position;
 		for(UnitSighting& sighting : system.known_sightings)
 		{
@@ -148,7 +149,7 @@ namespace danikk_space_engine::unit_system_internal
 
 		for(size_t index = 0; index < system.search_locations.size();)
 		{
-			if(!world.getWorldBodyData().isWorldBodyActive(system.search_locations[index].body_id))
+			if(!world.getWorldBodySystem().isWorldBodyActive(system.search_locations[index].body_id))
 			{
 				for(size_t shift = index + 1; shift < system.search_locations.size(); ++shift)
 					system.search_locations[shift - 1] = static_cast<UnitSearchLocation&&>(system.search_locations[shift]);

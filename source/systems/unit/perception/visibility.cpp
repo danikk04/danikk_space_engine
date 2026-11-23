@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/world.h>
@@ -7,7 +8,7 @@
 #include <danikk_space_engine/systems/unit/internal/perception.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
 #include <danikk_space_engine/systems/human/system.h>
 
@@ -49,7 +50,7 @@ namespace danikk_space_engine::unit_system_internal
 			if(agent.order.has_attack_target && isValidEnemy(world, previous_target, human->faction_id))
 			{
 				const glm::dvec3 origin = world.getHumanSystem().getWorldPosition(*human);
-				const WorldBody& body = world.getWorldBodyData().getWorldBody(human->world_body_id);
+				const WorldBody& body = world.getWorldBodySystem().getWorldBody(human->world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
 				const HumanData* target_human = world.getHumanSystem().findHuman(previous_target.human_id);
@@ -75,7 +76,7 @@ namespace danikk_space_engine::unit_system_internal
 				if(!isValidEnemy(world, candidate, human->faction_id)) continue;
 				markVisibilityChecked(system, candidate);
 				const glm::dvec3 origin = world.getHumanSystem().getWorldPosition(*human);
-				const WorldBody& body = world.getWorldBodyData().getWorldBody(human->world_body_id);
+				const WorldBody& body = world.getWorldBodySystem().getWorldBody(human->world_body_id);
 				const glm::dvec3 shot_origin = origin + body.rotation
 					* glm::dvec3(human->up * (human->getHeight() * 0.2f));
 				const HumanData* target_human = world.getHumanSystem().findHuman(candidate.human_id);

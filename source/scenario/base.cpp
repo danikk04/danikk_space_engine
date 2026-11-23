@@ -1,4 +1,5 @@
 #include <danikk_space_engine/scenario/base.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/systems/planet/system.h>
@@ -8,7 +9,7 @@
 #include <cmath>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/faction/faction.h>
 
@@ -93,24 +94,24 @@ namespace danikk_space_engine
 	 */
 	void startBaseScenario(World& world)
 	{
-		while(world.getWorldBodyData().getUsedWorldBodyIds().size() > 0)
+		while(world.getWorldBodySystem().getUsedWorldBodyIds().size() > 0)
 		{
-			const DynamicArray<WorldBodyId>& body_ids = world.getWorldBodyData().getUsedWorldBodyIds();
-			world.getWorldBodyData().destroyWorldBody(body_ids[body_ids.size() - 1]);
+			const DynamicArray<WorldBodyId>& body_ids = world.getWorldBodySystem().getUsedWorldBodyIds();
+			world.getWorldBodySystem().destroyWorldBody(body_ids[body_ids.size() - 1]);
 		}
 		world.getPointData().clear();
-		world.getWorldBodyData().clear();
+		world.getWorldBodySystem().clear();
 		world.getFactionSystem().create(faction_definition_ids::celestial_body);
 		world.getFactionSystem().create(faction_definition_ids::player);
 		world.getFactionSystem().create(faction_definition_ids::pirates);
 		world.getFactionSystem().setRelation(base_faction_ids::player, base_faction_ids::pirates,
 			{FactionRelationType::hostile, 0.0f});
 
-		const WorldBodyId planet_frame_id = world.getWorldBodyData().createWorldBody();
-		world.getWorldBodyData().getWorldBody(planet_frame_id).faction_id = base_faction_ids::celestial_body;
+		const WorldBodyId planet_frame_id = world.getWorldBodySystem().createWorldBody();
+		world.getWorldBodySystem().getWorldBody(planet_frame_id).faction_id = base_faction_ids::celestial_body;
 		const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet_settings_ids::earth);
 		PlanetData& planet = world.getPlanetSystem().createPlanet(planet_settings_ids::earth);
-		WorldBody& planet_frame = world.getWorldBodyData().getWorldBody(planet_frame_id);
+		WorldBody& planet_frame = world.getWorldBodySystem().getWorldBody(planet_frame_id);
 		planet_frame.planet_id = planet.id;
 		planet_frame.position = planet.position;
 		planet_frame.rotation = planet.rotation;

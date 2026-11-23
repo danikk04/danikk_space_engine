@@ -1,4 +1,5 @@
 #include <danikk_space_engine/item/category.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/item/item.h>
 
 #include <danikk_space_engine/component/point/bullet.h>
@@ -6,7 +7,7 @@
 #include <danikk_space_engine/item/definition.h>
 #include <danikk_space_engine/world.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/human/system.h>
 
 namespace danikk_space_engine
@@ -24,7 +25,7 @@ namespace danikk_space_engine
 				|| definition.parameters.weapon.projectile_id == projectile_definition_ids::none)
 				return false;
 			HumanData* human_data = getHuman(world, owner_human_id);
-			if(human_data == nullptr || !world.getWorldBodyData().isWorldBodyActive(human_data->world_body_id)) return false;
+			if(human_data == nullptr || !world.getWorldBodySystem().isWorldBodyActive(human_data->world_body_id)) return false;
 			HumanState* human = human_data;
 			const WorldBodyId body_id = human_data->world_body_id;
 

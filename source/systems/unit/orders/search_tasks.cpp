@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <limits>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
@@ -9,7 +10,7 @@
 #include <danikk_space_engine/systems/unit/internal/perception.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
 #include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/systems/unit/unit.h>
@@ -20,8 +21,8 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Resolves a body's current world-space position for a stored local search point. */
 	glm::dvec3 getSearchWorldPosition(const World& world, const UnitSearchLocation& location)
 	{
-		if(!world.getWorldBodyData().isWorldBodyActive(location.body_id)) return glm::dvec3(std::numeric_limits<double>::max());
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(location.body_id);
+		if(!world.getWorldBodySystem().isWorldBodyActive(location.body_id)) return glm::dvec3(std::numeric_limits<double>::max());
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(location.body_id);
 		return body.position + body.rotation * location.body_local_position;
 	}
 
@@ -30,8 +31,8 @@ namespace danikk_space_engine::unit_system_internal
 		const glm::dvec3& search_position, const glm::dvec3& eye_position,
 		double search_radius_squared, WorldBodyId body_id, DynamicArray<HumanId>& pending_destruction)
 	{
-		if(!world.getWorldBodyData().isWorldBodyActive(body_id)) return;
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
+		if(!world.getWorldBodySystem().isWorldBodyActive(body_id)) return;
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
 		const glm::dvec3 local_search_position = glm::conjugate(body.rotation)
 			* (search_position - body.position);
 		DynamicArray<HumanId> nearby_humans;
@@ -147,7 +148,7 @@ namespace danikk_space_engine::unit_system_internal
 					if(assigned_unit != nullptr) assigned_unit->assigned_to_search = false;
 					location.assigned_human_id = static_cast<HumanId>(-1);
 				}
-				else if(world.getWorldBodyData().isWorldBodyActive(location.body_id))
+				else if(world.getWorldBodySystem().isWorldBodyActive(location.body_id))
 				{
 					if(corpse_recovery) assigned_unit->agent->global_state = UnitGlobalState::work;
 					const glm::dvec3 target_position = getSearchWorldPosition(world, location);

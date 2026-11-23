@@ -1,8 +1,9 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 
 #include <cstdlib>
@@ -49,9 +50,9 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		if(!isPointActive(id)) return;
 		Point& point = points[id];
-		if(world.getWorldBodyData().isWorldBodyActive(point.world_body_id))
+		if(world.getWorldBodySystem().isWorldBodyActive(point.world_body_id))
 		{
-			WorldBody& body = world.getWorldBodyData().getWorldBody(point.world_body_id);
+			WorldBody& body = world.getWorldBodySystem().getWorldBody(point.world_body_id);
 			body.spatial_tree.remove(id, point.body_local_position);
 			const size_t index = point.world_body_point_index;
 			if(index >= body.point_ids.size() || body.point_ids[index] != id)

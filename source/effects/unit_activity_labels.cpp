@@ -1,4 +1,5 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/effects/unit_activity_labels.h>
@@ -9,7 +10,7 @@
 #include <danikk_engine/mesh.h>
 #include <danikk_engine/texture_methods.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/human/system.h>
 
@@ -97,7 +98,7 @@ namespace danikk_space_engine
 
 		for(const HumanData& data : world.getHumanSystem().getHumans())
 		{
-			if(!world.getWorldBodyData().isWorldBodyActive(data.world_body_id)) continue;
+			if(!world.getWorldBodySystem().isWorldBodyActive(data.world_body_id)) continue;
 			const HumanState& human = data;
 			if(human.hasDeathTimestamp() || human.faction_id >= world.getFactionSystem().size()
 				|| world.getFactionSystem().getRelation(base_faction_ids::player, human.faction_id).type
@@ -113,7 +114,7 @@ namespace danikk_space_engine
 			const float panel_width = text_width + panel_padding_x * 2.0f;
 
 			const glm::dvec3 human_position = world.getHumanSystem().getWorldPosition(data);
-			const WorldBody& body = world.getWorldBodyData().getWorldBody(data.world_body_id);
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(data.world_body_id);
 			vec3 human_up = vec3(body.rotation * glm::dvec3(human.up));
 			if(glm::length(human_up) <= 1e-6f) human_up = vec3(0.0f, 0.0f, 1.0f);
 			human_up = glm::normalize(human_up);

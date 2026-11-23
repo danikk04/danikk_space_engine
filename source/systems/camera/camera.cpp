@@ -1,4 +1,5 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/world.h>
@@ -7,7 +8,7 @@
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_framework/log.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -26,8 +27,8 @@ namespace danikk_space_engine
 		/** @brief Parallel-transports the camera heading as its radial up vector changes. */
 		void updateCameraSurfaceFrame(CameraSystem& camera, const World& world)
 		{
-			if(!world.getWorldBodyData().isWorldBodyActive(camera.getWorldBodyId())) return;
-			const WorldBody& body = world.getWorldBodyData().getWorldBody(camera.getWorldBodyId());
+			if(!world.getWorldBodySystem().isWorldBodyActive(camera.getWorldBodyId())) return;
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(camera.getWorldBodyId());
 			const glm::dvec3 radial = camera.getWorldPosition() - body.position;
 			const double radial_length = glm::length(radial);
 			if(radial_length <= 0.000001) return;
@@ -94,7 +95,7 @@ namespace danikk_space_engine
 	bool CameraSystem::isActive() const
 	{
 		return body_id != static_cast<WorldBodyId>(-1)
-			&& world.getWorldBodyData().isWorldBodyActive(body_id);
+			&& world.getWorldBodySystem().isWorldBodyActive(body_id);
 	}
 
 	/** @copydoc CameraSystem::getFront */
@@ -125,7 +126,7 @@ namespace danikk_space_engine
 	/** @copydoc CameraSystem::getWorldPosition */
 	glm::dvec3 CameraSystem::getWorldPosition() const
 	{
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
 		return body.position + body.rotation * body_local_position;
 	}
 

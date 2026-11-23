@@ -1,4 +1,4 @@
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <cmath>
 #include <limits>

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/systems/human/human.h>
@@ -10,7 +11,7 @@
 #include <danikk_engine/mesh.h>
 #include <danikk_engine/texture_methods.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/human/system.h>
 
@@ -97,7 +98,7 @@ namespace danikk_space_engine
 		{
 			const HumanData* human_data = world.getHumanSystem().findHuman(reference.human_id);
 			if(human_data == nullptr || human_data->generation_id != reference.generation_id
-				|| !world.getWorldBodyData().isWorldBodyActive(human_data->world_body_id)) continue;
+				|| !world.getWorldBodySystem().isWorldBodyActive(human_data->world_body_id)) continue;
 			const HumanState& human = *human_data;
 			if(human.hasDeathTimestamp()) continue;
 

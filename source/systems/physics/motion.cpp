@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/physics/physics.h>
@@ -7,7 +8,7 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/physics/internal.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/environment/environment.h>
 
 namespace danikk_space_engine
@@ -47,10 +48,10 @@ namespace danikk_space_engine
 
 		const WorldBodyId dragged_body_id = getDraggedWorldBodyId(world);
 
-		for(WorldBodyId body_id : world.getWorldBodyData().getUsedWorldBodyIds())
+		for(WorldBodyId body_id : world.getWorldBodySystem().getUsedWorldBodyIds())
 		{
 			if(body_id == dragged_body_id) continue;
-			WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
+			WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
 			if(body.planet_id != static_cast<PlanetId>(-1)) continue;
 
 			if(!collision_internal::hasSpatialPoints(body)) continue;

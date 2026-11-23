@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <limits>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
@@ -13,7 +14,7 @@
 #include <danikk_space_engine/geometry/build_part.h>
 #include <danikk_framework/log.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 
 namespace danikk_space_engine
@@ -46,7 +47,7 @@ namespace danikk_space_engine
 	RaycastHit RaycastSystem::cast(const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
 		DSE_WATCH();
-		const auto& body_ids = world.getWorldBodyData().getUsedWorldBodyIds();
+		const auto& body_ids = world.getWorldBodySystem().getUsedWorldBodyIds();
 		RaycastHit result = castBodies(body_ids.begin(), body_ids.size(), origin, direction, max_distance);
 		const double direction_length = glm::length(direction);
 		if(direction_length <= 1e-12 || max_distance < 0.0) return result;
@@ -56,7 +57,7 @@ namespace danikk_space_engine
 		{
 			bool has_proxy = false;
 			for(WorldBodyId body_id : body_ids)
-				if(world.getWorldBodyData().getWorldBody(body_id).planet_id == planet.id)
+				if(world.getWorldBodySystem().getWorldBody(body_id).planet_id == planet.id)
 				{
 					has_proxy = true;
 					break;
@@ -94,7 +95,7 @@ namespace danikk_space_engine
 			result.normal = vec3(planet.rotation * field_normal);
 			result.planet_id = planet.id;
 			for(WorldBodyId body_id : body_ids)
-				if(world.getWorldBodyData().getWorldBody(body_id).planet_id == planet.id)
+				if(world.getWorldBodySystem().getWorldBody(body_id).planet_id == planet.id)
 				{
 					result.body_id = body_id;
 					break;
@@ -107,7 +108,7 @@ namespace danikk_space_engine
 		const vec3& direction, float max_distance) const
 	{
 		DSE_WATCH();
-		if(!world.getWorldBodyData().isWorldBodyActive(body_id)) return RaycastHit{};
+		if(!world.getWorldBodySystem().isWorldBodyActive(body_id)) return RaycastHit{};
 		return castBodies(&body_id, 1, origin, direction, max_distance);
 	}
 
@@ -196,7 +197,7 @@ namespace danikk_space_engine
 		const glm::dvec3& origin, const vec3& direction, float max_distance) const
 	{
 		const World& owner = world;
-		const WorldBodyData& world_body_data = owner.getWorldBodyData();
+		const WorldBodySystem& world_body = owner.getWorldBodySystem();
 		const PlanetSystem& planets = owner.getPlanetSystem();
 		const PointData& point_data = owner.getPointData();
 		RaycastHit result;
@@ -209,7 +210,7 @@ namespace danikk_space_engine
 		for(size_t body_index = 0; body_index < body_count; ++body_index)
 		{
 			const WorldBodyId body_id = body_ids[body_index];
-			const WorldBody& body = world_body_data.getWorldBody(body_id);
+			const WorldBody& body = world_body.getWorldBody(body_id);
 			const bool is_planet = body.planet_id != static_cast<PlanetId>(-1);
 			const PlanetData* planet = is_planet ? planets.findPlanet(body.planet_id) : nullptr;
 			if(is_planet && planet == nullptr) continue;

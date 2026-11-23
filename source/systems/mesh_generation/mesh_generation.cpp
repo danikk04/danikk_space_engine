@@ -1,4 +1,5 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/build_part.h>
@@ -16,7 +17,7 @@
 
 #include <danikk_space_engine/systems/mesh_generation/internal.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/planet/system.h>
 
 namespace danikk_space_engine
@@ -115,8 +116,8 @@ namespace danikk_space_engine
 	void MeshGenerationSystem::invalidateBodyDetailMesh(WorldBodyId world_body_id)
 	{
 		DSE_WATCH();
-		if(!world.getWorldBodyData().isWorldBodyActive(world_body_id)) return;
-		WorldBody& body = world.getWorldBodyData().getWorldBody(world_body_id);
+		if(!world.getWorldBodySystem().isWorldBodyActive(world_body_id)) return;
+		WorldBody& body = world.getWorldBodySystem().getWorldBody(world_body_id);
 		body.detail_mesh_dirty = true;
 		body.detail_mesh_queued = false;
 		if(++body.detail_mesh_revision == 0) ++body.detail_mesh_revision;
@@ -130,9 +131,9 @@ namespace danikk_space_engine
 			? world.getCameraSystem().getWorldPosition() : glm::dvec3(0.0);
 		best_distance_squared = std::numeric_limits<double>::infinity();
 		bool found = false;
-		for(WorldBodyId world_body_id : world.getWorldBodyData().getUsedWorldBodyIds())
+		for(WorldBodyId world_body_id : world.getWorldBodySystem().getUsedWorldBodyIds())
 		{
-			const WorldBody& body = world.getWorldBodyData().getWorldBody(world_body_id);
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(world_body_id);
 			if(!body.detail_mesh_dirty || body.detail_mesh_queued) continue;
 			const glm::dvec3 offset = body.position - camera_position;
 			const double distance_squared = has_camera
@@ -153,8 +154,8 @@ namespace danikk_space_engine
 		if(job.source == MeshGenerationSource::planet_terrain_node)
 			return world.getPlanetSystem().isMeshGenerationJobWanted(job);
 		if(job.source != MeshGenerationSource::build_parts
-			|| !world.getWorldBodyData().isWorldBodyActive(job.world_body_id)) return false;
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(job.world_body_id);
+			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)) return false;
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(job.world_body_id);
 		return body.detail_mesh_queued && body.detail_mesh_revision == job.source_revision;
 	}
 
@@ -166,8 +167,8 @@ namespace danikk_space_engine
 			return;
 		}
 		if(job.source != MeshGenerationSource::build_parts
-			|| !world.getWorldBodyData().isWorldBodyActive(job.world_body_id)) return;
-		WorldBody& body = world.getWorldBodyData().getWorldBody(job.world_body_id);
+			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)) return;
+		WorldBody& body = world.getWorldBodySystem().getWorldBody(job.world_body_id);
 		if(body.detail_mesh_revision != job.source_revision) return;
 		body.detail_mesh_queued = pending;
 		if(!pending) body.detail_mesh_dirty = true;
@@ -181,8 +182,8 @@ namespace danikk_space_engine
 			return;
 		}
 		if(job.source != MeshGenerationSource::build_parts
-			|| !world.getWorldBodyData().isWorldBodyActive(job.world_body_id)) return;
-		WorldBody& body = world.getWorldBodyData().getWorldBody(job.world_body_id);
+			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)) return;
+		WorldBody& body = world.getWorldBodySystem().getWorldBody(job.world_body_id);
 		if(body.detail_mesh_revision != job.source_revision || !body.detail_mesh_dirty) return;
 		if(body.detail_mesh.mesh != nullptr)
 			world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
@@ -202,9 +203,9 @@ namespace danikk_space_engine
 			if(generated.source == MeshGenerationSource::planet_terrain_node)
 				world.getPlanetSystem().acceptGeneratedSurfaceNode(generated);
 			else if(generated.source == MeshGenerationSource::build_parts
-				&& world.getWorldBodyData().isWorldBodyActive(generated.world_body_id))
+				&& world.getWorldBodySystem().isWorldBodyActive(generated.world_body_id))
 			{
-				WorldBody& body = world.getWorldBodyData().getWorldBody(generated.world_body_id);
+				WorldBody& body = world.getWorldBodySystem().getWorldBody(generated.world_body_id);
 				if(body.detail_mesh_revision == generated.source_revision)
 				{
 					createMeshRenderData(body.detail_mesh,

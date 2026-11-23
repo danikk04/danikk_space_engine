@@ -1,7 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/component/component.h>
 #include <danikk_space_engine/systems/controller/controller.h>
@@ -25,7 +25,7 @@ namespace danikk_space_engine
 	{
 		TelemetrySystem telemetry;
 		PointData point_data;
-		WorldBodyData world_body_data;
+		WorldBodySystem world_body;
 		MeshGenerationSystem mesh_generation;
 		EnvironmentSystem environment;
 		PhysicsSystem physics;

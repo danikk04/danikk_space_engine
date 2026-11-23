@@ -1,4 +1,5 @@
 #include <danikk_space_engine/systems/controller/controller.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/assets/human_skin.h>
@@ -10,7 +11,7 @@
 #include <danikk_engine/texture_methods.h>
 #include <danikk_framework/log.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
 
@@ -20,8 +21,8 @@ namespace danikk_space_engine
 	{
 		void drawHumanPlacementEffect(World& world, const RaycastHit& hit, HumanSkinId skin_id)
 		{
-			if(!hit.hit || !world.getWorldBodyData().isWorldBodyActive(hit.body_id)) return;
-			const WorldBody& body = world.getWorldBodyData().getWorldBody(hit.body_id);
+			if(!hit.hit || !world.getWorldBodySystem().isWorldBodyActive(hit.body_id)) return;
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(hit.body_id);
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_position = inverse_rotation * (hit.position - body.position);
 			vec3 up = vec3(inverse_rotation * glm::dvec3(hit.normal));

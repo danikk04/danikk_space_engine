@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <algorithm>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
@@ -8,7 +9,7 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/systems/human/system.h>
@@ -49,14 +50,14 @@ namespace danikk_space_engine
 		bool getHumanCollider(World& world, HumanId human_id, HumanCollider& result)
 		{
 			HumanData* data = world.getHumanSystem().findHuman(human_id);
-			if(data == nullptr || !world.getWorldBodyData().isWorldBodyActive(data->world_body_id)) return false;
+			if(data == nullptr || !world.getWorldBodySystem().isWorldBodyActive(data->world_body_id)) return false;
 			HumanState& component = *data;
 			if(component.hasDeathTimestamp()) return false;
 			if(data->damageable.getHealth() <= 0.0f) return false;
 			const double height = component.getHeight();
 			if(height <= 0.0) return false;
 
-			const WorldBody& body = world.getWorldBodyData().getWorldBody(data->world_body_id);
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(data->world_body_id);
 			const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(glm::normalize(component.up)));
 			const double radius = height * 0.14;
 			const glm::dvec3 center = world.getHumanSystem().getWorldPosition(*data);
@@ -297,7 +298,7 @@ namespace danikk_space_engine
 		{
 			const HumanId slot_id = human_slot_ids[index];
 			HumanData* data = world.getHumanSystem().findHuman(slot_id);
-			if(data == nullptr || !world.getWorldBodyData().isWorldBodyActive(data->world_body_id)) continue;
+			if(data == nullptr || !world.getWorldBodySystem().isWorldBodyActive(data->world_body_id)) continue;
 			if(first_human_body_id == static_cast<WorldBodyId>(-1))
 				first_human_body_id = human_body_ids[index];
 			else has_multiple_bodies |= human_body_ids[index] != first_human_body_id;
@@ -315,7 +316,7 @@ namespace danikk_space_engine
 				const HumanId first_slot_id = human_slot_ids[first_index];
 				HumanCollider first;
 				if(!getHumanCollider(world, first_slot_id, first)) continue;
-				const WorldBody& first_body = world.getWorldBodyData().getWorldBody(first.body_id);
+				const WorldBody& first_body = world.getWorldBodySystem().getWorldBody(first.body_id);
 				const glm::dvec3 first_local_center = glm::conjugate(first_body.rotation)
 					* (first.center - first_body.position);
 				world.getUnitSystem().collectNearbyHumanIds(first.body_id, first_local_center,

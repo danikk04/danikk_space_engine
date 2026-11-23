@@ -20,7 +20,7 @@ namespace danikk_space_engine
 	struct WorldSystemContainer;
 	class TelemetrySystem;
 	class PointData;
-	class WorldBodyData;
+	class WorldBodySystem;
 	class MeshGenerationSystem;
 	class ComponentSystem;
 	class RaycastSystem;

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <limits>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
@@ -15,7 +16,7 @@
 #include <danikk_space_engine/systems/unit/internal/perception.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
 #include <danikk_space_engine/systems/human/system.h>
 
@@ -172,7 +173,7 @@ namespace danikk_space_engine::unit_system_internal
 		agent.order.clear();
 		const glm::dvec3 own_position = world.getHumanSystem().getWorldPosition(human_data);
 		const WorldBodyId own_body_id = human_data.world_body_id;
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(own_body_id);
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(own_body_id);
 		const UnitSighting* best = nullptr;
 		float best_score = -1.0f;
 		for(const UnitSighting& sighting : known_sightings)

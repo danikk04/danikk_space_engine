@@ -1,11 +1,12 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/unit/internal/perception.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/human/system.h>
 
 namespace danikk_space_engine::unit_system_internal
@@ -22,7 +23,7 @@ namespace danikk_space_engine::unit_system_internal
 		index.entries.clear();
 		for(const HumanData& human : world.getHumanSystem().getHumans())
 		{
-			if(!world.getWorldBodyData().isWorldBodyActive(human.world_body_id)) continue;
+			if(!world.getWorldBodySystem().isWorldBodyActive(human.world_body_id)) continue;
 			UnitSpatialEntry& entry = index.entries.pushCtor();
 			entry.target = UnitTarget{human.id, human.generation_id};
 			entry.body_id = human.world_body_id;
@@ -60,7 +61,7 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		DSE_WATCH();
 		result.clear();
-		if(half_extent < 0.0 || !world.getWorldBodyData().isWorldBodyActive(body_id)) return;
+		if(half_extent < 0.0 || !world.getWorldBodySystem().isWorldBodyActive(body_id)) return;
 		const glm::dvec3 extent(half_extent);
 		for(const HumanData& human : world.getHumanSystem().getHumans())
 		{

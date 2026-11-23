@@ -1,4 +1,5 @@
 #include <danikk_space_engine/tool.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/gui/gui.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/geometry/cube.h>
@@ -10,7 +11,7 @@
 #include <cmath>
 
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/physics/physics.h>
 
 #include <danikk_space_engine/systems/raycast/raycast.h>
@@ -45,15 +46,15 @@ namespace danikk_space_engine
 
 			if(body_id == static_cast<WorldBodyId>(-1))
 			{
-				body_id = world.getWorldBodyData().createWorldBody();
-				WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
+				body_id = world.getWorldBodySystem().createWorldBody();
+				WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
 				body.faction_id = base_faction_ids::player;
 				body.position = anchor_world_position;
 				body.mass = 1.0;
 				body.collision_radius = 0.0;
 			}
 
-			WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
+			WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
 			const PointId point_id = world.getPointData().createPoint();
 			const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 anchor_body_position = inverse_body_rotation

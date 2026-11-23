@@ -1,4 +1,5 @@
 #include <cmath>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
@@ -8,7 +9,7 @@
 #include <danikk_space_engine/systems/unit/internal/orders.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/human/system.h>
 
 namespace danikk_space_engine::unit_system_internal
@@ -84,7 +85,7 @@ namespace danikk_space_engine::unit_system_internal
 					break;
 				}
 
-			const WorldBody& body = world.getWorldBodyData().getWorldBody(candidate.body_id);
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(candidate.body_id);
 			const glm::dvec3 body_local_position = candidate.data->body_local_position;
 			if(assignment == nullptr)
 			{

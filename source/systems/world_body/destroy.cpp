@@ -1,5 +1,5 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/systems/human/system.h>
@@ -20,7 +20,7 @@ namespace danikk_space_engine
 
 	}
 
-	void WorldBodyData::attachPointToBody(WorldBodyId body_id, PointId point_id,
+	void WorldBodySystem::attachPointToBody(WorldBodyId body_id, PointId point_id,
 		const glm::dvec3& body_local_position)
 	{
 		if(!isWorldBodyActive(body_id) || !world.getPointData().isPointActive(point_id))
@@ -42,8 +42,8 @@ namespace danikk_space_engine
 		body.spatial_tree.insert(point_id, body_local_position);
 	}
 
-	/** @copydoc WorldBodyData::destroyWorldBody */
-	void WorldBodyData::destroyWorldBody(WorldBodyId id)
+	/** @copydoc WorldBodySystem::destroyWorldBody */
+	void WorldBodySystem::destroyWorldBody(WorldBodyId id)
 	{
 		if(!isWorldBodyActive(id)) return;
 		WorldBody& body = world_bodies[id];
@@ -62,19 +62,19 @@ namespace danikk_space_engine
 		world_bodies.free(id);
 	}
 
-	/** @copydoc WorldBodyData::clear */
-	void WorldBodyData::clear()
+	/** @copydoc WorldBodySystem::clear */
+	void WorldBodySystem::clear()
 	{
 		for(WorldBodyId id : world_bodies.usedIds())
 			destroyMeshRenderData(world_bodies[id].detail_mesh);
 		for(WorldBodyId id : world_bodies.usedIds())
 			if(world_bodies[id].point_ids.size() > 0)
-				danikk_engine::formatFatalError("World body % still owns points during WorldBodyData clear", id);
+				danikk_engine::formatFatalError("World body % still owns points during WorldBodySystem clear", id);
 		clearPools(world_bodies);
 	}
 
-	/** @copydoc WorldBodyData::release */
-	void WorldBodyData::release()
+	/** @copydoc WorldBodySystem::release */
+	void WorldBodySystem::release()
 	{
 		clear();
 		releasePools(world_bodies);

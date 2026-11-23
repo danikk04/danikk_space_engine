@@ -1,9 +1,10 @@
 #include <danikk_space_engine/effects/event_spawn_preview.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 
 #include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/world.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 
 #include <danikk_space_engine/systems/raycast/raycast.h>
@@ -15,8 +16,8 @@ namespace danikk_space_engine
 	{
 		EventSpawnPlacement placements[5];
 		const uint8 placement_count = collectEventSpawnPlacements(world, hit, faction_id, placements);
-		if(!world.getWorldBodyData().isWorldBodyActive(hit.body_id)) return;
-		const WorldBody& body = world.getWorldBodyData().getWorldBody(hit.body_id);
+		if(!world.getWorldBodySystem().isWorldBodyActive(hit.body_id)) return;
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(hit.body_id);
 		const vec4 preview_color(0.08f, 0.35f, 1.0f, 0.55f);
 		for(uint8 index = 0; index < placement_count; ++index)
 		{

@@ -1,4 +1,5 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/systems/unit/internal/battle.h>
 #include <danikk_space_engine/systems/unit/internal/mode.h>
@@ -13,7 +14,7 @@
 #include <danikk_space_engine/systems/human/damageable.h>
 #include <danikk_framework/log.h>
 
-#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/faction/faction.h>
 #include <danikk_space_engine/systems/human/system.h>
 
@@ -69,7 +70,7 @@ namespace danikk_space_engine
 		if(!agent.enabled) return false;
 		HumanData* data = world.getHumanSystem().findHuman(agent.human_id);
 		if(data == nullptr || data->generation_id != agent.human_generation_id
-			|| !world.getWorldBodyData().isWorldBodyActive(data->world_body_id)) return false;
+			|| !world.getWorldBodySystem().isWorldBodyActive(data->world_body_id)) return false;
 		human = data;
 		if(data->damageable.getHealth() <= 0.0f)
 		{
