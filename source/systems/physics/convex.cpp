@@ -4,7 +4,7 @@
 #include <danikk_space_engine/systems/physics/physics.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>
-#include "internal.h"
+#include <danikk_space_engine/systems/physics/internal.h>
 
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/world_body.h>

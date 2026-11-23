@@ -3,7 +3,7 @@
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/systems/planet/system.h>
-#include "internal.h"
+#include <danikk_space_engine/systems/physics/internal.h>
 
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/world_body.h>

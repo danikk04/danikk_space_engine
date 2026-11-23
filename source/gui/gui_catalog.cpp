@@ -5,7 +5,7 @@
 #include <danikk_framework/glm.h>
 #include <danikk_engine/texture_methods.h>
 
-#include "gui_internal.h"
+#include <danikk_space_engine/gui/gui_internal.h>
 
 namespace danikk_space_engine
 {

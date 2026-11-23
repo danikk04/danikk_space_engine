@@ -2,7 +2,7 @@
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/physics/physics.h>
-#include "internal.h"
+#include <danikk_space_engine/systems/physics/internal.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>

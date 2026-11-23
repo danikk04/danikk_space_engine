@@ -4,7 +4,7 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
-#include "internal.h"
+#include <danikk_space_engine/systems/mesh_generation/internal.h>
 
 #include <danikk_engine/danikk_engine.h>
 

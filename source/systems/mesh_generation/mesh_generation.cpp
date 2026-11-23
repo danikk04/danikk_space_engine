@@ -13,7 +13,7 @@
 #include <danikk_space_engine/systems/planet/data.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
-#include "internal.h"
+#include <danikk_space_engine/systems/mesh_generation/internal.h>
 
 #include <danikk_space_engine/world_body.h>
 #include <danikk_space_engine/systems/planet/system.h>

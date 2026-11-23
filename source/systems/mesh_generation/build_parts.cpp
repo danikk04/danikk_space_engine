@@ -3,7 +3,7 @@
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/world.h>
 
-#include "internal.h"
+#include <danikk_space_engine/systems/mesh_generation/internal.h>
 
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/world_body.h>

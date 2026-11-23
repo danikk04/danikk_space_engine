@@ -3,7 +3,7 @@
 #include <danikk_framework/glm.h>
 #include <danikk_engine/input.h>
 
-#include "gui_internal.h"
+#include <danikk_space_engine/gui/gui_internal.h>
 
 namespace danikk_space_engine
 {

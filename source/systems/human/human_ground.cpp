@@ -8,7 +8,7 @@
 #include <danikk_space_engine/item/item.h>
 #include <danikk_space_engine/world.h>
 
-#include "internal.h"
+#include <danikk_space_engine/systems/human/internal.h>
 
 #include <danikk_space_engine/systems/raycast/raycast.h>
 

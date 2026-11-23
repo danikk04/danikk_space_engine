@@ -3,7 +3,7 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/physics/physics.h>
 #include <danikk_space_engine/systems/controller/controller.h>
-#include "internal.h"
+#include <danikk_space_engine/systems/physics/internal.h>
 
 #include <danikk_space_engine/world_body.h>
 

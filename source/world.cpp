@@ -14,7 +14,7 @@
 #include <danikk_space_engine/systems/controller/controller.h>
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/world.h>
-#include "world_system_container.h"
+#include <danikk_space_engine/world_system_container.h>
 
 #include <limits>
 
