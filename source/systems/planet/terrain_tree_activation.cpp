@@ -9,6 +9,10 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		DynamicArray<uint8> target_nodes(tree.nodes.size(), 0);
 		DynamicArray<uint8> fallback_nodes(tree.nodes.size(), 0);
+		const auto hasDrawableMesh = [](const PlanetTerrainNode& node)
+		{
+			return node.mesh.mesh != nullptr && node.mesh.material_ranges.size() > 0;
+		};
 		for(PlanetTerrainNodeId node_id : selected_node_ids)
 			if(node_id < target_nodes.size()) target_nodes[node_id] = 1;
 
@@ -17,10 +21,10 @@ namespace danikk_space_engine
 		{
 			if(node_id >= tree.nodes.size()) return;
 			PlanetTerrainNode& node = tree.nodes[node_id];
-			if(node.mesh.mesh != nullptr) drawable_ancestor = node_id;
+			if(hasDrawableMesh(node)) drawable_ancestor = node_id;
 			if(target_nodes[node_id] != 0)
 			{
-				if(node.mesh.mesh == nullptr && drawable_ancestor != PlanetTerrainTree::invalid_node
+				if(!hasDrawableMesh(node) && drawable_ancestor != PlanetTerrainTree::invalid_node
 					&& drawable_ancestor != node_id)
 					fallback_nodes[drawable_ancestor] = 1;
 				return;
@@ -38,12 +42,12 @@ namespace danikk_space_engine
 			PlanetTerrainNode& node = tree.nodes[node_id];
 			if(fallback_nodes[node_id] != 0)
 			{
-				node.render_active = node.mesh.mesh != nullptr;
-				return;
+				node.render_active = hasDrawableMesh(node);
+				if(node.render_active) return;
 			}
 			if(target_nodes[node_id] != 0)
 			{
-				node.render_active = node.mesh.mesh != nullptr;
+				node.render_active = hasDrawableMesh(node);
 				return;
 			}
 			for(PlanetTerrainNodeId child_id : node.children)

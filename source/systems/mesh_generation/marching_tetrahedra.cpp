@@ -148,12 +148,15 @@ namespace danikk_space_engine
 					std::abs(density_delta) > 1e-12 ? first.density / density_delta : 0.5,
 					0.0, 1.0);
 				glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
-				if(world.getPlanetSystem().getPlanetDensity(job.planet_id, position,
+				const double interpolated_density = world.getPlanetSystem().getPlanetDensity(job.planet_id, position,
 					job.surface_only ? PlanetTerrainMode::heightmap_with_edits
-						: PlanetTerrainMode::cave_field_with_edits) < 0.0)
+						: PlanetTerrainMode::cave_field_with_edits);
+				if(std::abs(interpolated_density) > 1e-12)
 				{
 					glm::dvec3 inside = first.density >= 0.0 ? first.position : second.position;
-					glm::dvec3 outside = position;
+					glm::dvec3 outside = first.density < 0.0 ? first.position : second.position;
+					if(interpolated_density >= 0.0) inside = position;
+					else outside = position;
 					for(uint8 iteration = 0; iteration < 6; ++iteration)
 					{
 						const glm::dvec3 midpoint = (inside + outside) * 0.5;
