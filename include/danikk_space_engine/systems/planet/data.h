@@ -228,6 +228,8 @@ namespace danikk_space_engine
 		glm::dvec3 render_window_maximum = glm::dvec3(0.0);
 		/** @brief Latest camera height above the planet surface, negative underground. */
 		double streaming_height = 0.0;
+		/** @brief Detail scale selected for the latest camera position. */
+		double streaming_detail_scale = 0.0;
 		/** @brief Whether current camera data has activated terrain streaming for this planet. */
 		bool terrain_streaming_active = false;
 

@@ -40,8 +40,8 @@ namespace danikk_space_engine
 
 		/** @brief Updates adaptive terrain-tree streaming once for the current world frame. */
 		void update();
-		/** @brief Finds the nearest eligible node on the least-queued relevant tree level. */
-		bool findNextMeshGenerationJob(MeshGenerationJob& job, double& distance_squared) const;
+		/** @brief Finds the next job in the staged 9x9x9 detail-level coverage window. */
+		bool findNextMeshGenerationJob(MeshGenerationJob& job, double& distance_squared);
 		/** @brief Checks whether a queued planet mesh job is still relevant to the current frame. */
 		bool isMeshGenerationJobWanted(const MeshGenerationJob& job) const;
 		/** @brief Updates the node's pending flag after a job is assigned or canceled. */
