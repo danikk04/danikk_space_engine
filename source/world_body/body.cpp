@@ -227,41 +227,4 @@ namespace danikk_space_engine
 			collectBoxEntries(*this, root_id, center, half_extent, output);
 	}
 
-
-	/**
-	 * @brief Adds a component slot ID unless it is already present.
-	 * @param slot_id ID to add to this body's ordered component list.
-	 * @details Scans the current list linearly. If no match exists, appends the ID;
-	 * repeated additions leave both contents and order unchanged.
-	 */
-	void WorldBody::addComponentSlot(WorldBodyComponentSlotId slot_id)
-	{
-		for(WorldBodyComponentSlotId existing_id : component_slot_ids)
-		{
-			if(existing_id == slot_id) return;
-		}
-		component_slot_ids.push(slot_id);
-	}
-
-	/**
-	 * @brief Removes the first matching component slot ID without reordering others.
-	 * @param slot_id ID to remove from this body's component list.
-	 * @return True when an entry was found and removed; false when absent.
-	 * @details Shifts later IDs left after a match, then shrinks the array while
-	 * preserving the order of the remaining component slots.
-	 */
-	bool WorldBody::removeComponentSlot(WorldBodyComponentSlotId slot_id)
-	{
-		for(size_t index = 0; index < component_slot_ids.size(); index++)
-		{
-			if(component_slot_ids[index] != slot_id) continue;
-			for(size_t shift_index = index; shift_index + 1 < component_slot_ids.size(); shift_index++)
-			{
-				component_slot_ids[shift_index] = component_slot_ids[shift_index + 1];
-			}
-			component_slot_ids.resize(component_slot_ids.size() - 1);
-			return true;
-		}
-		return false;
-	}
 }

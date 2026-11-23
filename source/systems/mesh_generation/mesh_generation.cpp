@@ -2,7 +2,6 @@
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/component/point/build_part.h>
-#include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_framework/log.h>
 #include <algorithm>
 #include <chrono>

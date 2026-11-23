@@ -3,7 +3,6 @@
 
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/component/point/build_part.h>
-#include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/effects/unit_activity_labels.h>
 #include <danikk_space_engine/effects/unit_order_indicators.h>
@@ -134,8 +133,8 @@ namespace danikk_space_engine
 	}
 
 	/**
-	 * @brief Ticks body and point components, drains deferred point deletion, then advances physics.
-	 * Point and per-body component IDs are snapshotted before callbacks can mutate ownership lists.
+	 * @brief Ticks point components, drains deferred point deletion, then advances physics.
+	 * Point component IDs are snapshotted before callbacks can mutate ownership lists.
 	 * Deferred cleanup completes before UnitSystem updates faction intelligence and orders. PhysicsSystem
 	 * then advances motion and resolves contacts.
 	 */
@@ -146,7 +145,6 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		syncPlanetWorldBodyFrames();
-		getComponentSystem().tickWorldBodyComponents();
 		getComponentSystem().tickPointComponents();
 		getCameraSystem().tick();
 		getControllerSystem().tick();
@@ -173,7 +171,6 @@ namespace danikk_space_engine
 		syncPlanetWorldBodyFrames();
 		setClearColor(getCameraSystem().isActive()
 			? getPlanetSystem().getAtmosphereBackgroundColor(getCameraSystem().getWorldPosition()) : glm::vec3(0.0f));
-		getComponentSystem().renderWorldBodyComponents();
 		getPlanetSystem().update();
 		getMeshGenerationSystem().frame();
 		static_asset_collection.base3d_shader.use();

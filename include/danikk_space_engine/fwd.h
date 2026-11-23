@@ -89,8 +89,4 @@ namespace danikk_space_engine
 	 */
 	struct TemperatureSample;
 
-	/**
-	 * @brief Associates component data and callbacks with a world body.
-	 */
-	struct WorldBodyComponentSlot;
 }

@@ -82,56 +82,6 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @copydoc ComponentSystem::tickWorldBodyComponents */
-	void ComponentSystem::tickWorldBodyComponents()
-	{
-		DSE_WATCH();
-		const DynamicArray<WorldBodyId> world_body_ids(world.getWorldBodyData().getUsedWorldBodyIds());
-		DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
-
-		for(WorldBodyId body_id : world_body_ids)
-		{
-			if(!world.getWorldBodyData().isWorldBodyActive(body_id)) continue;
-			component_slot_ids.clear();
-			{
-				const WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
-				for(WorldBodyComponentSlotId slot_id : body.component_slot_ids)
-					component_slot_ids.push(slot_id);
-			}
-
-			for(WorldBodyComponentSlotId slot_id : component_slot_ids)
-			{
-				if(!world.getWorldBodyData().isWorldBodyComponentSlotActive(slot_id)) continue;
-				WorldBodyComponentSlot& slot = world.getWorldBodyData().getWorldBodyComponentSlot(slot_id);
-				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
-				if(type.tick != nullptr) type.tick(slot, world);
-			}
-		}
-	}
-
-	/** @copydoc ComponentSystem::renderWorldBodyComponents */
-	void ComponentSystem::renderWorldBodyComponents()
-	{
-		DSE_WATCH();
-		const DynamicArray<WorldBodyId> world_body_ids(world.getWorldBodyData().getUsedWorldBodyIds());
-		DynamicArray<WorldBodyComponentSlotId> component_slot_ids;
-		for(WorldBodyId body_id : world_body_ids)
-		{
-			if(!world.getWorldBodyData().isWorldBodyActive(body_id)) continue;
-			component_slot_ids.clear();
-			for(WorldBodyComponentSlotId slot_id : world.getWorldBodyData().getWorldBody(body_id).component_slot_ids)
-				component_slot_ids.push(slot_id);
-
-			for(WorldBodyComponentSlotId slot_id : component_slot_ids)
-			{
-				if(!world.getWorldBodyData().isWorldBodyComponentSlotActive(slot_id)) continue;
-				WorldBodyComponentSlot& slot = world.getWorldBodyData().getWorldBodyComponentSlot(slot_id);
-				const WorldBodyComponentType& type = getWorldBodyComponentType(slot.type_id);
-				if(type.frame != nullptr) type.frame(slot, world);
-			}
-		}
-	}
-
 	/** @copydoc ComponentSystem::renderPointComponents */
 	void ComponentSystem::renderPointComponents()
 	{

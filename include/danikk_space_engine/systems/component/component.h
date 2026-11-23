@@ -30,16 +30,9 @@ namespace danikk_space_engine
 		/** @brief Binds this component system to its owning World. */
 		explicit ComponentSystem(World& world) : world(world) {}
 
-		/**
-		 * @brief Ticks each active WorldBody's components.
-		 */
-		void tickWorldBodyComponents();
-
 		/** @brief Ticks all active point components from a stable PointData slot snapshot. */
 		void tickPointComponents();
 
-		/** @brief Runs frame callbacks for active components attached to WorldBody instances. */
-		void renderWorldBodyComponents();
 		/** @brief Runs frame callbacks for active point components from a stable slot snapshot. */
 		void renderPointComponents();
 		/** @brief Attaches a point component and its point to the owning body's frame. */
