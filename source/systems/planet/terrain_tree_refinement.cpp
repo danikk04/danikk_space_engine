@@ -88,7 +88,7 @@ namespace danikk_space_engine
 			render_window_minimum, render_window_maximum);
 		const auto count_nodes = [&]()
 		{
-			size_t nodes_per_level[PlanetTerrainTree::maximum_depth + 1] = {};
+			size_t total = 0;
 			const auto count_visible_target_nodes = [&](auto&& self, const glm::dvec3& center,
 				double half_extent, uint8 depth) -> size_t
 			{
@@ -100,8 +100,7 @@ namespace danikk_space_engine
 				if(half_extent <= getTargetHalfExtent(camera_position, detail_scale, center)
 					|| depth >= PlanetTerrainTree::maximum_depth)
 				{
-					if(++nodes_per_level[depth] > maximum_visible_meshes_per_level)
-						return maximum_visible_nodes + 1;
+					if(++total > maximum_target_nodes) return maximum_target_nodes + 1;
 					return 1;
 				}
 				const double child_half_extent = half_extent * 0.5;
@@ -114,20 +113,15 @@ namespace danikk_space_engine
 						(child_index & 4) ? child_half_extent : -child_half_extent);
 					count += self(self, child_center, child_half_extent,
 						static_cast<uint8>(depth + 1));
-					if(count > maximum_visible_nodes) return count;
+					if(count > maximum_target_nodes) return count;
 				}
 				return count;
 			};
-			size_t total = count_visible_target_nodes(count_visible_target_nodes,
+			return count_visible_target_nodes(count_visible_target_nodes,
 				glm::dvec3(0.0), PlanetTerrainTree::initial_root_half_extent, 0);
-			if(total > maximum_visible_nodes) return total;
-			total = 0;
-			for(uint8 depth = 0; depth <= PlanetTerrainTree::maximum_depth; ++depth)
-				total += nodes_per_level[depth];
-			return total;
 		};
 		target_node_count = count_nodes();
-		while(target_node_count > maximum_visible_nodes && detail_scale_adjustments < 32)
+		while(target_node_count > maximum_target_nodes && detail_scale_adjustments < 32)
 		{
 			detail_scale *= 1.5;
 			detail_scale_adjustments++;

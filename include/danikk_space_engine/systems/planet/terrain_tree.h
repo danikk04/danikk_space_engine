@@ -12,6 +12,8 @@ namespace danikk_space_engine
 	/** @brief One adaptive spatial cell in a planet's render/streaming octree. */
 	struct PlanetTerrainNode : public danikk_framework::OctreeNode<PlanetTerrainNodeId>
 	{
+		/** @brief Octree subdivision depth: zero at the coarse root, increasing toward detail. */
+		uint8 depth = 0;
 		/** @brief GPU mesh generated for this node's terrain region, if available. */
 		MeshRenderData mesh;
 		/** @brief Planet-local origin subtracted from the mesh vertices for precision. */
@@ -66,9 +68,8 @@ namespace danikk_space_engine
 		/** @brief Number of halvings from a 2^24 m root to a 32 m leaf. */
 		static constexpr uint8 maximum_depth = 19;
 		static constexpr size_t maximum_node_count = 131072;
-		static constexpr size_t maximum_visible_meshes_per_level = 256;
-		static constexpr size_t maximum_visible_nodes = maximum_visible_meshes_per_level
-			* (maximum_depth + 1);
+		/** @brief Upper bound for target-node estimates, matching the octree storage limit. */
+		static constexpr size_t maximum_target_nodes = maximum_node_count;
 		uint64 next_node_generation_id = 1;
 
 		/** @brief Creates the canonical root and assigns it a fresh generation ID. */

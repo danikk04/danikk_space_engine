@@ -47,6 +47,7 @@ namespace danikk_space_engine
 			PlanetTerrainNode, PlanetTerrainNodeId>::createRoot(
 				glm::dvec3(0.0), initial_root_half_extent);
 		if(root_id == invalid_node) return invalid_node;
+		nodes[root_id].depth = 0;
 		nodes[root_id].generation_id = next_node_generation_id++;
 		if(next_node_generation_id == 0) next_node_generation_id++;
 		return root_id;
@@ -56,10 +57,12 @@ namespace danikk_space_engine
 	{
 		if(parent_id >= nodes.size()) return false;
 		if(nodes[parent_id].hasChildren()) return true;
+		const uint8 child_depth = static_cast<uint8>(nodes[parent_id].depth + 1);
 		if(nodes.size() + 8 > maximum_node_count || !splitNode(parent_id)) return false;
 		for(uint8 child_index = 0; child_index < 8; ++child_index)
 		{
 			const PlanetTerrainNodeId child_id = nodes[parent_id].children[child_index];
+			nodes[child_id].depth = child_depth;
 			nodes[child_id].generation_id = next_node_generation_id++;
 			if(next_node_generation_id == 0) next_node_generation_id++;
 		}
