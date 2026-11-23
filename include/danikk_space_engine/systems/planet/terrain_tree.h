@@ -12,18 +12,31 @@ namespace danikk_space_engine
 	/** @brief One adaptive spatial cell in a planet's render/streaming octree. */
 	struct PlanetTerrainNode : public danikk_framework::OctreeNode<PlanetTerrainNodeId>
 	{
+		/** @brief GPU mesh generated for this node's terrain region, if available. */
 		MeshRenderData mesh;
+		/** @brief Planet-local origin subtracted from the mesh vertices for precision. */
 		glm::dvec3 mesh_position = glm::dvec3(0.0);
+		/** @brief Incarnation token used to reject jobs submitted for an older node state. */
 		uint64 generation_id = 1;
+		/** @brief Terrain revision represented by the currently stored mesh. */
 		uint64 mesh_revision = 0;
+		/** @brief Whether mesh generation completed for this node, including empty results. */
 		bool mesh_generated = false;
+		/** @brief Generator algorithm used to create the stored mesh. */
 		PlanetMeshGenerator mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
+		/** @brief Whether the stored mesh contains only the planet's surface shell. */
 		bool mesh_surface_only = true;
+		/** @brief Whether a mesh generation job is queued, processing, or awaiting completion. */
 		bool generation_pending = false;
+		/** @brief Terrain revision captured by the pending generation job. */
 		uint64 pending_terrain_revision = 0;
+		/** @brief Node incarnation captured by the pending generation job. */
 		uint64 pending_node_generation_id = 0;
+		/** @brief Generator algorithm requested by the pending generation job. */
 		PlanetMeshGenerator pending_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
+		/** @brief Whether the pending job generates only the planet's surface shell. */
 		bool pending_surface_only = true;
+		/** @brief Whether this node's mesh is selected for drawing or fallback coverage. */
 		bool render_active = false;
 
 		/** @brief Tests this node's cubic bounds against an axis-aligned box. */

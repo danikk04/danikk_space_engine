@@ -196,23 +196,39 @@ namespace danikk_space_engine
 	/** @brief Terrain, streaming, and render state owned by one planet. */
 	struct PlanetData
 	{
+		/** @brief Stable identifier assigned by PlanetSystem. */
 		PlanetId id = static_cast<PlanetId>(-1);
 		/** @brief WorldBody whose local frame anchors entities to this planet. */
 		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
+		/** @brief Planet center in world coordinates. */
 		glm::dvec3 position = glm::dvec3(0.0);
+		/** @brief Planet orientation from its local frame into world orientation. */
 		glm::dquat rotation = glm::dquat(1.0, 0.0, 0.0, 0.0);
+		/** @brief Index into PlanetSystem's immutable settings catalog. */
 		PlanetSettingsId settings_id = planet_settings_ids::earth;
+		/** @brief Planet incarnation token used to reject stale asynchronous jobs. */
 		uint64 generation_id = 0;
+		/** @brief Current terrain-edit revision. Incremented whenever an edit changes. */
 		uint64 terrain_revision = 0;
+		/** @brief Terrain revision most recently synchronized into the render tree. */
 		uint64 terrain_tree_revision = 0;
+		/** @brief Whether saved terrain edits have been loaded for this planet. */
 		bool terrain_edits_loaded = false;
+		/** @brief Owned terrain edits and their spatial index. */
 		PlanetTerrainEdits terrain_edits;
+		/** @brief Adaptive octree containing this planet's render nodes and cached meshes. */
 		PlanetTerrainTree terrain_tree;
+		/** @brief Edited regions awaiting propagation into the render tree. */
 		DynamicArray<PlanetTerrainDirtyRegion> pending_terrain_dirty_regions;
+		/** @brief Latest camera position expressed in the planet's local frame. */
 		glm::dvec3 streaming_camera_position = glm::dvec3(0.0);
+		/** @brief Minimum corner of the latest planet-local AABB used to find relevant nodes. */
 		glm::dvec3 render_window_minimum = glm::dvec3(0.0);
+		/** @brief Maximum corner of the latest planet-local AABB used to find relevant nodes. */
 		glm::dvec3 render_window_maximum = glm::dvec3(0.0);
+		/** @brief Latest camera height above the planet surface, negative underground. */
 		double streaming_height = 0.0;
+		/** @brief Whether current camera data has activated terrain streaming for this planet. */
 		bool terrain_streaming_active = false;
 
 		/** @brief Synchronizes edits and updates this planet's adaptive terrain tree. */
