@@ -3,12 +3,12 @@
 
 namespace danikk_space_engine
 {
-	void PlanetSystem::activateMeshes(PlanetTerrainTree& tree,
-		const DynamicArray<PlanetTerrainNodeId>& selected_node_ids) const
+	void PlanetTerrainTree::activateMeshes(
+		const DynamicArray<PlanetTerrainNodeId>& selected_node_ids)
 	{
 		DSE_WATCH();
-		DynamicArray<uint8> target_nodes(tree.nodes.size(), 0);
-		DynamicArray<uint8> fallback_nodes(tree.nodes.size(), 0);
+		DynamicArray<uint8> target_nodes(nodes.size(), 0);
+		DynamicArray<uint8> fallback_nodes(nodes.size(), 0);
 		const auto hasDrawableMesh = [](const PlanetTerrainNode& node)
 		{
 			return node.mesh.mesh != nullptr && node.mesh.material_ranges.size() > 0;
@@ -19,8 +19,8 @@ namespace danikk_space_engine
 		const auto markFallbacks = [&](auto&& self, PlanetTerrainNodeId node_id,
 			PlanetTerrainNodeId drawable_ancestor) -> void
 		{
-			if(node_id >= tree.nodes.size()) return;
-			PlanetTerrainNode& node = tree.nodes[node_id];
+			if(node_id >= nodes.size()) return;
+			PlanetTerrainNode& node = nodes[node_id];
 			if(hasDrawableMesh(node)) drawable_ancestor = node_id;
 			if(target_nodes[node_id] != 0)
 			{
@@ -33,13 +33,13 @@ namespace danikk_space_engine
 				if(child_id != PlanetTerrainTree::invalid_node)
 					self(self, child_id, drawable_ancestor);
 		};
-		if(tree.root_id < tree.nodes.size())
-			markFallbacks(markFallbacks, tree.root_id, PlanetTerrainTree::invalid_node);
+		if(root_id < nodes.size())
+			markFallbacks(markFallbacks, root_id, PlanetTerrainTree::invalid_node);
 
 		const auto activate = [&](auto&& self, PlanetTerrainNodeId node_id) -> void
 		{
-			if(node_id >= tree.nodes.size()) return;
-			PlanetTerrainNode& node = tree.nodes[node_id];
+			if(node_id >= nodes.size()) return;
+			PlanetTerrainNode& node = nodes[node_id];
 			if(fallback_nodes[node_id] != 0)
 			{
 				node.render_active = hasDrawableMesh(node);
@@ -53,6 +53,6 @@ namespace danikk_space_engine
 			for(PlanetTerrainNodeId child_id : node.children)
 				if(child_id != PlanetTerrainTree::invalid_node) self(self, child_id);
 		};
-		if(tree.root_id < tree.nodes.size()) activate(activate, tree.root_id);
+		if(root_id < nodes.size()) activate(activate, root_id);
 	}
 }

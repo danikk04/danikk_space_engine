@@ -6,17 +6,17 @@
 
 namespace danikk_space_engine
 {
-	double PlanetSystem::getTargetHalfExtent(const glm::dvec3& camera_position,
-		double detail_scale, const glm::dvec3& center) const
+	double PlanetTerrainTree::getTargetHalfExtent(const glm::dvec3& camera_position,
+		double detail_scale, const glm::dvec3& center)
 	{
 		const double distance = glm::length(camera_position - center);
 		const double minimum = PlanetTerrainTree::minimum_node_width * 0.5;
 		return std::clamp(minimum + detail_scale * distance, minimum, 262144.0);
 	}
 
-	void PlanetSystem::updateRenderWindow(const glm::dvec3& camera_position, double height,
+	void PlanetTerrainTree::updateRenderWindow(const glm::dvec3& camera_position, double height,
 		const PlanetSettings& settings, glm::dvec3& render_window_minimum,
-		glm::dvec3& render_window_maximum) const
+		glm::dvec3& render_window_maximum)
 	{
 		const double root_half_extent = PlanetTerrainTree::initial_root_half_extent;
 		const glm::dvec3 root_minimum(-root_half_extent);
@@ -41,19 +41,19 @@ namespace danikk_space_engine
 		}
 	}
 
-	bool PlanetSystem::isNodeRelevant(const glm::dvec3& render_window_minimum,
+	bool PlanetTerrainNode::isRelevantTo(const glm::dvec3& render_window_minimum,
 		const glm::dvec3& render_window_maximum, const glm::dvec3& camera_position,
-		double height, const PlanetSettings& settings, const PlanetTerrainNode& node) const
+		double height, const PlanetSettings& settings) const
 	{
-		if(!node.intersectsBounds(render_window_minimum, render_window_maximum)) return false;
-		const double node_radius = node.half_extent * 1.7320508075688772;
-		const double center_distance = glm::length(node.center);
+		if(!intersectsBounds(render_window_minimum, render_window_maximum)) return false;
+		const double node_radius = half_extent * 1.7320508075688772;
+		const double center_distance = glm::length(center);
 		const double minimum_radius = glm::max(0.0, center_distance - node_radius);
 		const double maximum_radius = center_distance + node_radius;
 		const bool surface_intersection = height >= 0.0
 			&& maximum_radius >= settings.radius - 25000.0
 			&& minimum_radius <= settings.radius + 15000.0;
-		const glm::dvec3 to_node = node.center - camera_position;
+		const glm::dvec3 to_node = center - camera_position;
 		const double distance = glm::length(to_node);
 		const bool local_cave_intersection = height < 0.0
 			&& distance <= node_radius + 384.0;
@@ -66,7 +66,7 @@ namespace danikk_space_engine
 			{
 				const double horizon_cosine = settings.radius / camera_distance;
 				const glm::dvec3 camera_direction = camera_position / camera_distance;
-				const glm::dvec3 node_direction = node.center / center_distance;
+				const glm::dvec3 node_direction = center / center_distance;
 				const double angular_radius = std::min(1.0, node_radius / center_distance);
 				if(glm::dot(camera_direction, node_direction) + angular_radius < horizon_cosine)
 					return false;
@@ -122,10 +122,10 @@ namespace danikk_space_engine
 		tree.createRoot();
 	}
 
-	void PlanetSystem::calculateDetailBudget(const glm::dvec3& camera_position, double height,
+	void PlanetTerrainTree::calculateDetailScale(const glm::dvec3& camera_position, double height,
 		const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 		glm::dvec3& render_window_maximum, double& detail_scale,
-		size_t& target_node_count, size_t& detail_scale_adjustments) const
+		size_t& target_node_count, size_t& detail_scale_adjustments)
 	{
 		DSE_WATCH();
 		detail_scale = height < 0.0 ? 0.01 : 0.015;
@@ -142,8 +142,8 @@ namespace danikk_space_engine
 				PlanetTerrainNode candidate;
 				candidate.center = center;
 				candidate.half_extent = half_extent;
-				if(!isNodeRelevant(render_window_minimum, render_window_maximum,
-					camera_position, height, settings, candidate)) return 0;
+				if(!candidate.isRelevantTo(render_window_minimum, render_window_maximum,
+					camera_position, height, settings)) return 0;
 				if(half_extent <= getTargetHalfExtent(camera_position, detail_scale, center)
 					|| depth >= PlanetTerrainTree::maximum_depth)
 				{
@@ -184,27 +184,27 @@ namespace danikk_space_engine
 		}
 	}
 
-	void PlanetSystem::refineTerrainTree(PlanetTerrainTree& tree, const glm::dvec3& camera_position,
+	void PlanetTerrainTree::refine(const glm::dvec3& camera_position,
 		double height, const PlanetSettings& settings, double detail_scale,
-		const glm::dvec3& render_window_minimum, const glm::dvec3& render_window_maximum) const
+		const glm::dvec3& render_window_minimum, const glm::dvec3& render_window_maximum)
 	{
 		DSE_WATCH();
 		const auto visit = [&](auto&& self, PlanetTerrainNodeId node_id, uint8 depth) -> void
 		{
-			if(node_id >= tree.nodes.size()
+			if(node_id >= nodes.size()
 				|| depth >= PlanetTerrainTree::maximum_depth) return;
 			PlanetTerrainNode candidate;
-			candidate.center = tree.nodes[node_id].center;
-			candidate.half_extent = tree.nodes[node_id].half_extent;
-			if(!isNodeRelevant(render_window_minimum, render_window_maximum,
-				camera_position, height, settings, candidate)
-				|| candidate.half_extent <= getTargetHalfExtent(camera_position,
+			candidate.center = nodes[node_id].center;
+			candidate.half_extent = nodes[node_id].half_extent;
+			if(!candidate.isRelevantTo(render_window_minimum, render_window_maximum,
+				camera_position, height, settings)
+				|| candidate.half_extent <= PlanetTerrainTree::getTargetHalfExtent(camera_position,
 					detail_scale, candidate.center)) return;
-			if(!tree.ensureChildren(node_id)) return;
+			if(!ensureChildren(node_id)) return;
 			for(uint8 child_index = 0; child_index < 8; ++child_index)
-				self(self, tree.nodes[node_id].children[child_index],
+				self(self, nodes[node_id].children[child_index],
 					static_cast<uint8>(depth + 1));
 		};
-		if(tree.root_id < tree.nodes.size()) visit(visit, tree.root_id, 0);
+		if(root_id < nodes.size()) visit(visit, root_id, 0);
 	}
 }

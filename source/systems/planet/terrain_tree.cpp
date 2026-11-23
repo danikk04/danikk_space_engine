@@ -93,7 +93,7 @@ namespace danikk_space_engine
 		DynamicArray<PlanetTerrainNodeId> selected_node_ids;
 
 		synchronizeTerrainTree(planet);
-		calculateDetailBudget(camera_position, height,
+		PlanetTerrainTree::calculateDetailScale(camera_position, height,
 			planet_settings, render_window_minimum, render_window_maximum, detail_scale,
 			target_node_count, detail_scale_adjustments);
 		planet.streaming_camera_position = camera_position;
@@ -101,11 +101,11 @@ namespace danikk_space_engine
 		planet.render_window_minimum = render_window_minimum;
 		planet.render_window_maximum = render_window_maximum;
 		planet.terrain_streaming_active = true;
-		refineTerrainTree(tree, camera_position, height, planet_settings,
+		tree.refine(camera_position, height, planet_settings,
 			detail_scale, render_window_minimum, render_window_maximum);
-		updateRenderActivity(planet, camera_position, height, planet_settings, detail_scale,
+		tree.updateRenderActivity(camera_position, height, planet_settings, detail_scale,
 			render_window_minimum, render_window_maximum, selected_node_ids);
-		activateMeshes(tree, selected_node_ids);
+		tree.activateMeshes(selected_node_ids);
 		recordDiagnostics(planet, target_node_count, detail_scale_adjustments, detail_scale);
 		evictCachedMeshes(tree, camera_position);
 	}
