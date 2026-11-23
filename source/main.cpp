@@ -19,6 +19,13 @@
 #include <danikk_engine/input.h>
 #include <danikk_framework/memory.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
+#include <danikk_space_engine/systems/controller/controller.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_engine_game
 {
 	using namespace danikk_space_engine;
@@ -59,11 +66,11 @@ namespace danikk_engine_game
 		SelectedUnitsSummary getSelectedUnitsSummary(const World& world)
 		{
 			SelectedUnitsSummary summary;
-			for(const SelectedUnitRef& reference : world.controller.selected_unit_refs)
+			for(const SelectedUnitRef& reference : world.getControllerSystem().selected_unit_refs)
 			{
-				const HumanData* human_data = world.humans.findHuman(reference.human_id);
+				const HumanData* human_data = world.getHumanSystem().findHuman(reference.human_id);
 				if(human_data == nullptr || human_data->generation_id != reference.generation_id
-					|| !world.world_body_data.isWorldBodyActive(human_data->world_body_id)) continue;
+					|| !world.getWorldBodyData().isWorldBodyActive(human_data->world_body_id)) continue;
 				const HumanState& human = *human_data;
 				if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 				++summary.count;
@@ -86,13 +93,13 @@ namespace danikk_engine_game
 				return;
 			}
 			const World& world = *static_cast<const World*>(source);
-			const glm::dvec3 camera_position = world.camera.getWorldPosition();
-			const ControllerSystem& controller = world.controller;
+			const glm::dvec3 camera_position = world.getCameraSystem().getWorldPosition();
+			const ControllerSystem& controller = world.getControllerSystem();
 			formatAppend(text, "MODE:%\n", controller.mode == PlayerMode::commander
 				? "COMMANDER" : "GOD");
 			float average_mesh_generation_time_ms = 0.0f;
 			text << "MESH GEN AVG (50):";
-			if(world.mesh_generation.getAverageGenerationTimeMilliseconds(
+			if(world.getMeshGenerationSystem().getAverageGenerationTimeMilliseconds(
 				average_mesh_generation_time_ms))
 			{
 				appendGuiNumber(text, average_mesh_generation_time_ms);
@@ -122,11 +129,11 @@ namespace danikk_engine_game
 			double nearest_surface_distance = std::numeric_limits<double>::max();
 			double nearest_planet_height = 0.0;
 			bool nearest_planet_height_available = false;
-			for(const PlanetData& planet : world.planets.getPlanets())
+			for(const PlanetData& planet : world.getPlanetSystem().getPlanets())
 			{
 				const glm::dvec3 planet_local_camera_position = glm::conjugate(planet.rotation)
 					* (camera_position - planet.position);
-				const double height = world.planets.getPlanetHeightAboveSurface(
+				const double height = world.getPlanetSystem().getPlanetHeightAboveSurface(
 					planet.id, planet_local_camera_position);
 				const double distance = std::abs(height);
 				if(distance >= nearest_surface_distance) continue;
@@ -187,17 +194,17 @@ namespace danikk_engine_game
 			switch(action.type)
 			{
 				case GUIActionType::toggle_tool_catalog:
-					world.controller.tool_catalog_open = !world.controller.tool_catalog_open;
+					world.getControllerSystem().tool_catalog_open = !world.getControllerSystem().tool_catalog_open;
 					break;
 				case GUIActionType::close_tool_catalog:
-					world.controller.tool_catalog_open = false;
+					world.getControllerSystem().tool_catalog_open = false;
 					break;
 				case GUIActionType::select_tool_catalog_entry:
-					world.controller.selectToolCatalogEntry(action.catalog_entry_id);
-					world.controller.tool_catalog_open = false;
+					world.getControllerSystem().selectToolCatalogEntry(action.catalog_entry_id);
+					world.getControllerSystem().tool_catalog_open = false;
 					break;
 				case GUIActionType::select_hotbar_slot:
-					world.controller.selectHotbarSlot(action.hotbar_slot);
+					world.getControllerSystem().selectHotbarSlot(action.hotbar_slot);
 					break;
 			}
 		}
@@ -250,9 +257,9 @@ namespace danikk_engine_game
 		world.init();
 		gui.bindDebugInfo(&world, writeWorldDebugInfo);
 		gui.bindSelectedUnits(&world, writeSelectedUnits, &world, hasSelectedUnits);
-		gui.bindHotbar(world.controller.hotbar_entry_ids,
-			&world.controller.selected_hotbar_slot, &world.controller.tool_catalog_open);
-		gui.bindPreviewCamera(&world.camera, readPreviewCamera);
+		gui.bindHotbar(world.getControllerSystem().hotbar_entry_ids,
+			&world.getControllerSystem().selected_hotbar_slot, &world.getControllerSystem().tool_catalog_open);
+		gui.bindPreviewCamera(&world.getCameraSystem(), readPreviewCamera);
     	static_asset_collection.base2d_shader.use();
     }
 
@@ -264,7 +271,7 @@ namespace danikk_engine_game
      */
     void frame()
     {
-		world.telemetry.beginTick();
+		world.getTelemetrySystem().beginTick();
 		{
 			/**
 			 * @brief Measures the duration of the enclosing telemetry scope.
@@ -279,6 +286,6 @@ namespace danikk_engine_game
 			world.tick();
 			world.frame();
 		}
-		world.telemetry.endTick();
+		world.getTelemetrySystem().endTick();
     }
 }

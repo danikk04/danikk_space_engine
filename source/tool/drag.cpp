@@ -6,6 +6,11 @@
 
 #include <cmath>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -17,14 +22,14 @@ namespace danikk_space_engine
 		 */
 		bool canDragWorldBody(const World& world, WorldBodyId body_id)
 		{
-			if(!world.world_body_data.isWorldBodyActive(body_id)) return false;
+			if(!world.getWorldBodyData().isWorldBodyActive(body_id)) return false;
 
-			if(world.camera.isActive() && world.camera.getWorldBodyId() == body_id)
+			if(world.getCameraSystem().isActive() && world.getCameraSystem().getWorldBodyId() == body_id)
 			{
 				return false;
 			}
 
-			if(world.world_body_data.getWorldBody(body_id).planet_id != static_cast<PlanetId>(-1)) return false;
+			if(world.getWorldBodyData().getWorldBody(body_id).planet_id != static_cast<PlanetId>(-1)) return false;
 			return true;
 		}
 
@@ -77,11 +82,11 @@ namespace danikk_space_engine
 		if(mouse_state == button_states::press)
 		{
 			clearDrag(controller);
-			if(hit.hit && world.world_body_data.isWorldBodyActive(hit.body_id))
+			if(hit.hit && world.getWorldBodyData().isWorldBodyActive(hit.body_id))
 			{
 				if(canDragWorldBody(world, hit.body_id))
 				{
-					const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
+					const WorldBody& body = world.getWorldBodyData().getWorldBody(hit.body_id);
 					controller.dragged_world_body_id = hit.body_id;
 					controller.dragged_body_distance = hit.distance;
 					controller.dragged_hit_offset = glm::conjugate(body.rotation)
@@ -99,7 +104,7 @@ namespace danikk_space_engine
 			return;
 		}
 
-		WorldBody& body = world.world_body_data.getWorldBody(body_id);
+		WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
 		if(alt_pressed && scroll_delta != 0.0f)
 		{
 			controller.dragged_body_distance *= std::pow(1.2, static_cast<double>(scroll_delta));
@@ -107,7 +112,7 @@ namespace danikk_space_engine
 		}
 		else if(!alt_pressed && scroll_delta != 0.0f)
 		{
-			const glm::dvec3 axis = glm::normalize(glm::dvec3(world.camera.getUp()));
+			const glm::dvec3 axis = glm::normalize(glm::dvec3(world.getCameraSystem().getUp()));
 			constexpr double half_angle_per_scroll = 3.14159265358979323846 / 24.0;
 			const double half_angle = static_cast<double>(scroll_delta) * half_angle_per_scroll;
 			const double sine = std::sin(half_angle);
@@ -116,8 +121,8 @@ namespace danikk_space_engine
 		}
 		if(alt_pressed && (cursor_delta.x != 0.0f || cursor_delta.y != 0.0f))
 		{
-			const glm::dvec3 camera_up = glm::normalize(glm::dvec3(world.camera.getUp()));
-			const glm::dvec3 camera_right = glm::normalize(glm::dvec3(world.camera.getRight()));
+			const glm::dvec3 camera_up = glm::normalize(glm::dvec3(world.getCameraSystem().getUp()));
+			const glm::dvec3 camera_right = glm::normalize(glm::dvec3(world.getCameraSystem().getRight()));
 			const double yaw_half_angle = -static_cast<double>(cursor_delta.x) * 0.5;
 			const double pitch_half_angle = -static_cast<double>(cursor_delta.y) * 0.5;
 			const glm::dquat yaw_rotation(
@@ -133,8 +138,8 @@ namespace danikk_space_engine
 			body.rotation = glm::normalize(pitch_rotation * yaw_rotation * body.rotation);
 		}
 
-		const glm::dvec3 target = world.camera.getWorldPosition()
-			+ glm::dvec3(world.camera.getFront()) * controller.dragged_body_distance;
+		const glm::dvec3 target = world.getCameraSystem().getWorldPosition()
+			+ glm::dvec3(world.getCameraSystem().getFront()) * controller.dragged_body_distance;
 		body.position = target - body.rotation * controller.dragged_hit_offset;
 	}
 }

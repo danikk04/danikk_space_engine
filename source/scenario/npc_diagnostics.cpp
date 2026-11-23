@@ -11,6 +11,13 @@
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/human/system.h>
+
+#include <danikk_space_engine/systems/faction/faction.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -39,7 +46,7 @@ namespace danikk_space_engine
 		/** @brief Reads the point center in planet coordinates without adding telemetry scopes. */
 		glm::dvec3 getNpcPosition(const World& world, const HumanData& human)
 		{
-			return world.humans.getWorldPosition(human);
+			return world.getHumanSystem().getWorldPosition(human);
 		}
 
 		/**
@@ -53,8 +60,8 @@ namespace danikk_space_engine
 			human.faction_id = faction_id;
 			human.up = vec3(glm::normalize(feet));
 			const glm::dvec3 center = feet + glm::dvec3(human.up) * (human.getHeight() * 0.5);
-			HumanData& data = world.humans.createHuman(body_id, center, human);
-			world.unit_system.registerAgent(data.id, false);
+			HumanData& data = world.getHumanSystem().createHuman(body_id, center, human);
+			world.getUnitSystem().registerAgent(data.id, false);
 			return data.id;
 		}
 
@@ -66,7 +73,7 @@ namespace danikk_space_engine
 		void createNpcFixture(World& world, WorldBodyId body_id, PlanetData& planet,
 			DiagnosticNpc (&npcs)[npc_count])
 		{
-			const PlanetSettings& planet_settings = world.planets.getPlanetSettings(planet.settings_id);
+			const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
 			const glm::dvec3 hill_center(0.0, 0.0, planet_settings.radius + 64.0 - hill_radius);
 			planet.terrain_edits.append(
 				PlanetTerrainEdit{hill_center, hill_radius, default_materials::stone});
@@ -92,25 +99,25 @@ namespace danikk_space_engine
 		{
 			formatLogInfo("NPC diagnostics phase=% ticks=%", name, ticks);
 			for(DiagnosticNpc& npc : npcs)
-				if(const HumanData* human = world.humans.findHuman(npc.human_id))
+				if(const HumanData* human = world.getHumanSystem().findHuman(npc.human_id))
 					npc.start_position = getNpcPosition(world, *human);
 
 			for(uint32 tick = 0; tick < ticks; ++tick)
 			{
 				for(const DiagnosticNpc& npc : npcs)
 				{
-					if(HumanData* human = world.humans.findHuman(npc.human_id))
+					if(HumanData* human = world.getHumanSystem().findHuman(npc.human_id))
 						human->desired_velocity = velocity;
 				}
-				world.telemetry.beginTick();
+				world.getTelemetrySystem().beginTick();
 				world.tick();
-				world.telemetry.endTick(tick + 1 == ticks);
+				world.getTelemetrySystem().endTick(tick + 1 == ticks);
 			}
 
 			PhaseResult result;
 			for(const DiagnosticNpc& npc : npcs)
 			{
-				const HumanData* human = world.humans.findHuman(npc.human_id);
+				const HumanData* human = world.getHumanSystem().findHuman(npc.human_id);
 				if(human == nullptr) continue;
 				++result.active;
 				if(human->grounded) ++result.grounded;
@@ -126,26 +133,26 @@ namespace danikk_space_engine
 	int runNpcDiagnostics()
 	{
 		World scene;
-		scene.camera.unbind();
-		scene.factions.create(faction_definition_ids::celestial_body);
-		scene.factions.create(faction_definition_ids::player);
-		scene.factions.create(faction_definition_ids::pirates);
+		scene.getCameraSystem().unbind();
+		scene.getFactionSystem().create(faction_definition_ids::celestial_body);
+		scene.getFactionSystem().create(faction_definition_ids::player);
+		scene.getFactionSystem().create(faction_definition_ids::pirates);
 
-		const WorldBodyId body_id = scene.world_body_data.createWorldBody();
-		PlanetData& planet = scene.planets.createPlanet(planet_settings_ids::earth);
-		scene.world_body_data.getWorldBody(body_id).planet_id = planet.id;
+		const WorldBodyId body_id = scene.getWorldBodyData().createWorldBody();
+		PlanetData& planet = scene.getPlanetSystem().createPlanet(planet_settings_ids::earth);
+		scene.getWorldBodyData().getWorldBody(body_id).planet_id = planet.id;
 		DiagnosticNpc npcs[npc_count]{};
 		createNpcFixture(scene, body_id, planet, npcs);
 
 		formatLogInfo("NPC diagnostics population=% PlayerFaction=% Pirates=%", npc_count, npc_count / 2, npc_count / 2);
-		scene.telemetry.setReportIntervalMilliseconds(std::numeric_limits<uint64>::max());
+		scene.getTelemetrySystem().setReportIntervalMilliseconds(std::numeric_limits<uint64>::max());
 		const PhaseResult warmup = measureNpcPhase(scene, npcs, "warmup", 60, vec3(0.0f));
 		const PhaseResult idle = measureNpcPhase(scene, npcs, "idle", 120, vec3(0.0f));
 		const PhaseResult walking = measureNpcPhase(scene, npcs, "walking", 120, vec3(1.5f, 0.0f, 0.0f));
 
 		bool lost_support = false;
 		double drop = 0.0;
-		if(HumanData* before = scene.humans.findHuman(npcs[0].human_id))
+		if(HumanData* before = scene.getHumanSystem().findHuman(npcs[0].human_id))
 		{
 			const glm::dvec3 center = getNpcPosition(scene, *before);
 			planet.terrain_edits.append(
@@ -153,7 +160,7 @@ namespace danikk_space_engine
 			++planet.terrain_revision;
 			measureNpcPhase(scene, npcs, "excavation", 1, vec3(0.0f));
 
-			if(const HumanData* after = scene.humans.findHuman(npcs[0].human_id))
+			if(const HumanData* after = scene.getHumanSystem().findHuman(npcs[0].human_id))
 			{
 				drop = glm::dot(center - getNpcPosition(scene, *after), glm::dvec3(after->up));
 				lost_support = !after->grounded && drop > 0.0001;
@@ -165,10 +172,10 @@ namespace danikk_space_engine
 		formatLogInfo("NPC diagnostics excavation lost_support=% drop_m=%", lost_support, drop);
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
 		scene.destroyWorldBody(body_id);
-		scene.humans.shutdown();
-		scene.point_data.release();
-		scene.world_body_data.release();
-		scene.factions.release();
+		scene.getHumanSystem().shutdown();
+		scene.getPointData().release();
+		scene.getWorldBodyData().release();
+		scene.getFactionSystem().release();
 		return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }

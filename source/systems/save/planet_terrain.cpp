@@ -60,11 +60,11 @@ namespace danikk_space_engine
 	/** @brief Loads and validates a planet's ordered terrain stamps and revision counter. */
 	bool SaveSystem::loadPlanetTerrainEdits(PlanetId planet_id)
 	{
-		PlanetData* planet_data = world.planets.findPlanet(planet_id);
+		PlanetData* planet_data = world.getPlanetSystem().findPlanet(planet_id);
 		if(planet_data == nullptr) return false;
 		PlanetData& planet = *planet_data;
 		if(planet.terrain_edits_loaded) return true;
-		const PlanetSettings& settings = world.planets.getPlanetSettings(planet.settings_id);
+		const PlanetSettings& settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
 		const double planet_radius = settings.radius;
 		const uint64 noise_seed = settings.noise_seed;
 		const std::filesystem::path new_file_path = terrainEditsFilePath(planet_id, noise_seed);
@@ -151,11 +151,11 @@ namespace danikk_space_engine
 	/** @brief Writes terrain-edit stamps field by field and logs path or write failures. */
 	void SaveSystem::savePlanetTerrainEdits(PlanetId planet_id)
 	{
-		const PlanetData* planet_data = world.planets.findPlanet(planet_id);
+		const PlanetData* planet_data = world.getPlanetSystem().findPlanet(planet_id);
 		if(planet_data == nullptr) return;
 		const PlanetData& planet = *planet_data;
 		std::error_code error;
-		const PlanetSettings& settings = world.planets.getPlanetSettings(planet.settings_id);
+		const PlanetSettings& settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
 		const double planet_radius = settings.radius;
 		const uint64 noise_seed = settings.noise_seed;
 		const std::filesystem::path file_path = terrainEditsFilePath(planet_id, noise_seed);

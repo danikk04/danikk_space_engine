@@ -5,6 +5,9 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include "internal.h"
 
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -55,11 +58,11 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		DynamicArray<PlanetCoreTarget> planets;
-		const DynamicArray<WorldBodyId> world_body_ids(world.world_body_data.getUsedWorldBodyIds());
+		const DynamicArray<WorldBodyId> world_body_ids(world.getWorldBodyData().getUsedWorldBodyIds());
 		for(WorldBodyId body_id : world_body_ids)
 		{
-			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
-			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
+			if(!world.getWorldBodyData().isWorldBodyActive(body_id)) continue;
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
 			if(body.planet_id != static_cast<PlanetId>(-1)) planets.push(PlanetCoreTarget{body_id, body.position});
 		}
 		if(planets.size() == 0) return;
@@ -67,8 +70,8 @@ namespace danikk_space_engine
 		DynamicArray<WorldBodyId> bodies_to_destroy;
 		for(WorldBodyId body_id : world_body_ids)
 		{
-			if(!world.world_body_data.isWorldBodyActive(body_id)) continue;
-			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
+			if(!world.getWorldBodyData().isWorldBodyActive(body_id)) continue;
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
 			if(body.planet_id != static_cast<PlanetId>(-1) || !collision_internal::hasSpatialPoints(body)) continue;
 			if(isInsideAnyPlanetCore(body.position, planets)) bodies_to_destroy.push(body_id);
 		}
@@ -79,12 +82,12 @@ namespace danikk_space_engine
 
 		DynamicArray<PointId> points_to_destroy;
 
-		for(PointComponentSlotId slot_id : world.point_data.getUsedPointComponentSlotIds())
+		for(PointComponentSlotId slot_id : world.getPointData().getUsedPointComponentSlotIds())
 		{
-			if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-			const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
-			if(!world.point_data.isPointActive(slot.point_id)
-				|| !world.world_body_data.isWorldBodyActive(slot.world_body_id)) continue;
+			if(!world.getPointData().isPointComponentSlotActive(slot_id)) continue;
+			const PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
+			if(!world.getPointData().isPointActive(slot.point_id)
+				|| !world.getWorldBodyData().isWorldBodyActive(slot.world_body_id)) continue;
 			const glm::dvec3 position = world.getPointWorldPosition(slot.point_id);
 			if(!isInsideAnyPlanetCore(position, planets)) continue;
 

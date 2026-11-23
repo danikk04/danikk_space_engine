@@ -5,6 +5,9 @@
 #include <danikk_space_engine/systems/unit/internal/perception.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine::unit_system_internal
 {
 	namespace
@@ -17,9 +20,9 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		DSE_WATCH();
 		index.entries.clear();
-		for(const HumanData& human : world.humans.getHumans())
+		for(const HumanData& human : world.getHumanSystem().getHumans())
 		{
-			if(!world.world_body_data.isWorldBodyActive(human.world_body_id)) continue;
+			if(!world.getWorldBodyData().isWorldBodyActive(human.world_body_id)) continue;
 			UnitSpatialEntry& entry = index.entries.pushCtor();
 			entry.target = UnitTarget{human.id, human.generation_id};
 			entry.body_id = human.world_body_id;
@@ -34,13 +37,13 @@ namespace danikk_space_engine::unit_system_internal
 		DSE_WATCH();
 		agent.enemy_candidates.clear();
 		agent.candidate_index = 0;
-		const HumanData* own = world.humans.findHuman(agent.human_id);
+		const HumanData* own = world.getHumanSystem().findHuman(agent.human_id);
 		if(own == nullptr || own->generation_id != agent.human_generation_id
 			|| own->world_body_id != body_id) return;
 		const glm::dvec3 extent(unit_spatial_query_half_extent);
 		const glm::dvec3 minimum = own->body_local_position - extent;
 		const glm::dvec3 maximum = own->body_local_position + extent;
-		for(const HumanData& candidate : world.humans.getHumans())
+		for(const HumanData& candidate : world.getHumanSystem().getHumans())
 		{
 			if(candidate.world_body_id != body_id) continue;
 			if(glm::any(glm::lessThan(candidate.body_local_position, minimum))
@@ -57,9 +60,9 @@ namespace danikk_space_engine::unit_system_internal
 	{
 		DSE_WATCH();
 		result.clear();
-		if(half_extent < 0.0 || !world.world_body_data.isWorldBodyActive(body_id)) return;
+		if(half_extent < 0.0 || !world.getWorldBodyData().isWorldBodyActive(body_id)) return;
 		const glm::dvec3 extent(half_extent);
-		for(const HumanData& human : world.humans.getHumans())
+		for(const HumanData& human : world.getHumanSystem().getHumans())
 		{
 			if(human.world_body_id != body_id) continue;
 			const glm::dvec3 delta = glm::abs(human.body_local_position - center);

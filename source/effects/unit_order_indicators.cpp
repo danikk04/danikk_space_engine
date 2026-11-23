@@ -10,6 +10,10 @@
 #include <danikk_engine/mesh.h>
 #include <danikk_engine/texture_methods.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -77,30 +81,30 @@ namespace danikk_space_engine
 	/** @copydoc drawUnitOrderIndicators */
 	void drawUnitOrderIndicators(World& world)
 	{
-		const ControllerSystem& player = world.controller;
+		const ControllerSystem& player = world.getControllerSystem();
 		if(player.selected_unit_refs.size() == 0) return;
 
 		DynamicArray<DefaultVertex> arrow_vertices;
 		DynamicArray<gl_point_index_t> arrow_indices;
 		DynamicArray<DefaultVertex> marker_vertices;
 		DynamicArray<gl_point_index_t> marker_indices;
-		const glm::dvec3 camera_position = world.camera.getWorldPosition();
-		const CameraSystem& camera = world.camera;
+		const glm::dvec3 camera_position = world.getCameraSystem().getWorldPosition();
+		const CameraSystem& camera = world.getCameraSystem();
 		const vec3 camera_up = glm::normalize(camera.getUp());
 		const vec3 camera_right = glm::normalize(glm::cross(camera.getFront(), camera_up));
 
 		for(const SelectedUnitRef& reference : player.selected_unit_refs)
 		{
-			const HumanData* human_data = world.humans.findHuman(reference.human_id);
+			const HumanData* human_data = world.getHumanSystem().findHuman(reference.human_id);
 			if(human_data == nullptr || human_data->generation_id != reference.generation_id
-				|| !world.world_body_data.isWorldBodyActive(human_data->world_body_id)) continue;
+				|| !world.getWorldBodyData().isWorldBodyActive(human_data->world_body_id)) continue;
 			const HumanState& human = *human_data;
 			if(human.hasDeathTimestamp()) continue;
 
 			glm::dvec3 move_target_world;
-			if(!world.unit_system.getMoveTarget(reference.human_id, reference.generation_id, move_target_world)) continue;
+			if(!world.getUnitSystem().getMoveTarget(reference.human_id, reference.generation_id, move_target_world)) continue;
 
-			const glm::dvec3 start_world = world.humans.getWorldPosition(*human_data);
+			const glm::dvec3 start_world = world.getHumanSystem().getWorldPosition(*human_data);
 			const glm::dvec3 start = start_world - camera_position;
 			const glm::dvec3 target = move_target_world - camera_position;
 			appendMovementArrow(arrow_vertices, arrow_indices, vec3(start), vec3(target), camera_up);

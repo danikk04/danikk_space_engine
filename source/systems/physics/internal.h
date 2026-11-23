@@ -3,6 +3,7 @@
 #include <limits>
 
 #include <danikk_space_engine/world.h>
+#include <danikk_space_engine/world_body.h>
 
 namespace danikk_space_engine::collision_internal
 {

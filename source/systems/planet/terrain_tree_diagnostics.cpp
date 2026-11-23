@@ -33,6 +33,6 @@ namespace danikk_space_engine
 				|| candidate.node_width < snapshot.finest_job_width)
 				snapshot.finest_job_width = candidate.node_width;
 		}
-		world.telemetry.mesh_generation_telemetry.recordPlanetTerrainTree(snapshot);
+		world.getTelemetrySystem().mesh_generation_telemetry.recordPlanetTerrainTree(snapshot);
 	}
 }

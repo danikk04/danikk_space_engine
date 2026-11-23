@@ -9,6 +9,10 @@
 #include <danikk_engine/mesh.h>
 #include <danikk_engine/texture_methods.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -77,8 +81,8 @@ namespace danikk_space_engine
 		panel_vertices.clear();
 		panel_indices.clear();
 
-		const glm::dvec3 camera_position = world.camera.getWorldPosition();
-		const CameraSystem& camera = world.camera;
+		const glm::dvec3 camera_position = world.getCameraSystem().getWorldPosition();
+		const CameraSystem& camera = world.getCameraSystem();
 		const vec3 camera_front = glm::normalize(camera.getFront());
 		const vec3 camera_up = glm::normalize(camera.getUp());
 		const vec3 camera_right = glm::normalize(glm::cross(camera_front, camera_up));
@@ -91,25 +95,25 @@ namespace danikk_space_engine
 		constexpr float panel_padding_x = 0.05f;
 		constexpr float panel_height = 0.18f;
 
-		for(const HumanData& data : world.humans.getHumans())
+		for(const HumanData& data : world.getHumanSystem().getHumans())
 		{
-			if(!world.world_body_data.isWorldBodyActive(data.world_body_id)) continue;
+			if(!world.getWorldBodyData().isWorldBodyActive(data.world_body_id)) continue;
 			const HumanState& human = data;
-			if(human.hasDeathTimestamp() || human.faction_id >= world.factions.size()
-				|| world.factions.getRelation(base_faction_ids::player, human.faction_id).type
+			if(human.hasDeathTimestamp() || human.faction_id >= world.getFactionSystem().size()
+				|| world.getFactionSystem().getRelation(base_faction_ids::player, human.faction_id).type
 					!= FactionRelationType::allied) continue;
 
 			UnitGlobalState global_state;
 			UnitSubstate substate;
-			if(!world.unit_system.getState(data.id, data.generation_id, global_state, substate)) continue;
+			if(!world.getUnitSystem().getState(data.id, data.generation_id, global_state, substate)) continue;
 			const char* label = getStateText(global_state, substate);
 			const size_t character_count = getTextLength(label);
 			const float text_width = character_count * glyph_size.x
 				+ (character_count - 1) * glyph_spacing;
 			const float panel_width = text_width + panel_padding_x * 2.0f;
 
-			const glm::dvec3 human_position = world.humans.getWorldPosition(data);
-			const WorldBody& body = world.world_body_data.getWorldBody(data.world_body_id);
+			const glm::dvec3 human_position = world.getHumanSystem().getWorldPosition(data);
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(data.world_body_id);
 			vec3 human_up = vec3(body.rotation * glm::dvec3(human.up));
 			if(glm::length(human_up) <= 1e-6f) human_up = vec3(0.0f, 0.0f, 1.0f);
 			human_up = glm::normalize(human_up);

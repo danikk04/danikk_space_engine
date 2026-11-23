@@ -6,6 +6,10 @@
 #include <danikk_space_engine/systems/unit/internal/perception.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/faction/faction.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine::unit_system_internal
 {
 	static constexpr uint32 sighting_timeout_ms = 8000;
@@ -33,10 +37,10 @@ namespace danikk_space_engine::unit_system_internal
 		/** @brief Adds known dead faction members to the same post-combat inspection queue as lost contacts. */
 		void rememberFriendlyCorpseLocations(World& world, UnitGroup& system)
 		{
-			for(const HumanData& human : world.humans.getHumans())
+			for(const HumanData& human : world.getHumanSystem().getHumans())
 			{
 				if(human.faction_id != system.faction_id || human.damageable.getHealth() > 0.0f
-					|| !world.world_body_data.isWorldBodyActive(human.world_body_id)) continue;
+					|| !world.getWorldBodyData().isWorldBodyActive(human.world_body_id)) continue;
 
 				UnitSighting corpse_location;
 				corpse_location.faction_id = system.faction_id;
@@ -57,22 +61,22 @@ namespace danikk_space_engine::unit_system_internal
 	/** @brief Checks that a cached target still identifies a living hostile human. */
 	bool isValidEnemy(World& world, const UnitTarget& target, FactionId faction)
 	{
-		const HumanData* human = world.humans.findHuman(target.human_id);
+		const HumanData* human = world.getHumanSystem().findHuman(target.human_id);
 		if(human == nullptr || human->generation_id != target.generation_id
-			|| !world.world_body_data.isWorldBodyActive(human->world_body_id)) return false;
-		return human->damageable.getHealth() > 0.0f && faction < world.factions.size()
-			&& human->faction_id < world.factions.size()
-			&& world.factions.getRelation(faction, human->faction_id).type == FactionRelationType::hostile;
+			|| !world.getWorldBodyData().isWorldBodyActive(human->world_body_id)) return false;
+		return human->damageable.getHealth() > 0.0f && faction < world.getFactionSystem().size()
+			&& human->faction_id < world.getFactionSystem().size()
+			&& world.getFactionSystem().getRelation(faction, human->faction_id).type == FactionRelationType::hostile;
 	}
 	/** @brief Checks that a shared contact still names a living hostile human. */
 	bool isValidSighting(World& world, const UnitSighting& sighting)
 	{
-		if(sighting.faction_id >= world.factions.size()) return false;
-		const HumanData* target = world.humans.findHuman(sighting.target_human_id);
+		if(sighting.faction_id >= world.getFactionSystem().size()) return false;
+		const HumanData* target = world.getHumanSystem().findHuman(sighting.target_human_id);
 		if(target == nullptr || target->generation_id != sighting.target_generation_id
-			|| !world.world_body_data.isWorldBodyActive(target->world_body_id)) return false;
-		if(target->faction_id >= world.factions.size()
-			|| world.factions.getRelation(sighting.faction_id, target->faction_id).type != FactionRelationType::hostile)
+			|| !world.getWorldBodyData().isWorldBodyActive(target->world_body_id)) return false;
+		if(target->faction_id >= world.getFactionSystem().size()
+			|| world.getFactionSystem().getRelation(sighting.faction_id, target->faction_id).type != FactionRelationType::hostile)
 			return false;
 		return target->damageable.getHealth() > 0.0f;
 	}
@@ -81,9 +85,9 @@ namespace danikk_space_engine::unit_system_internal
 	void rememberSighting(World& world, UnitGroup& system, FactionId faction_id,
 		const UnitTarget& target, const glm::dvec3& position)
 	{
-		const HumanData* target_data = world.humans.findHuman(target.human_id);
+		const HumanData* target_data = world.getHumanSystem().findHuman(target.human_id);
 		if(target_data == nullptr || target_data->generation_id != target.generation_id
-			|| !world.world_body_data.isWorldBodyActive(target_data->world_body_id)) return;
+			|| !world.getWorldBodyData().isWorldBodyActive(target_data->world_body_id)) return;
 		const glm::dvec3 body_local_position = target_data->body_local_position;
 		for(UnitSighting& sighting : system.known_sightings)
 		{
@@ -144,7 +148,7 @@ namespace danikk_space_engine::unit_system_internal
 
 		for(size_t index = 0; index < system.search_locations.size();)
 		{
-			if(!world.world_body_data.isWorldBodyActive(system.search_locations[index].body_id))
+			if(!world.getWorldBodyData().isWorldBodyActive(system.search_locations[index].body_id))
 			{
 				for(size_t shift = index + 1; shift < system.search_locations.size(); ++shift)
 					system.search_locations[shift - 1] = static_cast<UnitSearchLocation&&>(system.search_locations[shift]);

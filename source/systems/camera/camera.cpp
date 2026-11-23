@@ -7,6 +7,8 @@
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_framework/log.h>
 
+#include <danikk_space_engine/world_body.h>
+
 namespace danikk_space_engine
 {
 	void CameraSystem::init()
@@ -24,8 +26,8 @@ namespace danikk_space_engine
 		/** @brief Parallel-transports the camera heading as its radial up vector changes. */
 		void updateCameraSurfaceFrame(CameraSystem& camera, const World& world)
 		{
-			if(!world.world_body_data.isWorldBodyActive(camera.getWorldBodyId())) return;
-			const WorldBody& body = world.world_body_data.getWorldBody(camera.getWorldBodyId());
+			if(!world.getWorldBodyData().isWorldBodyActive(camera.getWorldBodyId())) return;
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(camera.getWorldBodyId());
 			const glm::dvec3 radial = camera.getWorldPosition() - body.position;
 			const double radial_length = glm::length(radial);
 			if(radial_length <= 0.000001) return;
@@ -92,7 +94,7 @@ namespace danikk_space_engine
 	bool CameraSystem::isActive() const
 	{
 		return body_id != static_cast<WorldBodyId>(-1)
-			&& world.world_body_data.isWorldBodyActive(body_id);
+			&& world.getWorldBodyData().isWorldBodyActive(body_id);
 	}
 
 	/** @copydoc CameraSystem::getFront */
@@ -123,7 +125,7 @@ namespace danikk_space_engine
 	/** @copydoc CameraSystem::getWorldPosition */
 	glm::dvec3 CameraSystem::getWorldPosition() const
 	{
-		const WorldBody& body = world.world_body_data.getWorldBody(body_id);
+		const WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
 		return body.position + body.rotation * body_local_position;
 	}
 
@@ -132,8 +134,8 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		if(!isActive()) return;
-		const bool has_controller = world.controller.controls();
-		if(has_controller && world.controller.tool_catalog_open) return;
+		const bool has_controller = world.getControllerSystem().controls();
+		if(has_controller && world.getControllerSystem().tool_catalog_open) return;
 		updateCameraSurfaceFrame(*this, world);
 
 		const vec2 cursor_delta = getCursorDelta() * getMouseSensivity();
@@ -144,9 +146,9 @@ namespace danikk_space_engine
 		const int right_alt_state = getKeyboardState(keyboard_buttons::right_alt);
 		const bool alt_pressed = left_alt_state == button_states::press || left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press || right_alt_state == button_states::hold;
-		const ToolCameraHandler camera_handler = world.controller.getActiveTool().camera;
+		const ToolCameraHandler camera_handler = world.getControllerSystem().getActiveTool().camera;
 		const bool drag_rotation_mode = has_controller && camera_handler != nullptr
-			&& camera_handler(world.controller, left_mouse_down, alt_pressed);
+			&& camera_handler(world.getControllerSystem(), left_mouse_down, alt_pressed);
 		if(!drag_rotation_mode)
 		{
 			const float roll_cos = cos(rotation.z);
@@ -163,7 +165,7 @@ namespace danikk_space_engine
 		const int e_state = getKeyboardState(keyboard_buttons::e);
 		if(e_state == button_states::press || e_state == button_states::hold) rotation.z += roll_delta;
 
-		const float speed = (has_controller ? world.controller.camera_movement_speed : 1.0f) * frame_delay;
+		const float speed = (has_controller ? world.getControllerSystem().camera_movement_speed : 1.0f) * frame_delay;
 		vec3 direction(0.0f);
 		if(getKeyboardState(keyboard_buttons::w)) direction += getFront();
 		if(getKeyboardState(keyboard_buttons::s)) direction -= getFront();

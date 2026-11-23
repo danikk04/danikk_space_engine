@@ -57,7 +57,7 @@ namespace danikk_space_engine
 				if(eviction_id == PlanetTerrainTree::invalid_node) break;
 				PlanetTerrainNode& node = tree.nodes[eviction_id];
 				destroyMeshRenderData(node.mesh);
-				world.telemetry.mesh_generation_telemetry.recordMeshDeletion(
+				world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
 					MeshDeletionReason::cache_capacity);
 				node.mesh_revision = 0;
 				cached_meshes_per_level[level]--;
@@ -65,11 +65,11 @@ namespace danikk_space_engine
 				evicted_mesh_count++;
 			}
 		}
-		world.telemetry.mesh_generation_telemetry.recordPlanetMeshEviction(evicted_mesh_count);
+		world.getTelemetrySystem().mesh_generation_telemetry.recordPlanetMeshEviction(evicted_mesh_count);
 		uint64 active_mesh_count = 0;
 		for(const PlanetTerrainNode& node : tree.nodes)
 			if(node.render_active && node.mesh.mesh != nullptr) active_mesh_count++;
-		world.telemetry.mesh_generation_telemetry.recordPlanetTerrainCache(cached_mesh_count,
+		world.getTelemetrySystem().mesh_generation_telemetry.recordPlanetTerrainCache(cached_mesh_count,
 			active_mesh_count,
 			(maximum_cached_meshes_per_level * (PlanetTerrainTree::maximum_depth + 1)));
 	}

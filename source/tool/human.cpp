@@ -10,6 +10,12 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/math/ray.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/human/system.h>
+
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -25,7 +31,7 @@ namespace danikk_space_engine
 		 */
 		void clearHumanDrag(World& world, ControllerSystem& controller)
 		{
-			if(HumanData* human = world.humans.findHuman(controller.dragged_human_id))
+			if(HumanData* human = world.getHumanSystem().findHuman(controller.dragged_human_id))
 				human->follow_ground = controller.dragged_human_followed_ground;
 			controller.dragged_human_id = no_human;
 			controller.dragged_human_distance = 0.0;
@@ -45,13 +51,13 @@ namespace danikk_space_engine
 		void createHumanAtHit(World& world, const RaycastHit& hit,
 			HumanSkinId skin_id, FactionId faction_id)
 		{
-			if(!world.world_body_data.isWorldBodyActive(hit.body_id)) return;
+			if(!world.getWorldBodyData().isWorldBodyActive(hit.body_id)) return;
 			const WorldBodyId body_id = hit.body_id;
-			const WorldBody& body = world.world_body_data.getWorldBody(body_id);
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_position = inverse_rotation * (hit.position - body.position);
 			vec3 up = vec3(inverse_rotation * glm::dvec3(hit.normal));
-			if(world.planets.isPlanet(body.planet_id))
+			if(world.getPlanetSystem().isPlanet(body.planet_id))
 			{
 				if(glm::length(local_position) < 1e-6) return;
 				up = vec3(glm::normalize(local_position));
@@ -60,10 +66,10 @@ namespace danikk_space_engine
 			up = glm::normalize(up);
 			const vec3 local_normal = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			if(glm::dot(up, local_normal) < 0.5f) return;
-			const vec3 forward = vec3(inverse_rotation * (world.camera.getWorldPosition() - hit.position));
-			const HumanId human_id = world.humans.createNpc(body_id,
+			const vec3 forward = vec3(inverse_rotation * (world.getCameraSystem().getWorldPosition() - hit.position));
+			const HumanId human_id = world.getHumanSystem().createNpc(body_id,
 				local_position + glm::dvec3(up * 0.02f), up, forward, faction_id);
-			if(HumanData* human = world.humans.findHuman(human_id)) human->appearance.skin_id = skin_id;
+			if(HumanData* human = world.getHumanSystem().findHuman(human_id)) human->appearance.skin_id = skin_id;
 		}
 	}
 
@@ -125,14 +131,14 @@ namespace danikk_space_engine
 		if(mouse_state == button_states::press)
 		{
 			clearHumanDrag(world, controller);
-			const glm::dvec3 ray_origin = world.camera.getWorldPosition();
-			const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.camera.getFront()));
+			const glm::dvec3 ray_origin = world.getCameraSystem().getWorldPosition();
+			const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.getCameraSystem().getFront()));
 			double closest_distance = hit.hit ? hit.distance : 10000.0;
-			for(const HumanData& human : world.humans.getHumans())
+			for(const HumanData& human : world.getHumanSystem().getHumans())
 			{
-				if(!world.world_body_data.isWorldBodyActive(human.world_body_id)) continue;
-				const WorldBody& body = world.world_body_data.getWorldBody(human.world_body_id);
-				const glm::dvec3 center = world.humans.getWorldPosition(human);
+				if(!world.getWorldBodyData().isWorldBodyActive(human.world_body_id)) continue;
+				const WorldBody& body = world.getWorldBodyData().getWorldBody(human.world_body_id);
+				const glm::dvec3 center = world.getHumanSystem().getWorldPosition(human);
 				const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(human.up));
 				double distance = 0.0;
 				const double radius = static_cast<double>(human.getHeight()) * 0.14;
@@ -145,11 +151,11 @@ namespace danikk_space_engine
 					controller.dragged_human_followed_ground = human.follow_ground;
 				}
 			}
-			if(HumanData* human = world.humans.findHuman(controller.dragged_human_id)) human->follow_ground = false;
+			if(HumanData* human = world.getHumanSystem().findHuman(controller.dragged_human_id)) human->follow_ground = false;
 		}
 
 		if(controller.dragged_human_id == no_human) return;
-		HumanData* human = world.humans.findHuman(controller.dragged_human_id);
+		HumanData* human = world.getHumanSystem().findHuman(controller.dragged_human_id);
 		if(human == nullptr)
 		{
 			clearHumanDrag(world, controller);
@@ -161,14 +167,14 @@ namespace danikk_space_engine
 			controller.dragged_human_distance *= std::pow(1.2, static_cast<double>(scroll_delta));
 			controller.dragged_human_distance = glm::clamp(controller.dragged_human_distance, 0.5, 10000.0);
 		}
-		if(!world.world_body_data.isWorldBodyActive(human->world_body_id))
+		if(!world.getWorldBodyData().isWorldBodyActive(human->world_body_id))
 		{
 			clearHumanDrag(world, controller);
 			return;
 		}
-		const WorldBody& body = world.world_body_data.getWorldBody(human->world_body_id);
-		const glm::dvec3 target = world.camera.getWorldPosition()
-			+ glm::dvec3(world.camera.getFront()) * controller.dragged_human_distance;
+		const WorldBody& body = world.getWorldBodyData().getWorldBody(human->world_body_id);
+		const glm::dvec3 target = world.getCameraSystem().getWorldPosition()
+			+ glm::dvec3(world.getCameraSystem().getFront()) * controller.dragged_human_distance;
 		const glm::dvec3 body_local_target = glm::conjugate(body.rotation) * (target - body.position);
 		human->body_local_position = body_local_target;
 	}

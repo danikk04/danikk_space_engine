@@ -7,6 +7,9 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include "internal.h"
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/environment/environment.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -20,8 +23,8 @@ namespace danikk_space_engine
 		 */
 		WorldBodyId getDraggedWorldBodyId(const World& world)
 		{
-			if(!world.controller.controls()) return static_cast<WorldBodyId>(-1);
-			return world.controller.dragged_world_body_id;
+			if(!world.getControllerSystem().controls()) return static_cast<WorldBodyId>(-1);
+			return world.getControllerSystem().dragged_world_body_id;
 		}
 	}
 
@@ -44,14 +47,14 @@ namespace danikk_space_engine
 
 		const WorldBodyId dragged_body_id = getDraggedWorldBodyId(world);
 
-		for(WorldBodyId body_id : world.world_body_data.getUsedWorldBodyIds())
+		for(WorldBodyId body_id : world.getWorldBodyData().getUsedWorldBodyIds())
 		{
 			if(body_id == dragged_body_id) continue;
-			WorldBody& body = world.world_body_data.getWorldBody(body_id);
+			WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
 			if(body.planet_id != static_cast<PlanetId>(-1)) continue;
 
 			if(!collision_internal::hasSpatialPoints(body)) continue;
-			const glm::dvec3 acceleration = world.environment.sampleGravityAt(body.position);
+			const glm::dvec3 acceleration = world.getEnvironmentSystem().sampleGravityAt(body.position);
 			body.linear_velocity += acceleration * static_cast<double>(delta_time);
 			body.position += body.linear_velocity * static_cast<double>(delta_time);
 

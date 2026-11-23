@@ -4,6 +4,10 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+
 namespace danikk_space_engine
 {
 	const DynamicArray<MeshGenerationJob>& PlanetSystem::buildMeshGenerationJobBuffer(
@@ -16,9 +20,9 @@ namespace danikk_space_engine
 		mesh_generation_job_candidate_buffer.reserve(capacity);
 		mesh_generation_job_candidate_distances.reserve(capacity);
 
-		const bool has_camera = world.camera.isActive();
+		const bool has_camera = world.getCameraSystem().isActive();
 		const glm::dvec3 camera_position = has_camera
-			? world.camera.getWorldPosition() : glm::dvec3(0.0);
+			? world.getCameraSystem().getWorldPosition() : glm::dvec3(0.0);
 		for(const MeshGenerationJob& candidate : candidates)
 		{
 			glm::dvec3 candidate_position(0.0);
@@ -37,8 +41,8 @@ namespace danikk_space_engine
 			}
 			else if(candidate.source == MeshGenerationSource::build_parts)
 			{
-				if(!world.world_body_data.isWorldBodyActive(candidate.world_body_id)) valid = false;
-				else candidate_position = world.world_body_data.getWorldBody(candidate.world_body_id).position;
+				if(!world.getWorldBodyData().isWorldBodyActive(candidate.world_body_id)) valid = false;
+				else candidate_position = world.getWorldBodyData().getWorldBody(candidate.world_body_id).position;
 			}
 			if(!valid) continue;
 
@@ -78,6 +82,6 @@ namespace danikk_space_engine
 			candidate.planet_id = planet.id;
 			candidate.planet_generation_id = planet.generation_id;
 		}
-		world.mesh_generation.appendPlanetJobCandidates(planet.pending_job_candidates);
+		world.getMeshGenerationSystem().appendPlanetJobCandidates(planet.pending_job_candidates);
 	}
 }

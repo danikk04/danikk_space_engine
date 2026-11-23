@@ -6,13 +6,16 @@
 #include <danikk_space_engine/item/definition.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine
 {
 	namespace
 	{
 		/** @brief Resolves a human by its independent HumanSystem identity. */
 		HumanData* getHuman(World& world, HumanId human_id)
-		{ return world.humans.findHuman(human_id); }
+		{ return world.getHumanSystem().findHuman(human_id); }
 
 		/** @brief Creates a projectile using weapon and owner parameters. */
 		bool useWeapon(World& world, HumanId owner_human_id, InventorySlot& slot, const ItemDefinition& definition)
@@ -21,7 +24,7 @@ namespace danikk_space_engine
 				|| definition.parameters.weapon.projectile_id == projectile_definition_ids::none)
 				return false;
 			HumanData* human_data = getHuman(world, owner_human_id);
-			if(human_data == nullptr || !world.world_body_data.isWorldBodyActive(human_data->world_body_id)) return false;
+			if(human_data == nullptr || !world.getWorldBodyData().isWorldBodyActive(human_data->world_body_id)) return false;
 			HumanState* human = human_data;
 			const WorldBodyId body_id = human_data->world_body_id;
 

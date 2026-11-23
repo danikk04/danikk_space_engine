@@ -8,6 +8,9 @@
 #include <danikk_space_engine/systems/unit/internal/orders.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine::unit_system_internal
 {
 	/** @brief Removes one stored post-combat assignment while preserving the remaining order. */
@@ -37,7 +40,7 @@ namespace danikk_space_engine::unit_system_internal
 			HumanData* human = nullptr;
 			if(!getActiveUnit(world, agent, human) || human->faction_id != system.faction_id) continue;
 			const WorldBodyId body_id = human->world_body_id;
-			const glm::dvec3 position = world.humans.getWorldPosition(*human);
+			const glm::dvec3 position = world.getHumanSystem().getWorldPosition(*human);
 			candidates.push(UnitSearchCandidate{agent.human_id, human, &agent, human, body_id, position, false});
 		}
 
@@ -81,7 +84,7 @@ namespace danikk_space_engine::unit_system_internal
 					break;
 				}
 
-			const WorldBody& body = world.world_body_data.getWorldBody(candidate.body_id);
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(candidate.body_id);
 			const glm::dvec3 body_local_position = candidate.data->body_local_position;
 			if(assignment == nullptr)
 			{

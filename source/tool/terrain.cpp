@@ -4,6 +4,8 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_framework/log.h>
 
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -30,7 +32,7 @@ namespace danikk_space_engine
 			return ToolApplyResult();
 		}
 		const PlanetId planet_id = hit.planet_id;
-		if(!world.planets.isPlanet(planet_id))
+		if(!world.getPlanetSystem().isPlanet(planet_id))
 		{
 			if constexpr(enable_terrain_edit_tool_logs)
 				danikk_framework::formatLogWarning(
@@ -38,7 +40,7 @@ namespace danikk_space_engine
 				action_name, planet_id, hit.body_id, hit.hit_terrain);
 			return ToolApplyResult();
 		}
-		const bool applied = world.planets.editPlanetGround(
+		const bool applied = world.getPlanetSystem().editPlanetGround(
 			planet_id, hit.position, 6.0, material_id);
 		if constexpr(enable_terrain_edit_tool_logs)
 			danikk_framework::formatLogInfo(

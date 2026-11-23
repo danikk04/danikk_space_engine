@@ -2,6 +2,8 @@
 #include <danikk_space_engine/tool_catalog.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	/**

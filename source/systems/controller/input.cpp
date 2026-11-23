@@ -8,6 +8,8 @@
 #include <danikk_engine/input.h>
 #include <danikk_framework/log.h>
 
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -159,7 +161,7 @@ namespace danikk_space_engine
 		const bool has_continuous_behavior = active_tool.tick != nullptr;
 		RaycastHit hit;
 		if(input.left_mouse_state == button_states::press)
-			hit = world.raycasts.castFromCamera();
+			hit = world.getRaycastSystem().castFromCamera();
 		const bool unit_selection_click = input.left_mouse_state == button_states::press
 			&& !(mode == PlayerMode::god && has_continuous_behavior)
 			&& selectOwnHumanUnderCursor(hit, input.shift_pressed);

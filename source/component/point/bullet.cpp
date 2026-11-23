@@ -13,17 +13,24 @@
 #include <danikk_engine/texture_methods.h>
 #include <danikk_framework/glm.h>
 
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/component/component.h>
+#include <danikk_space_engine/systems/raycast/raycast.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine
 {
 	/** @copydoc spawnBullet */
 	void spawnBullet(World& world, WorldBodyId body_id, const glm::dvec3& body_local_position,
 		const BulletComponent& bullet)
 	{
-		const PointId point_id = world.point_data.createPoint();
-		world.point_data.getPoint(point_id).body_local_position = body_local_position;
+		const PointId point_id = world.getPointData().createPoint();
+		world.getPointData().getPoint(point_id).body_local_position = body_local_position;
 		BulletComponent initial_bullet = bullet;
 		initial_bullet.previous_position = body_local_position;
-		const PointComponentSlotId slot_id = world.point_data.createPointComponentSlot(point_id, PointComponentTypeId::bullet, &initial_bullet);
+		const PointComponentSlotId slot_id = world.getPointData().createPointComponentSlot(point_id, PointComponentTypeId::bullet, &initial_bullet);
 		world.attachPointComponentToBody(body_id, point_id, slot_id, body_local_position);
 	}
 
@@ -102,8 +109,8 @@ namespace danikk_space_engine
 
 		const float delta_time = getTargetFrameDelay();
 		if(delta_time <= 0.0f) return;
-		Point& point = world.point_data.getPoint(slot.point_id);
-		WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
+		Point& point = world.getPointData().getPoint(slot.point_id);
+		WorldBody& body = world.getWorldBodyData().getWorldBody(slot.world_body_id);
 		const glm::dvec3 start_position = point.body_local_position;
 		bullet.previous_position = start_position;
 		const glm::dvec3 displacement = glm::dvec3(bullet.velocity) * static_cast<double>(delta_time);
@@ -112,18 +119,18 @@ namespace danikk_space_engine
 		{
 			const glm::dvec3 start_world_position = world.getPointWorldPosition(slot.point_id);
 			const glm::dvec3 direction = glm::normalize(body.rotation * glm::dvec3(bullet.velocity));
-			const RaycastHit hit = world.raycasts.cast(start_world_position, vec3(direction), step_distance);
+			const RaycastHit hit = world.getRaycastSystem().cast(start_world_position, vec3(direction), step_distance);
 			double nearest = hit.hit ? hit.distance : step_distance;
 			HumanId victim_id = static_cast<HumanId>(-1);
 			HumanId suppression_target_id = static_cast<HumanId>(-1);
 			double nearest_suppression_distance = nearest;
-			for(const HumanData& candidate : world.humans.getHumans())
+			for(const HumanData& candidate : world.getHumanSystem().getHumans())
 			{
 				if(candidate.id == bullet.owner_human_id || candidate.world_body_id != slot.world_body_id
 					|| candidate.damageable.getHealth() <= 0.0f) continue;
 				const HumanState& human = candidate;
 				const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(human.up));
-				const glm::dvec3 center = world.humans.getWorldPosition(candidate);
+				const glm::dvec3 center = world.getHumanSystem().getWorldPosition(candidate);
 				const double radius = human.getHeight() * 0.14;
 				for(int i = -2; i <= 2; ++i)
 				{
@@ -146,26 +153,26 @@ namespace danikk_space_engine
 			}
 			if(victim_id != static_cast<HumanId>(-1))
 			{
-				HumanData* victim = world.humans.findHuman(victim_id);
+				HumanData* victim = world.getHumanSystem().findHuman(victim_id);
 				if(victim != nullptr)
 				{
-					world.unit_system.reportAttack(bullet.owner_human_id, victim_id);
+					world.getUnitSystem().reportAttack(bullet.owner_human_id, victim_id);
 					applyBallisticDamage(victim->damageable, bullet.damage);
 				}
 				bullet.destruction_queued = true;
-				world.components.deferPointDestruction(slot.point_id);
+				world.getComponentSystem().deferPointDestruction(slot.point_id);
 				return;
 			}
 			if(suppression_target_id != static_cast<HumanId>(-1))
 			{
-				world.unit_system.reportAttack(bullet.owner_human_id, suppression_target_id);
+				world.getUnitSystem().reportAttack(bullet.owner_human_id, suppression_target_id);
 			}
 			if(hit.hit)
 			{
 				world.setPointBodyLocalPosition(slot.point_id,
 					glm::conjugate(body.rotation) * (hit.position - body.position));
 				bullet.destruction_queued = true;
-				world.components.deferPointDestruction(slot.point_id);
+				world.getComponentSystem().deferPointDestruction(slot.point_id);
 				return;
 			}
 			world.setPointBodyLocalPosition(slot.point_id, start_position + displacement);
@@ -175,7 +182,7 @@ namespace danikk_space_engine
 		if(bullet.age >= bullet.lifetime)
 		{
 			bullet.destruction_queued = true;
-			world.components.deferPointDestruction(slot.point_id);
+			world.getComponentSystem().deferPointDestruction(slot.point_id);
 		}
 	}
 
@@ -198,8 +205,8 @@ namespace danikk_space_engine
 
 		const BulletComponent& bullet = *static_cast<const BulletComponent*>(slot.getData());
 		if(bullet.destruction_queued) return;
-		const Point& point = world.point_data.getPoint(slot.point_id);
-		const WorldBody& body = world.world_body_data.getWorldBody(slot.world_body_id);
+		const Point& point = world.getPointData().getPoint(slot.point_id);
+		const WorldBody& body = world.getWorldBodyData().getWorldBody(slot.world_body_id);
 		const vec3 current_position = vec3(point.body_local_position - body.detail_mesh_position);
 		const float velocity_length = glm::length(bullet.velocity);
 		if(velocity_length <= 0.000001f) return;
@@ -211,7 +218,7 @@ namespace danikk_space_engine
 		const vec3 start_position = previous_position
 			- forward * glm::max(0.0f, visible_trail_length - actual_segment_length);
 		const glm::dvec3 camera_local_position = glm::inverse(body.rotation)
-			* (world.camera.getWorldPosition() - body.position) - body.detail_mesh_position;
+			* (world.getCameraSystem().getWorldPosition() - body.position) - body.detail_mesh_position;
 		const vec3 midpoint = (start_position + current_position) * 0.5f;
 		const vec3 to_camera = vec3(camera_local_position - glm::dvec3(midpoint));
 		vec3 side = glm::cross(forward, to_camera);
@@ -246,7 +253,7 @@ namespace danikk_space_engine
 			4 * (sizeof(DefaultVertex) / sizeof(float)), indices, 6);
 		DefaultVertex::setAttributes();
 		static_asset_collection.bullet_tracer_shader.use();
-		const CameraSystem& camera = world.camera;
+		const CameraSystem& camera = world.getCameraSystem();
 		const mat4 view = glm::lookAt(vec3(0.0f), camera.getFront(), camera.getUp());
 		const mat4 projection = glm::perspective(glm::radians(camera.vertical_fov_degrees),
 			screen_ratio_gz, camera.near_clip_distance, camera.far_clip_distance);
@@ -255,7 +262,7 @@ namespace danikk_space_engine
 		white_texture.bind();
 		setDrawColor(vec4(1.0f, 1.0f, 0.0f, 1.0f));
 		const glm::dvec3 anchor_world = body.position + body.rotation * body.detail_mesh_position
-			- world.camera.getWorldPosition();
+			- world.getCameraSystem().getWorldPosition();
 		mat4 body_rotation(1.0f);
 		body_rotation[0] = vec4(vec3(body.rotation * glm::dvec3(1.0, 0.0, 0.0)), 0.0f);
 		body_rotation[1] = vec4(vec3(body.rotation * glm::dvec3(0.0, 1.0, 0.0)), 0.0f);

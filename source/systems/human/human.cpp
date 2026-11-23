@@ -3,6 +3,8 @@
 #include <danikk_space_engine/world.h>
 #include <danikk_framework/log.h>
 
+#include <danikk_space_engine/world_body.h>
+
 namespace danikk_space_engine
 {
 	void HumanSystem::init()
@@ -22,7 +24,7 @@ namespace danikk_space_engine
 	HumanData& HumanSystem::createHuman(WorldBodyId body_id,
 		const glm::dvec3& body_local_position, const HumanState& initial_state)
 	{
-		if(!world.world_body_data.isWorldBodyActive(body_id))
+		if(!world.getWorldBodyData().isWorldBodyActive(body_id))
 			danikk_engine::formatFatalError("Cannot create a human on inactive WorldBody %", body_id);
 		HumanData& human = humans.pushCtor();
 		human = HumanData();
@@ -81,9 +83,9 @@ namespace danikk_space_engine
 
 	glm::dvec3 HumanSystem::getWorldPosition(const HumanData& human) const
 	{
-		if(!world.world_body_data.isWorldBodyActive(human.world_body_id))
+		if(!world.getWorldBodyData().isWorldBodyActive(human.world_body_id))
 			danikk_engine::formatFatalError("Human % references inactive WorldBody %", human.id, human.world_body_id);
-		const WorldBody& body = world.world_body_data.getWorldBody(human.world_body_id);
+		const WorldBody& body = world.getWorldBodyData().getWorldBody(human.world_body_id);
 		return body.position + body.rotation * human.body_local_position;
 	}
 

@@ -9,6 +9,8 @@
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/world_body.h>
+
 namespace danikk_space_engine
 {
 	/** @brief Creates and registers a faction-controlled soldier with the default loadout. */
@@ -16,7 +18,7 @@ namespace danikk_space_engine
 		const vec3& up, const vec3& forward, FactionId faction_id)
 	{
 		DSE_WATCH();
-		if(!world.world_body_data.isWorldBodyActive(body_id))
+		if(!world.getWorldBodyData().isWorldBodyActive(body_id))
 			formatFatalError("Cannot create NPC on an invalid WorldBody");
 
 		HumanState initial_state;
@@ -37,7 +39,7 @@ namespace danikk_space_engine
 		weapon_slot.is_equipped = true;
 		human.arm_pose = HumanArmPose::weapon_ready;
 
-		world.unit_system.registerAgent(human.id);
+		world.getUnitSystem().registerAgent(human.id);
 		return human.id;
 	}
 }

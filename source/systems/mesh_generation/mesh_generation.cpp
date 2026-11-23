@@ -15,6 +15,9 @@
 
 #include "internal.h"
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/planet/system.h>
+
 namespace danikk_space_engine
 {
 	MeshGenerationSystem::MeshGenerationSystem(World& world)
@@ -144,8 +147,8 @@ namespace danikk_space_engine
 	void MeshGenerationSystem::invalidateBodyDetailMesh(WorldBodyId world_body_id)
 	{
 		DSE_WATCH();
-		if(!world.world_body_data.isWorldBodyActive(world_body_id)) return;
-		WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
+		if(!world.getWorldBodyData().isWorldBodyActive(world_body_id)) return;
+		WorldBody& body = world.getWorldBodyData().getWorldBody(world_body_id);
 		body.detail_mesh_dirty = true;
 		body.detail_mesh_queued = false;
 		if(++body.detail_mesh_revision == 0) ++body.detail_mesh_revision;
@@ -155,14 +158,14 @@ namespace danikk_space_engine
 	void MeshGenerationSystem::collectBuildPartJobCandidates()
 	{
 		DSE_WATCH();
-		for(WorldBodyId world_body_id : world.world_body_data.getUsedWorldBodyIds())
+		for(WorldBodyId world_body_id : world.getWorldBodyData().getUsedWorldBodyIds())
 		{
-			WorldBody& body = world.world_body_data.getWorldBody(world_body_id);
+			WorldBody& body = world.getWorldBodyData().getWorldBody(world_body_id);
 			if(!body.detail_mesh_dirty && !body.detail_mesh_queued) continue;
 			if(body.detail_mesh_dirty)
 			{
 				if(body.detail_mesh.mesh != nullptr)
-					world.telemetry.mesh_generation_telemetry.recordMeshDeletion(
+					world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
 						MeshDeletionReason::detail_mesh_rebuild);
 				destroyMeshRenderData(body.detail_mesh);
 				body.detail_mesh_dirty = false;
@@ -187,14 +190,14 @@ namespace danikk_space_engine
 		if(tryTakeCompletedJob(generated) && generated.generation_id == generation_id
 			&& generated.source == MeshGenerationSource::planet_terrain_node)
 		{
-			world.planets.acceptGeneratedSurfaceNode(generated);
+			world.getPlanetSystem().acceptGeneratedSurfaceNode(generated);
 		}
 		else if(generated.generation_id == generation_id
 			&& generated.source == MeshGenerationSource::build_parts)
 		{
-			if(world.world_body_data.isWorldBodyActive(generated.world_body_id))
+			if(world.getWorldBodyData().isWorldBodyActive(generated.world_body_id))
 			{
-				WorldBody& body = world.world_body_data.getWorldBody(generated.world_body_id);
+				WorldBody& body = world.getWorldBodyData().getWorldBody(generated.world_body_id);
 				if(body.detail_mesh_revision == generated.source_revision)
 				{
 					createMeshRenderData(body.detail_mesh,
@@ -224,7 +227,7 @@ namespace danikk_space_engine
 			}
 		}
 
-		updateMeshGenerationJobs(generation_id, world.planets.buildMeshGenerationJobBuffer(
+		updateMeshGenerationJobs(generation_id, world.getPlanetSystem().buildMeshGenerationJobBuffer(
 			job_candidates, thread_pool.workerCount() * 2));
 	}
 }
@@ -336,7 +339,7 @@ namespace danikk_space_engine
 		const uint64 generation_nanoseconds = static_cast<uint64>(std::chrono::duration_cast<std::chrono::nanoseconds>(
 			std::chrono::steady_clock::now() - generation_start_time).count());
 		if(job.source == MeshGenerationSource::planet_terrain_node)
-			world.telemetry.mesh_generation_telemetry.recordPlanetMeshGeneration(
+			world.getTelemetrySystem().mesh_generation_telemetry.recordPlanetMeshGeneration(
 				mesh_generation_internal::getPlanetTerrainNodeLevel(job.node_width),
 				generation_succeeded ? job.triangle_point_indices.size() / 3 : 0,
 				generation_nanoseconds);
@@ -430,7 +433,7 @@ namespace danikk_space_engine
 			}
 		}
 		job_available.notify_all();
-		world.telemetry.mesh_generation_telemetry.setPlanetMeshQueueSnapshot(snapshot);
+		world.getTelemetrySystem().mesh_generation_telemetry.setPlanetMeshQueueSnapshot(snapshot);
 	}
 
 	bool MeshGenerationSystem::tryTakeCompletedJob(MeshGenerationJob& completed_job)

@@ -2,13 +2,15 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/systems/camera/camera.h>
+
 namespace danikk_space_engine
 {
 	/** @brief Draws active planet surface meshes directly from their owning octree nodes. */
 	void PlanetSystem::renderSurfaceNodes()
 	{
 		DSE_WATCH();
-		const glm::dvec3 camera_position = world.camera.getWorldPosition();
+		const glm::dvec3 camera_position = world.getCameraSystem().getWorldPosition();
 		for(const PlanetData& planet : planets)
 		{
 			for(const PlanetTerrainNode& node : planet.terrain_tree.nodes)

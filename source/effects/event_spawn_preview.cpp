@@ -3,6 +3,11 @@
 #include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	/** @brief Draws five blue human silhouettes using the exact placements used by the event. */
@@ -10,8 +15,8 @@ namespace danikk_space_engine
 	{
 		EventSpawnPlacement placements[5];
 		const uint8 placement_count = collectEventSpawnPlacements(world, hit, faction_id, placements);
-		if(!world.world_body_data.isWorldBodyActive(hit.body_id)) return;
-		const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
+		if(!world.getWorldBodyData().isWorldBodyActive(hit.body_id)) return;
+		const WorldBody& body = world.getWorldBodyData().getWorldBody(hit.body_id);
 		const vec4 preview_color(0.08f, 0.35f, 1.0f, 0.55f);
 		for(uint8 index = 0; index < placement_count; ++index)
 		{
@@ -41,7 +46,7 @@ namespace danikk_space_engine
 			const glm::dvec3 center_world = body.position + body.rotation
 				* (placement.feet_position + glm::dvec3(local_up * (height * 0.5f)));
 			const mat4 body_matrix = glm::translate(mat4(1.0f),
-				vec3(center_world - world.camera.getWorldPosition())) * orientation;
+				vec3(center_world - world.getCameraSystem().getWorldPosition())) * orientation;
 			const mat4 feet_matrix = body_matrix
 				* glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, -0.5f))
 				* glm::scale(mat4(1.0f), vec3(height));

@@ -7,6 +7,9 @@
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
+
 namespace danikk_space_engine
 {
 	using namespace collision_internal;
@@ -59,20 +62,20 @@ namespace danikk_space_engine
 			const BodyMassProperties& mass_properties,
 			const PlanetCollisionTarget& target)
 		{
-			const PlanetData& planet = world.planets.getPlanet(target.planet_id);
+			const PlanetData& planet = world.getPlanetSystem().getPlanet(target.planet_id);
 			const glm::dquat inverse_planet_rotation = glm::conjugate(planet.rotation);
 			DynamicArray<SurfaceContact> point_contacts;
 			size_t build_part_count = 0;
 			for(PointId point_id : moving_body.point_ids)
-				if(world.point_data.isPointActive(point_id))
-					for(PointComponentSlotId slot_id : world.point_data.getPoint(point_id).component_slot_ids)
-						if(world.point_data.isPointComponentSlotActive(slot_id)
-							&& world.point_data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
+				if(world.getPointData().isPointActive(point_id))
+					for(PointComponentSlotId slot_id : world.getPointData().getPoint(point_id).component_slot_ids)
+						if(world.getPointData().isPointComponentSlotActive(slot_id)
+							&& world.getPointData().getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
 							build_part_count++;
 			point_contacts.reserve(moving_body.point_ids.size() + build_part_count * 8);
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
-				return world.planets.getPlanetDensity(target.planet_id, position,
+				return world.getPlanetSystem().getPlanetDensity(target.planet_id, position,
 					PlanetTerrainMode::cave_field_with_edits);
 			};
 			constexpr double gradient_step = planet_voxel_size * 0.25;
@@ -80,21 +83,21 @@ namespace danikk_space_engine
 			local_points.reserve(moving_body.point_ids.size() + build_part_count * 8);
 			for(PointId point_id : moving_body.point_ids)
 			{
-				if(!world.point_data.isPointActive(point_id)) continue;
-				const Point& point = world.point_data.getPoint(point_id);
+				if(!world.getPointData().isPointActive(point_id)) continue;
+				const Point& point = world.getPointData().getPoint(point_id);
 				if(point.world_body_id != moving_body_id) continue;
 				local_points.push(point.body_local_position);
 			}
 			for(PointId point_id : moving_body.point_ids)
 			{
-				if(!world.point_data.isPointActive(point_id)) continue;
-				const Point& point = world.point_data.getPoint(point_id);
+				if(!world.getPointData().isPointActive(point_id)) continue;
+				const Point& point = world.getPointData().getPoint(point_id);
 				for(PointComponentSlotId slot_id : point.component_slot_ids)
 				{
-					if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-					const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
+					if(!world.getPointData().isPointComponentSlotActive(slot_id)) continue;
+					const PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
 					if(slot.type_id != PointComponentTypeId::build_part
-						|| !world.point_data.isPointActive(slot.point_id)) continue;
+						|| !world.getPointData().isPointActive(slot.point_id)) continue;
 					const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 					const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
 					const glm::dvec3 anchor = point.body_local_position;
@@ -210,7 +213,7 @@ namespace danikk_space_engine
 		{
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
-				return world.planets.getPlanetDensity(planet_id, position,
+				return world.getPlanetSystem().getPlanetDensity(planet_id, position,
 					PlanetTerrainMode::cave_field_with_edits);
 			};
 			penetration = sample_field(field_position) + collider_radius;
@@ -258,16 +261,16 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		DynamicArray<PlanetCollisionTarget> planets;
 
-		for(const PlanetData& planet : world.planets.getPlanets())
+		for(const PlanetData& planet : world.getPlanetSystem().getPlanets())
 		{
 			planets.push(PlanetCollisionTarget{planet.id});
 		}
 		if(planets.size() == 0) return;
 
-		for(WorldBodyId moving_body_id : world.world_body_data.getUsedWorldBodyIds())
+		for(WorldBodyId moving_body_id : world.getWorldBodyData().getUsedWorldBodyIds())
 		{
-			if(!world.world_body_data.isWorldBodyActive(moving_body_id)) continue;
-			WorldBody& moving_body = world.world_body_data.getWorldBody(moving_body_id);
+			if(!world.getWorldBodyData().isWorldBodyActive(moving_body_id)) continue;
+			WorldBody& moving_body = world.getWorldBodyData().getWorldBody(moving_body_id);
 			if(moving_body.planet_id != static_cast<PlanetId>(-1)) continue;
 			if(!hasSpatialPoints(moving_body)) continue;
 			const BodyMassProperties mass_properties = calculateMassProperties(moving_body);
@@ -275,11 +278,11 @@ namespace danikk_space_engine
 			bool has_surface_geometry = false;
 			for(PointId point_id : moving_body.point_ids)
 			{
-				if(!world.point_data.isPointActive(point_id)) continue;
-				for(PointComponentSlotId slot_id : world.point_data.getPoint(point_id).component_slot_ids)
+				if(!world.getPointData().isPointActive(point_id)) continue;
+				for(PointComponentSlotId slot_id : world.getPointData().getPoint(point_id).component_slot_ids)
 				{
-					if(world.point_data.isPointComponentSlotActive(slot_id)
-						&& world.point_data.getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
+					if(world.getPointData().isPointComponentSlotActive(slot_id)
+						&& world.getPointData().getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
 					{
 						has_surface_geometry = true;
 						break;
@@ -291,7 +294,7 @@ namespace danikk_space_engine
 			{
 				for(const PlanetCollisionTarget& target : planets)
 				{
-					const PlanetData& planet = world.planets.getPlanet(target.planet_id);
+					const PlanetData& planet = world.getPlanetSystem().getPlanet(target.planet_id);
 					const glm::dvec3 field_position = glm::conjugate(planet.rotation)
 						* (moving_body.position - planet.position);
 					glm::dvec3 local_outward(0.0);
@@ -307,7 +310,7 @@ namespace danikk_space_engine
 			}
 
 			for(const PlanetCollisionTarget& target : planets)
-				if(world.world_body_data.getWorldBody(moving_body_id).planet_id != target.planet_id)
+				if(world.getWorldBodyData().getWorldBody(moving_body_id).planet_id != target.planet_id)
 					collideBodySurfaceWithPlanet(world, moving_body_id, moving_body, mass_properties, target);
 		}
 	}

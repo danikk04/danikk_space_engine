@@ -7,6 +7,11 @@
 
 #include <cmath>
 
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/faction/faction.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -47,14 +52,14 @@ namespace danikk_space_engine
 				glm::max(step, (planet_settings.radius - core_clearance) * 0.25));
 			const auto density_at = [&](const glm::dvec3& position)
 			{
-				return world.planets.getPlanetDensity(planet_id, position,
+				return world.getPlanetSystem().getPlanetDensity(planet_id, position,
 					PlanetTerrainMode::cave_field_with_edits);
 			};
 
 			for(const glm::dvec3& direction : directions)
 			{
 				double consecutive_solid_depth = 0.0;
-				const double surface_radius = world.planets.getPlanetSurfaceRadius(
+				const double surface_radius = world.getPlanetSystem().getPlanetSurfaceRadius(
 					planet_id, direction, PlanetTerrainMode::heightmap_with_edits);
 				for(double depth = step; depth <= maximum_search_depth; depth += step)
 				{
@@ -88,31 +93,31 @@ namespace danikk_space_engine
 	 */
 	void startBaseScenario(World& world)
 	{
-		while(world.world_body_data.getUsedWorldBodyIds().size() > 0)
+		while(world.getWorldBodyData().getUsedWorldBodyIds().size() > 0)
 		{
-			const DynamicArray<WorldBodyId>& body_ids = world.world_body_data.getUsedWorldBodyIds();
+			const DynamicArray<WorldBodyId>& body_ids = world.getWorldBodyData().getUsedWorldBodyIds();
 			world.destroyWorldBody(body_ids[body_ids.size() - 1]);
 		}
-		world.point_data.clear();
-		world.world_body_data.clear();
-		world.factions.create(faction_definition_ids::celestial_body);
-		world.factions.create(faction_definition_ids::player);
-		world.factions.create(faction_definition_ids::pirates);
-		world.factions.setRelation(base_faction_ids::player, base_faction_ids::pirates,
+		world.getPointData().clear();
+		world.getWorldBodyData().clear();
+		world.getFactionSystem().create(faction_definition_ids::celestial_body);
+		world.getFactionSystem().create(faction_definition_ids::player);
+		world.getFactionSystem().create(faction_definition_ids::pirates);
+		world.getFactionSystem().setRelation(base_faction_ids::player, base_faction_ids::pirates,
 			{FactionRelationType::hostile, 0.0f});
 
-		const WorldBodyId planet_frame_id = world.world_body_data.createWorldBody();
-		world.world_body_data.getWorldBody(planet_frame_id).faction_id = base_faction_ids::celestial_body;
-		const PlanetSettings& planet_settings = world.planets.getPlanetSettings(planet_settings_ids::earth);
-		PlanetData& planet = world.planets.createPlanet(planet_settings_ids::earth);
-		WorldBody& planet_frame = world.world_body_data.getWorldBody(planet_frame_id);
+		const WorldBodyId planet_frame_id = world.getWorldBodyData().createWorldBody();
+		world.getWorldBodyData().getWorldBody(planet_frame_id).faction_id = base_faction_ids::celestial_body;
+		const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet_settings_ids::earth);
+		PlanetData& planet = world.getPlanetSystem().createPlanet(planet_settings_ids::earth);
+		WorldBody& planet_frame = world.getWorldBodyData().getWorldBody(planet_frame_id);
 		planet_frame.planet_id = planet.id;
 		planet_frame.position = planet.position;
 		planet_frame.rotation = planet.rotation;
 		constexpr double camera_altitude = 10.0;
 		const glm::dvec3 camera_direction(0.0, 0.0, 1.0);
 		glm::dvec3 camera_body_local_position = camera_direction
-			* (world.planets.getPlanetSurfaceRadius(planet.id, camera_direction,
+			* (world.getPlanetSystem().getPlanetSurfaceRadius(planet.id, camera_direction,
 				PlanetTerrainMode::heightmap_with_edits) + camera_altitude);
 		if(settings.default_camera_position == DefaultCameraPosition::ground
 			&& !findGroundCameraPosition(world, planet.id, planet_settings, camera_body_local_position))
@@ -120,8 +125,8 @@ namespace danikk_space_engine
 			danikk_framework::formatLogWarning(
 				"Unable to find solid underground camera position; spawning above the planet");
 		}
-		world.camera.bind(planet_frame_id, camera_body_local_position);
-		world.camera.rotation.y = -pi_half;
-		world.controller.reset();
+		world.getCameraSystem().bind(planet_frame_id, camera_body_local_position);
+		world.getCameraSystem().rotation.y = -pi_half;
+		world.getControllerSystem().reset();
 	}
 }

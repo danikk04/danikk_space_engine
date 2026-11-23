@@ -1,26 +1,13 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
-#include <danikk_space_engine/systems/environment/environment.h>
-#include <danikk_space_engine/systems/physics/physics.h>
+#include <danikk_space_engine/fwd.h>
+#include <danikk_space_engine/id.h>
 
-#include <danikk_space_engine/point.h>
-#include <danikk_space_engine/systems/camera/camera.h>
-#include <danikk_space_engine/systems/controller/controller.h>
-#include <danikk_space_engine/systems/component/component.h>
-#include <danikk_space_engine/world_body.h>
-#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
-#include <danikk_space_engine/systems/planet/system.h>
-#include <danikk_space_engine/systems/raycast/raycast.h>
-#include <danikk_space_engine/systems/save/system.h>
-#include <danikk_space_engine/systems/faction/faction.h>
-#include <danikk_space_engine/systems/unit/unit.h>
-#include <danikk_space_engine/systems/human/system.h>
-#include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <memory>
 
 namespace danikk_space_engine
 {
-
 	/**
 	 * @brief Coordinates world state, simulation updates, physics, and geometry queries.
 	 *
@@ -33,41 +20,56 @@ namespace danikk_space_engine
 	class World
 	{
 	public:
-		/** @brief Owns this world's CPU profiler and runtime telemetry. */
-		TelemetrySystem telemetry;
-		/** @brief Owns point resources and their component slots. */
-		PointData point_data;
-		/** @brief Owns WorldBody resources and their component slots. */
-		WorldBodyData world_body_data;
-		/** @brief Owns asynchronous terrain-node and body-detail mesh requests. */
-		MeshGenerationSystem mesh_generation;
-		/** @brief Samples global gravity and other spatial environment fields. */
-		EnvironmentSystem environment;
-		/** @brief Integrates body motion and resolves physical contacts after component ticks. */
-		PhysicsSystem physics;
-		/** @brief Processes local player input and stores its selected point and interaction state. */
-		ControllerSystem controller;
-		/** @brief Owns camera state, input, point binding, and projection. */
-		CameraSystem camera;
-		/** @brief Dispatches tick and frame callbacks for WorldBody and point components. */
-		ComponentSystem components;
-		/** @brief Owns planet data, terrain queries, edits, and terrain-node streaming. */
-		PlanetSystem planets;
-		/** @brief Performs terrain and BuildPart ray queries. */
-		RaycastSystem raycasts;
-		/** @brief Owns world-save paths, formats, and persistent data serialization. */
-		SaveSystem saves;
-		/** @brief Owns this world's faction instances and diplomatic relations. */
-		FactionSystem factions;
-		/** @brief Owns per-faction unit groups, tactical memory, and orders. */
-		UnitSystem unit_system;
-		/** @brief Owns human entities, their positions, health, and inventory. */
-		HumanSystem humans;
-
 		/** @brief Constructs subsystems bound to this World instance. */
 		World();
+		~World();
 		World(const World&) = delete;
 		World& operator=(const World&) = delete;
+
+		/** @brief Returns the telemetry system owned by this world. */
+		TelemetrySystem& getTelemetrySystem();
+		const TelemetrySystem& getTelemetrySystem() const;
+		/** @brief Returns the point and WorldBody data containers. */
+		PointData& getPointData();
+		const PointData& getPointData() const;
+		WorldBodyData& getWorldBodyData();
+		const WorldBodyData& getWorldBodyData() const;
+		/** @brief Returns the asynchronous mesh generation system. */
+		MeshGenerationSystem& getMeshGenerationSystem();
+		const MeshGenerationSystem& getMeshGenerationSystem() const;
+		/** @brief Returns the environment simulation system. */
+		EnvironmentSystem& getEnvironmentSystem();
+		const EnvironmentSystem& getEnvironmentSystem() const;
+		/** @brief Returns the physics simulation system. */
+		PhysicsSystem& getPhysicsSystem();
+		const PhysicsSystem& getPhysicsSystem() const;
+		/** @brief Returns the local player controller system. */
+		ControllerSystem& getControllerSystem();
+		const ControllerSystem& getControllerSystem() const;
+		/** @brief Returns the camera system. */
+		CameraSystem& getCameraSystem();
+		const CameraSystem& getCameraSystem() const;
+		/** @brief Returns the component dispatch system. */
+		ComponentSystem& getComponentSystem();
+		const ComponentSystem& getComponentSystem() const;
+		/** @brief Returns the planet and terrain system. */
+		PlanetSystem& getPlanetSystem();
+		const PlanetSystem& getPlanetSystem() const;
+		/** @brief Returns the raycast system. */
+		RaycastSystem& getRaycastSystem();
+		const RaycastSystem& getRaycastSystem() const;
+		/** @brief Returns the save system. */
+		SaveSystem& getSaveSystem();
+		const SaveSystem& getSaveSystem() const;
+		/** @brief Returns the faction system. */
+		FactionSystem& getFactionSystem();
+		const FactionSystem& getFactionSystem() const;
+		/** @brief Returns the unit system. */
+		UnitSystem& getUnitSystem();
+		const UnitSystem& getUnitSystem() const;
+		/** @brief Returns the human entity system. */
+		HumanSystem& getHumanSystem();
+		const HumanSystem& getHumanSystem() const;
 
 		/**
 		 * @brief Executes current unit orders, updates UnitGroup decisions, then runs world physics.
@@ -124,6 +126,8 @@ namespace danikk_space_engine
 		/** @brief Destroys all body-owned points before releasing the body and planet records. */
 		void destroyWorldBody(WorldBodyId body_id);
 
+	private:
+		std::unique_ptr<WorldSystemContainer> system_container;
 	};
 
 }

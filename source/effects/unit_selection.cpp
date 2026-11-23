@@ -10,6 +10,11 @@
 #include <danikk_engine/mesh.h>
 #include <danikk_engine/texture_methods.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/raycast/raycast.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -57,28 +62,28 @@ namespace danikk_space_engine
 	/** @copydoc drawUnitSelectionIndicators */
 	void drawUnitSelectionIndicators(World& world)
 	{
-		const ControllerSystem& controller = world.controller;
+		const ControllerSystem& controller = world.getControllerSystem();
 		if(controller.selected_unit_refs.size() == 0) return;
 		initializeSelectionRingMesh();
 		static_asset_collection.bullet_tracer_shader.use();
-		const CameraSystem& camera = world.camera;
+		const CameraSystem& camera = world.getCameraSystem();
 		setViewMatrix(glm::lookAt(vec3(0.0f), camera.getFront(), camera.getUp()));
 		setProjectionMatrix(glm::perspective(glm::radians(camera.vertical_fov_degrees),
 			screen_ratio_gz, camera.near_clip_distance, camera.far_clip_distance));
 		white_texture.bind();
 		setDrawColor(vec4(1.0f));
-		const glm::dvec3 camera_position = world.camera.getWorldPosition();
+		const glm::dvec3 camera_position = world.getCameraSystem().getWorldPosition();
 
 		for(const SelectedUnitRef& reference : controller.selected_unit_refs)
 		{
-			const HumanData* data = world.humans.findHuman(reference.human_id);
+			const HumanData* data = world.getHumanSystem().findHuman(reference.human_id);
 			if(data == nullptr || data->generation_id != reference.generation_id
-				|| !world.world_body_data.isWorldBodyActive(data->world_body_id)) continue;
+				|| !world.getWorldBodyData().isWorldBodyActive(data->world_body_id)) continue;
 			const HumanState& human = *data;
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 
-			const WorldBody& body = world.world_body_data.getWorldBody(data->world_body_id);
-			const glm::dvec3 center = world.humans.getWorldPosition(*data);
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(data->world_body_id);
+			const glm::dvec3 center = world.getHumanSystem().getWorldPosition(*data);
 			glm::dvec3 body_up = body.rotation * glm::dvec3(human.up);
 			if(glm::length(body_up) <= 1e-9) body_up = body.rotation * glm::dvec3(human.ground_normal);
 			if(glm::length(body_up) <= 1e-9) body_up = glm::dvec3(0.0, 0.0, 1.0);
@@ -88,7 +93,7 @@ namespace danikk_space_engine
 			const glm::dvec3 feet = center - body_up * half_height;
 			// Query the ground for every selected unit so stale grounded state cannot leave a ring floating in the air.
 			const glm::dvec3 ray_origin = center + body_up * 0.1;
-			const RaycastHit ground_hit = world.raycasts.castBody(data->world_body_id, ray_origin,
+			const RaycastHit ground_hit = world.getRaycastSystem().castBody(data->world_body_id, ray_origin,
 				vec3(-body_up), static_cast<float>(half_height + maximum_ground_gap + 0.25));
 			if(!ground_hit.hit) continue;
 			glm::dvec3 ground_normal = glm::dvec3(ground_hit.normal);

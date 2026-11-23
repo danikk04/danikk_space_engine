@@ -9,6 +9,10 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/save/system.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -47,7 +51,7 @@ namespace danikk_space_engine
 		planet->pending_terrain_dirty_regions.push(dirty_region);
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
-		world.saves.savePlanetTerrainEdits(planet_id);
+		world.getSaveSystem().savePlanetTerrainEdits(planet_id);
 		return true;
 	}
 
@@ -71,13 +75,13 @@ namespace danikk_space_engine
 		planet.generation_id = next_generation_id++;
 		if(next_generation_id == 0) next_generation_id = 1;
 		planets.pushMove(planet);
-		world.saves.loadPlanetTerrainEdits(planet.id);
+		world.getSaveSystem().loadPlanetTerrainEdits(planet.id);
 		return planets[planets.size() - 1];
 	}
 
 	void PlanetSystem::cancelQueuedJobsForPlanet(const PlanetData& planet)
 	{
-		world.mesh_generation.cancelPlanetJobs(planet.id, planet.generation_id);
+		world.getMeshGenerationSystem().cancelPlanetJobs(planet.id, planet.generation_id);
 	}
 
 	void PlanetSystem::destroyPlanet(PlanetId planet_id)
@@ -158,16 +162,16 @@ namespace danikk_space_engine
 	void PlanetSystem::update()
 	{
 		DSE_WATCH();
-		world.mesh_generation.beginJobCandidateFrame();
+		world.getMeshGenerationSystem().beginJobCandidateFrame();
 		for(PlanetData& planet : planets) updatePlanet(planet);
 	}
 
 	void PlanetSystem::updatePlanet(PlanetData& planet)
 	{
 		DSE_WATCH();
-		if(!world.camera.isActive()) return;
+		if(!world.getCameraSystem().isActive()) return;
 		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
-			* (world.camera.getWorldPosition() - planet.position);
+			* (world.getCameraSystem().getWorldPosition() - planet.position);
 		const double surface_height = getPlanetHeightAboveSurface(planet.id, camera_position);
 		updatePlanetTerrainTree(planet, camera_position, surface_height);
 	}
@@ -210,7 +214,7 @@ namespace danikk_space_engine
 			danikk_framework::formatLogInfo(
 				"Planet terrain edit accepted: planet=% revision=% center=(%,%,%) radius=% material=%",
 				planet_id, planet->terrain_revision, center.x, center.y, center.z, radius, material_id);
-		world.saves.savePlanetTerrainEdits(planet_id);
+		world.getSaveSystem().savePlanetTerrainEdits(planet_id);
 		return true;
 	}
 

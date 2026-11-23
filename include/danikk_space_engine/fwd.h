@@ -17,6 +17,15 @@ namespace danikk_space_engine
 	 * @brief Coordinates world state, simulation updates, physics, and geometry queries.
 	 */
 	class World;
+	struct WorldSystemContainer;
+	class TelemetrySystem;
+	class PointData;
+	class WorldBodyData;
+	class MeshGenerationSystem;
+	class ComponentSystem;
+	class RaycastSystem;
+	class FactionSystem;
+	class UnitSystem;
 
 
 	/** @brief Runtime configuration and streaming state for one planet. */

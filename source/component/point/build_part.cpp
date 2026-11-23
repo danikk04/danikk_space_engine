@@ -6,6 +6,9 @@
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -102,13 +105,13 @@ namespace danikk_space_engine
 	void frameBuildPartComponent(PointComponentSlot& slot, World& world)
 	{
 		DSE_WATCH();
-		if(!world.point_data.isPointActive(slot.point_id)
-			|| !world.world_body_data.isWorldBodyActive(slot.world_body_id))
+		if(!world.getPointData().isPointActive(slot.point_id)
+			|| !world.getWorldBodyData().isWorldBodyActive(slot.world_body_id))
 		{
 			danikk_engine::formatFatalError("BuildPart component references an invalid anchor");
 		}
 		const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
-		if(world.world_body_data.getWorldBody(slot.world_body_id).detail_mesh.mesh != nullptr) return;
+		if(world.getWorldBodyData().getWorldBody(slot.world_body_id).detail_mesh.mesh != nullptr) return;
 		const mat4 world_matrix = world.getPointWorldMatrix(slot.point_id)
 			* part.rotation
 			* glm::scale(mat4(1.0f), part.size);

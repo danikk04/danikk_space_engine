@@ -118,7 +118,7 @@ namespace danikk_space_engine
 		{
 			if(node.mesh.mesh == nullptr) continue;
 			destroyMeshRenderData(node.mesh);
-			world.telemetry.mesh_generation_telemetry.recordMeshDeletion(
+			world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
 				MeshDeletionReason::tree_node_limit);
 		}
 		tree.clear();

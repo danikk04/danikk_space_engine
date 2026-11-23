@@ -13,6 +13,11 @@
 
 #include "internal.h"
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/environment/environment.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -45,11 +50,11 @@ namespace danikk_space_engine
 	void tickHumanData(HumanData& human, World& world)
 	{
 		DSE_WATCH();
-		if(!world.world_body_data.isWorldBodyActive(human.world_body_id))
+		if(!world.getWorldBodyData().isWorldBodyActive(human.world_body_id))
 			formatFatalError("Human % references an invalid WorldBody", human.id);
-		WorldBody& body = world.world_body_data.getWorldBody(human.world_body_id);
-		const glm::dvec3 world_position = world.humans.getWorldPosition(human);
-		const glm::dvec3 gravity_world = world.environment.sampleGravityAt(world_position);
+		WorldBody& body = world.getWorldBodyData().getWorldBody(human.world_body_id);
+		const glm::dvec3 world_position = world.getHumanSystem().getWorldPosition(human);
+		const glm::dvec3 gravity_world = world.getEnvironmentSystem().sampleGravityAt(world_position);
 		const double gravity_magnitude = glm::length(gravity_world);
 		const float gravity = static_cast<float>(gravity_magnitude);
 		if(gravity_magnitude > 1e-8)
@@ -110,8 +115,8 @@ namespace danikk_space_engine
 	void frameHumanData(const HumanData& human, World& world)
 	{
 		DSE_WATCH();
-		if(!world.world_body_data.isWorldBodyActive(human.world_body_id)) return;
-		const WorldBody& body = world.world_body_data.getWorldBody(human.world_body_id);
+		if(!world.getWorldBodyData().isWorldBodyActive(human.world_body_id)) return;
+		const WorldBody& body = world.getWorldBodyData().getWorldBody(human.world_body_id);
 		vec3 local_up = human.body_pose == HumanBodyPose::standing ? human.up : human.ground_normal;
 		if(glm::length(local_up) <= 1e-6f) local_up = human.up;
 		local_up = glm::normalize(local_up);
@@ -134,8 +139,8 @@ namespace danikk_space_engine
 		orientation[0] = vec4(right, 0);
 		orientation[1] = vec4(forward, 0);
 		orientation[2] = vec4(up, 0);
-		const glm::dvec3 position = world.humans.getWorldPosition(human);
-		mat4 body_matrix = glm::translate(mat4(1.0f), vec3(position - world.camera.getWorldPosition()))
+		const glm::dvec3 position = world.getHumanSystem().getWorldPosition(human);
+		mat4 body_matrix = glm::translate(mat4(1.0f), vec3(position - world.getCameraSystem().getWorldPosition()))
 			* orientation;
 		if(human.body_pose != HumanBodyPose::standing)
 		{

@@ -10,6 +10,8 @@
 
 #include "internal.h"
 
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine::human_internal
 {
 		constexpr float minimum_ground_normal_dot = 0.2f;
@@ -40,7 +42,7 @@ namespace danikk_space_engine::human_internal
 			const glm::dvec3 bottom_center = proposed - glm::dvec3(up * static_cast<float>(half_axis));
 			const auto densityAtOffset = [&](double offset)
 			{
-				return world.planets.getPlanetDensity(planet_id,
+				return world.getPlanetSystem().getPlanetDensity(planet_id,
 					bottom_center + glm::dvec3(up) * offset,
 					PlanetTerrainMode::cave_field_with_edits);
 			};
@@ -69,9 +71,9 @@ namespace danikk_space_engine::human_internal
 			{
 				glm::dvec3 offset(0.0);
 				offset[axis] = gradient_step;
-				gradient[axis] = (world.planets.getPlanetDensity(planet_id,
+				gradient[axis] = (world.getPlanetSystem().getPlanetDensity(planet_id,
 					contact_position + offset, PlanetTerrainMode::cave_field_with_edits)
-					- world.planets.getPlanetDensity(planet_id,
+					- world.getPlanetSystem().getPlanetDensity(planet_id,
 						contact_position - offset, PlanetTerrainMode::cave_field_with_edits))
 					/ (2.0 * gradient_step);
 			}
@@ -112,7 +114,7 @@ namespace danikk_space_engine::human_internal
 			const glm::dvec3 foot = body.position
 				+ body.rotation * proposed_foot;
 			const vec3 world_up = vec3(body.rotation * glm::dvec3(up));
-			const RaycastHit hit = world.raycasts.castBody(body_id,
+			const RaycastHit hit = world.getRaycastSystem().castBody(body_id,
 				foot + glm::dvec3(world_up) * static_cast<double>(step_height),
 				-world_up, step_height + maximum_drop);
 			if(!hit.hit || glm::dot(hit.normal, world_up) < minimum_ground_normal_dot) return false;
@@ -154,7 +156,7 @@ namespace danikk_space_engine::human_internal
 			}
 
 			const PlanetId planet_id = body.planet_id;
-			const PlanetData* planet = world.planets.findPlanet(planet_id);
+			const PlanetData* planet = world.getPlanetSystem().findPlanet(planet_id);
 			const float height = human.getHeight();
 			const bool cached_support = planet != nullptr && human.grounded && human.vertical_speed == 0.0f
 				&& cache.planet_generation_id == planet->generation_id

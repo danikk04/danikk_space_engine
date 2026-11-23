@@ -10,14 +10,18 @@
 #include <danikk_engine/texture_methods.h>
 #include <danikk_framework/log.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	namespace
 	{
 		void drawHumanPlacementEffect(World& world, const RaycastHit& hit, HumanSkinId skin_id)
 		{
-			if(!hit.hit || !world.world_body_data.isWorldBodyActive(hit.body_id)) return;
-			const WorldBody& body = world.world_body_data.getWorldBody(hit.body_id);
+			if(!hit.hit || !world.getWorldBodyData().isWorldBodyActive(hit.body_id)) return;
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(hit.body_id);
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_position = inverse_rotation * (hit.position - body.position);
 			vec3 up = vec3(inverse_rotation * glm::dvec3(hit.normal));
@@ -31,7 +35,7 @@ namespace danikk_space_engine
 			const vec3 local_normal = vec3(inverse_rotation * glm::dvec3(hit.normal));
 			if(glm::dot(up, local_normal) < 0.5f) return;
 			const vec3 forward = vec3(inverse_rotation
-				* (world.camera.getWorldPosition() - hit.position));
+				* (world.getCameraSystem().getWorldPosition() - hit.position));
 
 			HumanState preview_human;
 			preview_human.up = up;
@@ -52,7 +56,7 @@ namespace danikk_space_engine
 			orientation[1] = glm::vec4(world_forward, 0.0);
 			orientation[2] = glm::vec4(world_up, 0.0);
 			const mat4 body_matrix = glm::translate(mat4(1.0f),
-				vec3(center_world - world.camera.getWorldPosition())) * orientation;
+				vec3(center_world - world.getCameraSystem().getWorldPosition())) * orientation;
 			const mat4 feet_matrix = body_matrix
 				* glm::translate(mat4(1.0f), vec3(0.0f, 0.0f, -0.5f))
 				* glm::scale(mat4(1.0f), vec3(height));
@@ -97,7 +101,7 @@ namespace danikk_space_engine
 	/** @brief Returns whether local control is enabled and the camera remains active. */
 	bool ControllerSystem::controls() const
 	{
-		return is_bound && world.camera.isActive();
+		return is_bound && world.getCameraSystem().isActive();
 	}
 
 	/** @brief Releases world ownership and transient selections before the world is destroyed. */
@@ -163,10 +167,10 @@ namespace danikk_space_engine
 		if(effect == nullptr) return;
 
 		static_asset_collection.base3d_shader.use(true);
-		setViewMatrix(glm::lookAt(vec3(0.0f), world.camera.getFront(), world.camera.getUp()));
-		setProjectionMatrix(glm::perspective(glm::radians(world.camera.vertical_fov_degrees),
-			screen_ratio_gz, world.camera.near_clip_distance, world.camera.far_clip_distance));
-		const RaycastHit hit = world.raycasts.castFromCamera();
+		setViewMatrix(glm::lookAt(vec3(0.0f), world.getCameraSystem().getFront(), world.getCameraSystem().getUp()));
+		setProjectionMatrix(glm::perspective(glm::radians(world.getCameraSystem().vertical_fov_degrees),
+			screen_ratio_gz, world.getCameraSystem().near_clip_distance, world.getCameraSystem().far_clip_distance));
+		const RaycastHit hit = world.getRaycastSystem().castFromCamera();
 		effect(world, *this, hit);
 	}
 }

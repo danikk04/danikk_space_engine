@@ -10,6 +10,9 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/item/item.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine::unit_system_internal
 {
 	namespace
@@ -19,8 +22,8 @@ namespace danikk_space_engine::unit_system_internal
 		{
 			DSE_WATCH();
 			const float dt = glm::max(getTargetFrameDelay(), 0.0f);
-			const WorldBody& body = world.world_body_data.getWorldBody(data.world_body_id);
-			const glm::dvec3 own_position = world.humans.getWorldPosition(data);
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(data.world_body_id);
+			const glm::dvec3 own_position = world.getHumanSystem().getWorldPosition(data);
 			human.desired_velocity = vec3(0.0f);
 			if(agent.order.has_move_target)
 			{

@@ -74,7 +74,7 @@ namespace danikk_space_engine
 		{
 			if(node.mesh.mesh == nullptr) continue;
 			destroyMeshRenderData(node.mesh);
-			world.telemetry.mesh_generation_telemetry.recordMeshDeletion(reason);
+			world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(reason);
 		}
 		planet.terrain_tree.clear();
 	}

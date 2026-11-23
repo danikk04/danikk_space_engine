@@ -8,6 +8,8 @@
 
 #include <danikk_engine/danikk_engine.h>
 
+#include <danikk_space_engine/systems/planet/system.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -75,11 +77,11 @@ namespace danikk_space_engine
 		 * @param job Node bounds, origin, generator settings, and output arrays.
 		 * The field is sampled at every lattice corner. Each lattice cube is split
 		 * into six tetrahedra; sign-changing tetrahedron edges are refined against
-		 * the original scalar field by bisection and cached by an unordered endpoint key so adjacent
-		 * tetrahedra share vertices. Tetrahedron cases explicitly connect their
-		 * three- or four-vertex intersections, and triangles are wound from solid
-		 * toward air. Terrain samples are read directly from World; this helper creates
-		 * no GPU resources.
+		 * the original scalar field by bisection and cached by an unordered endpoint
+		 * key so adjacent tetrahedra share vertices. Tetrahedron cases explicitly
+		 * connect their three- or four-vertex intersections, and triangles are wound
+		 * from solid toward air. Terrain samples are read directly from World; this
+		 * helper creates no GPU resources.
 		 */
 		void generatePlanetTerrainNodeMarchingTetrahedra(World& world, MeshGenerationJob& job)
 		{
@@ -106,7 +108,7 @@ namespace danikk_space_engine
 					for(size_t x = 0; x < points_per_axis; x++)
 					{
 						const size_t point_index = pointId(x, y, z);
-						densities[point_index] = world.planets.getPlanetDensity(
+						densities[point_index] = world.getPlanetSystem().getPlanetDensity(
 							job.planet_id, pointPosition(x, y, z),
 							job.surface_only
 								? PlanetTerrainMode::heightmap_with_edits
@@ -116,9 +118,9 @@ namespace danikk_space_engine
 			}
 
 			const size_t cell_count = cells_per_axis * cells_per_axis * cells_per_axis;
-		// The tetrahedral split introduces fewer than 20 distinct edges per cell.
-		// Keep the open-addressed table below a roughly 60% load instead of reserving 64 slots per cell.
-		const size_t edge_cache_size = nextPowerOfTwo(std::max<size_t>(64, cell_count * 32));
+			// The tetrahedral split introduces fewer than 20 distinct edges per cell.
+			// Keep the open-addressed table below a roughly 60% load instead of reserving 64 slots per cell.
+			const size_t edge_cache_size = nextPowerOfTwo(std::max<size_t>(64, cell_count * 32));
 			DynamicArray<uint64> edge_keys;
 			edge_keys.resize(edge_cache_size, empty_edge_key);
 			DynamicArray<uint32> edge_values;
@@ -146,7 +148,7 @@ namespace danikk_space_engine
 					std::abs(density_delta) > 1e-12 ? first.density / density_delta : 0.5,
 					0.0, 1.0);
 				glm::dvec3 position = glm::mix(first.position, second.position, interpolation);
-				if(world.planets.getPlanetDensity(job.planet_id, position,
+				if(world.getPlanetSystem().getPlanetDensity(job.planet_id, position,
 					job.surface_only ? PlanetTerrainMode::heightmap_with_edits
 						: PlanetTerrainMode::cave_field_with_edits) < 0.0)
 				{
@@ -155,7 +157,7 @@ namespace danikk_space_engine
 					for(uint8 iteration = 0; iteration < 6; ++iteration)
 					{
 						const glm::dvec3 midpoint = (inside + outside) * 0.5;
-						if(world.planets.getPlanetDensity(job.planet_id, midpoint,
+						if(world.getPlanetSystem().getPlanetDensity(job.planet_id, midpoint,
 							job.surface_only ? PlanetTerrainMode::heightmap_with_edits
 								: PlanetTerrainMode::cave_field_with_edits) >= 0.0)
 							inside = midpoint;

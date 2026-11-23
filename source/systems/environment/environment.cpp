@@ -50,9 +50,9 @@ namespace danikk_space_engine
 	{
 		glm::dvec3 gravity(0.0);
 
-		for(const PlanetData& planet : world.planets.getPlanets())
+		for(const PlanetData& planet : world.getPlanetSystem().getPlanets())
 		{
-			const PlanetSettings& settings = world.planets.getPlanetSettings(planet.settings_id);
+			const PlanetSettings& settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
 			if(settings.surface_gravity <= 0.0 || settings.radius <= 0.0) continue;
 
 				const glm::dvec3 toward_planet = planet.position - world_position;

@@ -8,6 +8,12 @@
 
 #include <cmath>
 
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/physics/physics.h>
+
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -28,7 +34,7 @@ namespace danikk_space_engine
 		{
 			const BuildPartPlacement placement = getBuildPartPlacement(world, hit, shape, size, rotation_step);
 			if(placement.body_id != static_cast<WorldBodyId>(-1)
-				&& !world.physics.isBuildPartPlacementClear(placement.body_id, shape,
+				&& !world.getPhysicsSystem().isBuildPartPlacementClear(placement.body_id, shape,
 					placement.world_position, placement.body_local_rotation, size))
 				return false;
 
@@ -38,16 +44,16 @@ namespace danikk_space_engine
 
 			if(body_id == static_cast<WorldBodyId>(-1))
 			{
-				body_id = world.world_body_data.createWorldBody();
-				WorldBody& body = world.world_body_data.getWorldBody(body_id);
+				body_id = world.getWorldBodyData().createWorldBody();
+				WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
 				body.faction_id = base_faction_ids::player;
 				body.position = anchor_world_position;
 				body.mass = 1.0;
 				body.collision_radius = 0.0;
 			}
 
-			WorldBody& body = world.world_body_data.getWorldBody(body_id);
-			const PointId point_id = world.point_data.createPoint();
+			WorldBody& body = world.getWorldBodyData().getWorldBody(body_id);
+			const PointId point_id = world.getPointData().createPoint();
 			const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 anchor_body_position = inverse_body_rotation
 				* (anchor_world_position - body.position);
@@ -57,7 +63,7 @@ namespace danikk_space_engine
 			part.size = size;
 			part.parent_slot_id = parent_slot_id;
 			part.rotation = placement.body_local_rotation;
-			const PointComponentSlotId part_slot_id = world.point_data.createPointComponentSlot(
+			const PointComponentSlotId part_slot_id = world.getPointData().createPointComponentSlot(
 				point_id, PointComponentTypeId::build_part, &part);
 			world.attachPointComponentToBody(body_id, point_id, part_slot_id, anchor_body_position);
 			double shape_radius = 0.0;

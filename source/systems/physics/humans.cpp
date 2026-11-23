@@ -8,6 +8,11 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/raycast/raycast.h>
+#include <danikk_space_engine/systems/unit/unit.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine
 {
 	namespace
@@ -43,18 +48,18 @@ namespace danikk_space_engine
 		/** @brief Builds one collider on the stack from an active human component slot. */
 		bool getHumanCollider(World& world, HumanId human_id, HumanCollider& result)
 		{
-			HumanData* data = world.humans.findHuman(human_id);
-			if(data == nullptr || !world.world_body_data.isWorldBodyActive(data->world_body_id)) return false;
+			HumanData* data = world.getHumanSystem().findHuman(human_id);
+			if(data == nullptr || !world.getWorldBodyData().isWorldBodyActive(data->world_body_id)) return false;
 			HumanState& component = *data;
 			if(component.hasDeathTimestamp()) return false;
 			if(data->damageable.getHealth() <= 0.0f) return false;
 			const double height = component.getHeight();
 			if(height <= 0.0) return false;
 
-			const WorldBody& body = world.world_body_data.getWorldBody(data->world_body_id);
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(data->world_body_id);
 			const glm::dvec3 up = glm::normalize(body.rotation * glm::dvec3(glm::normalize(component.up)));
 			const double radius = height * 0.14;
-			const glm::dvec3 center = world.humans.getWorldPosition(*data);
+			const glm::dvec3 center = world.getHumanSystem().getWorldPosition(*data);
 			const double half_axis = height * 0.5 - radius;
 			result = HumanCollider{
 				data->id,
@@ -166,7 +171,7 @@ namespace danikk_space_engine
 			const glm::dvec3 foot_position = human.center - human.up * (human.height * 0.5);
 			constexpr double probe_height = 1.0;
 			constexpr double maximum_lift = 1.0;
-			const RaycastHit hit = world.raycasts.castBody(
+			const RaycastHit hit = world.getRaycastSystem().castBody(
 				human.body_id,
 				foot_position + human.up * probe_height,
 				vec3(-human.up),
@@ -287,12 +292,12 @@ namespace danikk_space_engine
 		DynamicArray<WorldBodyId> human_body_ids;
 		bool has_multiple_bodies = false;
 		WorldBodyId first_human_body_id = static_cast<WorldBodyId>(-1);
-		world.unit_system.collectHumanIds(human_slot_ids, human_body_ids);
+		world.getUnitSystem().collectHumanIds(human_slot_ids, human_body_ids);
 		for(size_t index = 0; index < human_slot_ids.size(); ++index)
 		{
 			const HumanId slot_id = human_slot_ids[index];
-			HumanData* data = world.humans.findHuman(slot_id);
-			if(data == nullptr || !world.world_body_data.isWorldBodyActive(data->world_body_id)) continue;
+			HumanData* data = world.getHumanSystem().findHuman(slot_id);
+			if(data == nullptr || !world.getWorldBodyData().isWorldBodyActive(data->world_body_id)) continue;
 			if(first_human_body_id == static_cast<WorldBodyId>(-1))
 				first_human_body_id = human_body_ids[index];
 			else has_multiple_bodies |= human_body_ids[index] != first_human_body_id;
@@ -310,10 +315,10 @@ namespace danikk_space_engine
 				const HumanId first_slot_id = human_slot_ids[first_index];
 				HumanCollider first;
 				if(!getHumanCollider(world, first_slot_id, first)) continue;
-				const WorldBody& first_body = world.world_body_data.getWorldBody(first.body_id);
+				const WorldBody& first_body = world.getWorldBodyData().getWorldBody(first.body_id);
 				const glm::dvec3 first_local_center = glm::conjugate(first_body.rotation)
 					* (first.center - first_body.position);
-				world.unit_system.collectNearbyHumanIds(first.body_id, first_local_center,
+				world.getUnitSystem().collectNearbyHumanIds(first.body_id, first_local_center,
 					broadphase_half_extent, nearby_slot_ids);
 			for(HumanId second_slot_id : nearby_slot_ids)
 				{
@@ -334,7 +339,7 @@ namespace danikk_space_engine
 
 		for(HumanId slot_id : human_slot_ids)
 		{
-			HumanData* human = world.humans.findHuman(slot_id);
+			HumanData* human = world.getHumanSystem().findHuman(slot_id);
 			if(human == nullptr || !human->displaced_by_human_collision) continue;
 			HumanCollider collider;
 			if(getHumanCollider(world, slot_id, collider)) restoreHumanGroundClearance(world, collider);

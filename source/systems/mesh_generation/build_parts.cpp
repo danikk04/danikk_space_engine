@@ -5,23 +5,26 @@
 
 #include "internal.h"
 
+#include <danikk_space_engine/point.h>
+#include <danikk_space_engine/world_body.h>
+
 namespace danikk_space_engine::mesh_generation_internal
 {
 	/** @brief Reads a body's BuildPart components and combines them into a body-local mesh. */
 	void generateBuildPartMesh(World& world, MeshGenerationJob& job)
 	{
-		if(!world.world_body_data.isWorldBodyActive(job.world_body_id)) return;
-		const WorldBody& body = world.world_body_data.getWorldBody(job.world_body_id);
+		if(!world.getWorldBodyData().isWorldBodyActive(job.world_body_id)) return;
+		const WorldBody& body = world.getWorldBodyData().getWorldBody(job.world_body_id);
 		size_t vertex_count = 0;
 		size_t index_count = 0;
 		bool has_mesh_origin = false;
 		for(PointId point_id : body.point_ids)
 		{
-			if(!world.point_data.isPointActive(point_id)) continue;
-			for(PointComponentSlotId slot_id : world.point_data.getPoint(point_id).component_slot_ids)
+			if(!world.getPointData().isPointActive(point_id)) continue;
+			for(PointComponentSlotId slot_id : world.getPointData().getPoint(point_id).component_slot_ids)
 			{
-				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
+				if(!world.getPointData().isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
 				if(slot.type_id != PointComponentTypeId::build_part) continue;
 				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
@@ -35,12 +38,12 @@ namespace danikk_space_engine::mesh_generation_internal
 
 		for(PointId point_id : body.point_ids)
 		{
-			if(!world.point_data.isPointActive(point_id)) continue;
-			const Point& point = world.point_data.getPoint(point_id);
+			if(!world.getPointData().isPointActive(point_id)) continue;
+			const Point& point = world.getPointData().getPoint(point_id);
 			for(PointComponentSlotId slot_id : point.component_slot_ids)
 			{
-				if(!world.point_data.isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.point_data.getPointComponentSlot(slot_id);
+				if(!world.getPointData().isPointComponentSlotActive(slot_id)) continue;
+				const PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
 				if(slot.type_id != PointComponentTypeId::build_part) continue;
 				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);

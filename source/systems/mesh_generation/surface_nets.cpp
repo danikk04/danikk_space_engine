@@ -4,6 +4,8 @@
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 
+#include <danikk_space_engine/systems/planet/system.h>
+
 namespace danikk_space_engine::mesh_generation_internal
 {
 	/**
@@ -46,7 +48,7 @@ namespace danikk_space_engine::mesh_generation_internal
 		for(int z = -1; z <= static_cast<int>(cells_per_axis) + 1; ++z)
 			for(int y = -1; y <= static_cast<int>(cells_per_axis) + 1; ++y)
 				for(int x = -1; x <= static_cast<int>(cells_per_axis) + 1; ++x)
-					densities[sampleIndex(x, y, z)] = world.planets.getPlanetDensity(
+					densities[sampleIndex(x, y, z)] = world.getPlanetSystem().getPlanetDensity(
 						job.planet_id, samplePosition(x, y, z),
 						job.surface_only
 						? PlanetTerrainMode::heightmap_with_edits

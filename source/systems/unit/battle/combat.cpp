@@ -15,6 +15,10 @@
 #include <danikk_space_engine/systems/unit/internal/perception.h>
 #include <danikk_space_engine/systems/unit/internal/state.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/raycast/raycast.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine::unit_system_internal
 {
 	namespace
@@ -85,7 +89,7 @@ namespace danikk_space_engine::unit_system_internal
 			const glm::dvec3& target_position, const WorldBody& body,
 			const DynamicArray<TargetAllocation>& allocations)
 		{
-			const HumanData* target_data = world.humans.findHuman(sighting.target_human_id);
+			const HumanData* target_data = world.getHumanSystem().findHuman(sighting.target_human_id);
 			if(target_data == nullptr) return 0.0f;
 			const HumanState& target = *target_data;
 			const glm::dvec3 offset = target_position - own_position;
@@ -166,18 +170,18 @@ namespace danikk_space_engine::unit_system_internal
 		const UnitTarget previous_target{agent.order.target_human_id,
 			agent.order.target_generation_id};
 		agent.order.clear();
-		const glm::dvec3 own_position = world.humans.getWorldPosition(human_data);
+		const glm::dvec3 own_position = world.getHumanSystem().getWorldPosition(human_data);
 		const WorldBodyId own_body_id = human_data.world_body_id;
-		const WorldBody& body = world.world_body_data.getWorldBody(own_body_id);
+		const WorldBody& body = world.getWorldBodyData().getWorldBody(own_body_id);
 		const UnitSighting* best = nullptr;
 		float best_score = -1.0f;
 		for(const UnitSighting& sighting : known_sightings)
 		{
 			if(sighting.faction_id != human.faction_id || !isRecentSighting(sighting)
 				|| !isValidSighting(world, sighting)) continue;
-			const HumanData* sighted = world.humans.findHuman(sighting.target_human_id);
+			const HumanData* sighted = world.getHumanSystem().findHuman(sighting.target_human_id);
 			if(sighted == nullptr || sighted->world_body_id != own_body_id) continue;
-			const glm::dvec3 target_position = world.humans.getWorldPosition(*sighted);
+			const glm::dvec3 target_position = world.getHumanSystem().getWorldPosition(*sighted);
 			const float score = scoreTarget(world, sighting, human_data, human, previous_target,
 				own_position, target_position, body, allocations);
 			if(score > best_score)
@@ -191,9 +195,9 @@ namespace danikk_space_engine::unit_system_internal
 		agent.order.has_attack_target = true;
 		agent.order.target_human_id = best->target_human_id;
 		agent.order.target_generation_id = best->target_generation_id;
-		HumanData* target_data = world.humans.findHuman(best->target_human_id);
+		HumanData* target_data = world.getHumanSystem().findHuman(best->target_human_id);
 		if(target_data == nullptr) return;
-		const glm::dvec3 target_position = world.humans.getWorldPosition(*target_data);
+		const glm::dvec3 target_position = world.getHumanSystem().getWorldPosition(*target_data);
 		const glm::dvec3 shot_origin = own_position
 			+ body.rotation * glm::dvec3(human.up * (human.getHeight() * 0.2f));
 		const glm::dvec3 delta = target_position - shot_origin;
@@ -205,7 +209,7 @@ namespace danikk_space_engine::unit_system_internal
 			agent.order.has_equip_order = true;
 			agent.order.equip_item_definition_id = weapon->item_definition_id;
 		}
-		const RaycastHit hit = world.raycasts.cast(shot_origin, vec3(delta), static_cast<float>(distance));
+		const RaycastHit hit = world.getRaycastSystem().cast(shot_origin, vec3(delta), static_cast<float>(distance));
 		const bool visible = !hit.hit || hit.distance >= distance - 0.1;
 		if(visible)
 		{

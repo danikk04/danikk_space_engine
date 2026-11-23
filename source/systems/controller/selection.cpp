@@ -4,6 +4,12 @@
 #include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/world.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/human/system.h>
+
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	/** @brief Removes stale, dead, or no-longer-player-owned selection references. */
@@ -13,9 +19,9 @@ namespace danikk_space_engine
 		for(size_t read_index = 0; read_index < selected_unit_refs.size(); ++read_index)
 		{
 			const SelectedUnitRef reference = selected_unit_refs[read_index];
-			const HumanData* human_data = world.humans.findHuman(reference.human_id);
+			const HumanData* human_data = world.getHumanSystem().findHuman(reference.human_id);
 			if(human_data == nullptr || human_data->generation_id != reference.generation_id
-				|| !world.world_body_data.isWorldBodyActive(human_data->world_body_id)) continue;
+				|| !world.getWorldBodyData().isWorldBodyActive(human_data->world_body_id)) continue;
 			const HumanState& human = *human_data;
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 			selected_unit_refs[write_index++] = reference;
@@ -32,19 +38,19 @@ namespace danikk_space_engine
 	bool ControllerSystem::selectOwnHumanUnderCursor(
 		const RaycastHit& surface_hit, bool shift_pressed)
 	{
-		const glm::dvec3 ray_origin = world.camera.getWorldPosition();
-		const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.camera.getFront()));
+		const glm::dvec3 ray_origin = world.getCameraSystem().getWorldPosition();
+		const glm::dvec3 ray_direction = glm::normalize(glm::dvec3(world.getCameraSystem().getFront()));
 		double closest_distance = surface_hit.hit ? surface_hit.distance : 10000.0;
 		HumanId closest_slot_id = static_cast<HumanId>(-1);
 
-		for(const HumanData& data : world.humans.getHumans())
+		for(const HumanData& data : world.getHumanSystem().getHumans())
 		{
-			if(!world.world_body_data.isWorldBodyActive(data.world_body_id)) continue;
+			if(!world.getWorldBodyData().isWorldBodyActive(data.world_body_id)) continue;
 			const HumanState& human = data;
 			if(human.faction_id != base_faction_ids::player || human.hasDeathTimestamp()) continue;
 
-			const WorldBody& body = world.world_body_data.getWorldBody(data.world_body_id);
-			const glm::dvec3 center = world.humans.getWorldPosition(data);
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(data.world_body_id);
+			const glm::dvec3 center = world.getHumanSystem().getWorldPosition(data);
 			glm::dvec3 up = body.rotation * glm::dvec3(human.up);
 			const double up_length = glm::length(up);
 			if(up_length <= 1e-9) up = glm::dvec3(0.0, 0.0, 1.0);
@@ -61,7 +67,7 @@ namespace danikk_space_engine
 
 		if(!shift_pressed) selected_unit_refs.clear();
 		if(closest_slot_id == static_cast<HumanId>(-1)) return false;
-		const HumanData* data = world.humans.findHuman(closest_slot_id);
+		const HumanData* data = world.getHumanSystem().findHuman(closest_slot_id);
 		if(data == nullptr) return false;
 		for(size_t index = 0; index < selected_unit_refs.size(); ++index)
 		{

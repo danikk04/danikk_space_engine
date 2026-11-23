@@ -1,5 +1,6 @@
 #pragma once
 #include <danikk_space_engine/world.h>
+#include <danikk_space_engine/world_body.h>
 #include <danikk_space_engine/systems/human/human.h>
 #include <danikk_space_engine/systems/human/inventory.h>
 namespace danikk_space_engine::human_internal

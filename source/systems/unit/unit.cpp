@@ -13,6 +13,10 @@
 #include <danikk_space_engine/systems/human/damageable.h>
 #include <danikk_framework/log.h>
 
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/faction/faction.h>
+#include <danikk_space_engine/systems/human/system.h>
+
 namespace danikk_space_engine
 {
 	void UnitSystem::init()
@@ -49,7 +53,7 @@ namespace danikk_space_engine
 			for(size_t i = 0; i < group.agents.size();)
 			{
 				const UnitAgentState& agent = group.agents[i];
-				const HumanData* human = world.humans.findHuman(agent.human_id);
+				const HumanData* human = world.getHumanSystem().findHuman(agent.human_id);
 				if(human != nullptr && human->generation_id == agent.human_generation_id) { ++i; continue; }
 				for(size_t j = i + 1; j < group.agents.size(); ++j)
 					group.agents[j - 1] = static_cast<UnitAgentState&&>(group.agents[j]);
@@ -63,9 +67,9 @@ namespace danikk_space_engine
 	bool unit_system_internal::getActiveUnit(World& world, UnitAgentState& agent, HumanData*& human)
 	{
 		if(!agent.enabled) return false;
-		HumanData* data = world.humans.findHuman(agent.human_id);
+		HumanData* data = world.getHumanSystem().findHuman(agent.human_id);
 		if(data == nullptr || data->generation_id != agent.human_generation_id
-			|| !world.world_body_data.isWorldBodyActive(data->world_body_id)) return false;
+			|| !world.getWorldBodyData().isWorldBodyActive(data->world_body_id)) return false;
 		human = data;
 		if(data->damageable.getHealth() <= 0.0f)
 		{
@@ -86,19 +90,19 @@ namespace danikk_space_engine
 	void UnitSystem::reportAttack(HumanId attacker_human_id, HumanId victim_human_id)
 	{
 		DSE_WATCH();
-		HumanData* attacker_data = world.humans.findHuman(attacker_human_id);
-		HumanData* victim_data = world.humans.findHuman(victim_human_id);
+		HumanData* attacker_data = world.getHumanSystem().findHuman(attacker_human_id);
+		HumanData* victim_data = world.getHumanSystem().findHuman(victim_human_id);
 		if(attacker_data == nullptr || victim_data == nullptr) return;
 		HumanState& attacker = *attacker_data;
 		HumanState& victim = *victim_data;
-		if(attacker.faction_id >= world.factions.size() || victim.faction_id >= world.factions.size()
-			|| world.factions.getRelation(victim.faction_id, attacker.faction_id).type != FactionRelationType::hostile)
+		if(attacker.faction_id >= world.getFactionSystem().size() || victim.faction_id >= world.getFactionSystem().size()
+			|| world.getFactionSystem().getRelation(victim.faction_id, attacker.faction_id).type != FactionRelationType::hostile)
 			return;
 
-		ensureUnitGroupCount(impl->groups, world.factions.size());
+		ensureUnitGroupCount(impl->groups, world.getFactionSystem().size());
 		UnitGroup& group = impl->groups[victim.faction_id];
 		const uint32 now = danikk_engine::getMsTimestamp();
-		const glm::dvec3 attacker_position = world.humans.getWorldPosition(*attacker_data);
+		const glm::dvec3 attacker_position = world.getHumanSystem().getWorldPosition(*attacker_data);
 		const glm::dvec3 local_position = attacker_data->body_local_position;
 		UnitSighting* contact = nullptr;
 		for(UnitSighting& sighting : group.known_sightings)
@@ -134,7 +138,7 @@ namespace danikk_space_engine
 	void UnitSystem::tick(float dt)
 	{
 		DSE_WATCH();
-		ensureUnitGroupCount(impl->groups, world.factions.size());
+		ensureUnitGroupCount(impl->groups, world.getFactionSystem().size());
 		unit_system_internal::rebuildUnitSpatialIndex(world, impl->spatial_index);
 		for(UnitGroup& group : impl->groups)
 		{
@@ -172,11 +176,11 @@ namespace danikk_space_engine
 	void UnitSystem::registerAgent(HumanId human_id, bool enabled)
 	{
 		DSE_WATCH();
-		HumanData* data = world.humans.findHuman(human_id);
+		HumanData* data = world.getHumanSystem().findHuman(human_id);
 		if(data == nullptr) return;
 		HumanState& human = *data;
-		if(human.faction_id >= world.factions.size()) return;
-		ensureUnitGroupCount(impl->groups, world.factions.size());
+		if(human.faction_id >= world.getFactionSystem().size()) return;
+		ensureUnitGroupCount(impl->groups, world.getFactionSystem().size());
 		UnitGroup& group = impl->groups[human.faction_id];
 		for(UnitAgentState& agent : group.agents)
 			if(agent.human_id == human_id && agent.human_generation_id == data->generation_id)

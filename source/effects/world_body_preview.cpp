@@ -7,6 +7,10 @@
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_engine/texture_methods.h>
 
+#include <danikk_space_engine/systems/camera/camera.h>
+
+#include <danikk_space_engine/systems/raycast/raycast.h>
+
 namespace danikk_space_engine
 {
 	/**
@@ -27,7 +31,7 @@ namespace danikk_space_engine
 		if(!hit.hit) return;
 
 		const BuildPartPlacement placement = getBuildPartPlacement(world, hit, shape, size, rotation_step);
-		const vec3 camera_relative_center = vec3(placement.world_position - world.camera.getWorldPosition());
+		const vec3 camera_relative_center = vec3(placement.world_position - world.getCameraSystem().getWorldPosition());
 		const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
 
 		DynamicArray<DefaultVertex> vertices;
