@@ -155,8 +155,7 @@ namespace danikk_space_engine::human_internal
 				return;
 			}
 
-			const PlanetId planet_id = body.planet_id;
-			const PlanetData* planet = world.getPlanetSystem().findPlanet(planet_id);
+			const PlanetData* planet = world.getPlanetSystem().findPlanetByWorldBodyId(body_id);
 			const float height = human.getHeight();
 			const bool cached_support = planet != nullptr && human.grounded && human.vertical_speed == 0.0f
 				&& cache.planet_generation_id == planet->generation_id

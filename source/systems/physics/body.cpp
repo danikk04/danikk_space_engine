@@ -4,6 +4,7 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/physics/physics.h>
 #include <danikk_space_engine/systems/controller/controller.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/physics/internal.h>
 
 #include <danikk_space_engine/systems/world_body/world_body.h>
@@ -32,8 +33,7 @@ namespace danikk_space_engine
 
 		for(WorldBodyId id : world.getWorldBodySystem().getUsedWorldBodyIds())
 		{
-			const WorldBody& body = world.getWorldBodySystem().getWorldBody(id);
-			if(body.planet_id != static_cast<PlanetId>(-1)) continue;
+			if(world.getPlanetSystem().isPlanetWorldBody(id)) continue;
 			BodyCollider collider = createCollider(world, id, dragged_id);
 			if(collider.parts.size() > 0) colliders.push(static_cast<BodyCollider&&>(collider));
 		}

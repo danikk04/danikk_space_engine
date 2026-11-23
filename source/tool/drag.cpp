@@ -30,7 +30,7 @@ namespace danikk_space_engine
 				return false;
 			}
 
-			if(world.getWorldBodySystem().getWorldBody(body_id).planet_id != static_cast<PlanetId>(-1)) return false;
+			if(world.getPlanetSystem().isPlanetWorldBody(body_id)) return false;
 			return true;
 		}
 

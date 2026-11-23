@@ -73,13 +73,12 @@ namespace danikk_space_engine
 
 	void World::syncPlanetWorldBodyFrames()
 	{
-		for(WorldBodyId body_id : getWorldBodySystem().getUsedWorldBodyIds())
+		for(const PlanetData& planet : getPlanetSystem().getPlanets())
 		{
-			WorldBody& body = getWorldBodySystem().getWorldBody(body_id);
-			const PlanetData* planet = getPlanetSystem().findPlanet(body.planet_id);
-			if(planet == nullptr) continue;
-			body.position = planet->position;
-			body.rotation = planet->rotation;
+			if(!getWorldBodySystem().isWorldBodyActive(planet.world_body_id)) continue;
+			WorldBody& body = getWorldBodySystem().getWorldBody(planet.world_body_id);
+			body.position = planet.position;
+			body.rotation = planet.rotation;
 		}
 	}
 

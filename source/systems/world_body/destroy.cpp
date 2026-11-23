@@ -54,8 +54,7 @@ namespace danikk_space_engine
 		world.getHumanSystem().destroyWorldBodyHumans(id);
 		while(body.point_ids.size() > 0)
 			world.getPointData().destroyPoint(body.point_ids[body.point_ids.size() - 1]);
-		if(body.planet_id != static_cast<PlanetId>(-1))
-			world.getPlanetSystem().destroyPlanet(body.planet_id);
+		world.getPlanetSystem().destroyPlanetForWorldBody(id);
 		if(body.point_ids.size() > 0)
 			danikk_engine::formatFatalError("World body % still owns points during destruction", id);
 		world_bodies.free(id);
@@ -64,6 +63,8 @@ namespace danikk_space_engine
 	/** @copydoc WorldBodySystem::clear */
 	void WorldBodySystem::clear()
 	{
+		for(WorldBodyId id : world_bodies.usedIds())
+			world.getPlanetSystem().destroyPlanetForWorldBody(id);
 		for(WorldBodyId id : world_bodies.usedIds())
 			world.getBuildObjectSystem().destroyBuildObjectForWorldBody(id);
 		for(WorldBodyId id : world_bodies.usedIds())

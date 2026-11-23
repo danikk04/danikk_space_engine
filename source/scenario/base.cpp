@@ -112,7 +112,7 @@ namespace danikk_space_engine
 		const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet_settings_ids::earth);
 		PlanetData& planet = world.getPlanetSystem().createPlanet(planet_settings_ids::earth);
 		WorldBody& planet_frame = world.getWorldBodySystem().getWorldBody(planet_frame_id);
-		planet_frame.planet_id = planet.id;
+		planet.world_body_id = planet_frame_id;
 		planet_frame.position = planet.position;
 		planet_frame.rotation = planet.rotation;
 		constexpr double camera_altitude = 10.0;

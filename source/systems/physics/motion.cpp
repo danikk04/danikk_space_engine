@@ -54,7 +54,7 @@ namespace danikk_space_engine
 		{
 			if(body_id == dragged_body_id) continue;
 			WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
-			if(body.planet_id != static_cast<PlanetId>(-1)) continue;
+			if(world.getPlanetSystem().isPlanetWorldBody(body_id)) continue;
 
 			const BuildObjectId object_id = world.getBuildObjectSystem().findBuildObjectId(body_id);
 			if(body.point_ids.size() == 0

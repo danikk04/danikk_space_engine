@@ -141,7 +141,7 @@ namespace danikk_space_engine
 
 		const WorldBodyId body_id = scene.getWorldBodySystem().createWorldBody();
 		PlanetData& planet = scene.getPlanetSystem().createPlanet(planet_settings_ids::earth);
-		scene.getWorldBodySystem().getWorldBody(body_id).planet_id = planet.id;
+		planet.world_body_id = body_id;
 		DiagnosticNpc npcs[npc_count]{};
 		createNpcFixture(scene, body_id, planet, npcs);
 

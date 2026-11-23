@@ -260,7 +260,7 @@ namespace danikk_space_engine
 		{
 			if(!world.getWorldBodySystem().isWorldBodyActive(moving_body_id)) continue;
 			WorldBody& moving_body = world.getWorldBodySystem().getWorldBody(moving_body_id);
-			if(moving_body.planet_id != static_cast<PlanetId>(-1)) continue;
+			if(world.getPlanetSystem().isPlanetWorldBody(moving_body_id)) continue;
 			const BuildObjectId build_object_id = world.getBuildObjectSystem().findBuildObjectId(moving_body_id);
 			if(moving_body.point_ids.size() == 0
 				&& (build_object_id == static_cast<BuildObjectId>(-1)
@@ -290,7 +290,7 @@ namespace danikk_space_engine
 			}
 
 			for(const PlanetCollisionTarget& target : planets)
-				if(world.getWorldBodySystem().getWorldBody(moving_body_id).planet_id != target.planet_id)
+				if(world.getPlanetSystem().getPlanet(target.planet_id).world_body_id != moving_body_id)
 					collideBodySurfaceWithPlanet(world, moving_body_id, moving_body, mass_properties, target);
 		}
 	}

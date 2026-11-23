@@ -197,6 +197,8 @@ namespace danikk_space_engine
 	struct PlanetData
 	{
 		PlanetId id = static_cast<PlanetId>(-1);
+		/** @brief WorldBody whose local frame anchors entities to this planet. */
+		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
 		glm::dvec3 position = glm::dvec3(0.0);
 		glm::dquat rotation = glm::dquat(1.0, 0.0, 0.0, 0.0);
 		PlanetSettingsId settings_id = planet_settings_ids::earth;

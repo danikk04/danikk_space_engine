@@ -58,8 +58,6 @@ namespace danikk_space_engine
 	class WorldBody
 	{
 	public:
-		/** @brief Planet whose spatial frame this body proxies, or invalid PlanetId. */
-		PlanetId planet_id = static_cast<PlanetId>(-1);
 		/** @brief Faction owning this body, or no_faction if unassigned. */
 		FactionId faction_id = no_faction;
 		/** @brief Body origin in double-precision world coordinates. */

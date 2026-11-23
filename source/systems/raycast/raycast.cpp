@@ -55,13 +55,7 @@ namespace danikk_space_engine
 		float nearest_distance = result.hit ? result.distance : max_distance;
 		for(const PlanetData& planet : world.getPlanetSystem().getPlanets())
 		{
-			bool has_proxy = false;
-			for(WorldBodyId body_id : body_ids)
-				if(world.getWorldBodySystem().getWorldBody(body_id).planet_id == planet.id)
-				{
-					has_proxy = true;
-					break;
-				}
+			const bool has_proxy = world.getWorldBodySystem().isWorldBodyActive(planet.world_body_id);
 			if(has_proxy) continue;
 			const PlanetSettings& settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
 			double broadphase_radius = settings.radius + 11000.0;
@@ -94,12 +88,8 @@ namespace danikk_space_engine
 			result.position = origin + ray_direction * hit_distance;
 			result.normal = vec3(planet.rotation * field_normal);
 			result.planet_id = planet.id;
-			for(WorldBodyId body_id : body_ids)
-				if(world.getWorldBodySystem().getWorldBody(body_id).planet_id == planet.id)
-				{
-					result.body_id = body_id;
-					break;
-				}
+			if(world.getWorldBodySystem().isWorldBodyActive(planet.world_body_id))
+				result.body_id = planet.world_body_id;
 		}
 		return result;
 	}
@@ -210,9 +200,8 @@ namespace danikk_space_engine
 		{
 			const WorldBodyId body_id = body_ids[body_index];
 			const WorldBody& body = world_body.getWorldBody(body_id);
-			const bool is_planet = body.planet_id != static_cast<PlanetId>(-1);
-			const PlanetData* planet = is_planet ? planets.findPlanet(body.planet_id) : nullptr;
-			if(is_planet && planet == nullptr) continue;
+			const PlanetData* planet = planets.findPlanetByWorldBodyId(body_id);
+			const bool is_planet = planet != nullptr;
 			const glm::dquat body_rotation = is_planet ? planet->rotation : body.rotation;
 			const glm::dvec3 body_position = is_planet ? planet->position : body.position;
 			const glm::dquat inverse_rotation = glm::conjugate(body_rotation);

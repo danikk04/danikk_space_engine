@@ -24,7 +24,6 @@ namespace danikk_space_engine
 		 */
 		struct PlanetCoreTarget
 		{
-			WorldBodyId body_id;
 			glm::dvec3 center;
 		};
 
@@ -62,12 +61,8 @@ namespace danikk_space_engine
 		DSE_WATCH();
 		DynamicArray<PlanetCoreTarget> planets;
 		const DynamicArray<WorldBodyId> world_body_ids(world.getWorldBodySystem().getUsedWorldBodyIds());
-		for(WorldBodyId body_id : world_body_ids)
-		{
-			if(!world.getWorldBodySystem().isWorldBodyActive(body_id)) continue;
-			const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
-			if(body.planet_id != static_cast<PlanetId>(-1)) planets.push(PlanetCoreTarget{body_id, body.position});
-		}
+		for(const PlanetData& planet : world.getPlanetSystem().getPlanets())
+			planets.push(PlanetCoreTarget{planet.position});
 		if(planets.size() == 0) return;
 
 		DynamicArray<WorldBodyId> bodies_to_destroy;
@@ -76,7 +71,7 @@ namespace danikk_space_engine
 			if(!world.getWorldBodySystem().isWorldBodyActive(body_id)) continue;
 			const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
 			const BuildObjectId object_id = world.getBuildObjectSystem().findBuildObjectId(body_id);
-			if(body.planet_id != static_cast<PlanetId>(-1) || (body.point_ids.size() == 0
+			if(world.getPlanetSystem().isPlanetWorldBody(body_id) || (body.point_ids.size() == 0
 				&& (object_id == static_cast<BuildObjectId>(-1)
 					|| world.getBuildObjectSystem().getBuildObject(object_id).build_part_ids.size() == 0))) continue;
 			if(isInsideAnyPlanetCore(body.position, planets)) bodies_to_destroy.push(body_id);

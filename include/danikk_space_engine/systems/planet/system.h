@@ -30,6 +30,10 @@ namespace danikk_space_engine
 		bool isPlanet(PlanetId planet_id) const;
 		PlanetData* findPlanet(PlanetId planet_id);
 		const PlanetData* findPlanet(PlanetId planet_id) const;
+		PlanetData* findPlanetByWorldBodyId(WorldBodyId world_body_id);
+		const PlanetData* findPlanetByWorldBodyId(WorldBodyId world_body_id) const;
+		bool isPlanetWorldBody(WorldBodyId world_body_id) const;
+		void destroyPlanetForWorldBody(WorldBodyId world_body_id);
 		PlanetData& getPlanet(PlanetId planet_id);
 		const PlanetData& getPlanet(PlanetId planet_id) const;
 		const DynamicArray<PlanetData>& getPlanets() const { return planets; }

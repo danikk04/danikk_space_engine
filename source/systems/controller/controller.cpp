@@ -1,4 +1,5 @@
 #include <danikk_space_engine/systems/controller/controller.h>
+#include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/config.h>
@@ -26,7 +27,7 @@ namespace danikk_space_engine
 			const glm::dquat inverse_rotation = glm::conjugate(body.rotation);
 			const glm::dvec3 local_position = inverse_rotation * (hit.position - body.position);
 			vec3 up = vec3(inverse_rotation * glm::dvec3(hit.normal));
-			if(body.planet_id != static_cast<PlanetId>(-1))
+			if(world.getPlanetSystem().isPlanetWorldBody(hit.body_id))
 			{
 				if(glm::length(local_position) <= 1e-6) return;
 				up = vec3(glm::normalize(local_position));

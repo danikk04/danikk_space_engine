@@ -119,6 +119,35 @@ namespace danikk_space_engine
 		return nullptr;
 	}
 
+	PlanetData* PlanetSystem::findPlanetByWorldBodyId(WorldBodyId world_body_id)
+	{
+		for(PlanetData& planet : planets)
+			if(planet.world_body_id == world_body_id) return &planet;
+		return nullptr;
+	}
+
+	const PlanetData* PlanetSystem::findPlanetByWorldBodyId(WorldBodyId world_body_id) const
+	{
+		for(const PlanetData& planet : planets)
+			if(planet.world_body_id == world_body_id) return &planet;
+		return nullptr;
+	}
+
+	bool PlanetSystem::isPlanetWorldBody(WorldBodyId world_body_id) const
+	{
+		return findPlanetByWorldBodyId(world_body_id) != nullptr;
+	}
+
+	void PlanetSystem::destroyPlanetForWorldBody(WorldBodyId world_body_id)
+	{
+		for(const PlanetData& planet : planets)
+			if(planet.world_body_id == world_body_id)
+			{
+				destroyPlanet(planet.id);
+				return;
+			}
+	}
+
 	PlanetData& PlanetSystem::getPlanet(PlanetId planet_id)
 	{
 		PlanetData* planet = findPlanet(planet_id);
