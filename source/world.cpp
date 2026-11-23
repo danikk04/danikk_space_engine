@@ -21,7 +21,7 @@
 namespace danikk_space_engine
 {
 	WorldSystemContainer::WorldSystemContainer(World& world)
-		: telemetry(), point_data(), world_body_data(), mesh_generation(world), environment(world),
+		: telemetry(), point_data(world), world_body_data(world), mesh_generation(world), environment(world),
 		  physics(world), controller(world), camera(world), components(world), planets(world),
 		  raycasts(world), saves(world), factions(), unit_system(world), humans(world)
 	{
@@ -65,97 +65,6 @@ namespace danikk_space_engine
 	HumanSystem& World::getHumanSystem() { return system_container->humans; }
 	const HumanSystem& World::getHumanSystem() const { return system_container->humans; }
 
-	glm::dvec3 World::getPointWorldPosition(PointId point_id) const
-	{
-		DSE_WATCH();
-		const Point& point = getPointData().getPoint(point_id);
-		const WorldBody& body = getWorldBodyData().getWorldBody(point.world_body_id);
-		return body.position + body.rotation * point.body_local_position;
-	}
-
-	mat4 World::getPointWorldMatrix(PointId point_id) const
-	{
-		const Point& point = getPointData().getPoint(point_id);
-		const WorldBody& body = getWorldBodyData().getWorldBody(point.world_body_id);
-		const glm::dvec3 relative_position = body.position + body.rotation * point.body_local_position
-			- getCameraSystem().getWorldPosition();
-		mat4 rotation(1.0f);
-		rotation[0] = vec4(vec3(body.rotation * glm::dvec3(1.0, 0.0, 0.0)), 0.0f);
-		rotation[1] = vec4(vec3(body.rotation * glm::dvec3(0.0, 1.0, 0.0)), 0.0f);
-		rotation[2] = vec4(vec3(body.rotation * glm::dvec3(0.0, 0.0, 1.0)), 0.0f);
-		return glm::translate(mat4(1.0f), vec3(relative_position)) * rotation;
-	}
-
-	void World::attachPointComponentToBody(WorldBodyId body_id, PointId point_id,
-		PointComponentSlotId slot_id, const glm::dvec3& body_local_position)
-	{
-		if(!getPointData().isPointComponentSlotActive(slot_id))
-			danikk_engine::formatFatalError("Cannot attach an inactive point component slot");
-		attachPointToBody(body_id, point_id, body_local_position);
-		PointComponentSlot& slot = getPointData().getPointComponentSlot(slot_id);
-		slot.world_body_id = body_id;
-		if(slot.type_id == PointComponentTypeId::build_part)
-			getMeshGenerationSystem().invalidateBodyDetailMesh(body_id);
-	}
-
-	void World::attachPointToBody(WorldBodyId body_id, PointId point_id,
-		const glm::dvec3& body_local_position)
-	{
-		if(!getWorldBodyData().isWorldBodyActive(body_id) || !getPointData().isPointActive(point_id))
-			danikk_engine::formatFatalError("Cannot attach an inactive point to a WorldBody");
-		Point& point = getPointData().getPoint(point_id);
-		WorldBody& body = getWorldBodyData().getWorldBody(body_id);
-		if(point.world_body_id != static_cast<WorldBodyId>(-1)
-			&& point.world_body_id != body_id)
-			danikk_engine::formatFatalError("Point % is already attached to another WorldBody", point_id);
-		if(point.world_body_id == static_cast<WorldBodyId>(-1))
-		{
-			point.world_body_id = body_id;
-			point.world_body_point_index = body.point_ids.size();
-			body.point_ids.push(point_id);
-		}
-		if(point.world_body_id == body_id)
-			body.spatial_tree.remove(point_id, point.body_local_position);
-		point.body_local_position = body_local_position;
-		body.spatial_tree.insert(point_id, body_local_position);
-	}
-
-	void World::destroyPoint(PointId point_id)
-	{
-		if(!getPointData().isPointActive(point_id)) return;
-		Point& point = getPointData().getPoint(point_id);
-		if(getWorldBodyData().isWorldBodyActive(point.world_body_id))
-		{
-			WorldBody& body = getWorldBodyData().getWorldBody(point.world_body_id);
-			body.spatial_tree.remove(point_id, point.body_local_position);
-			const size_t index = point.world_body_point_index;
-			if(index >= body.point_ids.size() || body.point_ids[index] != point_id)
-				danikk_engine::formatFatalError("Point % has an invalid WorldBody membership index", point_id);
-			for(size_t move = index + 1; move < body.point_ids.size(); ++move)
-				body.point_ids[move - 1] = body.point_ids[move];
-			body.point_ids.resize(body.point_ids.size() - 1);
-			for(size_t move = index; move < body.point_ids.size(); ++move)
-				getPointData().getPoint(body.point_ids[move]).world_body_point_index = move;
-			for(PointComponentSlotId slot_id : point.component_slot_ids)
-				if(getPointData().isPointComponentSlotActive(slot_id)
-					&& getPointData().getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
-					getMeshGenerationSystem().invalidateBodyDetailMesh(point.world_body_id);
-		}
-		getPointData().destroyPoint(point_id);
-	}
-
-	void World::destroyWorldBody(WorldBodyId body_id)
-	{
-		if(!getWorldBodyData().isWorldBodyActive(body_id)) return;
-		WorldBody& body = getWorldBodyData().getWorldBody(body_id);
-		getHumanSystem().destroyWorldBodyHumans(body_id);
-		while(body.point_ids.size() > 0) destroyPoint(body.point_ids[body.point_ids.size() - 1]);
-		if(body.planet_id != static_cast<PlanetId>(-1)) getPlanetSystem().destroyPlanet(body.planet_id);
-		if(body.detail_mesh.mesh != nullptr)
-			getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(MeshDeletionReason::world_body_destroyed);
-		getWorldBodyData().destroyWorldBody(body_id);
-	}
-
 	void World::syncPlanetWorldBodyFrames()
 	{
 		for(WorldBodyId body_id : getWorldBodyData().getUsedWorldBodyIds())
@@ -166,18 +75,6 @@ namespace danikk_space_engine
 			body.position = planet->position;
 			body.rotation = planet->rotation;
 		}
-	}
-
-	void World::setPointBodyLocalPosition(PointId point_id, const glm::dvec3& body_local_position)
-	{
-		if(!getPointData().isPointActive(point_id)) return;
-		Point& point = getPointData().getPoint(point_id);
-		if(!getWorldBodyData().isWorldBodyActive(point.world_body_id))
-			danikk_engine::formatFatalError("Cannot move point % without an active WorldBody", point_id);
-		WorldBody& body = getWorldBodyData().getWorldBody(point.world_body_id);
-		body.spatial_tree.remove(point_id, point.body_local_position);
-		point.body_local_position = body_local_position;
-		body.spatial_tree.insert(point_id, body_local_position);
 	}
 
 	/**
@@ -193,7 +90,7 @@ namespace danikk_space_engine
 		while(getWorldBodyData().getUsedWorldBodyIds().size() > 0)
 		{
 			const DynamicArray<WorldBodyId>& body_ids = getWorldBodyData().getUsedWorldBodyIds();
-			destroyWorldBody(body_ids[body_ids.size() - 1]);
+			getWorldBodyData().destroyWorldBody(body_ids[body_ids.size() - 1]);
 		}
 		getMeshGenerationSystem().init();
 		getComponentSystem().init();
@@ -226,7 +123,7 @@ namespace danikk_space_engine
 		while(getWorldBodyData().getUsedWorldBodyIds().size() > 0)
 		{
 			const DynamicArray<WorldBodyId>& body_ids = getWorldBodyData().getUsedWorldBodyIds();
-			destroyWorldBody(body_ids[body_ids.size() - 1]);
+			getWorldBodyData().destroyWorldBody(body_ids[body_ids.size() - 1]);
 		}
 		getPointData().release();
 		getWorldBodyData().release();

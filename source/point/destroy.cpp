@@ -1,6 +1,9 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/component/point/build_part.h>
+#include <danikk_space_engine/world.h>
+#include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 
 #include <cstdlib>
 
@@ -45,6 +48,24 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		if(!isPointActive(id)) return;
+		Point& point = points[id];
+		if(world.getWorldBodyData().isWorldBodyActive(point.world_body_id))
+		{
+			WorldBody& body = world.getWorldBodyData().getWorldBody(point.world_body_id);
+			body.spatial_tree.remove(id, point.body_local_position);
+			const size_t index = point.world_body_point_index;
+			if(index >= body.point_ids.size() || body.point_ids[index] != id)
+				danikk_engine::formatFatalError("Point % has an invalid WorldBody membership index", id);
+			for(size_t move = index + 1; move < body.point_ids.size(); ++move)
+				body.point_ids[move - 1] = body.point_ids[move];
+			body.point_ids.resize(body.point_ids.size() - 1);
+			for(size_t move = index; move < body.point_ids.size(); ++move)
+				getPoint(body.point_ids[move]).world_body_point_index = move;
+			for(PointComponentSlotId slot_id : point.component_slot_ids)
+				if(isPointComponentSlotActive(slot_id)
+					&& getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
+					world.getMeshGenerationSystem().invalidateBodyDetailMesh(point.world_body_id);
+		}
 		DynamicArray<PointComponentSlotId>& attached_slots = points[id].component_slot_ids;
 		while(attached_slots.size() > 0)
 			destroyPointComponentSlot(attached_slots[attached_slots.size() - 1]);

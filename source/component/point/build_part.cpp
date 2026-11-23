@@ -112,7 +112,7 @@ namespace danikk_space_engine
 		}
 		const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
 		if(world.getWorldBodyData().getWorldBody(slot.world_body_id).detail_mesh.mesh != nullptr) return;
-		const mat4 world_matrix = world.getPointWorldMatrix(slot.point_id)
+		const mat4 world_matrix = world.getWorldBodyData().getPointWorldMatrix(slot.point_id)
 			* part.rotation
 			* glm::scale(mat4(1.0f), part.size);
 		setWorldMatrix(world_matrix);

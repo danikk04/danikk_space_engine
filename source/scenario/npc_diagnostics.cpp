@@ -171,7 +171,7 @@ namespace danikk_space_engine
 			&& walking.grounded == npc_count && walking.moved == npc_count && lost_support;
 		formatLogInfo("NPC diagnostics excavation lost_support=% drop_m=%", lost_support, drop);
 		formatLogInfo("NPC diagnostics %", passed ? "PASS" : "FAIL");
-		scene.destroyWorldBody(body_id);
+		scene.getWorldBodyData().destroyWorldBody(body_id);
 		scene.getHumanSystem().shutdown();
 		scene.getPointData().release();
 		scene.getWorldBodyData().release();

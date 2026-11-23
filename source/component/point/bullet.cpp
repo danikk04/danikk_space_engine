@@ -31,7 +31,8 @@ namespace danikk_space_engine
 		BulletComponent initial_bullet = bullet;
 		initial_bullet.previous_position = body_local_position;
 		const PointComponentSlotId slot_id = world.getPointData().createPointComponentSlot(point_id, PointComponentTypeId::bullet, &initial_bullet);
-		world.attachPointComponentToBody(body_id, point_id, slot_id, body_local_position);
+		world.getComponentSystem().attachPointComponentToBody(
+			body_id, point_id, slot_id, body_local_position);
 	}
 
 	/**
@@ -117,7 +118,7 @@ namespace danikk_space_engine
 		const double step_distance = glm::length(displacement);
 		if(step_distance > 0.000001f)
 		{
-			const glm::dvec3 start_world_position = world.getPointWorldPosition(slot.point_id);
+			const glm::dvec3 start_world_position = world.getWorldBodyData().getPointWorldPosition(slot.point_id);
 			const glm::dvec3 direction = glm::normalize(body.rotation * glm::dvec3(bullet.velocity));
 			const RaycastHit hit = world.getRaycastSystem().cast(start_world_position, vec3(direction), step_distance);
 			double nearest = hit.hit ? hit.distance : step_distance;
@@ -169,13 +170,13 @@ namespace danikk_space_engine
 			}
 			if(hit.hit)
 			{
-				world.setPointBodyLocalPosition(slot.point_id,
+				world.getWorldBodyData().setPointBodyLocalPosition(slot.point_id,
 					glm::conjugate(body.rotation) * (hit.position - body.position));
 				bullet.destruction_queued = true;
 				world.getComponentSystem().deferPointDestruction(slot.point_id);
 				return;
 			}
-			world.setPointBodyLocalPosition(slot.point_id, start_position + displacement);
+			world.getWorldBodyData().setPointBodyLocalPosition(slot.point_id, start_position + displacement);
 		}
 
 		bullet.age += delta_time;

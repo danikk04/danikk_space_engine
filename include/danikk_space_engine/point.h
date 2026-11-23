@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/default.h>
+#include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/resource_pool.h>
 #include <danikk_space_engine/component/point/point.h>
@@ -24,6 +25,8 @@ namespace danikk_space_engine
 	/** @brief Owns points and their attached point-component slots. */
 	class PointData
 	{
+		/** @brief World whose body membership and component meshes this data updates. */
+		World& world;
 		/** @brief Stable-ID pool for point positions. */
 		WorldResourcePool<Point, PointId> points{"Point"};
 		/** @brief Stable-ID pool for point-component slots. */
@@ -32,12 +35,14 @@ namespace danikk_space_engine
 		uint64 next_point_component_generation_id = 1;
 
 	public:
+		/** @brief Binds point lifecycle operations to their owning World. */
+		explicit PointData(World& world) : world(world) {}
 		/** @brief Creates a default point and returns its ID. */
 		PointId createPoint();
 		/** @brief Creates and initializes a component slot attached to a point. */
 		PointComponentSlotId createPointComponentSlot(PointId point_id, PointComponentTypeId type_id,
 			const void* init_data = nullptr);
-		/** @brief Destroys a point and its attached component slots. */
+		/** @brief Detaches a point from its body, invalidates dependent meshes, and destroys it. */
 		void destroyPoint(PointId id);
 		/** @brief Destroys a detached point-component slot and its payload. */
 		void destroyPointComponentSlot(PointComponentSlotId id);

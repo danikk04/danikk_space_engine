@@ -5,9 +5,22 @@
 
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/world_body.h>
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 
 namespace danikk_space_engine
 {
+	void ComponentSystem::attachPointComponentToBody(WorldBodyId body_id, PointId point_id,
+		PointComponentSlotId slot_id, const glm::dvec3& body_local_position)
+	{
+		if(!world.getPointData().isPointComponentSlotActive(slot_id))
+			danikk_engine::formatFatalError("Cannot attach an inactive point component slot");
+		world.getWorldBodyData().attachPointToBody(body_id, point_id, body_local_position);
+		PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
+		slot.world_body_id = body_id;
+		if(slot.type_id == PointComponentTypeId::build_part)
+			world.getMeshGenerationSystem().invalidateBodyDetailMesh(body_id);
+	}
+
 	void ComponentSystem::init()
 	{
 		danikk_framework::formatLogInfo("Init ComponentSystem");
@@ -33,7 +46,7 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		for(PointId point_id : deferred_point_destruction_ids)
-			if(world.getPointData().isPointActive(point_id)) world.destroyPoint(point_id);
+			if(world.getPointData().isPointActive(point_id)) world.getPointData().destroyPoint(point_id);
 		deferred_point_destruction_ids.clear();
 	}
 

@@ -11,9 +11,8 @@ namespace danikk_space_engine
 	/**
 	 * @brief Coordinates world state, simulation updates, physics, and geometry queries.
 	 *
-	 * PointData and WorldBodyData own resource lifetimes. World coordinates body-local point ownership,
-	 * component callbacks, deferred
-	 * destructive point cleanup until callback traversal finishes, then advances PhysicsSystem.
+	 * PointData and WorldBodyData own point and body lifecycles. World orders component callbacks,
+	 * deferred point cleanup, simulation updates, and physics advancement.
 	 * Mesh generation runs on a worker; completed data is validated
 	 * and accepted by the main thread before mesh creation and drawing.
 	 */
@@ -108,23 +107,6 @@ namespace danikk_space_engine
 		 * release their GPU resources safely.
 		 */
 		void shutdown();
-
-		/** @brief Transforms a point's canonical body-local position into world coordinates. */
-		glm::dvec3 getPointWorldPosition(PointId point_id) const;
-		/** @brief Builds a camera-relative transform at a point in its WorldBody frame. */
-		mat4 getPointWorldMatrix(PointId point_id) const;
-		/** @brief Attaches a point-component slot directly to a body's local octree. */
-		void attachPointComponentToBody(WorldBodyId body_id, PointId point_id,
-			PointComponentSlotId slot_id, const glm::dvec3& body_local_position);
-		/** @brief Attaches a point to a body's local frame and spatial tree. */
-		void attachPointToBody(WorldBodyId body_id, PointId point_id,
-			const glm::dvec3& body_local_position);
-		/** @brief Moves a point within its owning body and updates the body octree. */
-		void setPointBodyLocalPosition(PointId point_id, const glm::dvec3& body_local_position);
-		/** @brief Removes a point from its body spatial index and destroys its components. */
-		void destroyPoint(PointId point_id);
-		/** @brief Destroys all body-owned points before releasing the body and planet records. */
-		void destroyWorldBody(WorldBodyId body_id);
 
 	private:
 		std::unique_ptr<WorldSystemContainer> system_container;

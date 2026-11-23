@@ -5,6 +5,7 @@
 #include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/systems/human/damageable.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/component/component.h>
 
 #include <cmath>
 
@@ -65,7 +66,8 @@ namespace danikk_space_engine
 			part.rotation = placement.body_local_rotation;
 			const PointComponentSlotId part_slot_id = world.getPointData().createPointComponentSlot(
 				point_id, PointComponentTypeId::build_part, &part);
-			world.attachPointComponentToBody(body_id, point_id, part_slot_id, anchor_body_position);
+			world.getComponentSystem().attachPointComponentToBody(
+				body_id, point_id, part_slot_id, anchor_body_position);
 			double shape_radius = 0.0;
 			const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
 			for(const vec3& position : geometry.positions)

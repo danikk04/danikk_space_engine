@@ -42,6 +42,9 @@ namespace danikk_space_engine
 		void renderWorldBodyComponents();
 		/** @brief Runs frame callbacks for active point components from a stable slot snapshot. */
 		void renderPointComponents();
+		/** @brief Attaches a point component and its point to the owning body's frame. */
+		void attachPointComponentToBody(WorldBodyId body_id, PointId point_id,
+			PointComponentSlotId slot_id, const glm::dvec3& body_local_position);
 		/** @brief Queues a point for destruction after component traversal completes. */
 		void deferPointDestruction(PointId point_id);
 		/** @brief Destroys queued points after callback traversal. */

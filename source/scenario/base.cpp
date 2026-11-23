@@ -96,7 +96,7 @@ namespace danikk_space_engine
 		while(world.getWorldBodyData().getUsedWorldBodyIds().size() > 0)
 		{
 			const DynamicArray<WorldBodyId>& body_ids = world.getWorldBodyData().getUsedWorldBodyIds();
-			world.destroyWorldBody(body_ids[body_ids.size() - 1]);
+			world.getWorldBodyData().destroyWorldBody(body_ids[body_ids.size() - 1]);
 		}
 		world.getPointData().clear();
 		world.getWorldBodyData().clear();

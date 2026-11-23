@@ -2,6 +2,7 @@
 
 #include <danikk_framework/dynamic_array.h>
 
+#include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/resource_pool.h>
 #include <danikk_space_engine/component/world_body/world_body.h>
 #include <danikk_space_engine/systems/faction/faction.h>
@@ -119,6 +120,8 @@ namespace danikk_space_engine
 	/** @brief Owns WorldBody instances and their attached world-body component slots. */
 	class WorldBodyData
 	{
+		/** @brief World whose point, planet, and human state is coordinated during body removal. */
+		World& world;
 		/** @brief Stable-ID pool for positioned WorldBody resources. */
 		WorldResourcePool<WorldBody, WorldBodyId> world_bodies{"WorldBody"};
 		/** @brief Stable-ID pool for world-body component slots. */
@@ -127,12 +130,23 @@ namespace danikk_space_engine
 		uint64 next_world_body_component_generation_id = 1;
 
 	public:
+		/** @brief Binds body lifecycle operations to their owning World. */
+		explicit WorldBodyData(World& world) : world(world) {}
 		/** @brief Creates a default WorldBody and returns its ID. */
 		WorldBodyId createWorldBody();
+		/** @brief Attaches a point to a body's local frame and spatial tree. */
+		void attachPointToBody(WorldBodyId body_id, PointId point_id,
+			const glm::dvec3& body_local_position);
+		/** @brief Converts a body's local point position to world coordinates. */
+		glm::dvec3 getPointWorldPosition(PointId point_id) const;
+		/** @brief Builds a camera-relative world transform for a point. */
+		mat4 getPointWorldMatrix(PointId point_id) const;
+		/** @brief Moves a point in its body frame and updates the spatial tree. */
+		void setPointBodyLocalPosition(PointId point_id, const glm::dvec3& body_local_position);
 		/** @brief Creates a component slot attached to an active WorldBody. */
 		WorldBodyComponentSlotId createWorldBodyComponentSlot(WorldBodyId world_body_id,
 			WorldBodyComponentTypeId type_id, const void* init_data = nullptr);
-		/** @brief Destroys a body's mesh, component slots, and body resource. */
+		/** @brief Destroys a body's humans, points, planet, mesh, component slots, and resource. */
 		void destroyWorldBody(WorldBodyId id);
 		/** @brief Destroys a body-component slot and its payload. */
 		void destroyWorldBodyComponentSlot(WorldBodyComponentSlotId id);

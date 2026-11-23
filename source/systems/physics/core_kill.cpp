@@ -77,7 +77,7 @@ namespace danikk_space_engine
 		}
 		for(WorldBodyId body_id : bodies_to_destroy)
 		{
-			world.destroyWorldBody(body_id);
+			world.getWorldBodyData().destroyWorldBody(body_id);
 		}
 
 		DynamicArray<PointId> points_to_destroy;
@@ -88,7 +88,7 @@ namespace danikk_space_engine
 			const PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
 			if(!world.getPointData().isPointActive(slot.point_id)
 				|| !world.getWorldBodyData().isWorldBodyActive(slot.world_body_id)) continue;
-			const glm::dvec3 position = world.getPointWorldPosition(slot.point_id);
+			const glm::dvec3 position = world.getWorldBodyData().getPointWorldPosition(slot.point_id);
 			if(!isInsideAnyPlanetCore(position, planets)) continue;
 
 			bool already_queued = false;
@@ -104,7 +104,7 @@ namespace danikk_space_engine
 		}
 		for(PointId point_id : points_to_destroy)
 		{
-			world.destroyPoint(point_id);
+			world.getPointData().destroyPoint(point_id);
 		}
 	}
 }
