@@ -7,7 +7,7 @@
 
 namespace danikk_space_engine
 {
-	void PlanetSystem::acceptGeneratedSurfaceNode(const MeshGenerationJob& job)
+	void PlanetSystem::acceptGeneratedTerrainNodeMesh(const MeshGenerationJob& job)
 	{
 		DSE_WATCH();
 		if(job.source != MeshGenerationSource::planet_terrain_node) return;

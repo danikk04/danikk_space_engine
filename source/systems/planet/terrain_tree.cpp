@@ -79,7 +79,7 @@ namespace danikk_space_engine
 		terrain_tree.clear();
 	}
 
-	void PlanetData::synchronizeTerrainTree(MeshGenerationTelemetry& telemetry)
+	void PlanetData::applyTerrainChangesToTree(MeshGenerationTelemetry& telemetry)
 	{
 		DSE_WATCH();
 		PlanetTerrainTree& tree = terrain_tree;
@@ -125,7 +125,7 @@ namespace danikk_space_engine
 		tree.createRoot();
 	}
 
-	void PlanetData::updateTerrainTree(const glm::dvec3& camera_position, double height,
+	void PlanetData::updateTerrainStreaming(const glm::dvec3& camera_position, double height,
 		const PlanetSettings& planet_settings, MeshGenerationTelemetry& telemetry)
 	{
 		DSE_WATCH();
@@ -134,8 +134,8 @@ namespace danikk_space_engine
 		size_t detail_scale_adjustments = 0;
 		DynamicArray<PlanetTerrainNodeId> selected_node_ids;
 
-		synchronizeTerrainTree(telemetry);
-		PlanetTerrainTree::calculateDetailScale(camera_position, height,
+		applyTerrainChangesToTree(telemetry);
+		PlanetTerrainTree::calculateStreamingDetailScale(camera_position, height,
 			planet_settings, render_window_minimum, render_window_maximum, detail_scale,
 			target_node_count, detail_scale_adjustments);
 		streaming_camera_position = camera_position;
@@ -144,9 +144,9 @@ namespace danikk_space_engine
 		terrain_streaming_active = true;
 		terrain_tree.refine(camera_position, height, planet_settings,
 			detail_scale, render_window_minimum, render_window_maximum);
-		terrain_tree.updateRenderActivity(camera_position, height, planet_settings, detail_scale,
+		terrain_tree.selectRenderNodes(camera_position, height, planet_settings, detail_scale,
 			render_window_minimum, render_window_maximum, selected_node_ids);
-		terrain_tree.activateMeshes(selected_node_ids);
+		terrain_tree.applyRenderSelection(selected_node_ids);
 		recordDiagnostics(telemetry, target_node_count, detail_scale_adjustments, detail_scale);
 	}
 }

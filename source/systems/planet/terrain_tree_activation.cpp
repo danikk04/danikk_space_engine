@@ -3,7 +3,7 @@
 
 namespace danikk_space_engine
 {
-	void PlanetTerrainTree::activateMeshes(
+	void PlanetTerrainTree::applyRenderSelection(
 		const DynamicArray<PlanetTerrainNodeId>& selected_node_ids)
 	{
 		DSE_WATCH();

@@ -15,6 +15,9 @@ namespace danikk_space_engine
 		void updatePlanet(PlanetData& planet);
 		void evictCachedMeshes(PlanetTerrainTree& tree, const glm::dvec3& camera_position);
 		void cancelQueuedJobsForPlanet(const PlanetData& planet);
+		bool findNextMeshGenerationJobInWindow(PlanetData& planet,
+			const glm::dvec3& camera_world_position, uint8 window_radius,
+			MeshGenerationJob& job, double& distance_squared, bool& window_covered);
 
 	public:
 		explicit PlanetSystem(World& world) : world(world) {}
@@ -46,9 +49,10 @@ namespace danikk_space_engine
 		bool isMeshGenerationJobWanted(const MeshGenerationJob& job) const;
 		/** @brief Updates the node's pending flag after a job is assigned or canceled. */
 		void setMeshGenerationJobPending(const MeshGenerationJob& job, bool pending);
-		void acceptGeneratedSurfaceNode(const MeshGenerationJob& job);
-		/** @brief Draws active adaptive surface-node meshes in the current depth pass. */
-		void renderSurfaceNodes();
+		/** @brief Replaces a node's mesh with an accepted terrain generation result. */
+		void acceptGeneratedTerrainNodeMesh(const MeshGenerationJob& job);
+		/** @brief Draws all active adaptive terrain-node meshes in the current depth pass. */
+		void renderActiveTerrainNodes();
 		/**
 		 * @brief Applies and persists a spherical terrain edit on a registered planet.
 		 * @param planet_id Planet to modify.

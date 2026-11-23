@@ -6,8 +6,8 @@
 
 namespace danikk_space_engine
 {
-	/** @brief Draws active planet surface meshes directly from their owning octree nodes. */
-	void PlanetSystem::renderSurfaceNodes()
+	/** @brief Draws active terrain-node meshes directly from their owning octree nodes. */
+	void PlanetSystem::renderActiveTerrainNodes()
 	{
 		DSE_WATCH();
 		const glm::dvec3 camera_position = world.getCameraSystem().getWorldPosition();

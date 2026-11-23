@@ -5,7 +5,7 @@
 
 namespace danikk_space_engine
 {
-	void PlanetTerrainTree::updateRenderActivity(
+	void PlanetTerrainTree::selectRenderNodes(
 		const glm::dvec3& camera_position, double height, const PlanetSettings& planet_settings,
 		double detail_scale, const glm::dvec3& render_window_minimum,
 		const glm::dvec3& render_window_maximum,
@@ -25,7 +25,7 @@ namespace danikk_space_engine
 				for(uint8 child_index = 0; child_index < 8; ++child_index)
 				{
 					const PlanetTerrainNodeId child_id = node.children[child_index];
-					if(child_id != PlanetTerrainTree::invalid_node && nodes[child_id].isRelevantTo(
+					if(child_id != PlanetTerrainTree::invalid_node && nodes[child_id].isInTerrainRenderRegion(
 						render_window_minimum, render_window_maximum, camera_position, height,
 						planet_settings))
 						self(self, child_id);

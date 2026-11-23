@@ -215,7 +215,7 @@ namespace danikk_space_engine
 		if(tryTakeCompletedJob(generated) && generated.generation_id == generation_id)
 		{
 			if(generated.source == MeshGenerationSource::planet_terrain_node)
-				world.getPlanetSystem().acceptGeneratedSurfaceNode(generated);
+				world.getPlanetSystem().acceptGeneratedTerrainNodeMesh(generated);
 			else if(generated.source == MeshGenerationSource::build_parts
 				&& world.getWorldBodySystem().isWorldBodyActive(generated.world_body_id)
 				&& world.getBuildObjectSystem().isBuildObjectActive(generated.build_object_id))

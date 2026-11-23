@@ -248,7 +248,7 @@ namespace danikk_space_engine
 				drawMeshRenderData(object.detail_mesh,
 					glm::translate(mat4(1.0f), vec3(relative_position)) * rotation);
 			}
-			getPlanetSystem().renderSurfaceNodes();
+			getPlanetSystem().renderActiveTerrainNodes();
 		};
 
 		if(far_render_distance > getCameraSystem().far_clip_distance * 1.05)

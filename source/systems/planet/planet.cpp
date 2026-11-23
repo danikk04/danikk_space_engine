@@ -207,7 +207,7 @@ namespace danikk_space_engine
 		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
 			* (world.getCameraSystem().getWorldPosition() - planet.position);
 		const double surface_height = getPlanetHeightAboveSurface(planet.id, camera_position);
-		planet.updateTerrainTree(camera_position, surface_height,
+		planet.updateTerrainStreaming(camera_position, surface_height,
 			getPlanetSettings(planet.settings_id),
 			world.getTelemetrySystem().mesh_generation_telemetry);
 		evictCachedMeshes(planet.terrain_tree, camera_position);

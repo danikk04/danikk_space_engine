@@ -41,7 +41,7 @@ namespace danikk_space_engine
 		}
 	}
 
-	bool PlanetTerrainNode::isRelevantTo(const glm::dvec3& render_window_minimum,
+	bool PlanetTerrainNode::isInTerrainRenderRegion(const glm::dvec3& render_window_minimum,
 		const glm::dvec3& render_window_maximum, const glm::dvec3& camera_position,
 		double height, const PlanetSettings& settings) const
 	{
@@ -75,7 +75,7 @@ namespace danikk_space_engine
 		return true;
 	}
 
-	void PlanetTerrainTree::calculateDetailScale(const glm::dvec3& camera_position, double height,
+	void PlanetTerrainTree::calculateStreamingDetailScale(const glm::dvec3& camera_position, double height,
 		const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 		glm::dvec3& render_window_maximum, double& detail_scale,
 		size_t& target_node_count, size_t& detail_scale_adjustments)
@@ -95,7 +95,7 @@ namespace danikk_space_engine
 				PlanetTerrainNode candidate;
 				candidate.center = center;
 				candidate.half_extent = half_extent;
-				if(!candidate.isRelevantTo(render_window_minimum, render_window_maximum,
+				if(!candidate.isInTerrainRenderRegion(render_window_minimum, render_window_maximum,
 					camera_position, height, settings)) return 0;
 				if(half_extent <= getTargetHalfExtent(camera_position, detail_scale, center)
 					|| depth >= PlanetTerrainTree::maximum_depth)
@@ -149,7 +149,7 @@ namespace danikk_space_engine
 			PlanetTerrainNode candidate;
 			candidate.center = nodes[node_id].center;
 			candidate.half_extent = nodes[node_id].half_extent;
-			if(!candidate.isRelevantTo(render_window_minimum, render_window_maximum,
+			if(!candidate.isInTerrainRenderRegion(render_window_minimum, render_window_maximum,
 				camera_position, height, settings)
 				|| candidate.half_extent <= PlanetTerrainTree::getTargetHalfExtent(camera_position,
 					detail_scale, candidate.center)) return;

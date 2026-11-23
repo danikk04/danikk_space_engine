@@ -49,8 +49,8 @@ namespace danikk_space_engine
 		/** @brief Checks whether the stored mesh matches the requested terrain version and mode. */
 		bool hasCurrentMesh(uint64 terrain_revision, PlanetMeshGenerator expected_generator,
 			bool expected_surface_only) const;
-		/** @brief Tests whether this node is in the current surface/cave render region. */
-		bool isRelevantTo(const glm::dvec3& render_window_minimum,
+		/** @brief Tests the render window, surface/cave range, and horizon for this node. */
+		bool isInTerrainRenderRegion(const glm::dvec3& render_window_minimum,
 			const glm::dvec3& render_window_maximum, const glm::dvec3& camera_position,
 			double height, const PlanetSettings& settings) const;
 	};
@@ -82,8 +82,8 @@ namespace danikk_space_engine
 		static void updateRenderWindow(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 			glm::dvec3& render_window_maximum);
-		/** @brief Chooses a distance-based detail scale while respecting visible-node limits. */
-		static void calculateDetailScale(const glm::dvec3& camera_position, double height,
+		/** @brief Computes streaming detail, render window, and visible-node budget diagnostics. */
+		static void calculateStreamingDetailScale(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 			glm::dvec3& render_window_maximum, double& detail_scale,
 			size_t& target_node_count, size_t& detail_scale_adjustments);
@@ -92,14 +92,14 @@ namespace danikk_space_engine
 			const PlanetSettings& settings, double detail_scale,
 			const glm::dvec3& render_window_minimum,
 			const glm::dvec3& render_window_maximum);
-		/** @brief Selects visible target nodes, nearest first within each tree level. */
-		void updateRenderActivity(const glm::dvec3& camera_position, double height,
+		/** @brief Selects visible target nodes and marks them active, nearest first per level. */
+		void selectRenderNodes(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& planet_settings, double detail_scale,
 			const glm::dvec3& render_window_minimum,
 			const glm::dvec3& render_window_maximum,
 			DynamicArray<PlanetTerrainNodeId>& selected_node_ids);
-		/** @brief Activates target meshes and drawable ancestors used as temporary fallbacks. */
-		void activateMeshes(const DynamicArray<PlanetTerrainNodeId>& selected_node_ids);
+		/** @brief Applies target visibility and activates drawable ancestors as temporary fallbacks. */
+		void applyRenderSelection(const DynamicArray<PlanetTerrainNodeId>& selected_node_ids);
 	};
 
 	/** @brief Spherical terrain region whose cached meshes must be regenerated. */

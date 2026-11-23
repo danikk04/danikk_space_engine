@@ -233,11 +233,11 @@ namespace danikk_space_engine
 		/** @brief Whether current camera data has activated terrain streaming for this planet. */
 		bool terrain_streaming_active = false;
 
-		/** @brief Synchronizes edits and updates this planet's adaptive terrain tree. */
-		void updateTerrainTree(const glm::dvec3& camera_position, double height,
+		/** @brief Updates edits, adaptive terrain streaming, mesh selection, and diagnostics. */
+		void updateTerrainStreaming(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, MeshGenerationTelemetry& telemetry);
-		/** @brief Synchronizes cached node revisions with terrain edits and tree limits. */
-		void synchronizeTerrainTree(MeshGenerationTelemetry& telemetry);
+		/** @brief Applies dirty terrain regions and enforces the adaptive tree node limit. */
+		void applyTerrainChangesToTree(MeshGenerationTelemetry& telemetry);
 		/** @brief Records streaming diagnostics collected from this planet's terrain tree. */
 		void recordDiagnostics(MeshGenerationTelemetry& telemetry, size_t target_node_count,
 			size_t detail_scale_adjustments, double detail_scale) const;
