@@ -12,6 +12,10 @@ namespace danikk_space_engine
 	/** @brief One adaptive spatial cell in a planet's render/streaming octree. */
 	struct PlanetTerrainNode : public danikk_framework::OctreeNode<PlanetTerrainNodeId>
 	{
+		/** @brief Parent node, or invalid_node when this node is the root. */
+		PlanetTerrainNodeId parent_id = static_cast<PlanetTerrainNodeId>(-1);
+		/** @brief Number of parent links from the tree root. */
+		uint8 depth = 0;
 		/** @brief GPU mesh generated for this node's terrain region, if available. */
 		MeshRenderData mesh;
 		/** @brief Planet-local origin subtracted from the mesh vertices for precision. */
@@ -38,6 +42,8 @@ namespace danikk_space_engine
 		bool pending_surface_only = true;
 		/** @brief Whether this node's mesh is selected for drawing or fallback coverage. */
 		bool render_active = false;
+		/** @brief Temporary per-frame marker preventing duplicate fallback entries. */
+		bool render_fallback = false;
 
 		/** @brief Tests this node's cubic bounds against an axis-aligned box. */
 		bool intersectsBounds(const glm::dvec3& minimum, const glm::dvec3& maximum) const;

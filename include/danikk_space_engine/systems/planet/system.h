@@ -12,6 +12,8 @@ namespace danikk_space_engine
 		DynamicArray<PlanetData> planets;
 		/** @brief Reused per-frame list of selected detail nodes and drawable fallbacks. */
 		DynamicArray<PlanetTerrainRenderNode> terrain_render_nodes;
+		/** @brief Reused scratch IDs for cache eviction candidates. */
+		DynamicArray<PlanetTerrainNodeId> mesh_eviction_candidates;
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);

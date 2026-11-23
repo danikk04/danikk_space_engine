@@ -10,19 +10,6 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		/** @brief Returns the octree depth implied by a node's power-of-two half extent. */
-		uint8 getNodeDepth(const PlanetTerrainNode& node)
-		{
-			uint8 depth = 0;
-			double half_extent = PlanetTerrainTree::initial_root_half_extent;
-			while(depth < PlanetTerrainTree::maximum_depth && half_extent > node.half_extent)
-			{
-				half_extent *= 0.5;
-				depth++;
-			}
-			return depth;
-		}
-
 		/** @brief Collects visible target nodes in detail-first order with the per-level cap applied. */
 		void collectTargetNodes(PlanetData& planet, const PlanetSettings& settings,
 			DynamicArray<PlanetTerrainNodeId>& selected_node_ids)
@@ -57,8 +44,8 @@ namespace danikk_space_engine
 				{
 					const PlanetTerrainNode& left = tree.nodes[left_id];
 					const PlanetTerrainNode& right = tree.nodes[right_id];
-					const uint8 left_depth = getNodeDepth(left);
-					const uint8 right_depth = getNodeDepth(right);
+					const uint8 left_depth = left.depth;
+					const uint8 right_depth = right.depth;
 					if(left_depth != right_depth) return left_depth > right_depth;
 					const glm::dvec3 left_offset = left.center - planet.streaming_camera_position;
 					const glm::dvec3 right_offset = right.center - planet.streaming_camera_position;
@@ -71,7 +58,7 @@ namespace danikk_space_engine
 			size_t selected_per_level[PlanetTerrainTree::maximum_depth + 1] = {};
 			for(PlanetTerrainNodeId node_id : visible_node_ids)
 			{
-				const uint8 depth = getNodeDepth(tree.nodes[node_id]);
+				const uint8 depth = tree.nodes[node_id].depth;
 				if(selected_per_level[depth] >= PlanetTerrainTree::maximum_visible_meshes_per_level) continue;
 				selected_per_level[depth]++;
 				selected_node_ids.push(node_id);
@@ -82,69 +69,61 @@ namespace danikk_space_engine
 	const DynamicArray<PlanetTerrainRenderNode>& PlanetSystem::getTerrainNodesForRender()
 	{
 		DSE_WATCH();
+		// The previous output list is also the exact set of nodes whose transient
+		// render flags need clearing. Avoid touching every node in every tree.
+		for(const PlanetTerrainRenderNode& render_node : terrain_render_nodes)
+		{
+			PlanetData* planet = findPlanet(render_node.planet_id);
+			if(planet == nullptr || render_node.node_id >= planet->terrain_tree.nodes.size()) continue;
+			PlanetTerrainNode& node = planet->terrain_tree.nodes[render_node.node_id];
+			node.render_active = false;
+			node.render_fallback = false;
+		}
 		terrain_render_nodes.clear();
 		const bool has_camera = world.getCameraSystem().isActive();
 		for(PlanetData& planet : planets)
 		{
 			PlanetTerrainTree& tree = planet.terrain_tree;
-			for(PlanetTerrainNode& node : tree.nodes) node.render_active = false;
 			if(!planet.terrain_streaming_active || tree.root_id >= tree.nodes.size()) continue;
 
 			DynamicArray<PlanetTerrainNodeId> selected_node_ids;
 			collectTargetNodes(planet, getPlanetSettings(planet.settings_id), selected_node_ids);
-			DynamicArray<uint8> target_nodes(tree.nodes.size(), 0);
-			DynamicArray<uint8> fallback_nodes(tree.nodes.size(), 0);
-			for(PlanetTerrainNodeId node_id : selected_node_ids)
-				if(node_id < target_nodes.size()) target_nodes[node_id] = 1;
 
 			const auto hasDrawableMesh = [](const PlanetTerrainNode& node)
 			{
 				return node.mesh.mesh != nullptr && node.mesh.material_ranges.size() > 0;
 			};
-			const auto markFallbacks = [&](auto&& self, PlanetTerrainNodeId node_id,
-				PlanetTerrainNodeId drawable_ancestor) -> void
+			constexpr uint8 maximum_fallback_ancestor_levels = 4;
+			for(PlanetTerrainNodeId node_id : selected_node_ids)
 			{
-				if(node_id >= tree.nodes.size()) return;
-				const PlanetTerrainNode& node = tree.nodes[node_id];
-				if(hasDrawableMesh(node)) drawable_ancestor = node_id;
-				if(target_nodes[node_id] != 0)
-				{
-					if(!hasDrawableMesh(node) && drawable_ancestor != PlanetTerrainTree::invalid_node
-						&& drawable_ancestor != node_id)
-					{
-						constexpr uint8 maximum_fallback_ancestor_levels = 4;
-						const uint8 target_depth = getNodeDepth(node);
-						const uint8 ancestor_depth = getNodeDepth(tree.nodes[drawable_ancestor]);
-						if(target_depth >= ancestor_depth
-							&& target_depth - ancestor_depth <= maximum_fallback_ancestor_levels)
-							fallback_nodes[drawable_ancestor] = 1;
-					}
-					return;
-				}
-				for(PlanetTerrainNodeId child_id : node.children)
-					if(child_id != PlanetTerrainTree::invalid_node) self(self, child_id, drawable_ancestor);
-			};
-			markFallbacks(markFallbacks, tree.root_id, PlanetTerrainTree::invalid_node);
-
-			const auto appendSelectedNodes = [&](auto&& self, PlanetTerrainNodeId node_id) -> void
-			{
-				if(node_id >= tree.nodes.size()) return;
+				if(node_id >= tree.nodes.size()) continue;
 				PlanetTerrainNode& node = tree.nodes[node_id];
-				if(target_nodes[node_id] != 0)
+				if(hasDrawableMesh(node)) node.render_active = true;
+				terrain_render_nodes.push(PlanetTerrainRenderNode{planet.id, node_id, false});
+
+				if(hasDrawableMesh(node)) continue;
+				const uint8 target_depth = node.depth;
+				PlanetTerrainNodeId ancestor_id = node.parent_id;
+				while(ancestor_id != PlanetTerrainTree::invalid_node && ancestor_id < tree.nodes.size())
 				{
-					if(hasDrawableMesh(node)) node.render_active = true;
-					terrain_render_nodes.push(PlanetTerrainRenderNode{planet.id, node_id, false});
-					return;
+					PlanetTerrainNode& ancestor = tree.nodes[ancestor_id];
+					if(hasDrawableMesh(ancestor))
+					{
+						const uint8 ancestor_depth = ancestor.depth;
+						if(target_depth >= ancestor_depth
+							&& target_depth - ancestor_depth <= maximum_fallback_ancestor_levels
+							&& !ancestor.render_fallback)
+						{
+							ancestor.render_fallback = true;
+							ancestor.render_active = true;
+							terrain_render_nodes.push(PlanetTerrainRenderNode{
+								planet.id, ancestor_id, true});
+						}
+						break;
+					}
+					ancestor_id = ancestor.parent_id;
 				}
-				if(fallback_nodes[node_id] != 0 && hasDrawableMesh(node))
-				{
-					node.render_active = true;
-					terrain_render_nodes.push(PlanetTerrainRenderNode{planet.id, node_id, true});
-				}
-				for(PlanetTerrainNodeId child_id : node.children)
-					if(child_id != PlanetTerrainTree::invalid_node) self(self, child_id);
-			};
-			appendSelectedNodes(appendSelectedNodes, tree.root_id);
+			}
 			planet.recordDiagnostics(world.getTelemetrySystem().mesh_generation_telemetry,
 				planet.streaming_target_node_count, planet.streaming_detail_scale_adjustments,
 				planet.streaming_detail_scale);
