@@ -5,7 +5,8 @@
 #include <danikk_space_engine/systems/physics/physics.h>
 #include <danikk_space_engine/systems/physics/internal.h>
 #include <danikk_space_engine/systems/planet/system.h>
-#include <danikk_space_engine/component/point/build_part.h>
+#include <danikk_space_engine/systems/build_object/system.h>
+#include <danikk_space_engine/systems/build_part/system.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
 #include <danikk_space_engine/point.h>
@@ -66,13 +67,10 @@ namespace danikk_space_engine
 			const PlanetData& planet = world.getPlanetSystem().getPlanet(target.planet_id);
 			const glm::dquat inverse_planet_rotation = glm::conjugate(planet.rotation);
 			DynamicArray<SurfaceContact> point_contacts;
-			size_t build_part_count = 0;
-			for(PointId point_id : moving_body.point_ids)
-				if(world.getPointData().isPointActive(point_id))
-					for(PointComponentSlotId slot_id : world.getPointData().getPoint(point_id).component_slot_ids)
-						if(world.getPointData().isPointComponentSlotActive(slot_id)
-							&& world.getPointData().getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
-							build_part_count++;
+			const BuildObjectId object_id = world.getBuildObjectSystem().findBuildObjectId(moving_body_id);
+			const BuildObject* object = object_id == static_cast<BuildObjectId>(-1)
+				? nullptr : &world.getBuildObjectSystem().getBuildObject(object_id);
+			const size_t build_part_count = object == nullptr ? 0 : object->build_part_ids.size();
 			point_contacts.reserve(moving_body.point_ids.size() + build_part_count * 8);
 			const auto sample_field = [&](const glm::dvec3& position)
 			{
@@ -89,26 +87,16 @@ namespace danikk_space_engine
 				if(point.world_body_id != moving_body_id) continue;
 				local_points.push(point.body_local_position);
 			}
-			for(PointId point_id : moving_body.point_ids)
-			{
-				if(!world.getPointData().isPointActive(point_id)) continue;
-				const Point& point = world.getPointData().getPoint(point_id);
-				for(PointComponentSlotId slot_id : point.component_slot_ids)
+			if(object != nullptr)
+				for(BuildPartId part_id : object->build_part_ids)
 				{
-					if(!world.getPointData().isPointComponentSlotActive(slot_id)) continue;
-					const PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
-					if(slot.type_id != PointComponentTypeId::build_part
-						|| !world.getPointData().isPointActive(slot.point_id)) continue;
-					const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
+					if(!world.getBuildPartSystem().isBuildPartActive(part_id)) continue;
+					const BuildPart& part = world.getBuildPartSystem().getBuildPart(part_id);
 					const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
-					const glm::dvec3 anchor = point.body_local_position;
 					for(const vec3& vertex : geometry.positions)
-					{
-						local_points.push(anchor
+						local_points.push(part.body_local_position
 							+ glm::dvec3(part.rotation * vec4(vertex * part.size, 0.0f)));
-					}
 				}
-			}
 			for(const glm::dvec3& local_point : local_points)
 			{
 				const glm::dvec3 planet_local_point = inverse_planet_rotation
@@ -273,23 +261,14 @@ namespace danikk_space_engine
 			if(!world.getWorldBodySystem().isWorldBodyActive(moving_body_id)) continue;
 			WorldBody& moving_body = world.getWorldBodySystem().getWorldBody(moving_body_id);
 			if(moving_body.planet_id != static_cast<PlanetId>(-1)) continue;
-			if(!hasSpatialPoints(moving_body)) continue;
+			const BuildObjectId build_object_id = world.getBuildObjectSystem().findBuildObjectId(moving_body_id);
+			if(moving_body.point_ids.size() == 0
+				&& (build_object_id == static_cast<BuildObjectId>(-1)
+					|| world.getBuildObjectSystem().getBuildObject(build_object_id).build_part_ids.size() == 0)) continue;
 			const BodyMassProperties mass_properties = calculateMassProperties(moving_body);
 			if(mass_properties.mass <= 0.0) continue;
-			bool has_surface_geometry = false;
-			for(PointId point_id : moving_body.point_ids)
-			{
-				if(!world.getPointData().isPointActive(point_id)) continue;
-				for(PointComponentSlotId slot_id : world.getPointData().getPoint(point_id).component_slot_ids)
-				{
-					if(world.getPointData().isPointComponentSlotActive(slot_id)
-						&& world.getPointData().getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
-					{
-						has_surface_geometry = true;
-						break;
-					}
-				}
-			}
+			const bool has_surface_geometry = build_object_id != static_cast<BuildObjectId>(-1)
+				&& world.getBuildObjectSystem().getBuildObject(build_object_id).build_part_ids.size() > 0;
 
 			if(moving_body.collision_radius > 0.0 && !has_surface_geometry)
 			{

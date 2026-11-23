@@ -33,6 +33,10 @@ namespace danikk_space_engine
 		const PointData& getPointData() const;
 		WorldBodySystem& getWorldBodySystem();
 		const WorldBodySystem& getWorldBodySystem() const;
+		BuildObjectSystem& getBuildObjectSystem();
+		const BuildObjectSystem& getBuildObjectSystem() const;
+		BuildPartSystem& getBuildPartSystem();
+		const BuildPartSystem& getBuildPartSystem() const;
 		/** @brief Returns the asynchronous mesh generation system. */
 		MeshGenerationSystem& getMeshGenerationSystem();
 		const MeshGenerationSystem& getMeshGenerationSystem() const;
@@ -87,7 +91,7 @@ namespace danikk_space_engine
 		 * and conditionally draws debug overlays and the placement preview.
 		 */
 		void frame();
-		/** @brief Draws planet-tree and WorldBody-owned detail meshes. */
+		/** @brief Draws planet-tree meshes and BuildObject meshes in their WorldBody frames. */
 		void renderWorldMeshes();
 		/** @brief Mirrors planet-owned transforms into temporary WorldBody frames used by legacy entity ownership. */
 		void syncPlanetWorldBodyFrames();

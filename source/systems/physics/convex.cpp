@@ -3,7 +3,8 @@
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/physics/physics.h>
-#include <danikk_space_engine/component/point/build_part.h>
+#include <danikk_space_engine/systems/build_object/system.h>
+#include <danikk_space_engine/systems/build_part/system.h>
 #include <danikk_space_engine/geometry/build_part.h>
 #include <danikk_space_engine/systems/physics/internal.h>
 
@@ -99,7 +100,7 @@ namespace danikk_space_engine::collision_internal
 	}
 
 	/**
-	 * @brief Builds body-relative convex proxies from active BuildPart components.
+	 * @brief Builds body-relative convex proxies from active BuildParts.
 	 * @param world World supplying point-owned entitiess and component data.
 	 * @param id ID of the body to prepare.
 	 * @param dragged_id Body whose proxy must be kinematic during pair resolution.
@@ -112,49 +113,40 @@ namespace danikk_space_engine::collision_internal
 		BodyCollider collider;
 		collider.id = id;
 		const WorldBody& body = world.getWorldBodySystem().getWorldBody(id);
-		for(PointId point_id : body.point_ids)
+		const BuildObjectId object_id = world.getBuildObjectSystem().findBuildObjectId(id);
+		if(object_id == static_cast<BuildObjectId>(-1)) return collider;
+		const BuildObject& object = world.getBuildObjectSystem().getBuildObject(object_id);
+		for(BuildPartId part_id : object.build_part_ids)
 		{
-			if(!world.getPointData().isPointActive(point_id)) continue;
-			const Point& point = world.getPointData().getPoint(point_id);
-			for(PointComponentSlotId slot_id : point.component_slot_ids)
+			if(!world.getBuildPartSystem().isBuildPartActive(part_id)) continue;
+			const BuildPart& part = world.getBuildPartSystem().getBuildPart(part_id);
+			const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
+			BuildPartCollider part_shape;
+			part_shape.vertices.reserve(geometry.positions.size());
+			for(const vec3& local_position : geometry.positions)
 			{
-				if(!world.getPointData().isPointComponentSlotActive(slot_id)) continue;
-				const PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
-				if(slot.type_id != PointComponentTypeId::build_part
-					|| !world.getPointData().isPointActive(slot.point_id)) continue;
-				const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
-				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
-				BuildPartCollider part_shape;
-				const glm::dvec3 anchor = point.body_local_position;
-				part_shape.vertices.reserve(geometry.positions.size());
-				for(const vec3& local_position : geometry.positions)
-				{
-					const glm::dvec3 part_position = anchor
-						+ glm::dvec3(part.rotation * vec4(local_position * part.size, 0.0f));
-					const glm::dvec3 body_position = body.rotation * part_position;
-					part_shape.vertices.push(body_position);
-					part_shape.center += body_position;
-					collider.radius = glm::max(collider.radius, glm::length(body_position));
-				}
-				if(part_shape.vertices.size() < 4) continue;
-				part_shape.center /= static_cast<double>(part_shape.vertices.size());
-				for(const CubeTriangle& triangle : geometry.triangles)
-				{
-					const glm::dvec3& a = part_shape.vertices[triangle.points[0]];
-					const glm::dvec3& b = part_shape.vertices[triangle.points[1]];
-					const glm::dvec3& c = part_shape.vertices[triangle.points[2]];
-					addDirection(part_shape.normals, glm::cross(b - a, c - a));
-					addDirection(part_shape.edges, b - a);
-					addDirection(part_shape.edges, c - b);
-					addDirection(part_shape.edges, a - c);
-				}
-				for(const glm::dvec3& vertex : part_shape.vertices)
-				{
-					part_shape.radius = glm::max(part_shape.radius,
-						glm::length(vertex - part_shape.center));
-				}
-				collider.parts.push(static_cast<BuildPartCollider&&>(part_shape));
+				const glm::dvec3 part_position = part.body_local_position
+					+ glm::dvec3(part.rotation * vec4(local_position * part.size, 0.0f));
+				const glm::dvec3 body_position = body.rotation * part_position;
+				part_shape.vertices.push(body_position);
+				part_shape.center += body_position;
+				collider.radius = glm::max(collider.radius, glm::length(body_position));
 			}
+			if(part_shape.vertices.size() < 4) continue;
+			part_shape.center /= static_cast<double>(part_shape.vertices.size());
+			for(const CubeTriangle& triangle : geometry.triangles)
+			{
+				const glm::dvec3& a = part_shape.vertices[triangle.points[0]];
+				const glm::dvec3& b = part_shape.vertices[triangle.points[1]];
+				const glm::dvec3& c = part_shape.vertices[triangle.points[2]];
+				addDirection(part_shape.normals, glm::cross(b - a, c - a));
+				addDirection(part_shape.edges, b - a);
+				addDirection(part_shape.edges, c - b);
+				addDirection(part_shape.edges, a - c);
+			}
+			for(const glm::dvec3& vertex : part_shape.vertices)
+				part_shape.radius = glm::max(part_shape.radius, glm::length(vertex - part_shape.center));
+			collider.parts.push(static_cast<BuildPartCollider&&>(part_shape));
 		}
 		if(id != dragged_id && body.mass > 0.0)
 		{

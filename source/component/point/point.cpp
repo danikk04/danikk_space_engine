@@ -1,6 +1,5 @@
 #include <danikk_space_engine/component/point/point.h>
 #include <danikk_space_engine/component/point/bullet.h>
-#include <danikk_space_engine/component/point/build_part.h>
 
 namespace danikk_space_engine
 {
@@ -23,11 +22,7 @@ namespace danikk_space_engine
 			{}, // reserved engine type; no component implementation is registered yet
 			{}, // Reserved legacy type; people live in HumanSystem.
 			{}, // Reserved legacy type; inventories live with their owning entities.
-			{
-				sizeof(BuildPartComponent), alignof(BuildPartComponent), true,
-				constructBuildPartComponent, moveBuildPartComponent, destroyBuildPartComponent,
-				nullptr, frameBuildPartComponent
-			},
+			{}, // Legacy BuildPart component ID retained as an unused slot.
 			{} // Reserved legacy type; health is stored with its owning system record.
 		};
 		static_assert(sizeof(point_component_types) / sizeof(point_component_types[0])

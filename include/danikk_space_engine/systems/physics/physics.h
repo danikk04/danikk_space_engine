@@ -24,7 +24,7 @@ namespace danikk_space_engine
 		/**
 		 * @brief Applies gravity and integrates position and orientation of loaded, non-planet bodies.
 		 *
-		 * Uses the engine's target frame delay. Bodies without an point-owned entities,
+		 * Uses the engine's target frame delay. Bodies without points or BuildParts,
 		 * planet bodies, and the body currently held by the Drag tool are skipped.
 		 * Gravity is sampled from EnvironmentSystem before linear position is
 		 * advanced; angular velocity is integrated as an axis-angle rotation.
@@ -35,15 +35,15 @@ namespace danikk_space_engine
 		 * @brief Destroys loaded non-planet bodies and point entities inside a planet's 5 m core radius.
 		 *
 		 * Planet centers are snapshotted first. IDs are collected before pool
-		 * destruction to avoid invalidating iteration. Planet bodies are exempt; point
-		 * components in unpoint-owned entities are not examined.
+		 * destruction to avoid invalidating iteration. Planet bodies are exempt; individual
+		 * point components are not inspected when choosing bodies for destruction.
 		 */
 		void destroyEntitiesInsidePlanetCore();
 
 		/**
 		 * @brief Resolves contacts between loaded non-planet bodies and planet scalar fields.
 		 *
-		 * Mesh-bearing bodies use their point-owned entities points to build grouped terrain
+		 * Mesh-bearing bodies use their BuildParts and point entities to build grouped terrain
 		 * contacts from scalar-field density and gradient samples. Bodies without
 		 * surface triangles may use collision_radius as a spherical fallback.
 		 * Corrections and impulses affect the moving body; planets are immovable.

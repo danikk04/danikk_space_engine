@@ -6,6 +6,7 @@
 
 #include <danikk_engine/input.h>
 #include <danikk_engine/danikk_engine.h>
+#include <danikk_engine/texture_methods.h>
 #include <danikk_framework/log.h>
 
 #include <danikk_space_engine/systems/world_body/world_body.h>

@@ -5,7 +5,6 @@
 #include <danikk_space_engine/fwd.h>
 #include <danikk_space_engine/id.h>
 #include <danikk_space_engine/systems/faction/faction.h>
-#include <danikk_space_engine/mesh_render_data.h>
 
 namespace danikk_space_engine
 {
@@ -75,20 +74,6 @@ namespace danikk_space_engine
 		double mass = 1.0;
 		/** @brief Conservative radius used by body-level broadphase collision checks. */
 		double collision_radius = 0.0;
-		/** @brief Combined BuildPart mesh in body-local coordinates. */
-		MeshRenderData detail_mesh;
-		/** @brief Body-local origin subtracted from detail vertices to preserve float precision. */
-		glm::dvec3 detail_mesh_position = glm::dvec3(0.0);
-		/** @brief Revision used to discard stale asynchronous detail-mesh results. */
-		uint64 detail_mesh_revision = 1;
-		/** @brief Whether the combined detail mesh needs regeneration. */
-		bool detail_mesh_dirty = false;
-		/** @brief Whether a detail-mesh generation request is already queued. */
-		bool detail_mesh_queued = false;
-		/** @brief Local-space conservative sphere for culling the detail mesh. */
-		vec3 detail_mesh_bounds_center = vec3(0.0f);
-		float detail_mesh_bounds_radius = 0.0f;
-		bool detail_mesh_bounds_valid = false;
 		/** @brief Point IDs stored in this body's local coordinate frame. */
 		DynamicArray<PointId> point_ids;
 		/** @brief Adaptive spatial index for points in this body's local coordinate frame. */

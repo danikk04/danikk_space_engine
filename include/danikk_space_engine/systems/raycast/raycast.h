@@ -13,7 +13,7 @@ namespace danikk_space_engine
 	 * @brief Stores the nearest terrain or BuildPart hit returned by a ray query.
 	 *
 	 * A miss leaves `hit` false. The owning body identifies the geometry; a
-	 * BuildPart hit also supplies its component slot ID.
+	 * BuildPart hit also supplies its BuildPart ID.
 	 */
 	struct RaycastHit
 	{
@@ -25,7 +25,7 @@ namespace danikk_space_engine
 		glm::dvec3 position = glm::dvec3(0.0);
 		/** @brief Surface normal transformed into world orientation. */
 		vec3 normal = vec3(0.0f);
-		/** @brief True when the nearest hit is a BuildPart component. */
+		/** @brief True when the nearest hit is a BuildPart instance. */
 		bool hit_build_part = false;
 		/** @brief True when the hit was found in a planet scalar field. */
 		bool hit_terrain = false;
@@ -33,8 +33,8 @@ namespace danikk_space_engine
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		/** @brief Planet containing a terrain hit, even when it has no WorldBody proxy. */
 		PlanetId planet_id = static_cast<PlanetId>(-1);
-		/** @brief BuildPart component slot, valid when `hit_build_part` is true. */
-		PointComponentSlotId build_part_slot_id = static_cast<PointComponentSlotId>(-1);
+		/** @brief BuildPart ID, valid when `hit_build_part` is true. */
+		BuildPartId build_part_id = static_cast<BuildPartId>(-1);
 	};
 
 	/** @brief Performs ray queries against planet terrain and BuildPart geometry. */

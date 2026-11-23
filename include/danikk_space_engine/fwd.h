@@ -21,6 +21,8 @@ namespace danikk_space_engine
 	class TelemetrySystem;
 	class PointData;
 	class WorldBodySystem;
+	class BuildObjectSystem;
+	class BuildPartSystem;
 	class MeshGenerationSystem;
 	class ComponentSystem;
 	class RaycastSystem;

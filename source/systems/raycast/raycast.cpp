@@ -7,10 +7,10 @@
 
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
-#include <danikk_space_engine/point.h>
 #include <danikk_space_engine/math/ray.h>
 #include <danikk_space_engine/systems/planet/system.h>
-#include <danikk_space_engine/component/point/build_part.h>
+#include <danikk_space_engine/systems/build_object/system.h>
+#include <danikk_space_engine/systems/build_part/system.h>
 #include <danikk_space_engine/geometry/build_part.h>
 #include <danikk_framework/log.h>
 
@@ -199,7 +199,6 @@ namespace danikk_space_engine
 		const World& owner = world;
 		const WorldBodySystem& world_body = owner.getWorldBodySystem();
 		const PlanetSystem& planets = owner.getPlanetSystem();
-		const PointData& point_data = owner.getPointData();
 		RaycastHit result;
 		const float direction_length = glm::length(direction);
 		if(direction_length <= 0.000001f || max_distance < 0.0f) return result;
@@ -219,41 +218,6 @@ namespace danikk_space_engine
 			const glm::dquat inverse_rotation = glm::conjugate(body_rotation);
 			const glm::dvec3 local_origin = inverse_rotation * (origin - body_position);
 			const vec3 local_direction = vec3(inverse_rotation * glm::dvec3(normalized_direction));
-			auto test_point = [&](PointId point_id)
-			{
-				if(!point_data.isPointActive(point_id)) return;
-				const Point& point = point_data.getPoint(point_id);
-				if(point.world_body_id != body_id) return;
-				for(PointComponentSlotId slot_id : point.component_slot_ids)
-				{
-					if(!point_data.isPointComponentSlotActive(slot_id)) continue;
-					const PointComponentSlot& slot = point_data.getPointComponentSlot(slot_id);
-					if(slot.type_id != PointComponentTypeId::build_part) continue;
-					const BuildPartComponent& part = *static_cast<const BuildPartComponent*>(slot.getData());
-					const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
-					const glm::dvec3 anchor = point.body_local_position;
-					const Ray part_local_ray{vec3(local_origin - anchor), local_direction};
-					for(const CubeTriangle& triangle : geometry.triangles)
-					{
-						const vec3 a = vec3(part.rotation * vec4(geometry.positions[triangle.points[0]] * part.size, 0.0f));
-						const vec3 b = vec3(part.rotation * vec4(geometry.positions[triangle.points[1]] * part.size, 0.0f));
-						const vec3 c = vec3(part.rotation * vec4(geometry.positions[triangle.points[2]] * part.size, 0.0f));
-						const RayTriangleIntersection intersection = intersectRayTriangle(part_local_ray, a, b, c);
-						if(!intersection.hit || intersection.distance > nearest_distance) continue;
-
-						nearest_distance = intersection.distance;
-						result.hit = true;
-						result.hit_build_part = true;
-						result.hit_terrain = false;
-						result.build_part_slot_id = slot_id;
-						result.distance = intersection.distance;
-						result.position = origin + glm::dvec3(normalized_direction) * static_cast<double>(intersection.distance);
-						result.normal = vec3(body.rotation * glm::dvec3(intersection.normal));
-						result.body_id = body_id;
-						result.planet_id = planet->id;
-					}
-				}
-			};
 
 			if(is_planet)
 			{
@@ -295,10 +259,39 @@ namespace danikk_space_engine
 					}
 				}
 			}
-			DynamicArray<PointId> candidates;
-			body.spatial_tree.collectRayCandidates(local_origin, glm::dvec3(local_direction),
-				nearest_distance, candidates);
-			for(PointId point_id : candidates) test_point(point_id);
+			const BuildObjectId object_id = world.getBuildObjectSystem().findBuildObjectId(body_id);
+			if(object_id == static_cast<BuildObjectId>(-1)) continue;
+			const BuildObject& object = world.getBuildObjectSystem().getBuildObject(object_id);
+			for(BuildPartId part_id : object.build_part_ids)
+			{
+				if(!world.getBuildPartSystem().isBuildPartActive(part_id)) continue;
+				const BuildPart& part = world.getBuildPartSystem().getBuildPart(part_id);
+				const BuildPartGeometry& geometry = getBuildPartGeometry(part.shape);
+				const Ray part_local_ray{
+					vec3(local_origin - part.body_local_position), local_direction};
+				for(const CubeTriangle& triangle : geometry.triangles)
+				{
+					const vec3 a = vec3(part.rotation
+						* vec4(geometry.positions[triangle.points[0]] * part.size, 0.0f));
+					const vec3 b = vec3(part.rotation
+						* vec4(geometry.positions[triangle.points[1]] * part.size, 0.0f));
+					const vec3 c = vec3(part.rotation
+						* vec4(geometry.positions[triangle.points[2]] * part.size, 0.0f));
+					const RayTriangleIntersection intersection = intersectRayTriangle(part_local_ray, a, b, c);
+					if(!intersection.hit || intersection.distance > nearest_distance) continue;
+					nearest_distance = intersection.distance;
+					result.hit = true;
+					result.hit_build_part = true;
+					result.hit_terrain = false;
+					result.build_part_id = part_id;
+					result.distance = intersection.distance;
+					result.position = origin + glm::dvec3(normalized_direction)
+						* static_cast<double>(intersection.distance);
+					result.normal = vec3(body_rotation * glm::dvec3(intersection.normal));
+					result.body_id = body_id;
+					result.planet_id = is_planet ? planet->id : static_cast<PlanetId>(-1);
+				}
+			}
 		}
 		return result;
 	}

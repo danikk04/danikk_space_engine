@@ -1,8 +1,8 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/world_body/system.h>
+#include <danikk_space_engine/systems/build_object/system.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_framework/log.h>
 #include <algorithm>
 #include <chrono>
@@ -113,14 +113,14 @@ namespace danikk_space_engine
 		cancelJobsForPlanet(planet_id, planet_generation_id);
 	}
 
-	void MeshGenerationSystem::invalidateBodyDetailMesh(WorldBodyId world_body_id)
+	void MeshGenerationSystem::invalidateBuildObjectMesh(BuildObjectId build_object_id)
 	{
 		DSE_WATCH();
-		if(!world.getWorldBodySystem().isWorldBodyActive(world_body_id)) return;
-		WorldBody& body = world.getWorldBodySystem().getWorldBody(world_body_id);
-		body.detail_mesh_dirty = true;
-		body.detail_mesh_queued = false;
-		if(++body.detail_mesh_revision == 0) ++body.detail_mesh_revision;
+		if(!world.getBuildObjectSystem().isBuildObjectActive(build_object_id)) return;
+		BuildObject& object = world.getBuildObjectSystem().getBuildObject(build_object_id);
+		object.detail_mesh_dirty = true;
+		object.detail_mesh_queued = false;
+		if(++object.detail_mesh_revision == 0) ++object.detail_mesh_revision;
 	}
 
 	bool MeshGenerationSystem::findNextBuildPartMeshJob(
@@ -133,16 +133,21 @@ namespace danikk_space_engine
 		bool found = false;
 		for(WorldBodyId world_body_id : world.getWorldBodySystem().getUsedWorldBodyIds())
 		{
+			const BuildObjectId object_id = world.getBuildObjectSystem().findBuildObjectId(world_body_id);
+			if(object_id == static_cast<BuildObjectId>(-1)) continue;
+			const BuildObject& object = world.getBuildObjectSystem().getBuildObject(object_id);
+			if(!object.detail_mesh_dirty || object.detail_mesh_queued) continue;
 			const WorldBody& body = world.getWorldBodySystem().getWorldBody(world_body_id);
-			if(!body.detail_mesh_dirty || body.detail_mesh_queued) continue;
 			const glm::dvec3 offset = body.position - camera_position;
 			const double distance_squared = has_camera
 				? glm::dot(offset, offset) : std::numeric_limits<double>::infinity();
 			if(found && distance_squared >= best_distance_squared) continue;
 			job = MeshGenerationJob();
 			job.source = MeshGenerationSource::build_parts;
-			job.source_revision = body.detail_mesh_revision;
+			job.source_revision = object.detail_mesh_revision;
+			job.source_generation_id = object.generation_id;
 			job.world_body_id = world_body_id;
+			job.build_object_id = object_id;
 			best_distance_squared = distance_squared;
 			found = true;
 		}
@@ -154,9 +159,12 @@ namespace danikk_space_engine
 		if(job.source == MeshGenerationSource::planet_terrain_node)
 			return world.getPlanetSystem().isMeshGenerationJobWanted(job);
 		if(job.source != MeshGenerationSource::build_parts
-			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)) return false;
-		const WorldBody& body = world.getWorldBodySystem().getWorldBody(job.world_body_id);
-		return body.detail_mesh_queued && body.detail_mesh_revision == job.source_revision;
+			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)
+			|| !world.getBuildObjectSystem().isBuildObjectActive(job.build_object_id)) return false;
+		const BuildObject& object = world.getBuildObjectSystem().getBuildObject(job.build_object_id);
+		return object.world_body_id == job.world_body_id
+			&& object.generation_id == job.source_generation_id
+			&& object.detail_mesh_queued && object.detail_mesh_revision == job.source_revision;
 	}
 
 	void MeshGenerationSystem::setMeshJobPending(const MeshGenerationJob& job, bool pending)
@@ -167,11 +175,14 @@ namespace danikk_space_engine
 			return;
 		}
 		if(job.source != MeshGenerationSource::build_parts
-			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)) return;
-		WorldBody& body = world.getWorldBodySystem().getWorldBody(job.world_body_id);
-		if(body.detail_mesh_revision != job.source_revision) return;
-		body.detail_mesh_queued = pending;
-		if(!pending) body.detail_mesh_dirty = true;
+			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)
+			|| !world.getBuildObjectSystem().isBuildObjectActive(job.build_object_id)) return;
+		BuildObject& object = world.getBuildObjectSystem().getBuildObject(job.build_object_id);
+		if(object.world_body_id != job.world_body_id
+			|| object.generation_id != job.source_generation_id
+			|| object.detail_mesh_revision != job.source_revision) return;
+		object.detail_mesh_queued = pending;
+		if(!pending) object.detail_mesh_dirty = true;
 	}
 
 	void MeshGenerationSystem::markMeshJobScheduled(const MeshGenerationJob& job)
@@ -182,15 +193,18 @@ namespace danikk_space_engine
 			return;
 		}
 		if(job.source != MeshGenerationSource::build_parts
-			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)) return;
-		WorldBody& body = world.getWorldBodySystem().getWorldBody(job.world_body_id);
-		if(body.detail_mesh_revision != job.source_revision || !body.detail_mesh_dirty) return;
-		if(body.detail_mesh.mesh != nullptr)
+			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)
+			|| !world.getBuildObjectSystem().isBuildObjectActive(job.build_object_id)) return;
+		BuildObject& object = world.getBuildObjectSystem().getBuildObject(job.build_object_id);
+		if(object.world_body_id != job.world_body_id
+			|| object.generation_id != job.source_generation_id
+			|| object.detail_mesh_revision != job.source_revision || !object.detail_mesh_dirty) return;
+		if(object.detail_mesh.mesh != nullptr)
 			world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
 				MeshDeletionReason::detail_mesh_rebuild);
-		destroyMeshRenderData(body.detail_mesh);
-		body.detail_mesh_dirty = false;
-		body.detail_mesh_queued = true;
+		destroyMeshRenderData(object.detail_mesh);
+		object.detail_mesh_dirty = false;
+		object.detail_mesh_queued = true;
 	}
 
 	/** @copydoc MeshGenerationSystem::frame */
@@ -203,33 +217,38 @@ namespace danikk_space_engine
 			if(generated.source == MeshGenerationSource::planet_terrain_node)
 				world.getPlanetSystem().acceptGeneratedSurfaceNode(generated);
 			else if(generated.source == MeshGenerationSource::build_parts
-				&& world.getWorldBodySystem().isWorldBodyActive(generated.world_body_id))
+				&& world.getWorldBodySystem().isWorldBodyActive(generated.world_body_id)
+				&& world.getBuildObjectSystem().isBuildObjectActive(generated.build_object_id))
 			{
-				WorldBody& body = world.getWorldBodySystem().getWorldBody(generated.world_body_id);
-				if(body.detail_mesh_revision == generated.source_revision)
+				BuildObject& object = world.getBuildObjectSystem().getBuildObject(generated.build_object_id);
+				if(object.world_body_id == generated.world_body_id
+					&& object.generation_id == generated.source_generation_id)
 				{
-					createMeshRenderData(body.detail_mesh,
-						generated.point_positions.data(), generated.point_positions.size(),
-						generated.triangle_point_indices.data(), generated.triangle_point_indices.size(),
-						generated.triangle_material_ids.data(), generated.triangle_material_ids.size());
-					body.detail_mesh_position = generated.mesh_position;
-					body.detail_mesh_queued = false;
-					body.detail_mesh_bounds_valid = false;
-					if(generated.point_positions.size() > 0)
+					if(object.detail_mesh_revision == generated.source_revision)
 					{
-						vec3 minimum = generated.point_positions[0];
-						vec3 maximum = generated.point_positions[0];
-						for(const vec3& position : generated.point_positions)
+						createMeshRenderData(object.detail_mesh,
+							generated.point_positions.data(), generated.point_positions.size(),
+							generated.triangle_point_indices.data(), generated.triangle_point_indices.size(),
+							generated.triangle_material_ids.data(), generated.triangle_material_ids.size());
+						object.detail_mesh_position = generated.mesh_position;
+						object.detail_mesh_queued = false;
+						object.detail_mesh_bounds_valid = false;
+						if(generated.point_positions.size() > 0)
 						{
-							minimum = glm::min(minimum, position);
-							maximum = glm::max(maximum, position);
+							vec3 minimum = generated.point_positions[0];
+							vec3 maximum = generated.point_positions[0];
+							for(const vec3& position : generated.point_positions)
+							{
+								minimum = glm::min(minimum, position);
+								maximum = glm::max(maximum, position);
+							}
+							object.detail_mesh_bounds_center = (minimum + maximum) * 0.5f;
+							object.detail_mesh_bounds_radius = 0.0f;
+							for(const vec3& position : generated.point_positions)
+								object.detail_mesh_bounds_radius = glm::max(object.detail_mesh_bounds_radius,
+									glm::length(position - object.detail_mesh_bounds_center));
+							object.detail_mesh_bounds_valid = true;
 						}
-						body.detail_mesh_bounds_center = (minimum + maximum) * 0.5f;
-						body.detail_mesh_bounds_radius = 0.0f;
-						for(const vec3& position : generated.point_positions)
-							body.detail_mesh_bounds_radius = glm::max(body.detail_mesh_bounds_radius,
-								glm::length(position - body.detail_mesh_bounds_center));
-						body.detail_mesh_bounds_valid = true;
 					}
 				}
 			}

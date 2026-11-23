@@ -18,8 +18,6 @@ namespace danikk_space_engine
 		world.getWorldBodySystem().attachPointToBody(body_id, point_id, body_local_position);
 		PointComponentSlot& slot = world.getPointData().getPointComponentSlot(slot_id);
 		slot.world_body_id = body_id;
-		if(slot.type_id == PointComponentTypeId::build_part)
-			world.getMeshGenerationSystem().invalidateBodyDetailMesh(body_id);
 	}
 
 	void ComponentSystem::init()

@@ -5,7 +5,7 @@
 
 namespace danikk_space_engine
 {
-	/** @brief Primitive construction shapes supported by BuildPartComponent. */
+	/** @brief Primitive construction shapes supported by BuildPart instances. */
 	enum class BuildPartShape : uint8
 	{
 		cube = 0, ///< Unit cube centered on the local origin.

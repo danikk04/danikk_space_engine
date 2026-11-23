@@ -15,8 +15,7 @@ namespace danikk_space_engine
 		engine, ///< Reserved component type; no implementation is registered yet.
 		human, ///< Reserved legacy ID; people are owned by HumanSystem.
 		inventory, ///< Reserved legacy ID; inventories are stored with their owning entity.
-		build_part, ///< Structural cube or slope with rendering and collision geometry.
-		damageable, ///< Reserved legacy ID; health is stored with its owning entity.
+		damageable = 7, ///< Reserved legacy ID; health is stored with its owning entity.
 		count ///< Number of entries in the point-component type table.
 	};
 

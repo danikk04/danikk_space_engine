@@ -1,16 +1,15 @@
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/systems/world_body/system.h>
+#include <danikk_space_engine/systems/build_object/system.h>
+#include <danikk_space_engine/systems/build_part/system.h>
 #include <danikk_space_engine/gui/gui.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/geometry/cube.h>
-#include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/systems/human/damageable.h>
 #include <danikk_space_engine/systems/planet/system.h>
-#include <danikk_space_engine/systems/component/component.h>
 
 #include <cmath>
 
-#include <danikk_space_engine/point.h>
 #include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/physics/physics.h>
 
@@ -22,11 +21,11 @@ namespace danikk_space_engine
 	{
 
 		/**
-		 * @brief Attempts to create one BuildPart anchor and attach it to the hit part's WorldBody.
-		 * @param world World receiving the point and component resources.
-		 * @param hit Raycast result supplying placement position, normal, and optional parent part.
-		 * A hit on terrain creates a new WorldBody with one BuildPart anchor point. A hit
-		 * on a BuildPart adds a child part to that part's body and stores its slot as parent.
+		 * @brief Creates a BuildPart in the BuildObject selected by the placement result.
+		 * @param world World receiving body, BuildObject, and BuildPart resources.
+		 * @param hit Raycast result supplying placement position, normal, and optional reference part.
+		 * A terrain hit creates a WorldBody and its BuildObject; a BuildPart hit adds an
+		 * unparented part to the same BuildObject.
 		 * Intersections with existing parts on that body are rejected before resources are allocated.
 		 * @return True when the part was created; false when it would overlap another part.
 		 */
@@ -41,7 +40,7 @@ namespace danikk_space_engine
 				return false;
 
 			WorldBodyId body_id = placement.body_id;
-			const PointComponentSlotId parent_slot_id = placement.parent_slot_id;
+			BuildObjectId build_object_id = placement.build_object_id;
 			const glm::dvec3 anchor_world_position = placement.world_position;
 
 			if(body_id == static_cast<WorldBodyId>(-1))
@@ -52,34 +51,27 @@ namespace danikk_space_engine
 				body.position = anchor_world_position;
 				body.mass = 1.0;
 				body.collision_radius = 0.0;
+				build_object_id = world.getBuildObjectSystem().createBuildObject(body_id);
 			}
 
 			WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
-			const PointId point_id = world.getPointData().createPoint();
+			if(!world.getBuildObjectSystem().isBuildObjectActive(build_object_id)) return false;
 			const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
-			const glm::dvec3 anchor_body_position = inverse_body_rotation
+			const glm::dvec3 body_local_position = inverse_body_rotation
 				* (anchor_world_position - body.position);
-
-			BuildPartComponent part;
-			part.shape = shape;
-			part.size = size;
-			part.parent_slot_id = parent_slot_id;
-			part.rotation = placement.body_local_rotation;
-			const PointComponentSlotId part_slot_id = world.getPointData().createPointComponentSlot(
-				point_id, PointComponentTypeId::build_part, &part);
-			world.getComponentSystem().attachPointComponentToBody(
-				body_id, point_id, part_slot_id, anchor_body_position);
+			world.getBuildPartSystem().createBuildPart(build_object_id, shape,
+				body_local_position, placement.body_local_rotation, size);
 			double shape_radius = 0.0;
 			const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
 			for(const vec3& position : geometry.positions)
 			{
 				const vec3 scaled_position = position * size;
-				const vec3 rotated_position = vec3(part.rotation * vec4(scaled_position, 0.0f));
+				const vec3 rotated_position = vec3(placement.body_local_rotation * vec4(scaled_position, 0.0f));
 				shape_radius = glm::max(shape_radius, static_cast<double>(glm::length(rotated_position)));
 			}
 			body.collision_radius = glm::max(body.collision_radius,
-				glm::length(anchor_body_position) + shape_radius);
-			if(parent_slot_id != no_build_part_parent) body.mass += 1.0;
+				glm::length(body_local_position) + shape_radius);
+			if(placement.reference_build_part_id != static_cast<BuildPartId>(-1)) body.mass += 1.0;
 			return true;
 		}
 

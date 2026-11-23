@@ -16,6 +16,7 @@
 
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/systems/world_body/world_body.h>
+#include <danikk_space_engine/systems/build_object/system.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/component/component.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
@@ -209,18 +210,22 @@ namespace danikk_space_engine
 		if(bullet.destruction_queued) return;
 		const Point& point = world.getPointData().getPoint(slot.point_id);
 		const WorldBody& body = world.getWorldBodySystem().getWorldBody(slot.world_body_id);
-		const vec3 current_position = vec3(point.body_local_position - body.detail_mesh_position);
+		const BuildObjectId object_id = world.getBuildObjectSystem().findBuildObjectId(slot.world_body_id);
+		const glm::dvec3 mesh_position = object_id == static_cast<BuildObjectId>(-1)
+			? glm::dvec3(0.0)
+			: world.getBuildObjectSystem().getBuildObject(object_id).detail_mesh_position;
+		const vec3 current_position = vec3(point.body_local_position - mesh_position);
 		const float velocity_length = glm::length(bullet.velocity);
 		if(velocity_length <= 0.000001f) return;
 		const vec3 forward = bullet.velocity / velocity_length;
-		const vec3 previous_position = vec3(bullet.previous_position - body.detail_mesh_position);
+		const vec3 previous_position = vec3(bullet.previous_position - mesh_position);
 		const float actual_segment_length = glm::length(current_position - previous_position);
 		const float visible_trail_length = glm::min(velocity_length * bullet.age,
 			glm::max(actual_segment_length, glm::min(velocity_length * 0.12f, 12.0f)));
 		const vec3 start_position = previous_position
 			- forward * glm::max(0.0f, visible_trail_length - actual_segment_length);
 		const glm::dvec3 camera_local_position = glm::inverse(body.rotation)
-			* (world.getCameraSystem().getWorldPosition() - body.position) - body.detail_mesh_position;
+			* (world.getCameraSystem().getWorldPosition() - body.position) - mesh_position;
 		const vec3 midpoint = (start_position + current_position) * 0.5f;
 		const vec3 to_camera = vec3(camera_local_position - glm::dvec3(midpoint));
 		vec3 side = glm::cross(forward, to_camera);
@@ -263,7 +268,7 @@ namespace danikk_space_engine
 		setProjectionMatrix(projection);
 		white_texture.bind();
 		setDrawColor(vec4(1.0f, 1.0f, 0.0f, 1.0f));
-		const glm::dvec3 anchor_world = body.position + body.rotation * body.detail_mesh_position
+		const glm::dvec3 anchor_world = body.position + body.rotation * mesh_position
 			- world.getCameraSystem().getWorldPosition();
 		mat4 body_rotation(1.0f);
 		body_rotation[0] = vec4(vec3(body.rotation * glm::dvec3(1.0, 0.0, 0.0)), 0.0f);

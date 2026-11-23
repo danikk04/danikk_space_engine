@@ -3,11 +3,12 @@
 
 #include <danikk_space_engine/tool.h>
 #include <danikk_space_engine/world.h>
-#include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/systems/world_body/world_body.h>
+#include <danikk_space_engine/systems/build_object/system.h>
+#include <danikk_space_engine/systems/build_part/system.h>
 
 #include <danikk_space_engine/systems/raycast/raycast.h>
 
@@ -43,29 +44,27 @@ namespace danikk_space_engine
 			* (getSupportExtent(terrain_local_normal) + surface_offset);
 		placement.world_rotation = placement.body_local_rotation;
 
-		if(!hit.hit_build_part || !world.getPointData().isPointComponentSlotActive(hit.build_part_slot_id))
+		if(!hit.hit_build_part || !world.getBuildPartSystem().isBuildPartActive(hit.build_part_id))
 			return placement;
-
-		const PointComponentSlot& parent_slot = world.getPointData().getPointComponentSlot(hit.build_part_slot_id);
-		if(parent_slot.type_id != PointComponentTypeId::build_part
-			|| !world.getWorldBodySystem().isWorldBodyActive(parent_slot.world_body_id)) return placement;
-
-		const WorldBody& body = world.getWorldBodySystem().getWorldBody(parent_slot.world_body_id);
-		const BuildPartComponent& parent_part = *static_cast<const BuildPartComponent*>(parent_slot.getData());
+		const BuildPart& reference_part = world.getBuildPartSystem().getBuildPart(hit.build_part_id);
+		if(!world.getBuildObjectSystem().isBuildObjectActive(reference_part.build_object_id)) return placement;
+		const BuildObject& object = world.getBuildObjectSystem().getBuildObject(reference_part.build_object_id);
+		if(!world.getWorldBodySystem().isWorldBodyActive(object.world_body_id)) return placement;
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(object.world_body_id);
 		const glm::dquat inverse_body_rotation = glm::conjugate(body.rotation);
-		const glm::dvec3 parent_center = world.getPointData().getPoint(parent_slot.point_id).body_local_position;
+		const glm::dvec3 reference_center = reference_part.body_local_position;
 		const glm::dvec3 hit_in_body = inverse_body_rotation * (hit.position - body.position);
 		const vec3 body_normal = glm::normalize(vec3(inverse_body_rotation * glm::dvec3(hit_normal)));
 
-		// A child part inherits the parent's local frame; the hit face controls position, not its top direction.
-		placement.body_local_rotation = parent_part.rotation * local_quarter_turn;
-		const vec3 parent_forward(parent_part.rotation[1]);
-		const vec3 parent_up(parent_part.rotation[2]);
-		const vec3 tangent_reference = glm::abs(glm::dot(parent_up, body_normal)) > 0.99f
-			? parent_forward : parent_up;
+		// Parts remain independent; the hit part supplies only a local grid and orientation reference.
+		placement.body_local_rotation = reference_part.rotation * local_quarter_turn;
+		const vec3 reference_forward(reference_part.rotation[1]);
+		const vec3 reference_up(reference_part.rotation[2]);
+		const vec3 tangent_reference = glm::abs(glm::dot(reference_up, body_normal)) > 0.99f
+			? reference_forward : reference_up;
 		const vec3 tangent_right = glm::normalize(glm::cross(tangent_reference, body_normal));
 		const vec3 tangent_forward = glm::normalize(glm::cross(body_normal, tangent_right));
-		const glm::dvec3 relative_hit = hit_in_body - parent_center;
+		const glm::dvec3 relative_hit = hit_in_body - reference_center;
 		const double snapped_right = std::round(glm::dot(relative_hit, glm::dvec3(tangent_right)) / grid_step)
 			* grid_step;
 		const double snapped_forward = std::round(glm::dot(relative_hit, glm::dvec3(tangent_forward)) / grid_step)
@@ -74,12 +73,13 @@ namespace danikk_space_engine
 		const vec3 child_local_normal = vec3(
 			glm::transpose(mat3(placement.body_local_rotation)) * body_normal);
 		const double support_extent = getSupportExtent(child_local_normal);
-		const glm::dvec3 snapped_center = parent_center
+		const glm::dvec3 snapped_center = reference_center
 			+ glm::dvec3(tangent_right) * snapped_right
 			+ glm::dvec3(tangent_forward) * snapped_forward
 			+ glm::dvec3(body_normal) * (surface_distance + support_extent);
-		placement.body_id = parent_slot.world_body_id;
-		placement.parent_slot_id = hit.build_part_slot_id;
+		placement.body_id = object.world_body_id;
+		placement.build_object_id = reference_part.build_object_id;
+		placement.reference_build_part_id = hit.build_part_id;
 		placement.world_position = body.position + body.rotation * snapped_center;
 		placement.world_rotation = placement.body_local_rotation;
 		for(uint8 axis = 0; axis < 3; ++axis)

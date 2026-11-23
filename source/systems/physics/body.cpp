@@ -33,7 +33,7 @@ namespace danikk_space_engine
 		for(WorldBodyId id : world.getWorldBodySystem().getUsedWorldBodyIds())
 		{
 			const WorldBody& body = world.getWorldBodySystem().getWorldBody(id);
-			if(body.planet_id != static_cast<PlanetId>(-1) || !hasSpatialPoints(body)) continue;
+			if(body.planet_id != static_cast<PlanetId>(-1)) continue;
 			BodyCollider collider = createCollider(world, id, dragged_id);
 			if(collider.parts.size() > 0) colliders.push(static_cast<BodyCollider&&>(collider));
 		}

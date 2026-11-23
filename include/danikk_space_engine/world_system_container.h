@@ -2,6 +2,8 @@
 
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/systems/world_body/system.h>
+#include <danikk_space_engine/systems/build_object/system.h>
+#include <danikk_space_engine/systems/build_part/system.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/component/component.h>
 #include <danikk_space_engine/systems/controller/controller.h>
@@ -26,6 +28,8 @@ namespace danikk_space_engine
 		TelemetrySystem telemetry;
 		PointData point_data;
 		WorldBodySystem world_body;
+		BuildObjectSystem build_objects;
+		BuildPartSystem build_parts;
 		MeshGenerationSystem mesh_generation;
 		EnvironmentSystem environment;
 		PhysicsSystem physics;

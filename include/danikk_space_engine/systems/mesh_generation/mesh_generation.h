@@ -36,7 +36,9 @@ namespace danikk_space_engine
 	{
 		uint64 generation_id = 0;
 		uint64 source_revision = 0;
+		uint64 source_generation_id = 0;
 		WorldBodyId world_body_id = 0;
+		BuildObjectId build_object_id = static_cast<BuildObjectId>(-1);
 		PlanetId planet_id = static_cast<PlanetId>(-1);
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
@@ -60,7 +62,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Owns asynchronous mesh jobs and accepts generated CPU meshes.
 	 *
-	 * PlanetData and WorldBody own their accepted meshes. This system selects jobs directly from
+	 * PlanetData and BuildObject own their accepted meshes. This system selects jobs directly from
 	 * their state, runs the task pool, rejects stale results, and uploads meshes on the main thread.
 	 */
 	class MeshGenerationSystem
@@ -107,8 +109,8 @@ namespace danikk_space_engine
 		void frame();
 		/** @brief Cancels queued and active jobs for one planet incarnation. */
 		void cancelPlanetJobs(PlanetId planet_id, uint64 planet_generation_id);
-		/** @brief Marks the owning body's combined BuildPart mesh stale. */
-		void invalidateBodyDetailMesh(WorldBodyId world_body_id);
+		/** @brief Marks a BuildObject's combined BuildPart mesh stale. */
+		void invalidateBuildObjectMesh(BuildObjectId build_object_id);
 		/** @brief Reads the latest average generation time over 50 completed mesh jobs. */
 		bool getAverageGenerationTimeMilliseconds(float& average_time) const;
 	};

@@ -8,6 +8,8 @@
 
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/systems/world_body/world_body.h>
+#include <danikk_space_engine/systems/build_object/system.h>
+#include <danikk_space_engine/systems/build_part/system.h>
 
 namespace danikk_space_engine
 {
@@ -73,7 +75,10 @@ namespace danikk_space_engine
 		{
 			if(!world.getWorldBodySystem().isWorldBodyActive(body_id)) continue;
 			const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
-			if(body.planet_id != static_cast<PlanetId>(-1) || !collision_internal::hasSpatialPoints(body)) continue;
+			const BuildObjectId object_id = world.getBuildObjectSystem().findBuildObjectId(body_id);
+			if(body.planet_id != static_cast<PlanetId>(-1) || (body.point_ids.size() == 0
+				&& (object_id == static_cast<BuildObjectId>(-1)
+					|| world.getBuildObjectSystem().getBuildObject(object_id).build_part_ids.size() == 0))) continue;
 			if(isInsideAnyPlanetCore(body.position, planets)) bodies_to_destroy.push(body_id);
 		}
 		for(WorldBodyId body_id : bodies_to_destroy)

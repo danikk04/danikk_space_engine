@@ -45,14 +45,16 @@ namespace danikk_space_engine
 	{
 		/** @brief World-space center of the proposed BuildPart. */
 		glm::dvec3 world_position = glm::dvec3(0.0);
-		/** @brief Body-local orientation stored on the BuildPart component. */
+		/** @brief Body-local orientation stored on the BuildPart. */
 		mat4 body_local_rotation = mat4(1.0f);
 		/** @brief World-space orientation used to render the placement preview. */
 		mat4 world_rotation = mat4(1.0f);
 		/** @brief Existing body to attach to, or invalid when placement creates a new body. */
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
-		/** @brief Hit BuildPart used as the parent and local grid origin, if present. */
-		PointComponentSlotId parent_slot_id = static_cast<PointComponentSlotId>(-1);
+		/** @brief BuildObject receiving the new part, or invalid when placement creates one. */
+		BuildObjectId build_object_id = static_cast<BuildObjectId>(-1);
+		/** @brief Hit BuildPart used as the local grid reference; not a structural parent. */
+		BuildPartId reference_build_part_id = static_cast<BuildPartId>(-1);
 	};
 
 	/**

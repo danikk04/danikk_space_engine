@@ -1,7 +1,6 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/point.h>
-#include <danikk_space_engine/component/point/build_part.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
@@ -62,10 +61,6 @@ namespace danikk_space_engine
 			body.point_ids.resize(body.point_ids.size() - 1);
 			for(size_t move = index; move < body.point_ids.size(); ++move)
 				getPoint(body.point_ids[move]).world_body_point_index = move;
-			for(PointComponentSlotId slot_id : point.component_slot_ids)
-				if(isPointComponentSlotActive(slot_id)
-					&& getPointComponentSlot(slot_id).type_id == PointComponentTypeId::build_part)
-					world.getMeshGenerationSystem().invalidateBodyDetailMesh(point.world_body_id);
 		}
 		DynamicArray<PointComponentSlotId>& attached_slots = points[id].component_slot_ids;
 		while(attached_slots.size() > 0)
@@ -78,17 +73,6 @@ namespace danikk_space_engine
 	{
 		if(!isPointComponentSlotActive(id)) return;
 		const PointComponentSlot& destroyed_slot = point_components[id];
-		if(destroyed_slot.type_id == PointComponentTypeId::build_part)
-		{
-			for(PointComponentSlotId other_id : point_components.usedIds())
-				if(other_id != id && isPointComponentSlotActive(other_id))
-				{
-					PointComponentSlot& other_slot = point_components[other_id];
-					if(other_slot.type_id != PointComponentTypeId::build_part) continue;
-					BuildPartComponent& child = *static_cast<BuildPartComponent*>(other_slot.getData());
-					if(child.parent_slot_id == id) child.parent_slot_id = no_build_part_parent;
-				}
-		}
 		if(isPointActive(destroyed_slot.point_id))
 		{
 			DynamicArray<PointComponentSlotId>& point_slots = points[destroyed_slot.point_id].component_slot_ids;

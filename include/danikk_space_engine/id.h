@@ -10,6 +10,10 @@ namespace danikk_space_engine
 	using HumanId = uint32;
 	/** @brief 32-bit handle for a world-space body and its transform. */
 	using WorldBodyId = uint32;
+	/** @brief 32-bit handle for construction metadata associated with a WorldBody. */
+	using BuildObjectId = uint32;
+	/** @brief 32-bit handle for a structural part owned by a BuildObject. */
+	using BuildPartId = uint32;
 	/** @brief Stable handle for a planet owned by PlanetSystem. */
 	using PlanetId = uint32;
 	/** @brief 32-bit index identifying a material definition. */

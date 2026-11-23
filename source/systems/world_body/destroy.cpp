@@ -4,6 +4,9 @@
 #include <danikk_space_engine/point.h>
 #include <danikk_space_engine/systems/human/system.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/build_object/system.h>
+#include <danikk_space_engine/systems/build_part/system.h>
+#include <danikk_engine/danikk_engine.h>
 
 namespace danikk_space_engine
 {
@@ -47,16 +50,12 @@ namespace danikk_space_engine
 	{
 		if(!isWorldBodyActive(id)) return;
 		WorldBody& body = world_bodies[id];
+		world.getBuildObjectSystem().destroyBuildObjectForWorldBody(id);
 		world.getHumanSystem().destroyWorldBodyHumans(id);
 		while(body.point_ids.size() > 0)
 			world.getPointData().destroyPoint(body.point_ids[body.point_ids.size() - 1]);
 		if(body.planet_id != static_cast<PlanetId>(-1))
 			world.getPlanetSystem().destroyPlanet(body.planet_id);
-		if(body.detail_mesh.mesh != nullptr)
-			world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
-				MeshDeletionReason::world_body_destroyed);
-		destroyMeshRenderData(body.detail_mesh);
-		body.detail_mesh_bounds_valid = false;
 		if(body.point_ids.size() > 0)
 			danikk_engine::formatFatalError("World body % still owns points during destruction", id);
 		world_bodies.free(id);
@@ -66,7 +65,7 @@ namespace danikk_space_engine
 	void WorldBodySystem::clear()
 	{
 		for(WorldBodyId id : world_bodies.usedIds())
-			destroyMeshRenderData(world_bodies[id].detail_mesh);
+			world.getBuildObjectSystem().destroyBuildObjectForWorldBody(id);
 		for(WorldBodyId id : world_bodies.usedIds())
 			if(world_bodies[id].point_ids.size() > 0)
 				danikk_engine::formatFatalError("World body % still owns points during WorldBodySystem clear", id);
