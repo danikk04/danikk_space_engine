@@ -75,53 +75,6 @@ namespace danikk_space_engine
 		return true;
 	}
 
-	void PlanetSystem::synchronizeTerrainTree(PlanetData& planet)
-	{
-		DSE_WATCH();
-		PlanetTerrainTree& tree = planet.terrain_tree;
-		if(tree.root_id == PlanetTerrainTree::invalid_node) tree.createRoot();
-
-		if(planet.terrain_tree_revision != planet.terrain_revision)
-		{
-			for(PlanetTerrainNode& node : tree.nodes)
-			{
-				node.generation_pending = false;
-				node.pending_terrain_revision = 0;
-				node.pending_node_generation_id = 0;
-				bool dirty = planet.pending_terrain_dirty_regions.empty();
-				for(const PlanetTerrainDirtyRegion& region : planet.pending_terrain_dirty_regions)
-				{
-					if(!node.intersectsSphere(region.center, region.radius)) continue;
-					dirty = true;
-					break;
-				}
-				if(dirty)
-				{
-					node.mesh_revision = 0;
-					node.mesh_generated = false;
-					node.render_active = false;
-					node.generation_id = tree.next_node_generation_id++;
-					if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
-				}
-				else if(node.mesh_generated)
-					node.mesh_revision = planet.terrain_revision;
-			}
-			planet.pending_terrain_dirty_regions.clear();
-			planet.terrain_tree_revision = planet.terrain_revision;
-		}
-
-		if(tree.nodes.size() + 8192 <= PlanetTerrainTree::maximum_node_count) return;
-		for(PlanetTerrainNode& node : tree.nodes)
-		{
-			if(node.mesh.mesh == nullptr) continue;
-			destroyMeshRenderData(node.mesh);
-			world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
-				MeshDeletionReason::tree_node_limit);
-		}
-		tree.clear();
-		tree.createRoot();
-	}
-
 	void PlanetTerrainTree::calculateDetailScale(const glm::dvec3& camera_position, double height,
 		const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 		glm::dvec3& render_window_maximum, double& detail_scale,

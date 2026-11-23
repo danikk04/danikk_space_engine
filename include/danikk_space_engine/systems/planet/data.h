@@ -17,6 +17,9 @@
 
 namespace danikk_space_engine
 {
+	class MeshGenerationTelemetry;
+	enum class MeshDeletionReason : uint8;
+
 	namespace planet_settings_ids
 	{
 		inline constexpr PlanetSettingsId earth = 0;
@@ -209,6 +212,17 @@ namespace danikk_space_engine
 		glm::dvec3 render_window_maximum = glm::dvec3(0.0);
 		double streaming_height = 0.0;
 		bool terrain_streaming_active = false;
+
+		/** @brief Synchronizes edits and updates this planet's adaptive terrain tree. */
+		void updateTerrainTree(const glm::dvec3& camera_position, double height,
+			const PlanetSettings& settings, MeshGenerationTelemetry& telemetry);
+		/** @brief Synchronizes cached node revisions with terrain edits and tree limits. */
+		void synchronizeTerrainTree(MeshGenerationTelemetry& telemetry);
+		/** @brief Records streaming diagnostics collected from this planet's terrain tree. */
+		void recordDiagnostics(MeshGenerationTelemetry& telemetry, size_t target_node_count,
+			size_t detail_scale_adjustments, double detail_scale) const;
+		/** @brief Destroys cached terrain meshes and clears this planet's tree. */
+		void destroyTerrainTree(MeshGenerationTelemetry& telemetry, MeshDeletionReason reason);
 
 	};
 }

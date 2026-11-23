@@ -66,47 +66,86 @@ namespace danikk_space_engine
 		return true;
 	}
 
-	void PlanetSystem::destroyPlanetTerrainTree(PlanetData& planet,
+	void PlanetData::destroyTerrainTree(MeshGenerationTelemetry& telemetry,
 		MeshDeletionReason reason)
 	{
 		DSE_WATCH();
-		for(PlanetTerrainNode& node : planet.terrain_tree.nodes)
+		for(PlanetTerrainNode& node : terrain_tree.nodes)
 		{
 			if(node.mesh.mesh == nullptr) continue;
 			destroyMeshRenderData(node.mesh);
-			world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(reason);
+			telemetry.recordMeshDeletion(reason);
 		}
-		planet.terrain_tree.clear();
+		terrain_tree.clear();
 	}
 
-	void PlanetSystem::updatePlanetTerrainTree(PlanetData& planet,
-		const glm::dvec3& camera_position, double height)
+	void PlanetData::synchronizeTerrainTree(MeshGenerationTelemetry& telemetry)
 	{
 		DSE_WATCH();
-		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
-		PlanetTerrainTree& tree = planet.terrain_tree;
-		glm::dvec3 render_window_minimum(0.0);
-		glm::dvec3 render_window_maximum(0.0);
+		PlanetTerrainTree& tree = terrain_tree;
+		if(tree.root_id == PlanetTerrainTree::invalid_node) tree.createRoot();
+
+		if(terrain_tree_revision != terrain_revision)
+		{
+			for(PlanetTerrainNode& node : tree.nodes)
+			{
+				node.generation_pending = false;
+				node.pending_terrain_revision = 0;
+				node.pending_node_generation_id = 0;
+				bool dirty = pending_terrain_dirty_regions.empty();
+				for(const PlanetTerrainDirtyRegion& region : pending_terrain_dirty_regions)
+				{
+					if(!node.intersectsSphere(region.center, region.radius)) continue;
+					dirty = true;
+					break;
+				}
+				if(dirty)
+				{
+					node.mesh_revision = 0;
+					node.mesh_generated = false;
+					node.render_active = false;
+					node.generation_id = tree.next_node_generation_id++;
+					if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
+				}
+				else if(node.mesh_generated)
+					node.mesh_revision = terrain_revision;
+			}
+			pending_terrain_dirty_regions.clear();
+			terrain_tree_revision = terrain_revision;
+		}
+
+		if(tree.nodes.size() + 8192 <= PlanetTerrainTree::maximum_node_count) return;
+		for(PlanetTerrainNode& node : tree.nodes)
+		{
+			if(node.mesh.mesh == nullptr) continue;
+			destroyMeshRenderData(node.mesh);
+			telemetry.recordMeshDeletion(MeshDeletionReason::tree_node_limit);
+		}
+		tree.clear();
+		tree.createRoot();
+	}
+
+	void PlanetData::updateTerrainTree(const glm::dvec3& camera_position, double height,
+		const PlanetSettings& planet_settings, MeshGenerationTelemetry& telemetry)
+	{
+		DSE_WATCH();
 		double detail_scale = 0.0;
 		size_t target_node_count = 0;
 		size_t detail_scale_adjustments = 0;
 		DynamicArray<PlanetTerrainNodeId> selected_node_ids;
 
-		synchronizeTerrainTree(planet);
+		synchronizeTerrainTree(telemetry);
 		PlanetTerrainTree::calculateDetailScale(camera_position, height,
 			planet_settings, render_window_minimum, render_window_maximum, detail_scale,
 			target_node_count, detail_scale_adjustments);
-		planet.streaming_camera_position = camera_position;
-		planet.streaming_height = height;
-		planet.render_window_minimum = render_window_minimum;
-		planet.render_window_maximum = render_window_maximum;
-		planet.terrain_streaming_active = true;
-		tree.refine(camera_position, height, planet_settings,
+		streaming_camera_position = camera_position;
+		streaming_height = height;
+		terrain_streaming_active = true;
+		terrain_tree.refine(camera_position, height, planet_settings,
 			detail_scale, render_window_minimum, render_window_maximum);
-		tree.updateRenderActivity(camera_position, height, planet_settings, detail_scale,
+		terrain_tree.updateRenderActivity(camera_position, height, planet_settings, detail_scale,
 			render_window_minimum, render_window_maximum, selected_node_ids);
-		tree.activateMeshes(selected_node_ids);
-		recordDiagnostics(planet, target_node_count, detail_scale_adjustments, detail_scale);
-		evictCachedMeshes(tree, camera_position);
+		terrain_tree.activateMeshes(selected_node_ids);
+		recordDiagnostics(telemetry, target_node_count, detail_scale_adjustments, detail_scale);
 	}
 }

@@ -4,16 +4,16 @@
 
 namespace danikk_space_engine
 {
-	void PlanetSystem::recordDiagnostics(const PlanetData& planet,
-		size_t target_node_count, size_t detail_scale_adjustments, double detail_scale)
+	void PlanetData::recordDiagnostics(MeshGenerationTelemetry& telemetry,
+		size_t target_node_count, size_t detail_scale_adjustments, double detail_scale) const
 	{
 		DSE_WATCH();
 		PlanetTerrainTreeTelemetry snapshot;
-		snapshot.nodes = planet.terrain_tree.nodes.size();
+		snapshot.nodes = terrain_tree.nodes.size();
 		snapshot.target_nodes = target_node_count;
 		snapshot.detail_scale_adjustments = detail_scale_adjustments;
 		snapshot.detail_scale_total = detail_scale;
-		for(const PlanetTerrainNode& node : planet.terrain_tree.nodes)
+		for(const PlanetTerrainNode& node : terrain_tree.nodes)
 		{
 			if(node.render_active)
 			{
@@ -23,7 +23,7 @@ namespace danikk_space_engine
 					snapshot.finest_active_half_extent = node.half_extent;
 			}
 		}
-		for(const PlanetTerrainNode& node : planet.terrain_tree.nodes)
+		for(const PlanetTerrainNode& node : terrain_tree.nodes)
 		{
 			if(!node.generation_pending) continue;
 			snapshot.generation_pending_nodes++;
@@ -34,6 +34,6 @@ namespace danikk_space_engine
 				|| node_width < snapshot.finest_job_width)
 				snapshot.finest_job_width = node_width;
 		}
-		world.getTelemetrySystem().mesh_generation_telemetry.recordPlanetTerrainTree(snapshot);
+		telemetry.recordPlanetTerrainTree(snapshot);
 	}
 }

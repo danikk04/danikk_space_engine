@@ -36,7 +36,7 @@ namespace danikk_space_engine
 		for(PlanetData& planet : planets)
 		{
 			cancelQueuedJobsForPlanet(planet);
-			destroyPlanetTerrainTree(planet,
+			planet.destroyTerrainTree(world.getTelemetrySystem().mesh_generation_telemetry,
 				MeshDeletionReason::planet_system_shutdown);
 		}
 	}
@@ -90,7 +90,9 @@ namespace danikk_space_engine
 		{
 			if(planets[index].id != planet_id) continue;
 			cancelQueuedJobsForPlanet(planets[index]);
-			destroyPlanetTerrainTree(planets[index], MeshDeletionReason::planet_removed);
+			planets[index].destroyTerrainTree(
+				world.getTelemetrySystem().mesh_generation_telemetry,
+				MeshDeletionReason::planet_removed);
 			for(size_t shift = index + 1; shift < planets.size(); ++shift)
 				planets[shift - 1] = static_cast<PlanetData&&>(planets[shift]);
 			planets.resize(planets.size() - 1);
@@ -176,7 +178,10 @@ namespace danikk_space_engine
 		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
 			* (world.getCameraSystem().getWorldPosition() - planet.position);
 		const double surface_height = getPlanetHeightAboveSurface(planet.id, camera_position);
-		updatePlanetTerrainTree(planet, camera_position, surface_height);
+		planet.updateTerrainTree(camera_position, surface_height,
+			getPlanetSettings(planet.settings_id),
+			world.getTelemetrySystem().mesh_generation_telemetry);
+		evictCachedMeshes(planet.terrain_tree, camera_position);
 	}
 
 	bool PlanetSystem::editPlanetGround(PlanetId planet_id, const glm::dvec3& position,

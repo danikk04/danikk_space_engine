@@ -2,7 +2,6 @@
 
 #include <danikk_space_engine/systems/planet/data.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
-#include <danikk_space_engine/systems/telemetry/mesh_generation.h>
 
 namespace danikk_space_engine
 {
@@ -14,13 +13,7 @@ namespace danikk_space_engine
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
-		void updatePlanetTerrainTree(PlanetData& planet, const glm::dvec3& camera_position,
-			double height);
-		void synchronizeTerrainTree(PlanetData& planet);
-		void recordDiagnostics(const PlanetData& planet, size_t target_node_count,
-			size_t detail_scale_adjustments, double detail_scale);
 		void evictCachedMeshes(PlanetTerrainTree& tree, const glm::dvec3& camera_position);
-		void destroyPlanetTerrainTree(PlanetData& planet, MeshDeletionReason reason);
 		void cancelQueuedJobsForPlanet(const PlanetData& planet);
 
 	public:
