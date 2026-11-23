@@ -37,7 +37,7 @@ namespace danikk_space_engine
 		PlanetMeshGenerator expected_generator, bool expected_surface_only) const
 	{
 		return mesh_revision == terrain_revision && mesh_generator == expected_generator
-			&& mesh_surface_only == expected_surface_only && mesh.mesh != nullptr;
+			&& mesh_surface_only == expected_surface_only && mesh_generated;
 	}
 
 	PlanetTerrainNodeId PlanetTerrainTree::createRoot()
@@ -96,15 +96,17 @@ namespace danikk_space_engine
 		calculateDetailBudget(camera_position, height,
 			planet_settings, render_window_minimum, render_window_maximum, detail_scale,
 			target_node_count, detail_scale_adjustments);
+		planet.streaming_camera_position = camera_position;
+		planet.streaming_height = height;
+		planet.render_window_minimum = render_window_minimum;
+		planet.render_window_maximum = render_window_maximum;
+		planet.terrain_streaming_active = true;
 		refineTerrainTree(tree, camera_position, height, planet_settings,
 			detail_scale, render_window_minimum, render_window_maximum);
-		const size_t candidate_count = collectMeshJobCandidates(
-			planet, camera_position, height, planet_settings, detail_scale,
+		updateRenderActivity(planet, camera_position, height, planet_settings, detail_scale,
 			render_window_minimum, render_window_maximum, selected_node_ids);
 		activateMeshes(tree, selected_node_ids);
-		recordDiagnostics(planet,
-			target_node_count, detail_scale_adjustments, candidate_count, detail_scale);
+		recordDiagnostics(planet, target_node_count, detail_scale_adjustments, detail_scale);
 		evictCachedMeshes(tree, camera_position);
-		appendPlanetJobCandidates(planet);
 	}
 }

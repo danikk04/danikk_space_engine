@@ -14,9 +14,14 @@ namespace danikk_space_engine
 		glm::dvec3 mesh_position = glm::dvec3(0.0);
 		uint64 generation_id = 1;
 		uint64 mesh_revision = 0;
+		bool mesh_generated = false;
 		PlanetMeshGenerator mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
 		bool mesh_surface_only = true;
 		bool generation_pending = false;
+		uint64 pending_terrain_revision = 0;
+		uint64 pending_node_generation_id = 0;
+		PlanetMeshGenerator pending_mesh_generator = PlanetMeshGenerator::marching_tetrahedra;
+		bool pending_surface_only = true;
 		bool render_active = false;
 
 		/** @brief Tests this node's cubic bounds against an axis-aligned box. */

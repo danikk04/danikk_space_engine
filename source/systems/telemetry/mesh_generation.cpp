@@ -131,7 +131,7 @@ namespace danikk_space_engine
 		terrain_tree_frame.active_nodes += snapshot.active_nodes;
 		terrain_tree_frame.target_nodes += snapshot.target_nodes;
 		terrain_tree_frame.detail_scale_adjustments += snapshot.detail_scale_adjustments;
-		terrain_tree_frame.job_candidates += snapshot.job_candidates;
+		terrain_tree_frame.generation_pending_nodes += snapshot.generation_pending_nodes;
 		terrain_tree_frame.queued_jobs += snapshot.queued_jobs;
 		terrain_tree_frame.fine_queued += snapshot.fine_queued;
 		if(snapshot.finest_job_width > 0.0

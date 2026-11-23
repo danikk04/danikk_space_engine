@@ -60,6 +60,7 @@ namespace danikk_space_engine
 				world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
 					MeshDeletionReason::cache_capacity);
 				node.mesh_revision = 0;
+				node.mesh_generated = false;
 				cached_meshes_per_level[level]--;
 				cached_mesh_count--;
 				evicted_mesh_count++;

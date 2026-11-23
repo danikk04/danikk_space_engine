@@ -162,14 +162,17 @@ namespace danikk_space_engine
 	void PlanetSystem::update()
 	{
 		DSE_WATCH();
-		world.getMeshGenerationSystem().beginJobCandidateFrame();
 		for(PlanetData& planet : planets) updatePlanet(planet);
 	}
 
 	void PlanetSystem::updatePlanet(PlanetData& planet)
 	{
 		DSE_WATCH();
-		if(!world.getCameraSystem().isActive()) return;
+		if(!world.getCameraSystem().isActive())
+		{
+			planet.terrain_streaming_active = false;
+			return;
+		}
 		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
 			* (world.getCameraSystem().getWorldPosition() - planet.position);
 		const double surface_height = getPlanetHeightAboveSurface(planet.id, camera_position);

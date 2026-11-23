@@ -86,6 +86,8 @@ namespace danikk_space_engine
 			for(PlanetTerrainNode& node : tree.nodes)
 			{
 				node.generation_pending = false;
+				node.pending_terrain_revision = 0;
+				node.pending_node_generation_id = 0;
 				bool dirty = planet.pending_terrain_dirty_regions.empty();
 				for(const PlanetTerrainDirtyRegion& region : planet.pending_terrain_dirty_regions)
 				{
@@ -96,11 +98,12 @@ namespace danikk_space_engine
 				if(dirty)
 				{
 					node.mesh_revision = 0;
+					node.mesh_generated = false;
 					node.render_active = false;
 					node.generation_id = tree.next_node_generation_id++;
 					if(tree.next_node_generation_id == 0) tree.next_node_generation_id++;
 				}
-				else if(node.mesh.mesh != nullptr)
+				else if(node.mesh_generated)
 					node.mesh_revision = planet.terrain_revision;
 			}
 			planet.pending_terrain_dirty_regions.clear();

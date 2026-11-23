@@ -7,10 +7,12 @@
 #include <algorithm>
 #include <chrono>
 #include <exception>
+#include <limits>
 #include <thread>
 
 #include <danikk_engine/danikk_engine.h>
 #include <danikk_space_engine/systems/planet/data.h>
+#include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
 #include <danikk_space_engine/systems/mesh_generation/internal.h>
@@ -71,8 +73,10 @@ namespace danikk_space_engine
 		initialized = true;
 		generation_id++;
 		if(generation_id == 0) generation_id++;
-		job_candidates.clear();
-		updateMeshGenerationJobs(generation_id, job_candidates);
+		{
+			std::lock_guard<std::mutex> guard(task_mutex);
+			active_generation_id = generation_id;
+		}
 	}
 
 	/** @copydoc MeshGenerationSystem::shutdown */
@@ -99,27 +103,6 @@ namespace danikk_space_engine
 		}
 		initialized = false;
 		generation_id++;
-		job_candidates.clear();
-	}
-
-	/** @copydoc MeshGenerationSystem::beginJobCandidateFrame */
-	void MeshGenerationSystem::beginJobCandidateFrame()
-	{
-		DSE_WATCH();
-		job_candidates.clear();
-	}
-
-	/** @copydoc MeshGenerationSystem::appendPlanetJobCandidates */
-	void MeshGenerationSystem::appendPlanetJobCandidates(
-		const DynamicArray<MeshGenerationJob>& planet_job_candidates)
-	{
-		DSE_WATCH();
-		for(const MeshGenerationJob& candidate : planet_job_candidates)
-		{
-			MeshGenerationJob queued = candidate;
-			queued.generation_id = generation_id;
-			job_candidates.pushMove(queued);
-		}
 	}
 
 	/** @copydoc MeshGenerationSystem::cancelPlanetJobs */
@@ -128,20 +111,6 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		cancelJobsForPlanet(planet_id, planet_generation_id);
-		for(size_t index = 0; index < job_candidates.size();)
-		{
-			const MeshGenerationJob& candidate = job_candidates[index];
-			if(candidate.source != MeshGenerationSource::planet_terrain_node
-				|| candidate.planet_id != planet_id
-				|| candidate.planet_generation_id != planet_generation_id)
-			{
-				index++;
-				continue;
-			}
-			for(size_t shift = index + 1; shift < job_candidates.size(); shift++)
-				job_candidates[shift - 1] = static_cast<MeshGenerationJob&&>(job_candidates[shift]);
-			job_candidates.resize(job_candidates.size() - 1);
-		}
 	}
 
 	void MeshGenerationSystem::invalidateBodyDetailMesh(WorldBodyId world_body_id)
@@ -154,48 +123,87 @@ namespace danikk_space_engine
 		if(++body.detail_mesh_revision == 0) ++body.detail_mesh_revision;
 	}
 
-	/** @copydoc MeshGenerationSystem::collectBuildPartJobCandidates */
-	void MeshGenerationSystem::collectBuildPartJobCandidates()
+	bool MeshGenerationSystem::findNextBuildPartMeshJob(
+		MeshGenerationJob& job, double& best_distance_squared) const
 	{
-		DSE_WATCH();
+		const bool has_camera = world.getCameraSystem().isActive();
+		const glm::dvec3 camera_position = has_camera
+			? world.getCameraSystem().getWorldPosition() : glm::dvec3(0.0);
+		best_distance_squared = std::numeric_limits<double>::infinity();
+		bool found = false;
 		for(WorldBodyId world_body_id : world.getWorldBodyData().getUsedWorldBodyIds())
 		{
-			WorldBody& body = world.getWorldBodyData().getWorldBody(world_body_id);
-			if(!body.detail_mesh_dirty && !body.detail_mesh_queued) continue;
-			if(body.detail_mesh_dirty)
-			{
-				if(body.detail_mesh.mesh != nullptr)
-					world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
-						MeshDeletionReason::detail_mesh_rebuild);
-				destroyMeshRenderData(body.detail_mesh);
-				body.detail_mesh_dirty = false;
-				body.detail_mesh_queued = true;
-			}
-
-			MeshGenerationJob candidate;
-			candidate.source = MeshGenerationSource::build_parts;
-			candidate.generation_id = generation_id;
-			candidate.source_revision = body.detail_mesh_revision;
-			candidate.world_body_id = world_body_id;
-			job_candidates.pushMove(candidate);
+			const WorldBody& body = world.getWorldBodyData().getWorldBody(world_body_id);
+			if(!body.detail_mesh_dirty || body.detail_mesh_queued) continue;
+			const glm::dvec3 offset = body.position - camera_position;
+			const double distance_squared = has_camera
+				? glm::dot(offset, offset) : std::numeric_limits<double>::infinity();
+			if(found && distance_squared >= best_distance_squared) continue;
+			job = MeshGenerationJob();
+			job.source = MeshGenerationSource::build_parts;
+			job.source_revision = body.detail_mesh_revision;
+			job.world_body_id = world_body_id;
+			best_distance_squared = distance_squared;
+			found = true;
 		}
+		return found;
+	}
+
+	bool MeshGenerationSystem::isMeshJobWanted(const MeshGenerationJob& job) const
+	{
+		if(job.source == MeshGenerationSource::planet_terrain_node)
+			return world.getPlanetSystem().isMeshGenerationJobWanted(job);
+		if(job.source != MeshGenerationSource::build_parts
+			|| !world.getWorldBodyData().isWorldBodyActive(job.world_body_id)) return false;
+		const WorldBody& body = world.getWorldBodyData().getWorldBody(job.world_body_id);
+		return body.detail_mesh_queued && body.detail_mesh_revision == job.source_revision;
+	}
+
+	void MeshGenerationSystem::setMeshJobPending(const MeshGenerationJob& job, bool pending)
+	{
+		if(job.source == MeshGenerationSource::planet_terrain_node)
+		{
+			world.getPlanetSystem().setMeshGenerationJobPending(job, pending);
+			return;
+		}
+		if(job.source != MeshGenerationSource::build_parts
+			|| !world.getWorldBodyData().isWorldBodyActive(job.world_body_id)) return;
+		WorldBody& body = world.getWorldBodyData().getWorldBody(job.world_body_id);
+		if(body.detail_mesh_revision != job.source_revision) return;
+		body.detail_mesh_queued = pending;
+		if(!pending) body.detail_mesh_dirty = true;
+	}
+
+	void MeshGenerationSystem::markMeshJobScheduled(const MeshGenerationJob& job)
+	{
+		if(job.source == MeshGenerationSource::planet_terrain_node)
+		{
+			world.getPlanetSystem().setMeshGenerationJobPending(job, true);
+			return;
+		}
+		if(job.source != MeshGenerationSource::build_parts
+			|| !world.getWorldBodyData().isWorldBodyActive(job.world_body_id)) return;
+		WorldBody& body = world.getWorldBodyData().getWorldBody(job.world_body_id);
+		if(body.detail_mesh_revision != job.source_revision || !body.detail_mesh_dirty) return;
+		if(body.detail_mesh.mesh != nullptr)
+			world.getTelemetrySystem().mesh_generation_telemetry.recordMeshDeletion(
+				MeshDeletionReason::detail_mesh_rebuild);
+		destroyMeshRenderData(body.detail_mesh);
+		body.detail_mesh_dirty = false;
+		body.detail_mesh_queued = true;
 	}
 
 	/** @copydoc MeshGenerationSystem::frame */
 	void MeshGenerationSystem::frame()
 	{
 		DSE_WATCH();
-		collectBuildPartJobCandidates();
 		MeshGenerationJob generated;
-		if(tryTakeCompletedJob(generated) && generated.generation_id == generation_id
-			&& generated.source == MeshGenerationSource::planet_terrain_node)
+		if(tryTakeCompletedJob(generated) && generated.generation_id == generation_id)
 		{
-			world.getPlanetSystem().acceptGeneratedSurfaceNode(generated);
-		}
-		else if(generated.generation_id == generation_id
-			&& generated.source == MeshGenerationSource::build_parts)
-		{
-			if(world.getWorldBodyData().isWorldBodyActive(generated.world_body_id))
+			if(generated.source == MeshGenerationSource::planet_terrain_node)
+				world.getPlanetSystem().acceptGeneratedSurfaceNode(generated);
+			else if(generated.source == MeshGenerationSource::build_parts
+				&& world.getWorldBodyData().isWorldBodyActive(generated.world_body_id))
 			{
 				WorldBody& body = world.getWorldBodyData().getWorldBody(generated.world_body_id);
 				if(body.detail_mesh_revision == generated.source_revision)
@@ -226,9 +234,7 @@ namespace danikk_space_engine
 				}
 			}
 		}
-
-		updateMeshGenerationJobs(generation_id, world.getPlanetSystem().buildMeshGenerationJobBuffer(
-			job_candidates, thread_pool.workerCount() * 2));
+		updateMeshJobs();
 	}
 }
 namespace danikk_space_engine::mesh_generation_internal
@@ -243,29 +249,6 @@ namespace danikk_space_engine::mesh_generation_internal
 			level++;
 		}
 		return level;
-	}
-
-	bool sameJobKey(const MeshGenerationJob& a, const MeshGenerationJob& b)
-	{
-		return a.generation_id == b.generation_id
-			&& a.source == b.source
-			&& a.source_revision == b.source_revision
-			&& a.planet_generation_id == b.planet_generation_id
-			&& a.terrain_revision == b.terrain_revision
-			&& a.world_body_id == b.world_body_id
-			&& a.planet_id == b.planet_id
-			&& a.planet_mesh_generator == b.planet_mesh_generator
-			&& a.terrain_node_id == b.terrain_node_id
-			&& a.terrain_node_generation_id == b.terrain_node_generation_id
-			&& a.surface_only == b.surface_only;
-	}
-
-	bool hasMatchingJob(const MeshGenerationJob& candidate,
-		const Array<MeshGenerationJob, 8>& jobs)
-	{
-		for(const MeshGenerationJob& job : jobs)
-			if(job.state != MeshGenerationJobState::empty && sameJobKey(job, candidate)) return true;
-		return false;
 	}
 
 	void generateMesh(World& world, MeshGenerationJob& job)
@@ -362,57 +345,56 @@ namespace danikk_space_engine
 		job.state = MeshGenerationJobState::completed;
 	}
 
-	void MeshGenerationSystem::updateMeshGenerationJobs(uint64 new_generation_id,
-		const DynamicArray<MeshGenerationJob>& desired_jobs)
+	void MeshGenerationSystem::updateMeshJobs()
 	{
+		DSE_WATCH();
+		if(!initialized) return;
 		PlanetMeshQueueTelemetry snapshot;
+		size_t empty_job_indices[8] = {};
+		size_t empty_job_count = 0;
 		{
 			std::lock_guard<std::mutex> guard(task_mutex);
-			if(active_generation_id != new_generation_id)
-			{
-				active_generation_id = new_generation_id;
-				for(MeshGenerationJob& job : jobs)
-				{
-					if(job.state == MeshGenerationJobState::processing) job.cancelled = true;
-					else job = MeshGenerationJob();
-				}
-			}
-
-			const auto isDesired = [&](const MeshGenerationJob& job)
-			{
-				for(const MeshGenerationJob& candidate : desired_jobs)
-					if(candidate.generation_id == active_generation_id
-						&& mesh_generation_internal::sameJobKey(job, candidate))
-						return true;
-				return false;
-			};
 			for(MeshGenerationJob& job : jobs)
 			{
-				if(job.state == MeshGenerationJobState::empty || isDesired(job)) continue;
-				// A running task cannot be interrupted, so discarding its output only
-				// forces the same node to be generated again if it becomes desired later.
-				if(job.state == MeshGenerationJobState::queued) job = MeshGenerationJob();
+				if(job.state != MeshGenerationJobState::queued || isMeshJobWanted(job)) continue;
+				setMeshJobPending(job, false);
+				job = MeshGenerationJob();
 			}
-
-			for(const MeshGenerationJob& candidate : desired_jobs)
+			for(size_t index = 0; index < jobs.size(); ++index)
 			{
-				if(candidate.generation_id != active_generation_id
-					|| mesh_generation_internal::hasMatchingJob(candidate, jobs)) continue;
-				for(MeshGenerationJob& job : jobs)
-					if(job.state == MeshGenerationJobState::empty)
-					{
-						job = MeshGenerationJob(candidate);
-						job.state = MeshGenerationJobState::queued;
-						break;
-					}
+				if(jobs[index].state == MeshGenerationJobState::empty)
+					empty_job_indices[empty_job_count++] = index;
 			}
+		}
 
-			for(const MeshGenerationJob& candidate : desired_jobs)
+		bool jobs_added = false;
+		for(size_t empty_index = 0; empty_index < empty_job_count; ++empty_index)
+		{
+			MeshGenerationJob planet_job;
+			MeshGenerationJob build_part_job;
+			double planet_distance_squared = std::numeric_limits<double>::infinity();
+			double build_part_distance_squared = std::numeric_limits<double>::infinity();
+			const bool has_planet_job = world.getPlanetSystem().findNextMeshGenerationJob(
+				planet_job, planet_distance_squared);
+			const bool has_build_part_job = findNextBuildPartMeshJob(
+				build_part_job, build_part_distance_squared);
+			if(!has_planet_job && !has_build_part_job) break;
+
+			MeshGenerationJob& selected_job = has_planet_job
+				&& (!has_build_part_job || planet_distance_squared <= build_part_distance_squared)
+				? planet_job : build_part_job;
+			selected_job.generation_id = generation_id;
+			markMeshJobScheduled(selected_job);
+			selected_job.state = MeshGenerationJobState::queued;
 			{
-				if(candidate.source != MeshGenerationSource::planet_terrain_node) continue;
-				snapshot.desired++;
-				if(candidate.node_width <= 128.0) snapshot.fine_desired++;
+				std::lock_guard<std::mutex> guard(task_mutex);
+				jobs[empty_job_indices[empty_index]] = static_cast<MeshGenerationJob&&>(selected_job);
 			}
+			jobs_added = true;
+		}
+
+		{
+			std::lock_guard<std::mutex> guard(task_mutex);
 			for(const MeshGenerationJob& job : jobs)
 			{
 				if(job.state == MeshGenerationJobState::empty
@@ -426,12 +408,11 @@ namespace danikk_space_engine
 				{
 					snapshot.active++;
 					if(job.node_width <= 128.0) snapshot.fine_active++;
-					if(!isDesired(job)) snapshot.active_not_desired++;
 				}
 				else if(job.state == MeshGenerationJobState::completed) snapshot.completed++;
 			}
 		}
-		job_available.notify_all();
+		if(jobs_added) job_available.notify_all();
 		world.getTelemetrySystem().mesh_generation_telemetry.setPlanetMeshQueueSnapshot(snapshot);
 	}
 

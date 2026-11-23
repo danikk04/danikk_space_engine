@@ -24,19 +24,9 @@ namespace danikk_space_engine
 			record(PlanetMeshAcceptance::stale_planet);
 			return;
 		}
-		if(planet->terrain_revision != job.terrain_revision)
-		{
-			record(PlanetMeshAcceptance::stale_terrain);
-			return;
-		}
 		if(job.terrain_node_id >= planet->terrain_tree.nodes.size())
 		{
 			record(PlanetMeshAcceptance::invalid_node);
-			return;
-		}
-		if(job.planet_mesh_generator != settings.planet_mesh_generator)
-		{
-			record(PlanetMeshAcceptance::stale_generator);
 			return;
 		}
 		PlanetTerrainNode& node = planet->terrain_tree.nodes[job.terrain_node_id];
@@ -45,7 +35,18 @@ namespace danikk_space_engine
 			record(PlanetMeshAcceptance::stale_node);
 			return;
 		}
-		node.generation_pending = false;
+		if(planet->terrain_revision != job.terrain_revision)
+		{
+			setMeshGenerationJobPending(job, false);
+			record(PlanetMeshAcceptance::stale_terrain);
+			return;
+		}
+		if(job.planet_mesh_generator != settings.planet_mesh_generator)
+		{
+			setMeshGenerationJobPending(job, false);
+			record(PlanetMeshAcceptance::stale_generator);
+			return;
+		}
 		node.mesh_position = job.node_minimum;
 		// Build into a separate GPU mesh so the currently visible buffers remain
 		// intact until the replacement has been uploaded completely.
@@ -64,8 +65,10 @@ namespace danikk_space_engine
 		destroyMeshRenderData(previous);
 
 		node.mesh_revision = job.terrain_revision;
+		node.mesh_generated = true;
 		node.mesh_generator = job.planet_mesh_generator;
 		node.mesh_surface_only = job.surface_only;
+		setMeshGenerationJobPending(job, false);
 		record(job.triangle_point_indices.empty()
 			? PlanetMeshAcceptance::empty : PlanetMeshAcceptance::accepted);
 	}

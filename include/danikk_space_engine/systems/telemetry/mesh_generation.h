@@ -24,13 +24,10 @@ namespace danikk_space_engine
 
 	struct PlanetMeshQueueTelemetry
 	{
-		uint64 desired = 0;
-		uint64 fine_desired = 0;
 		uint64 queued = 0;
 		uint64 fine_queued = 0;
 		uint64 active = 0;
 		uint64 fine_active = 0;
-		uint64 active_not_desired = 0;
 		uint64 completed = 0;
 	};
 
@@ -41,7 +38,7 @@ namespace danikk_space_engine
 		uint64 active_nodes = 0;
 		uint64 target_nodes = 0;
 		uint64 detail_scale_adjustments = 0;
-		uint64 job_candidates = 0;
+		uint64 generation_pending_nodes = 0;
 		uint64 queued_jobs = 0;
 		uint64 fine_queued = 0;
 		uint64 cached_meshes = 0;

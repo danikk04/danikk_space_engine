@@ -14,7 +14,6 @@
 #include <danikk_space_engine/mesh_render_data.h>
 #include <danikk_space_engine/systems/planet/edit.h>
 #include <danikk_space_engine/systems/planet/terrain_tree.h>
-#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 
 namespace danikk_space_engine
 {
@@ -205,7 +204,11 @@ namespace danikk_space_engine
 		PlanetTerrainEdits terrain_edits;
 		PlanetTerrainTree terrain_tree;
 		DynamicArray<PlanetTerrainDirtyRegion> pending_terrain_dirty_regions;
-		DynamicArray<MeshGenerationJob> pending_job_candidates;
+		glm::dvec3 streaming_camera_position = glm::dvec3(0.0);
+		glm::dvec3 render_window_minimum = glm::dvec3(0.0);
+		glm::dvec3 render_window_maximum = glm::dvec3(0.0);
+		double streaming_height = 0.0;
+		bool terrain_streaming_active = false;
 
 	};
 }

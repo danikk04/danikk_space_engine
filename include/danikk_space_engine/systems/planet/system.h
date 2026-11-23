@@ -1,6 +1,7 @@
 #pragma once
 
 #include <danikk_space_engine/systems/planet/data.h>
+#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 #include <danikk_space_engine/systems/telemetry/mesh_generation.h>
 
 namespace danikk_space_engine
@@ -11,13 +12,9 @@ namespace danikk_space_engine
 		static constexpr size_t maximum_visible_meshes_per_level = 256;
 		static constexpr size_t maximum_visible_nodes = maximum_visible_meshes_per_level
 			* (PlanetTerrainTree::maximum_depth + 1);
-		static constexpr size_t maximum_job_candidates_per_frame = 32;
 
 		World& world;
 		DynamicArray<PlanetData> planets;
-		/** @brief Reused output batch and priority scratch for mesh-generation workers. */
-		DynamicArray<MeshGenerationJob> mesh_generation_job_candidate_buffer;
-		DynamicArray<double> mesh_generation_job_candidate_distances;
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
@@ -41,7 +38,7 @@ namespace danikk_space_engine
 			double height, const PlanetSettings& settings, double detail_scale,
 			const glm::dvec3& render_window_minimum,
 			const glm::dvec3& render_window_maximum) const;
-		size_t collectMeshJobCandidates(PlanetData& planet, const glm::dvec3& camera_position,
+		void updateRenderActivity(PlanetData& planet, const glm::dvec3& camera_position,
 			double height, const PlanetSettings& settings, double detail_scale,
 			const glm::dvec3& render_window_minimum,
 			const glm::dvec3& render_window_maximum,
@@ -49,10 +46,9 @@ namespace danikk_space_engine
 		void activateMeshes(PlanetTerrainTree& tree,
 			const DynamicArray<PlanetTerrainNodeId>& selected_node_ids) const;
 		void recordDiagnostics(const PlanetData& planet, size_t target_node_count,
-			size_t detail_scale_adjustments, size_t candidate_count, double detail_scale);
+			size_t detail_scale_adjustments, double detail_scale);
 		void evictCachedMeshes(PlanetTerrainTree& tree, const glm::dvec3& camera_position);
 		void destroyPlanetTerrainTree(PlanetData& planet, MeshDeletionReason reason);
-		void appendPlanetJobCandidates(PlanetData& planet);
 		void cancelQueuedJobsForPlanet(const PlanetData& planet);
 
 	public:
@@ -75,9 +71,12 @@ namespace danikk_space_engine
 
 		/** @brief Updates adaptive terrain-tree streaming once for the current world frame. */
 		void update();
-		/** @brief Builds the nearest valid mesh job candidates, bounded by the worker count. */
-		const DynamicArray<MeshGenerationJob>& buildMeshGenerationJobBuffer(
-			const DynamicArray<MeshGenerationJob>& candidates, size_t capacity);
+		/** @brief Finds the nearest eligible node on the least-queued relevant tree level. */
+		bool findNextMeshGenerationJob(MeshGenerationJob& job, double& distance_squared) const;
+		/** @brief Checks whether a queued planet mesh job is still relevant to the current frame. */
+		bool isMeshGenerationJobWanted(const MeshGenerationJob& job) const;
+		/** @brief Updates the node's pending flag after a job is assigned or canceled. */
+		void setMeshGenerationJobPending(const MeshGenerationJob& job, bool pending);
 		void acceptGeneratedSurfaceNode(const MeshGenerationJob& job);
 		/** @brief Draws active adaptive surface-node meshes in the current depth pass. */
 		void renderSurfaceNodes();
