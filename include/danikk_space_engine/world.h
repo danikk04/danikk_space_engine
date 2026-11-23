@@ -91,8 +91,6 @@ namespace danikk_space_engine
 		 * and conditionally draws debug overlays and the placement preview.
 		 */
 		void frame();
-		/** @brief Draws planet-tree meshes and BuildObject meshes in their WorldBody frames. */
-		void renderWorldMeshes();
 		/** @brief Mirrors planet-owned transforms into temporary WorldBody frames used by legacy entity ownership. */
 		void syncPlanetWorldBodyFrames();
 

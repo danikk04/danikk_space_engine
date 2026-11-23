@@ -90,6 +90,14 @@ namespace danikk_space_engine
 				text << " ms\n";
 			}
 			else text << " collecting\n";
+			double terrain_gpu_time_ms = 0.0;
+			text << "TERRAIN GPU PASS:";
+			if(world.getPlanetSystem().getLastTerrainGpuTimeMilliseconds(terrain_gpu_time_ms))
+			{
+				appendGuiNumber(text, terrain_gpu_time_ms);
+				text << " ms\n";
+			}
+			else text << " collecting\n";
 
 			if(controller.getActiveTool().input != nullptr)
 			{

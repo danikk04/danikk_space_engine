@@ -28,6 +28,10 @@ namespace danikk_space_engine
 		BuildObject& getBuildObject(BuildObjectId id);
 		const BuildObject& getBuildObject(BuildObjectId id) const;
 		const DynamicArray<BuildObjectId>& getUsedBuildObjectIds() const;
+		/** @brief Returns the farthest bound of resident detail meshes from the camera. */
+		double getFarthestDetailMeshDistance(const glm::dvec3& camera_position) const;
+		/** @brief Draws resident detail meshes relative to the supplied camera position. */
+		void renderDetailMeshes(const glm::dvec3& camera_position) const;
 		void release();
 	};
 }

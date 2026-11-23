@@ -80,11 +80,47 @@ namespace danikk_space_engine
 
 	/** @brief Draws the supplied detail and fallback nodes in the current depth pass. */
 	void PlanetSystem::renderTerrainNodes(
-		const DynamicArray<PlanetTerrainRenderNode>& render_nodes)
+		const DynamicArray<PlanetTerrainRenderNode>& render_nodes,
+		PlanetTerrainDepthPass depth_pass)
 	{
 		DSE_WATCH();
+		for(size_t index = 0; index < terrain_gpu_query_count; ++index)
+		{
+			if(!terrain_gpu_query_pending[index]) continue;
+			GLint available = GL_FALSE;
+			glGetQueryObjectiv(terrain_gpu_query_ids[index], GL_QUERY_RESULT_AVAILABLE, &available);
+			if(available == GL_FALSE) continue;
+			GLuint64 elapsed_nanoseconds = 0;
+			glGetQueryObjectui64v(terrain_gpu_query_ids[index], GL_QUERY_RESULT,
+				&elapsed_nanoseconds);
+			last_terrain_gpu_time_milliseconds = static_cast<double>(elapsed_nanoseconds) / 1000000.0;
+			has_last_terrain_gpu_time = true;
+			terrain_gpu_query_pending[index] = false;
+		}
+
+		size_t active_query_index = terrain_gpu_query_count;
+		for(size_t offset = 0; offset < terrain_gpu_query_count; ++offset)
+		{
+			const size_t index = (terrain_gpu_query_write_index + offset) % terrain_gpu_query_count;
+			if(terrain_gpu_query_pending[index] || terrain_gpu_query_ids[index] == 0) continue;
+			active_query_index = index;
+			break;
+		}
+		if(active_query_index < terrain_gpu_query_count)
+			glBeginQuery(GL_TIME_ELAPSED, terrain_gpu_query_ids[active_query_index]);
+
 		const CameraSystem& camera = world.getCameraSystem();
 		const glm::dvec3 camera_position = camera.getWorldPosition();
+		const auto belongsToDepthPass = [&](const PlanetData& planet, const PlanetTerrainNode& node)
+		{
+			if(depth_pass == PlanetTerrainDepthPass::full) return true;
+			const glm::dvec3 node_world_center = planet.position + planet.rotation * node.center;
+			const double center_distance = glm::length(node_world_center - camera_position);
+			const double bounding_radius = node.half_extent * 1.7320508075688772;
+			if(depth_pass == PlanetTerrainDepthPass::near)
+				return center_distance - bounding_radius <= camera.far_clip_distance;
+			return center_distance + bounding_radius >= camera.far_clip_distance;
+		};
 		GLint viewport[4] = {};
 		GLint stencil_bits = 0;
 		glGetIntegerv(GL_VIEWPORT, viewport);
@@ -114,6 +150,7 @@ namespace danikk_space_engine
 				PlanetData* planet = findPlanet(render_node.planet_id);
 				if(planet == nullptr || render_node.node_id >= planet->terrain_tree.nodes.size()) continue;
 				const PlanetTerrainNode& node = planet->terrain_tree.nodes[render_node.node_id];
+				if(!belongsToDepthPass(*planet, node)) continue;
 				const bool has_drawable_mesh = node.mesh.mesh != nullptr
 					&& node.mesh.material_ranges.size() > 0;
 				const bool current_empty_result = node.mesh_generated
@@ -134,6 +171,7 @@ namespace danikk_space_engine
 			PlanetData* planet = findPlanet(render_node.planet_id);
 			if(planet == nullptr || render_node.node_id >= planet->terrain_tree.nodes.size()) continue;
 			const PlanetTerrainNode& node = planet->terrain_tree.nodes[render_node.node_id];
+			if(!belongsToDepthPass(*planet, node)) continue;
 			if(node.mesh.mesh != nullptr) drawPlanetNodeMesh(*planet, node, camera_position);
 		}
 
@@ -150,6 +188,7 @@ namespace danikk_space_engine
 			PlanetData* planet = findPlanet(render_node.planet_id);
 			if(planet == nullptr || render_node.node_id >= planet->terrain_tree.nodes.size()) continue;
 			const PlanetTerrainNode& node = planet->terrain_tree.nodes[render_node.node_id];
+			if(!belongsToDepthPass(*planet, node)) continue;
 			if(node.mesh.mesh != nullptr) drawPlanetNodeMesh(*planet, node, camera_position);
 		}
 		if constexpr(show_terrain_stencil_debug_overlay)
@@ -171,6 +210,7 @@ namespace danikk_space_engine
 					PlanetData* planet = findPlanet(render_node.planet_id);
 					if(planet == nullptr || render_node.node_id >= planet->terrain_tree.nodes.size()) continue;
 					const PlanetTerrainNode& node = planet->terrain_tree.nodes[render_node.node_id];
+					if(!belongsToDepthPass(*planet, node)) continue;
 					if(node.mesh.mesh != nullptr) drawPlanetNodeMesh(*planet, node, camera_position);
 				}
 				glPolygonMode(GL_FRONT_AND_BACK, static_cast<GLenum>(old_polygon_mode[0]));
@@ -184,5 +224,17 @@ namespace danikk_space_engine
 			glDisable(GL_STENCIL_TEST);
 			glStencilMask(0xFF);
 		}
+		if(active_query_index < terrain_gpu_query_count)
+		{
+			glEndQuery(GL_TIME_ELAPSED);
+			terrain_gpu_query_pending[active_query_index] = true;
+			terrain_gpu_query_write_index = (active_query_index + 1) % terrain_gpu_query_count;
+		}
+	}
+
+	bool PlanetSystem::getLastTerrainGpuTimeMilliseconds(double& milliseconds) const
+	{
+		milliseconds = last_terrain_gpu_time_milliseconds;
+		return has_last_terrain_gpu_time;
 	}
 }

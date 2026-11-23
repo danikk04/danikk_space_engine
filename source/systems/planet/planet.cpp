@@ -2,6 +2,8 @@
 #include <limits>
 #include <optional>
 
+#include <glad/glad.h>
+
 #include <danikk_framework/log.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/config.h>
@@ -28,6 +30,10 @@ namespace danikk_space_engine
 	void PlanetSystem::init()
 	{
 		danikk_framework::formatLogInfo("Init PlanetSystem");
+		GLuint query_ids[terrain_gpu_query_count] = {};
+		glGenQueries(static_cast<GLsizei>(terrain_gpu_query_count), query_ids);
+		for(size_t index = 0; index < terrain_gpu_query_count; ++index)
+			terrain_gpu_query_ids[index] = query_ids[index];
 	}
 
 	void PlanetSystem::shutdown()
@@ -39,6 +45,16 @@ namespace danikk_space_engine
 			planet.destroyTerrainTree(world.getTelemetrySystem().mesh_generation_telemetry,
 				MeshDeletionReason::planet_system_shutdown);
 		}
+		GLuint query_ids[terrain_gpu_query_count] = {};
+		GLsizei query_count = 0;
+		for(size_t index = 0; index < terrain_gpu_query_count; ++index)
+		{
+			if(terrain_gpu_query_ids[index] == 0) continue;
+			query_ids[query_count++] = terrain_gpu_query_ids[index];
+			terrain_gpu_query_ids[index] = 0;
+			terrain_gpu_query_pending[index] = false;
+		}
+		if(query_count > 0) glDeleteQueries(query_count, query_ids);
 	}
 
 	bool PlanetSystem::removePlanetTerrainEdit(PlanetId planet_id, PlanetTerrainEditId edit_id)

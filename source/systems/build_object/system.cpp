@@ -1,7 +1,10 @@
 #include <danikk_space_engine/systems/build_object/system.h>
 
 #include <danikk_framework/log.h>
+#include <danikk_framework/glm.h>
 #include <danikk_engine/danikk_engine.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <danikk_space_engine/mesh_render_data.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/build_part/system.h>
@@ -90,6 +93,44 @@ namespace danikk_space_engine
 	const DynamicArray<BuildObjectId>& BuildObjectSystem::getUsedBuildObjectIds() const
 	{
 		return build_objects.usedIds();
+	}
+
+	double BuildObjectSystem::getFarthestDetailMeshDistance(const glm::dvec3& camera_position) const
+	{
+		double farthest_distance = 0.0;
+		for(WorldBodyId body_id : world.getWorldBodySystem().getUsedWorldBodyIds())
+		{
+			const BuildObjectId object_id = findBuildObjectId(body_id);
+			if(object_id == static_cast<BuildObjectId>(-1)) continue;
+			const BuildObject& object = getBuildObject(object_id);
+			if(!object.detail_mesh_bounds_valid) continue;
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
+			const glm::dvec3 center = body.position + body.rotation
+				* (object.detail_mesh_position + glm::dvec3(object.detail_mesh_bounds_center));
+			farthest_distance = glm::max(farthest_distance,
+				glm::length(center - camera_position) + object.detail_mesh_bounds_radius);
+		}
+		return farthest_distance;
+	}
+
+	void BuildObjectSystem::renderDetailMeshes(const glm::dvec3& camera_position) const
+	{
+		for(WorldBodyId body_id : world.getWorldBodySystem().getUsedWorldBodyIds())
+		{
+			const BuildObjectId object_id = findBuildObjectId(body_id);
+			if(object_id == static_cast<BuildObjectId>(-1)) continue;
+			const BuildObject& object = getBuildObject(object_id);
+			if(object.detail_mesh.mesh == nullptr) continue;
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
+			const glm::dvec3 relative_position = body.position
+				+ body.rotation * object.detail_mesh_position - camera_position;
+			mat4 rotation(1.0f);
+			rotation[0] = vec4(vec3(body.rotation * glm::dvec3(1.0, 0.0, 0.0)), 0.0f);
+			rotation[1] = vec4(vec3(body.rotation * glm::dvec3(0.0, 1.0, 0.0)), 0.0f);
+			rotation[2] = vec4(vec3(body.rotation * glm::dvec3(0.0, 0.0, 1.0)), 0.0f);
+			drawMeshRenderData(object.detail_mesh,
+				glm::translate(mat4(1.0f), vec3(relative_position)) * rotation);
+		}
 	}
 
 	void BuildObjectSystem::release()

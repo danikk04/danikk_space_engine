@@ -8,6 +8,7 @@ sources += files(
 	'terrain_tree_refinement.cpp',
 	'render_nodes.cpp',
 	'render.cpp',
+	'world_render.cpp',
 	'edit.cpp',
 	'terrain.cpp',
 )

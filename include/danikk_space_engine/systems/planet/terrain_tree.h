@@ -111,6 +111,14 @@ namespace danikk_space_engine
 		bool fallback = false;
 	};
 
+	/** @brief Camera-distance partition used when rendering with split depth ranges. */
+	enum class PlanetTerrainDepthPass : uint8
+	{
+		full,
+		near,
+		far
+	};
+
 	/** @brief Spherical terrain region whose cached meshes must be regenerated. */
 	struct PlanetTerrainDirtyRegion
 	{

@@ -14,6 +14,13 @@ namespace danikk_space_engine
 		DynamicArray<PlanetTerrainRenderNode> terrain_render_nodes;
 		/** @brief Reused scratch IDs for cache eviction candidates. */
 		DynamicArray<PlanetTerrainNodeId> mesh_eviction_candidates;
+		/** @brief Ring of nonblocking GPU timer queries for terrain draw passes. */
+		static constexpr size_t terrain_gpu_query_count = 8;
+		uint32 terrain_gpu_query_ids[terrain_gpu_query_count] = {};
+		bool terrain_gpu_query_pending[terrain_gpu_query_count] = {};
+		size_t terrain_gpu_query_write_index = 0;
+		double last_terrain_gpu_time_milliseconds = 0.0;
+		bool has_last_terrain_gpu_time = false;
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
@@ -47,6 +54,8 @@ namespace danikk_space_engine
 
 		/** @brief Updates adaptive terrain-tree streaming once for the current world frame. */
 		void update();
+		/** @brief Draws planet terrain and WorldBody detail meshes using split depth ranges as needed. */
+		void renderWorldMeshes();
 		/** @brief Finds the next job in the staged 9x9x9 detail-level coverage window. */
 		bool findNextMeshGenerationJob(MeshGenerationJob& job, double& distance_squared);
 		/** @brief Checks whether a queued planet mesh job is still relevant to the current frame. */
@@ -58,7 +67,10 @@ namespace danikk_space_engine
 		/** @brief Fills and returns the current frame's selected terrain-node list. */
 		const DynamicArray<PlanetTerrainRenderNode>& getTerrainNodesForRender();
 		/** @brief Draws the supplied terrain-node list in the current depth pass. */
-		void renderTerrainNodes(const DynamicArray<PlanetTerrainRenderNode>& render_nodes);
+		void renderTerrainNodes(const DynamicArray<PlanetTerrainRenderNode>& render_nodes,
+			PlanetTerrainDepthPass depth_pass = PlanetTerrainDepthPass::full);
+		/** @brief Reads the most recently completed asynchronous terrain GPU timing sample. */
+		bool getLastTerrainGpuTimeMilliseconds(double& milliseconds) const;
 		/**
 		 * @brief Applies and persists a spherical terrain edit on a registered planet.
 		 * @param planet_id Planet to modify.
