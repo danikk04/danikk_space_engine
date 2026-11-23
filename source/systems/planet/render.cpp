@@ -14,7 +14,7 @@ namespace danikk_space_engine
 	namespace
 	{
 		/** @brief Temporarily outlines fallback geometry where the detail stencil is set. */
-		constexpr bool show_terrain_stencil_debug_overlay = true;
+		constexpr bool show_terrain_stencil_debug_overlay = false;
 
 		/** @brief Clears stencil pixels inside the projected bounds owned by a detail node. */
 		void markProjectedNodeCoverage(const PlanetData& planet, const PlanetTerrainNode& node,
@@ -78,8 +78,9 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @brief Draws active terrain-node meshes directly from their owning octree nodes. */
-	void PlanetSystem::renderActiveTerrainNodes()
+	/** @brief Draws the supplied detail and fallback nodes in the current depth pass. */
+	void PlanetSystem::renderTerrainNodes(
+		const DynamicArray<PlanetTerrainRenderNode>& render_nodes)
 	{
 		DSE_WATCH();
 		const CameraSystem& camera = world.getCameraSystem();
@@ -107,33 +108,33 @@ namespace danikk_space_engine
 			glClear(GL_STENCIL_BUFFER_BIT);
 			glEnable(GL_SCISSOR_TEST);
 			glClearStencil(1);
-			for(const PlanetData& planet : planets)
+			for(const PlanetTerrainRenderNode& render_node : render_nodes)
 			{
-				for(const PlanetTerrainNode& node : planet.terrain_tree.nodes)
-				{
-					if(!node.render_target) continue;
-					const bool has_drawable_mesh = node.mesh.mesh != nullptr
-						&& node.mesh.material_ranges.size() > 0;
-					const bool current_empty_result = node.mesh_generated
-						&& node.mesh_revision == planet.terrain_revision
-						&& !has_drawable_mesh;
-					if(has_drawable_mesh || current_empty_result)
-						markProjectedNodeCoverage(planet, node, camera_position,
-							view_projection, viewport);
-				}
+				if(render_node.fallback) continue;
+				PlanetData* planet = findPlanet(render_node.planet_id);
+				if(planet == nullptr || render_node.node_id >= planet->terrain_tree.nodes.size()) continue;
+				const PlanetTerrainNode& node = planet->terrain_tree.nodes[render_node.node_id];
+				const bool has_drawable_mesh = node.mesh.mesh != nullptr
+					&& node.mesh.material_ranges.size() > 0;
+				const bool current_empty_result = node.mesh_generated
+					&& node.mesh_revision == planet->terrain_revision
+					&& !has_drawable_mesh;
+				if(has_drawable_mesh || current_empty_result)
+					markProjectedNodeCoverage(*planet, node, camera_position,
+						view_projection, viewport);
 			}
 			glClearStencil(0);
 			glDisable(GL_SCISSOR_TEST);
 		}
 
 		glDisable(GL_STENCIL_TEST);
-		for(const PlanetData& planet : planets)
+		for(const PlanetTerrainRenderNode& render_node : render_nodes)
 		{
-			for(const PlanetTerrainNode& node : planet.terrain_tree.nodes)
-			{
-				if(node.render_active && node.render_target && node.mesh.mesh != nullptr)
-					drawPlanetNodeMesh(planet, node, camera_position);
-			}
+			if(render_node.fallback) continue;
+			PlanetData* planet = findPlanet(render_node.planet_id);
+			if(planet == nullptr || render_node.node_id >= planet->terrain_tree.nodes.size()) continue;
+			const PlanetTerrainNode& node = planet->terrain_tree.nodes[render_node.node_id];
+			if(node.mesh.mesh != nullptr) drawPlanetNodeMesh(*planet, node, camera_position);
 		}
 
 		if(has_stencil)
@@ -143,13 +144,13 @@ namespace danikk_space_engine
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 			glEnable(GL_STENCIL_TEST);
 		}
-		for(const PlanetData& planet : planets)
+		for(const PlanetTerrainRenderNode& render_node : render_nodes)
 		{
-			for(const PlanetTerrainNode& node : planet.terrain_tree.nodes)
-			{
-				if(node.render_fallback && !node.render_target && node.mesh.mesh != nullptr)
-					drawPlanetNodeMesh(planet, node, camera_position);
-			}
+			if(!render_node.fallback) continue;
+			PlanetData* planet = findPlanet(render_node.planet_id);
+			if(planet == nullptr || render_node.node_id >= planet->terrain_tree.nodes.size()) continue;
+			const PlanetTerrainNode& node = planet->terrain_tree.nodes[render_node.node_id];
+			if(node.mesh.mesh != nullptr) drawPlanetNodeMesh(*planet, node, camera_position);
 		}
 		if constexpr(show_terrain_stencil_debug_overlay)
 		{
@@ -164,13 +165,13 @@ namespace danikk_space_engine
 				glDepthMask(GL_FALSE);
 				glDisable(GL_DEPTH_TEST);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				for(const PlanetData& planet : planets)
+				for(const PlanetTerrainRenderNode& render_node : render_nodes)
 				{
-					for(const PlanetTerrainNode& node : planet.terrain_tree.nodes)
-					{
-						if(node.render_fallback && !node.render_target && node.mesh.mesh != nullptr)
-							drawPlanetNodeMesh(planet, node, camera_position);
-					}
+					if(!render_node.fallback) continue;
+					PlanetData* planet = findPlanet(render_node.planet_id);
+					if(planet == nullptr || render_node.node_id >= planet->terrain_tree.nodes.size()) continue;
+					const PlanetTerrainNode& node = planet->terrain_tree.nodes[render_node.node_id];
+					if(node.mesh.mesh != nullptr) drawPlanetNodeMesh(*planet, node, camera_position);
 				}
 				glPolygonMode(GL_FRONT_AND_BACK, static_cast<GLenum>(old_polygon_mode[0]));
 				if(old_depth_test) glEnable(GL_DEPTH_TEST);

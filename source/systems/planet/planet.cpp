@@ -210,7 +210,6 @@ namespace danikk_space_engine
 		planet.updateTerrainStreaming(camera_position, surface_height,
 			getPlanetSettings(planet.settings_id),
 			world.getTelemetrySystem().mesh_generation_telemetry);
-		evictCachedMeshes(planet.terrain_tree, camera_position);
 	}
 
 	bool PlanetSystem::editPlanetGround(PlanetId planet_id, const glm::dvec3& position,

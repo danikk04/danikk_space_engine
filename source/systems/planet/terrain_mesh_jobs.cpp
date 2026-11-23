@@ -81,6 +81,10 @@ namespace danikk_space_engine
 			level_half_extent *= 0.5;
 			start_depth++;
 		}
+		constexpr uint8 prepared_finer_levels = 2;
+		for(uint8 level = 0; level < prepared_finer_levels
+			&& start_depth < PlanetTerrainTree::maximum_depth; ++level)
+			start_depth++;
 
 		PlanetTerrainTree& tree = planet.terrain_tree;
 		if(tree.root_id == PlanetTerrainTree::invalid_node && tree.createRoot()

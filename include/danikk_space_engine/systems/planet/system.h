@@ -10,6 +10,8 @@ namespace danikk_space_engine
 	{
 		World& world;
 		DynamicArray<PlanetData> planets;
+		/** @brief Reused per-frame list of selected detail nodes and drawable fallbacks. */
+		DynamicArray<PlanetTerrainRenderNode> terrain_render_nodes;
 		uint64 next_generation_id = 1;
 
 		void updatePlanet(PlanetData& planet);
@@ -51,8 +53,10 @@ namespace danikk_space_engine
 		void setMeshGenerationJobPending(const MeshGenerationJob& job, bool pending);
 		/** @brief Replaces a node's mesh with an accepted terrain generation result. */
 		void acceptGeneratedTerrainNodeMesh(const MeshGenerationJob& job);
-		/** @brief Draws all active adaptive terrain-node meshes in the current depth pass. */
-		void renderActiveTerrainNodes();
+		/** @brief Fills and returns the current frame's selected terrain-node list. */
+		const DynamicArray<PlanetTerrainRenderNode>& getTerrainNodesForRender();
+		/** @brief Draws the supplied terrain-node list in the current depth pass. */
+		void renderTerrainNodes(const DynamicArray<PlanetTerrainRenderNode>& render_nodes);
 		/**
 		 * @brief Applies and persists a spherical terrain edit on a registered planet.
 		 * @param planet_id Planet to modify.

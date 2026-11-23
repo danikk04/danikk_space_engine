@@ -230,7 +230,9 @@ namespace danikk_space_engine
 				glm::length(center - camera_position) + object.detail_mesh_bounds_radius);
 		}
 
-		const auto draw_world_geometry = [this]()
+		const DynamicArray<PlanetTerrainRenderNode>& terrain_render_nodes =
+			getPlanetSystem().getTerrainNodesForRender();
+		const auto draw_world_geometry = [this, &terrain_render_nodes]()
 		{
 			for(WorldBodyId id : getWorldBodySystem().getUsedWorldBodyIds())
 			{
@@ -248,7 +250,7 @@ namespace danikk_space_engine
 				drawMeshRenderData(object.detail_mesh,
 					glm::translate(mat4(1.0f), vec3(relative_position)) * rotation);
 			}
-			getPlanetSystem().renderActiveTerrainNodes();
+			getPlanetSystem().renderTerrainNodes(terrain_render_nodes);
 		};
 
 		if(far_render_distance > getCameraSystem().far_clip_distance * 1.05)

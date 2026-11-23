@@ -228,12 +228,16 @@ namespace danikk_space_engine
 		glm::dvec3 render_window_maximum = glm::dvec3(0.0);
 		/** @brief Latest camera height above the planet surface, negative underground. */
 		double streaming_height = 0.0;
+		/** @brief Number of ideal target nodes computed for the latest streaming update. */
+		size_t streaming_target_node_count = 0;
+		/** @brief Number of detail-scale adjustments made for the latest streaming update. */
+		size_t streaming_detail_scale_adjustments = 0;
 		/** @brief Detail scale selected for the latest camera position. */
 		double streaming_detail_scale = 0.0;
 		/** @brief Whether current camera data has activated terrain streaming for this planet. */
 		bool terrain_streaming_active = false;
 
-		/** @brief Updates edits, adaptive terrain streaming, mesh selection, and diagnostics. */
+		/** @brief Updates edits and adaptive terrain streaming for this planet. */
 		void updateTerrainStreaming(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, MeshGenerationTelemetry& telemetry);
 		/** @brief Applies dirty terrain regions and enforces the adaptive tree node limit. */

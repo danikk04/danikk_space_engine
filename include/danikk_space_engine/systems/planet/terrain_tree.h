@@ -38,10 +38,6 @@ namespace danikk_space_engine
 		bool pending_surface_only = true;
 		/** @brief Whether this node's mesh is selected for drawing or fallback coverage. */
 		bool render_active = false;
-		/** @brief Whether this node is a selected detail target, including a generated empty cell. */
-		bool render_target = false;
-		/** @brief Whether this drawable node is only a temporary ancestor fallback. */
-		bool render_fallback = false;
 
 		/** @brief Tests this node's cubic bounds against an axis-aligned box. */
 		bool intersectsBounds(const glm::dvec3& minimum, const glm::dvec3& maximum) const;
@@ -96,14 +92,17 @@ namespace danikk_space_engine
 			const PlanetSettings& settings, double detail_scale,
 			const glm::dvec3& render_window_minimum,
 			const glm::dvec3& render_window_maximum);
-		/** @brief Selects visible target nodes and marks them active, nearest first per level. */
-		void selectRenderNodes(const glm::dvec3& camera_position, double height,
-			const PlanetSettings& planet_settings, double detail_scale,
-			const glm::dvec3& render_window_minimum,
-			const glm::dvec3& render_window_maximum,
-			DynamicArray<PlanetTerrainNodeId>& selected_node_ids);
-		/** @brief Applies target visibility and activates drawable ancestors as temporary fallbacks. */
-		void applyRenderSelection(const DynamicArray<PlanetTerrainNodeId>& selected_node_ids);
+	};
+
+	/** @brief One node selected for this frame's terrain render list. */
+	struct PlanetTerrainRenderNode
+	{
+		/** @brief Planet that owns the selected octree node. */
+		PlanetId planet_id = static_cast<PlanetId>(-1);
+		/** @brief Index of the selected node in its planet's terrain tree. */
+		PlanetTerrainNodeId node_id = PlanetTerrainTree::invalid_node;
+		/** @brief True when this node is an ancestor mesh filling a missing target. */
+		bool fallback = false;
 	};
 
 	/** @brief Spherical terrain region whose cached meshes must be regenerated. */

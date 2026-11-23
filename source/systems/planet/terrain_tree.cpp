@@ -130,23 +130,16 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		double detail_scale = 0.0;
-		size_t target_node_count = 0;
-		size_t detail_scale_adjustments = 0;
-		DynamicArray<PlanetTerrainNodeId> selected_node_ids;
 
 		applyTerrainChangesToTree(telemetry);
 		PlanetTerrainTree::calculateStreamingDetailScale(camera_position, height,
 			planet_settings, render_window_minimum, render_window_maximum, detail_scale,
-			target_node_count, detail_scale_adjustments);
+			streaming_target_node_count, streaming_detail_scale_adjustments);
 		streaming_camera_position = camera_position;
 		streaming_height = height;
 		streaming_detail_scale = detail_scale;
 		terrain_streaming_active = true;
 		terrain_tree.refine(camera_position, height, planet_settings,
 			detail_scale, render_window_minimum, render_window_maximum);
-		terrain_tree.selectRenderNodes(camera_position, height, planet_settings, detail_scale,
-			render_window_minimum, render_window_maximum, selected_node_ids);
-		terrain_tree.applyRenderSelection(selected_node_ids);
-		recordDiagnostics(telemetry, target_node_count, detail_scale_adjustments, detail_scale);
 	}
 }
