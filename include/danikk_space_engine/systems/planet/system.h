@@ -51,8 +51,8 @@ namespace danikk_space_engine
 		void setMeshGenerationJobPending(const MeshGenerationJob& job, bool pending);
 		/** @brief Replaces a node's mesh with an accepted terrain generation result. */
 		void acceptGeneratedTerrainNodeMesh(const MeshGenerationJob& job);
-		/** @brief Draws all active adaptive terrain-node meshes in the current depth pass. */
-		void renderActiveTerrainNodes();
+		/** @brief Draws resident planet terrain meshes within the current LOD depth range. */
+		void renderPlanetTerrainMeshes();
 		/**
 		 * @brief Applies and persists a spherical terrain edit on a registered planet.
 		 * @param planet_id Planet to modify.

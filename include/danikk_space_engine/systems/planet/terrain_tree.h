@@ -68,8 +68,8 @@ namespace danikk_space_engine
 		/** @brief Number of halvings from a 2^24 m root to a 32 m leaf. */
 		static constexpr uint8 maximum_depth = 19;
 		static constexpr size_t maximum_node_count = 131072;
-		/** @brief Upper bound for target-node estimates, matching the octree storage limit. */
-		static constexpr size_t maximum_target_nodes = maximum_node_count;
+		/** @brief Global target-node budget; unlike drawing, this is not capped per depth. */
+		static constexpr size_t maximum_target_nodes = 5120;
 		uint64 next_node_generation_id = 1;
 
 		/** @brief Creates the canonical root and assigns it a fresh generation ID. */

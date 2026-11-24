@@ -16,6 +16,7 @@ namespace danikk_space_engine
 	{
     	base2d_shader.load("base2d");
     	base3d_shader.load("base3d");
+		planet_terrain_shader.load("planet_terrain");
 		bullet_tracer_shader.load("bullet_tracer");
 	    	base_font.load("archive");
 

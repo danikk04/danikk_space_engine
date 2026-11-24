@@ -1,5 +1,6 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/world.h>
 
 #include <danikk_space_engine/systems/camera/camera.h>
@@ -34,29 +35,26 @@ namespace danikk_space_engine
 		}
 	}
 
-	/** @brief Draws active terrain-node meshes directly from their owning octree nodes. */
-	void PlanetSystem::renderActiveTerrainNodes()
+	/** @brief Draws resident terrain meshes from fine nodes toward coarser ancestors. */
+	void PlanetSystem::renderPlanetTerrainMeshes()
 	{
 		DSE_WATCH();
 		const glm::dvec3 camera_position = world.getCameraSystem().getWorldPosition();
-		constexpr uint terrain_depth_offset_location = 10;
-		constexpr float maximum_terrain_depth_offset = 0.01f;
-		constexpr float terrain_depth_offset_per_level = maximum_terrain_depth_offset
-			/ static_cast<float>(maximum_terrain_ancestor_levels);
+		static_asset_collection.planet_terrain_shader.use();
 
-		// Draw no more than the camera's current target depth and its four coarser ancestors.
-		// Fine meshes go first; each coarser level receives a larger clip-space depth bias.
+		// Surface rendering includes up to four coarser ancestors; underground rendering
+		// keeps only the current target depth so coarse surface meshes cannot cover caves.
+		// Fine meshes are submitted before coarser ancestors.
 		for(int depth = static_cast<int>(PlanetTerrainTree::maximum_depth); depth >= 0; --depth)
 		{
 			for(const PlanetData& planet : planets)
 			{
 				const uint8 current_depth = getCurrentTerrainDepth(planet);
-				const uint8 coarsest_depth = current_depth > maximum_terrain_ancestor_levels
-					? static_cast<uint8>(current_depth - maximum_terrain_ancestor_levels) : 0;
+				uint8 coarsest_depth = current_depth;
+				if(planet.streaming_height >= 0.0)
+					coarsest_depth = current_depth > maximum_terrain_ancestor_levels
+						? static_cast<uint8>(current_depth - maximum_terrain_ancestor_levels) : 0;
 				if(depth < coarsest_depth || depth > current_depth) continue;
-				const float depth_offset = static_cast<float>(current_depth - depth)
-					* terrain_depth_offset_per_level;
-				setFloatUniform(terrain_depth_offset_location, depth_offset);
 				for(const PlanetTerrainNode& node : planet.terrain_tree.nodes)
 				{
 					if(node.depth != depth || node.mesh.mesh == nullptr) continue;
@@ -71,6 +69,5 @@ namespace danikk_space_engine
 				}
 			}
 		}
-		setFloatUniform(terrain_depth_offset_location, 0.0f);
 	}
 }

@@ -230,8 +230,18 @@ namespace danikk_space_engine
 				glm::length(center - camera_position) + object.detail_mesh_bounds_radius);
 		}
 
-		const auto draw_world_geometry = [this]()
+		const glm::dmat4 view = glm::lookAt(glm::dvec3(0.0),
+			glm::dvec3(getCameraSystem().getFront()), glm::dvec3(getCameraSystem().getUp()));
+		const glm::dmat4 standard_projection = glm::perspective(glm::radians(
+			static_cast<double>(getCameraSystem().vertical_fov_degrees)),
+			static_cast<double>(screen_ratio_gz),
+			static_cast<double>(getCameraSystem().near_clip_distance),
+			static_cast<double>(getCameraSystem().far_clip_distance));
+		const auto draw_world_geometry = [this, &view](const glm::dmat4& projection)
 		{
+			static_asset_collection.base3d_shader.use();
+			setViewMatrix(mat4(view));
+			setProjectionMatrix(mat4(projection));
 			for(WorldBodyId id : getWorldBodySystem().getUsedWorldBodyIds())
 			{
 				const WorldBody& body = getWorldBodySystem().getWorldBody(id);
@@ -248,7 +258,13 @@ namespace danikk_space_engine
 				drawMeshRenderData(object.detail_mesh,
 					glm::translate(mat4(1.0f), vec3(relative_position)) * rotation);
 			}
-			getPlanetSystem().renderActiveTerrainNodes();
+			static_asset_collection.planet_terrain_shader.use();
+			setViewMatrix(mat4(view));
+			setProjectionMatrix(mat4(projection));
+			getPlanetSystem().renderPlanetTerrainMeshes();
+			static_asset_collection.base3d_shader.use();
+			setViewMatrix(mat4(view));
+			setProjectionMatrix(mat4(projection));
 		};
 
 		if(far_render_distance > getCameraSystem().far_clip_distance * 1.05)
@@ -259,18 +275,21 @@ namespace danikk_space_engine
 					static_cast<double>(getCameraSystem().near_clip_distance), closest_planet_surface_distance * 0.5)));
 			const float far_clip = static_cast<float>(glm::min(far_render_distance * 1.02,
 				static_cast<double>(std::numeric_limits<float>::max() / 2.0f)));
-			setProjectionMatrix(glm::perspective(glm::radians(getCameraSystem().vertical_fov_degrees),
-				screen_ratio_gz, near_clip, far_clip));
+			const glm::dmat4 far_projection = glm::perspective(glm::radians(
+				static_cast<double>(getCameraSystem().vertical_fov_degrees)),
+				static_cast<double>(screen_ratio_gz), static_cast<double>(near_clip),
+				static_cast<double>(far_clip));
+			setProjectionMatrix(mat4(far_projection));
 			setDepthRange(0.5f, 1.0f);
-			draw_world_geometry();
+			draw_world_geometry(far_projection);
 			getCameraSystem().frame();
 			setDepthRange(0.0f, 0.5f);
-			draw_world_geometry();
+			draw_world_geometry(standard_projection);
 		}
 		else
 		{
 			setDepthRange(0.0f, 1.0f);
-			draw_world_geometry();
+			draw_world_geometry(standard_projection);
 		}
 	}
 }
