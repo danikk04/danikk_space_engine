@@ -63,7 +63,6 @@ namespace danikk_space_engine
 		PlanetData* planet_data = world.getPlanetSystem().findPlanet(planet_id);
 		if(planet_data == nullptr) return false;
 		PlanetData& planet = *planet_data;
-		if(planet.terrain_edits_loaded) return true;
 		const PlanetSettings& settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
 		const double planet_radius = settings.radius;
 		const uint64 noise_seed = settings.noise_seed;
@@ -86,7 +85,6 @@ namespace danikk_space_engine
 		}
 		if(!input)
 		{
-			planet.terrain_edits_loaded = true;
 			if constexpr(enable_terrain_edit_save_logs)
 				formatLogInfo("Planet terrain edits not found: planet=%", planet_id);
 			return false;
@@ -99,7 +97,6 @@ namespace danikk_space_engine
 			|| header.planet_radius != planet_radius || header.noise_seed != noise_seed
 			|| header.edit_count > 1000000)
 		{
-			planet.terrain_edits_loaded = true;
 			if constexpr(enable_terrain_edit_save_logs)
 				formatLogWarning(
 					"Planet terrain edits rejected: planet=% read_ok=% magic=% version=% count=% radius_match=% seed_match=%",
@@ -116,7 +113,6 @@ namespace danikk_space_engine
 			PlanetTerrainEdit edit;
 			if(!edit.read(input, header.version))
 			{
-				planet.terrain_edits_loaded = true;
 				if constexpr(enable_terrain_edit_save_logs)
 					formatLogWarning("Planet terrain edit record rejected: planet=% record=% of %",
 						planet_id, index, header.edit_count);
@@ -141,7 +137,6 @@ namespace danikk_space_engine
 					std::filesystem::remove(previous_file_path, error);
 			}
 		}
-		planet.terrain_edits_loaded = true;
 		if constexpr(enable_terrain_edit_save_logs)
 			formatLogInfo("Planet terrain edits loaded: planet=% count=% revision=%",
 				planet_id, planet.terrain_edits.ids.size(), planet.terrain_revision);

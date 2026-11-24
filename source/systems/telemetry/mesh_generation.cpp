@@ -48,7 +48,6 @@ namespace danikk_space_engine
 			case PlanetMeshAcceptance::accepted: accepted_planet_meshes++; break;
 			case PlanetMeshAcceptance::empty: empty_planet_meshes++; break;
 			case PlanetMeshAcceptance::missing_planet: missing_planet_meshes++; break;
-			case PlanetMeshAcceptance::stale_planet: stale_planet_meshes++; break;
 			case PlanetMeshAcceptance::stale_terrain: stale_terrain_meshes++; break;
 			case PlanetMeshAcceptance::invalid_node: invalid_planet_mesh_nodes++; break;
 			case PlanetMeshAcceptance::stale_generator: stale_planet_mesh_generators++; break;
@@ -85,6 +84,9 @@ namespace danikk_space_engine
 				case MeshDeletionReason::planet_system_shutdown:
 					pending_mesh_deletions.planet_system_shutdown++;
 					break;
+				case MeshDeletionReason::planet_render_unloaded:
+					pending_mesh_deletions.planet_render_unloaded++;
+					break;
 				case MeshDeletionReason::detail_mesh_rebuild:
 					pending_mesh_deletions.detail_mesh_rebuild++;
 					break;
@@ -100,10 +102,10 @@ namespace danikk_space_engine
 
 		if constexpr(enable_mesh_deletion_reason_logs)
 			formatLogInfo(
-				"Mesh deletions (last 100): cache_capacity=% tree_node_limit=% planet_removed=% planet_system_shutdown=% detail_mesh_rebuild=% world_body_destroyed=%",
+				"Mesh deletions (last 100): cache_capacity=% tree_node_limit=% planet_removed=% planet_system_shutdown=% planet_render_unloaded=% detail_mesh_rebuild=% world_body_destroyed=%",
 				report.cache_capacity, report.tree_node_limit,
 				report.planet_removed, report.planet_system_shutdown,
-				report.detail_mesh_rebuild, report.world_body_destroyed);
+				report.planet_render_unloaded, report.detail_mesh_rebuild, report.world_body_destroyed);
 	}
 
 	void MeshGenerationTelemetry::recordPlanetTerrainCache(uint64 cached_meshes,
@@ -160,7 +162,6 @@ namespace danikk_space_engine
 		uint64 report_accepted = 0;
 		uint64 report_empty = 0;
 		uint64 report_missing_planet = 0;
-		uint64 report_stale_planet = 0;
 		uint64 report_stale_terrain = 0;
 		uint64 report_invalid_node = 0;
 		uint64 report_stale_generator = 0;
@@ -174,7 +175,6 @@ namespace danikk_space_engine
 			report_accepted = accepted_planet_meshes;
 			report_empty = empty_planet_meshes;
 			report_missing_planet = missing_planet_meshes;
-			report_stale_planet = stale_planet_meshes;
 			report_stale_terrain = stale_terrain_meshes;
 			report_invalid_node = invalid_planet_mesh_nodes;
 			report_stale_generator = stale_planet_mesh_generators;
@@ -186,7 +186,6 @@ namespace danikk_space_engine
 			accepted_planet_meshes = 0;
 			empty_planet_meshes = 0;
 			missing_planet_meshes = 0;
-			stale_planet_meshes = 0;
 			stale_terrain_meshes = 0;
 			invalid_planet_mesh_nodes = 0;
 			stale_planet_mesh_generators = 0;
@@ -205,7 +204,7 @@ namespace danikk_space_engine
 			generated_triangles += level.generated_triangles;
 			generation_nanoseconds += level.generation_time.total_nanoseconds;
 		}
-		const uint64 stale_jobs = report_missing_planet + report_stale_planet
+		const uint64 stale_jobs = report_missing_planet
 			+ report_stale_terrain + report_invalid_node + report_stale_generator + report_stale_node;
 		const double average_generation_milliseconds = generated_meshes == 0 ? 0.0
 			: static_cast<double>(generation_nanoseconds) / generated_meshes / 1000000.0;

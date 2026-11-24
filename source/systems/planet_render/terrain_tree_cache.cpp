@@ -1,5 +1,6 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
@@ -20,10 +21,11 @@ namespace danikk_space_engine
 		}
 	}
 
-	void PlanetSystem::evictCachedMeshes(PlanetTerrainTree& tree,
+	void PlanetRenderSystem::evictCachedMeshes(PlanetRenderData& render_data,
 		const glm::dvec3& camera_position)
 	{
 		DSE_WATCH();
+		PlanetTerrainTree& tree = render_data.terrain_tree;
 		constexpr size_t maximum_cached_meshes_per_level = 1024;
 		DynamicArray<size_t> cached_meshes_per_level(tree.maximum_depth + 1, 0);
 		size_t cached_mesh_count = 0;

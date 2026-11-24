@@ -3,12 +3,13 @@
 
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 
 namespace danikk_space_engine
 {
-	bool PlanetSystem::findNextMeshGenerationJob(MeshGenerationJob& job,
+	bool PlanetRenderSystem::findNextMeshGenerationJob(MeshGenerationJob& job,
 		double& best_distance_squared)
 	{
 		DSE_WATCH();
@@ -22,13 +23,14 @@ namespace danikk_space_engine
 			bool has_candidate = false;
 			MeshGenerationJob nearest_job;
 			double nearest_distance_squared = std::numeric_limits<double>::infinity();
-			for(PlanetData& planet : planets)
+			for(PlanetRenderData& render_data : planet_render_data)
 			{
-				if(!planet.terrain_streaming_active) continue;
+				PlanetData* planet = world.getPlanetSystem().findPlanet(render_data.planet_id);
+				if(planet == nullptr || !render_data.terrain_streaming_active) continue;
 				MeshGenerationJob candidate_job;
 				double candidate_distance_squared = std::numeric_limits<double>::infinity();
 				bool planet_window_covered = false;
-				const bool has_planet_candidate = findNextMeshGenerationJobInWindow(planet,
+				const bool has_planet_candidate = findNextMeshGenerationJobInWindow(*planet, render_data,
 					camera_world_position, window_radius, candidate_job,
 					candidate_distance_squared, planet_window_covered);
 				radius_covered = radius_covered && planet_window_covered;
@@ -52,28 +54,29 @@ namespace danikk_space_engine
 		return false;
 	}
 
-	bool PlanetSystem::findNextMeshGenerationJobInWindow(PlanetData& planet,
+	bool PlanetRenderSystem::findNextMeshGenerationJobInWindow(const PlanetData& planet,
+		PlanetRenderData& render_data,
 		const glm::dvec3& camera_world_position, uint8 window_radius,
 		MeshGenerationJob& job, double& distance_squared, bool& window_covered)
 	{
 		window_covered = false;
 		distance_squared = std::numeric_limits<double>::infinity();
-		PlanetTerrainTree& tree = planet.terrain_tree;
-		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
+		PlanetTerrainTree& tree = render_data.terrain_tree;
+		const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
 		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
 			* (camera_world_position - planet.position);
 		glm::dvec3 anchor = camera_position;
-		if(planet.streaming_height >= 0.0)
+		if(render_data.streaming_height >= 0.0)
 		{
 			const double camera_radius = glm::length(camera_position);
 			if(camera_radius > 1e-9)
-				anchor *= (camera_radius - planet.streaming_height) / camera_radius;
+				anchor *= (camera_radius - render_data.streaming_height) / camera_radius;
 		}
 
 		const double root_half_extent = tree.initial_root_half_extent;
 		const double root_side = root_half_extent * 2.0;
 		const double target_half_extent = tree.getTargetHalfExtent(
-			camera_position, planet.streaming_detail_scale, anchor);
+			camera_position, render_data.streaming_detail_scale, anchor);
 		uint8 start_depth = 0;
 		double level_half_extent = root_half_extent;
 		while(start_depth < tree.maximum_depth
@@ -117,8 +120,8 @@ namespace danikk_space_engine
 				PlanetTerrainNode candidate;
 				candidate.center = cell_center;
 				candidate.half_extent = node_width * 0.5;
-				if(!candidate.isInTerrainRenderRegion(planet.render_window_minimum,
-					planet.render_window_maximum, camera_position, planet.streaming_height,
+				if(!candidate.isInTerrainRenderRegion(render_data.render_window_minimum,
+					render_data.render_window_maximum, camera_position, render_data.streaming_height,
 					planet_settings)) continue;
 
 				PlanetTerrainNodeId node_id = tree.root_id;
@@ -181,7 +184,7 @@ namespace danikk_space_engine
 			job = MeshGenerationJob();
 			job.source = MeshGenerationSource::planet_terrain_node;
 			job.planet_id = planet.id;
-			job.planet_generation_id = planet.generation_id;
+			job.planet_render_generation_id = render_data.runtime_generation_id;
 			job.terrain_revision = planet.terrain_revision;
 			job.terrain_node_id = nearest_node_id;
 			job.terrain_node_depth = node.depth;
@@ -199,33 +202,37 @@ namespace danikk_space_engine
 		return false;
 	}
 
-	bool PlanetSystem::isMeshGenerationJobWanted(const MeshGenerationJob& job) const
+	bool PlanetRenderSystem::isMeshGenerationJobWanted(const MeshGenerationJob& job) const
 	{
 		if(job.source != MeshGenerationSource::planet_terrain_node
 			|| !world.getCameraSystem().isActive()) return false;
-		const PlanetData* planet = findPlanet(job.planet_id);
-		if(planet == nullptr || !planet->terrain_streaming_active
-			|| planet->generation_id != job.planet_generation_id
+		const PlanetData* planet = world.getPlanetSystem().findPlanet(job.planet_id);
+		const PlanetRenderData* render_data = findPlanetRenderData(job.planet_id);
+		if(planet == nullptr || render_data == nullptr || !render_data->terrain_streaming_active
+			|| render_data->runtime_generation_id != job.planet_render_generation_id
 			|| planet->terrain_revision != job.terrain_revision
 			|| job.planet_mesh_generator != settings.planet_mesh_generator
-			|| job.terrain_node_id >= planet->terrain_tree.nodes.size()) return false;
-		const PlanetTerrainNode& node = planet->terrain_tree.nodes[job.terrain_node_id];
+			|| job.terrain_node_id >= render_data->terrain_tree.nodes.size()) return false;
+		const PlanetTerrainNode& node = render_data->terrain_tree.nodes[job.terrain_node_id];
 		if(node.generation_id != job.terrain_node_generation_id) return false;
-		const PlanetSettings& planet_settings = getPlanetSettings(planet->settings_id);
-		if(!node.isInTerrainRenderRegion(planet->render_window_minimum, planet->render_window_maximum,
-			planet->streaming_camera_position, planet->streaming_height, planet_settings)) return false;
-		const bool surface_only = planet->terrain_tree.isSurfaceOnly(node, planet_settings.radius);
+		const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet->settings_id);
+		if(!node.isInTerrainRenderRegion(render_data->render_window_minimum,
+			render_data->render_window_maximum, render_data->streaming_camera_position,
+			render_data->streaming_height, planet_settings)) return false;
+		const bool surface_only = render_data->terrain_tree.isSurfaceOnly(node, planet_settings.radius);
 		return surface_only == job.surface_only
 			&& !node.hasCurrentMesh(planet->terrain_revision, settings.planet_mesh_generator, surface_only);
 	}
 
-	void PlanetSystem::setMeshGenerationJobPending(const MeshGenerationJob& job, bool pending)
+	void PlanetRenderSystem::setMeshGenerationJobPending(const MeshGenerationJob& job, bool pending)
 	{
 		if(job.source != MeshGenerationSource::planet_terrain_node) return;
-		PlanetData* planet = findPlanet(job.planet_id);
-		if(planet == nullptr || planet->generation_id != job.planet_generation_id
-			|| job.terrain_node_id >= planet->terrain_tree.nodes.size()) return;
-		PlanetTerrainNode& node = planet->terrain_tree.nodes[job.terrain_node_id];
+		const PlanetData* planet = world.getPlanetSystem().findPlanet(job.planet_id);
+		PlanetRenderData* render_data = findPlanetRenderData(job.planet_id);
+		if(planet == nullptr || render_data == nullptr
+			|| render_data->runtime_generation_id != job.planet_render_generation_id
+			|| job.terrain_node_id >= render_data->terrain_tree.nodes.size()) return;
+		PlanetTerrainNode& node = render_data->terrain_tree.nodes[job.terrain_node_id];
 		if(node.generation_id != job.terrain_node_generation_id) return;
 		if(pending)
 		{

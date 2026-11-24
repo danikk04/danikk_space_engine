@@ -58,6 +58,9 @@ namespace danikk_space_engine
 		/** @brief Returns the planet and terrain system. */
 		PlanetSystem& getPlanetSystem();
 		const PlanetSystem& getPlanetSystem() const;
+		/** @brief Returns the lazy planet terrain render/cache system. */
+		PlanetRenderSystem& getPlanetRenderSystem();
+		const PlanetRenderSystem& getPlanetRenderSystem() const;
 		/** @brief Returns the raycast system. */
 		RaycastSystem& getRaycastSystem();
 		const RaycastSystem& getRaycastSystem() const;

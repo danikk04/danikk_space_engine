@@ -2,67 +2,16 @@
 
 #include <danikk_framework/log.h>
 #include <danikk_engine/danikk_engine.h>
-#include <danikk_engine/texture_methods.h>
-#include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/build_object/system.h>
 #include <danikk_space_engine/systems/build_object/data.h>
-#include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
-#include <danikk_space_engine/systems/telemetry/watcher.h>
 #include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/geometry/build_part.h>
 
-#include <cstdlib>
-#include <new>
-
 namespace danikk_space_engine
 {
-	namespace
-	{
-		Mesh* build_part_meshes[static_cast<size_t>(BuildPartShape::count)]{};
-
-		Mesh& getBuildPartMesh(BuildPartShape shape)
-		{
-			const size_t index = static_cast<size_t>(shape);
-			if(index >= static_cast<size_t>(BuildPartShape::count))
-				danikk_engine::formatFatalError("Invalid BuildPart shape %", index);
-			if(build_part_meshes[index] != nullptr) return *build_part_meshes[index];
-
-			const BuildPartGeometry& geometry = getBuildPartGeometry(shape);
-			if(geometry.positions.size() == 0 || geometry.triangles.size() == 0)
-				danikk_engine::formatFatalError("BuildPart shape % has no geometry", index);
-
-			DynamicArray<DefaultVertex> vertices;
-			DynamicArray<gl_point_index_t> indices;
-			vertices.reserve(geometry.triangles.size() * 3);
-			indices.reserve(geometry.triangles.size() * 3);
-			for(const CubeTriangle& triangle : geometry.triangles)
-			{
-				const vec3 a = geometry.positions[triangle.points[0]];
-				const vec3 b = geometry.positions[triangle.points[1]];
-				const vec3 c = geometry.positions[triangle.points[2]];
-				const vec3 normal = glm::normalize(glm::cross(b - a, c - a));
-				const vec3 face_positions[3] = {a, b, c};
-				for(const vec3& position : face_positions)
-				{
-					indices.push(static_cast<gl_point_index_t>(vertices.size()));
-					vertices.pushCtor(position, normal, vec2(position.x + 0.5f, position.y + 0.5f));
-				}
-			}
-
-			void* memory = malloc(sizeof(Mesh));
-			if(memory == nullptr) std::abort();
-			Mesh* mesh = new (memory) Mesh();
-			mesh->setData(reinterpret_cast<const float*>(vertices.data()),
-				vertices.size() * sizeof(DefaultVertex) / sizeof(float), indices.data(), indices.size());
-			DefaultVertex::setAttributes();
-			build_part_meshes[index] = mesh;
-			return *mesh;
-		}
-	}
-
 	void BuildPartSystem::init()
 	{
 		danikk_framework::formatLogInfo("Init BuildPartSystem");
@@ -145,35 +94,6 @@ namespace danikk_space_engine
 		BuildObject& object = world.getBuildObjectSystem().getBuildObject(build_object_id);
 		while(object.build_part_ids.size() > 0)
 			destroyBuildPart(object.build_part_ids[object.build_part_ids.size() - 1]);
-	}
-
-	void BuildPartSystem::renderFallback()
-	{
-		DSE_WATCH();
-		for(BuildObjectId object_id : world.getBuildObjectSystem().getUsedBuildObjectIds())
-		{
-			const BuildObject& object = world.getBuildObjectSystem().getBuildObject(object_id);
-			if(object.detail_mesh.mesh != nullptr
-				|| !world.getWorldBodySystem().isWorldBodyActive(object.world_body_id)) continue;
-			const WorldBody& body = world.getWorldBodySystem().getWorldBody(object.world_body_id);
-			const glm::dquat body_rotation = body.rotation;
-			for(BuildPartId part_id : object.build_part_ids)
-			{
-				if(!build_parts.isActive(part_id)) continue;
-				const BuildPart& part = build_parts[part_id];
-				const glm::dvec3 relative_position = body.position
-					+ body_rotation * part.body_local_position - world.getCameraSystem().getWorldPosition();
-				mat4 rotation(1.0f);
-				rotation[0] = vec4(vec3(body_rotation * glm::dvec3(1.0, 0.0, 0.0)), 0.0f);
-				rotation[1] = vec4(vec3(body_rotation * glm::dvec3(0.0, 1.0, 0.0)), 0.0f);
-				rotation[2] = vec4(vec3(body_rotation * glm::dvec3(0.0, 0.0, 1.0)), 0.0f);
-				setWorldMatrix(glm::translate(mat4(1.0f), vec3(relative_position))
-					* rotation * part.rotation * glm::scale(mat4(1.0f), part.size));
-				white_texture.bind();
-				setDrawColor(vec4(0.65f, 0.68f, 0.72f, 1.0f));
-				getBuildPartMesh(part.shape).draw();
-			}
-		}
 	}
 
 	bool BuildPartSystem::isBuildPartActive(BuildPartId id) const { return build_parts.isActive(id); }

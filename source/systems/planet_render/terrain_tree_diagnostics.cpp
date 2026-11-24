@@ -1,10 +1,11 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/planet_render/data.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {
-	void PlanetData::recordDiagnostics(MeshGenerationTelemetry& telemetry,
+	void PlanetRenderData::recordDiagnostics(MeshGenerationTelemetry& telemetry,
 		size_t target_node_count, size_t detail_scale_adjustments, double detail_scale) const
 	{
 		DSE_WATCH();

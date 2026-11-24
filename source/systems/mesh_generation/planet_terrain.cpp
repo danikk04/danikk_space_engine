@@ -41,8 +41,7 @@ namespace danikk_space_engine
 			 */
 			DSE_WATCH();
 			const PlanetData* planet = world.getPlanetSystem().findPlanet(job.planet_id);
-			if(planet == nullptr || planet->generation_id != job.planet_generation_id
-				|| planet->terrain_revision != job.terrain_revision) return;
+			if(planet == nullptr || planet->terrain_revision != job.terrain_revision) return;
 			generatePlanetNodeGeometry(world, job);
 
 			const size_t triangle_count = job.triangle_point_indices.size() / 3;

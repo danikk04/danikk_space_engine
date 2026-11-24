@@ -1,5 +1,5 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
-#include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/world.h>
 
@@ -8,13 +8,13 @@
 namespace danikk_space_engine
 {
 	/** @brief Draws the terrain meshes and transforms collected by each planet for this frame. */
-	void PlanetSystem::renderPlanetTerrainMeshes()
+	void PlanetRenderSystem::renderPlanetTerrainMeshes()
 	{
 		DSE_WATCH();
 		const glm::dvec3 camera_position = world.getCameraSystem().getWorldPosition();
 		static_asset_collection.planet_terrain_shader.use();
 
-		for(const PlanetData& planet : planets)
+		for(const PlanetRenderData& planet : planet_render_data)
 		{
 			for(const PlanetTerrainRenderItem& item : planet.terrain_render_items)
 			{

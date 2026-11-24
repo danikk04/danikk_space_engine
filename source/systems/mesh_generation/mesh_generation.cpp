@@ -2,6 +2,7 @@
 #include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/build_object/system.h>
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
+#include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_framework/log.h>
 #include <algorithm>
@@ -106,11 +107,10 @@ namespace danikk_space_engine
 	}
 
 	/** @copydoc MeshGenerationSystem::cancelPlanetJobs */
-	void MeshGenerationSystem::cancelPlanetJobs(PlanetId planet_id,
-		uint64 planet_generation_id)
+	void MeshGenerationSystem::cancelPlanetJobs(PlanetId planet_id)
 	{
 		DSE_WATCH();
-		cancelJobsForPlanet(planet_id, planet_generation_id);
+		cancelJobsForPlanet(planet_id);
 	}
 
 	void MeshGenerationSystem::invalidateBuildObjectMesh(BuildObjectId build_object_id)
@@ -157,7 +157,7 @@ namespace danikk_space_engine
 	bool MeshGenerationSystem::isMeshJobWanted(const MeshGenerationJob& job) const
 	{
 		if(job.source == MeshGenerationSource::planet_terrain_node)
-			return world.getPlanetSystem().isMeshGenerationJobWanted(job);
+			return world.getPlanetRenderSystem().isMeshGenerationJobWanted(job);
 		if(job.source != MeshGenerationSource::build_parts
 			|| !world.getWorldBodySystem().isWorldBodyActive(job.world_body_id)
 			|| !world.getBuildObjectSystem().isBuildObjectActive(job.build_object_id)) return false;
@@ -171,7 +171,7 @@ namespace danikk_space_engine
 	{
 		if(job.source == MeshGenerationSource::planet_terrain_node)
 		{
-			world.getPlanetSystem().setMeshGenerationJobPending(job, pending);
+			world.getPlanetRenderSystem().setMeshGenerationJobPending(job, pending);
 			return;
 		}
 		if(job.source != MeshGenerationSource::build_parts
@@ -189,7 +189,7 @@ namespace danikk_space_engine
 	{
 		if(job.source == MeshGenerationSource::planet_terrain_node)
 		{
-			world.getPlanetSystem().setMeshGenerationJobPending(job, true);
+			world.getPlanetRenderSystem().setMeshGenerationJobPending(job, true);
 			return;
 		}
 		if(job.source != MeshGenerationSource::build_parts
@@ -215,7 +215,7 @@ namespace danikk_space_engine
 		if(tryTakeCompletedJob(generated) && generated.generation_id == generation_id)
 		{
 			if(generated.source == MeshGenerationSource::planet_terrain_node)
-				world.getPlanetSystem().acceptGeneratedTerrainNodeMesh(generated);
+				world.getPlanetRenderSystem().acceptGeneratedTerrainNodeMesh(generated);
 			else if(generated.source == MeshGenerationSource::build_parts
 				&& world.getWorldBodySystem().isWorldBodyActive(generated.world_body_id)
 				&& world.getBuildObjectSystem().isBuildObjectActive(generated.build_object_id))
@@ -381,7 +381,7 @@ namespace danikk_space_engine
 			MeshGenerationJob build_part_job;
 			double planet_distance_squared = std::numeric_limits<double>::infinity();
 			double build_part_distance_squared = std::numeric_limits<double>::infinity();
-			const bool has_planet_job = world.getPlanetSystem().findNextMeshGenerationJob(
+			const bool has_planet_job = world.getPlanetRenderSystem().findNextMeshGenerationJob(
 				planet_job, planet_distance_squared);
 			const bool has_build_part_job = findNextBuildPartMeshJob(
 				build_part_job, build_part_distance_squared);
@@ -441,16 +441,14 @@ namespace danikk_space_engine
 		return false;
 	}
 
-	void MeshGenerationSystem::cancelJobsForPlanet(PlanetId planet_id,
-		uint64 planet_generation_id)
+	void MeshGenerationSystem::cancelJobsForPlanet(PlanetId planet_id)
 	{
 		std::lock_guard<std::mutex> guard(task_mutex);
 		for(MeshGenerationJob& job : jobs)
 		{
 			if(job.state == MeshGenerationJobState::empty
 				|| job.source != MeshGenerationSource::planet_terrain_node
-				|| job.planet_id != planet_id
-				|| job.planet_generation_id != planet_generation_id) continue;
+				|| job.planet_id != planet_id) continue;
 			if(job.state == MeshGenerationJobState::processing) job.cancelled = true;
 			else job = MeshGenerationJob();
 		}

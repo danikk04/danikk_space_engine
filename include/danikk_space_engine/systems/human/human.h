@@ -111,8 +111,6 @@ namespace danikk_space_engine
 			vec3 up = vec3(0.0f);
 			/** @brief Height used by the support probe. */
 			float height = 0.0f;
-			/** @brief Instance token of the planet component that supplied the field. */
-			uint64 planet_generation_id = 0;
 			/** @brief Terrain edit revision used by the support probe. */
 			uint64 terrain_revision = 0;
 		};

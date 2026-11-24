@@ -1,50 +1,59 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/world.h>
 
 #include <utility>
 
 namespace danikk_space_engine
 {
-	void PlanetSystem::acceptGeneratedTerrainNodeMesh(const MeshGenerationJob& job)
+	namespace
+	{
+		void recordPlanetMeshAcceptance(World& world, PlanetMeshAcceptance outcome)
+		{
+			world.getTelemetrySystem().mesh_generation_telemetry.recordPlanetMeshAcceptance(outcome);
+		}
+	}
+
+	void PlanetRenderSystem::acceptGeneratedTerrainNodeMesh(const MeshGenerationJob& job)
 	{
 		DSE_WATCH();
 		if(job.source != MeshGenerationSource::planet_terrain_node) return;
-		const auto record = [this](PlanetMeshAcceptance outcome)
-			{ world.getTelemetrySystem().mesh_generation_telemetry.recordPlanetMeshAcceptance(outcome); };
-		PlanetData* planet = findPlanet(job.planet_id);
+		PlanetData* planet = world.getPlanetSystem().findPlanet(job.planet_id);
 		if(planet == nullptr)
 		{
-			record(PlanetMeshAcceptance::missing_planet);
+			recordPlanetMeshAcceptance(world, PlanetMeshAcceptance::missing_planet);
 			return;
 		}
-		if(planet->generation_id != job.planet_generation_id)
+		PlanetRenderData* render_data = findPlanetRenderData(job.planet_id);
+		if(render_data == nullptr
+			|| render_data->runtime_generation_id != job.planet_render_generation_id)
 		{
-			record(PlanetMeshAcceptance::stale_planet);
+			recordPlanetMeshAcceptance(world, PlanetMeshAcceptance::stale_node);
 			return;
 		}
-		if(job.terrain_node_id >= planet->terrain_tree.nodes.size())
+		if(job.terrain_node_id >= render_data->terrain_tree.nodes.size())
 		{
-			record(PlanetMeshAcceptance::invalid_node);
+			recordPlanetMeshAcceptance(world, PlanetMeshAcceptance::invalid_node);
 			return;
 		}
-		PlanetTerrainNode& node = planet->terrain_tree.nodes[job.terrain_node_id];
+		PlanetTerrainNode& node = render_data->terrain_tree.nodes[job.terrain_node_id];
 		if(node.generation_id != job.terrain_node_generation_id)
 		{
-			record(PlanetMeshAcceptance::stale_node);
+			recordPlanetMeshAcceptance(world, PlanetMeshAcceptance::stale_node);
 			return;
 		}
 		if(planet->terrain_revision != job.terrain_revision)
 		{
 			setMeshGenerationJobPending(job, false);
-			record(PlanetMeshAcceptance::stale_terrain);
+			recordPlanetMeshAcceptance(world, PlanetMeshAcceptance::stale_terrain);
 			return;
 		}
 		if(job.planet_mesh_generator != settings.planet_mesh_generator)
 		{
 			setMeshGenerationJobPending(job, false);
-			record(PlanetMeshAcceptance::stale_generator);
+			recordPlanetMeshAcceptance(world, PlanetMeshAcceptance::stale_generator);
 			return;
 		}
 		node.mesh_position = job.node_minimum;
@@ -69,7 +78,7 @@ namespace danikk_space_engine
 		node.mesh_generator = job.planet_mesh_generator;
 		node.mesh_surface_only = job.surface_only;
 		setMeshGenerationJobPending(job, false);
-		record(job.triangle_point_indices.empty()
+		recordPlanetMeshAcceptance(world, job.triangle_point_indices.empty()
 			? PlanetMeshAcceptance::empty : PlanetMeshAcceptance::accepted);
 	}
 }

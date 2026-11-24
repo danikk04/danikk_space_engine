@@ -54,7 +54,6 @@ namespace danikk_space_engine
 		accepted,
 		empty,
 		missing_planet,
-		stale_planet,
 		stale_terrain,
 		invalid_node,
 		stale_generator,
@@ -67,6 +66,7 @@ namespace danikk_space_engine
 		tree_node_limit,
 		planet_removed,
 		planet_system_shutdown,
+		planet_render_unloaded,
 		detail_mesh_rebuild,
 		world_body_destroyed
 	};
@@ -81,6 +81,7 @@ namespace danikk_space_engine
 			uint64 tree_node_limit = 0;
 			uint64 planet_removed = 0;
 			uint64 planet_system_shutdown = 0;
+			uint64 planet_render_unloaded = 0;
 			uint64 detail_mesh_rebuild = 0;
 			uint64 world_body_destroyed = 0;
 		};
@@ -90,7 +91,6 @@ namespace danikk_space_engine
 		uint64 accepted_planet_meshes = 0;
 		uint64 empty_planet_meshes = 0;
 		uint64 missing_planet_meshes = 0;
-		uint64 stale_planet_meshes = 0;
 		uint64 stale_terrain_meshes = 0;
 		uint64 invalid_planet_mesh_nodes = 0;
 		uint64 stale_planet_mesh_generators = 0;

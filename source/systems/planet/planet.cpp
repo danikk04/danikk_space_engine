@@ -5,12 +5,10 @@
 #include <danikk_framework/log.h>
 #include <danikk_space_engine/material.h>
 #include <danikk_space_engine/config.h>
-#include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/world.h>
 
-#include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
-#include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/save/system.h>
 
 namespace danikk_space_engine
@@ -33,12 +31,6 @@ namespace danikk_space_engine
 	void PlanetSystem::shutdown()
 	{
 		danikk_framework::formatLogInfo("Shutdown PlanetSystem");
-		for(PlanetData& planet : planets)
-		{
-			cancelQueuedJobsForPlanet(planet);
-			planet.destroyTerrainTree(world.getTelemetrySystem().mesh_generation_telemetry,
-				MeshDeletionReason::planet_system_shutdown);
-		}
 	}
 
 	bool PlanetSystem::removePlanetTerrainEdit(PlanetId planet_id, PlanetTerrainEditId edit_id)
@@ -48,9 +40,9 @@ namespace danikk_space_engine
 		const PlanetTerrainEdit& edit = (*planet->terrain_edits.pool)[edit_id];
 		const PlanetTerrainDirtyRegion dirty_region{edit.getCenter(), edit.getRadius()};
 		if(!planet->terrain_edits.remove(edit_id)) return false;
-		planet->pending_terrain_dirty_regions.push(dirty_region);
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
+		world.getPlanetRenderSystem().markTerrainDirty(planet_id, dirty_region);
 		world.getSaveSystem().savePlanetTerrainEdits(planet_id);
 		return true;
 	}
@@ -65,32 +57,24 @@ namespace danikk_space_engine
 	PlanetData& PlanetSystem::createPlanet(PlanetSettingsId settings_id,
 		const glm::dvec3& position, const glm::dquat& rotation)
 	{
-		PlanetData planet(settings_id, getPlanetSettings(settings_id));
+		PlanetData planet(settings_id);
 		planet.id = 0;
 		while(findPlanet(planet.id) != nullptr) ++planet.id;
 		planet.position = position;
 		planet.rotation = rotation;
-		planet.generation_id = next_generation_id++;
-		if(next_generation_id == 0) next_generation_id = 1;
 		planets.pushMove(planet);
 		world.getSaveSystem().loadPlanetTerrainEdits(planet.id);
 		return planets[planets.size() - 1];
 	}
 
-	void PlanetSystem::cancelQueuedJobsForPlanet(const PlanetData& planet)
-	{
-		world.getMeshGenerationSystem().cancelPlanetJobs(planet.id, planet.generation_id);
-	}
-
 	void PlanetSystem::destroyPlanet(PlanetId planet_id)
 	{
+		// TODO: Wait for the planet's active mesh-generation jobs before erasing its PlanetData.
+		// Workers sample PlanetSystem while generating, so removal is not safe until they finish.
 		for(size_t index = 0; index < planets.size(); ++index)
 		{
 			if(planets[index].id != planet_id) continue;
-			cancelQueuedJobsForPlanet(planets[index]);
-			planets[index].destroyTerrainTree(
-				world.getTelemetrySystem().mesh_generation_telemetry,
-				MeshDeletionReason::planet_removed);
+			world.getPlanetRenderSystem().destroyPlanet(planet_id);
 			for(size_t shift = index + 1; shift < planets.size(); ++shift)
 				planets[shift - 1] = static_cast<PlanetData&&>(planets[shift]);
 			planets.pop();
@@ -188,29 +172,6 @@ namespace danikk_space_engine
 		return nearest_settings->atmosphere_color * static_cast<float>(atmosphere_factor);
 	}
 
-	void PlanetSystem::update()
-	{
-		DSE_WATCH();
-		for(PlanetData& planet : planets) updatePlanet(planet);
-	}
-
-	void PlanetSystem::updatePlanet(PlanetData& planet)
-	{
-		DSE_WATCH();
-		if(!world.getCameraSystem().isActive())
-		{
-			planet.terrain_streaming_active = false;
-			return;
-		}
-		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
-			* (world.getCameraSystem().getWorldPosition() - planet.position);
-		const double surface_height = getPlanetHeightAboveSurface(planet.id, camera_position);
-		planet.updateTerrainStreaming(camera_position, surface_height,
-			getPlanetSettings(planet.settings_id),
-			world.getTelemetrySystem().mesh_generation_telemetry);
-		evictCachedMeshes(planet.terrain_tree, camera_position);
-	}
-
 	bool PlanetSystem::editPlanetGround(PlanetId planet_id, const glm::dvec3& position,
 		double radius, MaterialId material_id)
 	{
@@ -242,9 +203,10 @@ namespace danikk_space_engine
 					planet_id, center.x, center.y, center.z, radius);
 			return false;
 		}
-		planet->pending_terrain_dirty_regions.push(PlanetTerrainDirtyRegion{center, radius});
 		planet->terrain_revision++;
 		if(planet->terrain_revision == 0) planet->terrain_revision++;
+		world.getPlanetRenderSystem().markTerrainDirty(planet_id,
+			PlanetTerrainDirtyRegion{center, radius});
 		if constexpr(enable_terrain_edit_system_logs)
 			danikk_framework::formatLogInfo(
 				"Planet terrain edit accepted: planet=% revision=% center=(%,%,%) radius=% material=%",

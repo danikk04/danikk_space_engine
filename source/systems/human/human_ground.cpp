@@ -158,7 +158,6 @@ namespace danikk_space_engine::human_internal
 			const PlanetData* planet = world.getPlanetSystem().findPlanetByWorldBodyId(body_id);
 			const float height = human.getHeight();
 			const bool cached_support = planet != nullptr && human.grounded && human.vertical_speed == 0.0f
-				&& cache.planet_generation_id == planet->generation_id
 				&& cache.terrain_revision == planet->terrain_revision && cache.height == height
 				&& cache.up == human.up && cache.center == position;
 
@@ -174,7 +173,6 @@ namespace danikk_space_engine::human_internal
 				cache.center = position;
 				cache.up = human.up;
 				cache.height = height;
-				cache.planet_generation_id = planet == nullptr ? 0 : planet->generation_id;
 				cache.terrain_revision = planet == nullptr ? 0 : planet->terrain_revision;
 			};
 

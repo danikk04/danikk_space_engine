@@ -1,9 +1,10 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/planet_render/data.h>
 
 namespace danikk_space_engine
 {
-	uint8 PlanetData::getCurrentTerrainDepth() const
+	uint8 PlanetRenderData::getCurrentTerrainDepth() const
 	{
 		glm::dvec3 anchor = streaming_camera_position;
 		if(streaming_height >= 0.0)
@@ -25,7 +26,8 @@ namespace danikk_space_engine
 		return depth;
 	}
 
-	void PlanetData::buildTerrainRenderList(const PlanetSettings& settings)
+	void PlanetRenderData::buildTerrainRenderList(const PlanetData& planet,
+		const PlanetSettings& settings)
 	{
 		DSE_WATCH();
 		PlanetTerrainTree& tree = terrain_tree;
@@ -59,7 +61,8 @@ namespace danikk_space_engine
 
 			node.render_active = true;
 			terrain_render_items.push(PlanetTerrainRenderItem{
-				node_id, position + rotation * node.mesh_position, rotation});
+				node_id, planet.position + planet.rotation * node.mesh_position,
+				planet.rotation});
 		}
 	}
 }

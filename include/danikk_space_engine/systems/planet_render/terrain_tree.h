@@ -103,7 +103,7 @@ namespace danikk_space_engine
 
 		/**
 		 * @brief Creates the canonical root and assigns it a fresh generation ID.
-		 * @details Called by PlanetData::applyTerrainChangesToTree() and the mesh scheduler when the tree is empty.
+		 * @details Called by PlanetRenderData::applyTerrainChangesToTree() and the mesh scheduler when the tree is empty.
 		 */
 		PlanetTerrainNodeId createRoot();
 		/**
@@ -131,7 +131,7 @@ namespace danikk_space_engine
 			glm::dvec3& render_window_maximum);
 		/**
 		 * @brief Computes streaming detail, render window, and visible-node budget diagnostics.
-		 * @details Called by PlanetData::updateTerrainStreaming() each frame before tree refinement.
+		 * @details Called by PlanetRenderData::updateTerrainStreaming() each frame before tree refinement.
 		 */
 		void calculateStreamingDetailScale(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, glm::dvec3& render_window_minimum,
@@ -139,7 +139,7 @@ namespace danikk_space_engine
 			size_t& target_node_count, size_t& detail_scale_adjustments);
 		/**
 		 * @brief Subdivides relevant leaves until they reach the requested detail scale.
-		 * @details Called by PlanetData::updateTerrainStreaming() to ensure target nodes exist for rendering and jobs.
+		 * @details Called by PlanetRenderData::updateTerrainStreaming() to ensure target nodes exist for rendering and jobs.
 		 */
 		void refine(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, double detail_scale,

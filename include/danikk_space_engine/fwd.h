@@ -35,6 +35,7 @@ namespace danikk_space_engine
 
 	/** @brief Owns planet state and provides terrain queries and streaming. */
 	class PlanetSystem;
+	class PlanetRenderSystem;
 
 	/** @brief Owns world-save paths and persistent data serialization. */
 	class SaveSystem;

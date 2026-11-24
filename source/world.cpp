@@ -25,6 +25,7 @@ namespace danikk_space_engine
 		: telemetry(), point_data(world), world_body(world), build_objects(world), build_parts(world),
 		  mesh_generation(world), environment(world),
 		  physics(world), controller(world), camera(world), components(world), planets(world),
+		  planet_render(world),
 		  raycasts(world), saves(world), factions(), unit_system(world), humans(world)
 	{
 	}
@@ -60,6 +61,8 @@ namespace danikk_space_engine
 	const ComponentSystem& World::getComponentSystem() const { return system_container->components; }
 	PlanetSystem& World::getPlanetSystem() { return system_container->planets; }
 	const PlanetSystem& World::getPlanetSystem() const { return system_container->planets; }
+	PlanetRenderSystem& World::getPlanetRenderSystem() { return system_container->planet_render; }
+	const PlanetRenderSystem& World::getPlanetRenderSystem() const { return system_container->planet_render; }
 	RaycastSystem& World::getRaycastSystem() { return system_container->raycasts; }
 	const RaycastSystem& World::getRaycastSystem() const { return system_container->raycasts; }
 	SaveSystem& World::getSaveSystem() { return system_container->saves; }
@@ -121,6 +124,7 @@ namespace danikk_space_engine
 		getCameraSystem().shutdown();
 		getControllerSystem().shutdown();
 		getPlanetSystem().shutdown();
+		getPlanetRenderSystem().shutdown();
 		getMeshGenerationSystem().shutdown();
 		getEnvironmentSystem().shutdown();
 		getPhysicsSystem().shutdown();
@@ -182,7 +186,7 @@ namespace danikk_space_engine
 		syncPlanetWorldBodyFrames();
 		setClearColor(getCameraSystem().isActive()
 			? getPlanetSystem().getAtmosphereBackgroundColor(getCameraSystem().getWorldPosition()) : glm::vec3(0.0f));
-		getPlanetSystem().update();
+		getPlanetRenderSystem().update();
 		getMeshGenerationSystem().frame();
 		static_asset_collection.base3d_shader.use();
 		getCameraSystem().frame();
@@ -190,7 +194,6 @@ namespace danikk_space_engine
 		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, getCameraSystem().getUp());
 		setViewMatrix(view);
 		renderWorldMeshes();
-		getBuildPartSystem().renderFallback();
 		// Draw dynamic point components after the world meshes so transparent overlays
 		// do not allow later terrain draws to pass through the base mesh depth.
 		getComponentSystem().renderPointComponents();
@@ -261,7 +264,7 @@ namespace danikk_space_engine
 			static_asset_collection.planet_terrain_shader.use();
 			setViewMatrix(mat4(view));
 			setProjectionMatrix(mat4(projection));
-			getPlanetSystem().renderPlanetTerrainMeshes();
+			getPlanetRenderSystem().renderPlanetTerrainMeshes();
 			static_asset_collection.base3d_shader.use();
 			setViewMatrix(mat4(view));
 			setProjectionMatrix(mat4(projection));

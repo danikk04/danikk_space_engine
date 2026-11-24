@@ -23,8 +23,6 @@ namespace danikk_space_engine
 			float construction_progress);
 		void destroyBuildPart(BuildPartId id);
 		void destroyBuildPartsForObject(BuildObjectId build_object_id);
-		/** @brief Draws individual part meshes while the owning combined mesh is unavailable. */
-		void renderFallback();
 		bool isBuildPartActive(BuildPartId id) const;
 		const BuildPart& getBuildPart(BuildPartId id) const;
 		const DynamicArray<BuildPartId>& getUsedBuildPartIds() const;

@@ -40,7 +40,8 @@ namespace danikk_space_engine
 		WorldBodyId world_body_id = 0;
 		BuildObjectId build_object_id = static_cast<BuildObjectId>(-1);
 		PlanetId planet_id = static_cast<PlanetId>(-1);
-		uint64 planet_generation_id = 0;
+		/** @brief Runtime-cache incarnation token for safely rejecting unloaded terrain work. */
+		uint64 planet_render_generation_id = 0;
 		uint64 terrain_revision = 0;
 		PlanetTerrainNodeId terrain_node_id = static_cast<PlanetTerrainNodeId>(-1);
 		/** @brief Octree depth used for per-level mesh-generation telemetry. */
@@ -64,7 +65,7 @@ namespace danikk_space_engine
 	/**
 	 * @brief Owns asynchronous mesh jobs and accepts generated CPU meshes.
 	 *
-	 * PlanetData and BuildObject own their accepted meshes. This system selects jobs directly from
+	 * PlanetRenderData and BuildObject own their accepted meshes. This system selects jobs directly from
 	 * their state, runs the task pool, rejects stale results, and uploads meshes on the main thread.
 	 */
 	class MeshGenerationSystem
@@ -95,7 +96,7 @@ namespace danikk_space_engine
 		void setMeshJobPending(const MeshGenerationJob& job, bool pending);
 		void markMeshJobScheduled(const MeshGenerationJob& job);
 		bool tryTakeCompletedJob(MeshGenerationJob& completed_job);
-		void cancelJobsForPlanet(PlanetId planet_id, uint64 planet_generation_id);
+		void cancelJobsForPlanet(PlanetId planet_id);
 
 	public:
 		explicit MeshGenerationSystem(World& world);
@@ -109,8 +110,8 @@ namespace danikk_space_engine
 		void shutdown();
 		/** @brief Updates worker slots and accepts at most one completed mesh per frame. */
 		void frame();
-		/** @brief Cancels queued and active jobs for one planet incarnation. */
-		void cancelPlanetJobs(PlanetId planet_id, uint64 planet_generation_id);
+		/** @brief Cancels queued and active jobs for one planet. */
+		void cancelPlanetJobs(PlanetId planet_id);
 		/** @brief Marks a BuildObject's combined BuildPart mesh stale. */
 		void invalidateBuildObjectMesh(BuildObjectId build_object_id);
 		/** @brief Reads the latest average generation time over 50 completed mesh jobs. */

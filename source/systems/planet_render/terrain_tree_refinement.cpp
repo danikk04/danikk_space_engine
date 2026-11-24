@@ -2,6 +2,7 @@
 #include <cmath>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/planet_render/terrain_tree.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine

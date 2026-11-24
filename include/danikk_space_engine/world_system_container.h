@@ -13,6 +13,7 @@
 #include <danikk_space_engine/systems/mesh_generation/mesh_generation.h>
 #include <danikk_space_engine/systems/physics/physics.h>
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/systems/raycast/raycast.h>
 #include <danikk_space_engine/systems/save/system.h>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
@@ -37,6 +38,7 @@ namespace danikk_space_engine
 		CameraSystem camera;
 		ComponentSystem components;
 		PlanetSystem planets;
+		PlanetRenderSystem planet_render;
 		RaycastSystem raycasts;
 		SaveSystem saves;
 		FactionSystem factions;
