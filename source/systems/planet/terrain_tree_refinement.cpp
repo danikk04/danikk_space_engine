@@ -7,10 +7,10 @@
 namespace danikk_space_engine
 {
 	double PlanetTerrainTree::getTargetHalfExtent(const glm::dvec3& camera_position,
-		double detail_scale, const glm::dvec3& center)
+		double detail_scale, const glm::dvec3& center) const
 	{
 		const double distance = glm::length(camera_position - center);
-		const double minimum = PlanetTerrainTree::minimum_node_width * 0.5;
+		const double minimum = minimum_node_width * 0.5;
 		return std::clamp(minimum + detail_scale * distance, minimum, 262144.0);
 	}
 
@@ -18,7 +18,7 @@ namespace danikk_space_engine
 		const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 		glm::dvec3& render_window_maximum)
 	{
-		const double root_half_extent = PlanetTerrainTree::initial_root_half_extent;
+		const double root_half_extent = initial_root_half_extent;
 		const glm::dvec3 root_minimum(-root_half_extent);
 		const glm::dvec3 root_maximum(root_half_extent);
 		glm::dvec3 anchor = camera_position;
@@ -75,6 +75,38 @@ namespace danikk_space_engine
 		return true;
 	}
 
+	bool PlanetTerrainTree::isSurfaceOnly(const PlanetTerrainNode& node,
+		double planet_radius) const
+	{
+		return node.intersectsSurfaceBand(planet_radius, 25000.0, 15000.0);
+	}
+
+	bool PlanetTerrainTree::isInRenderCoverage(const PlanetTerrainNode& node,
+		const glm::dvec3& anchor, uint8 target_depth) const
+	{
+		if(node.depth > target_depth || target_depth - node.depth > 5) return false;
+		const double node_width = node.half_extent * 2.0;
+		int32 minimum_index[3];
+		int32 node_index[3];
+		for(uint8 axis = 0; axis < 3; ++axis)
+		{
+			const double anchor_grid_position = (anchor[axis] + initial_root_half_extent) / node_width;
+			const double node_grid_position = (node.center[axis] + initial_root_half_extent) / node_width;
+			minimum_index[axis] = static_cast<int32>(std::floor(anchor_grid_position)) - 4;
+			node_index[axis] = static_cast<int32>(std::floor(node_grid_position));
+			if(node_index[axis] < minimum_index[axis]
+				|| node_index[axis] >= minimum_index[axis] + 8) return false;
+		}
+
+		// The finest selected level owns the complete 8x8x8 cube. Each coarser
+		// level leaves its central 4x4x4 cells to the immediately finer level.
+		if(node.depth == target_depth) return true;
+		for(uint8 axis = 0; axis < 3; ++axis)
+			if(node_index[axis] < minimum_index[axis] + 2
+				|| node_index[axis] >= minimum_index[axis] + 6) return true;
+		return false;
+	}
+
 	void PlanetTerrainTree::calculateStreamingDetailScale(const glm::dvec3& camera_position, double height,
 		const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 		glm::dvec3& render_window_maximum, double& detail_scale,
@@ -86,49 +118,55 @@ namespace danikk_space_engine
 		detail_scale_adjustments = 0;
 		updateRenderWindow(camera_position, height, settings,
 			render_window_minimum, render_window_maximum);
-		const auto count_nodes = [&]()
-		{
-			size_t total = 0;
-			const auto count_visible_target_nodes = [&](auto&& self, const glm::dvec3& center,
-				double half_extent, uint8 depth) -> size_t
-			{
-				PlanetTerrainNode candidate;
-				candidate.center = center;
-				candidate.half_extent = half_extent;
-				if(!candidate.isInTerrainRenderRegion(render_window_minimum, render_window_maximum,
-					camera_position, height, settings)) return 0;
-				if(half_extent <= getTargetHalfExtent(camera_position, detail_scale, center)
-					|| depth >= PlanetTerrainTree::maximum_depth)
-				{
-					if(++total > maximum_target_nodes) return maximum_target_nodes + 1;
-					return 1;
-				}
-				const double child_half_extent = half_extent * 0.5;
-				size_t count = 0;
-				for(uint8 child_index = 0; child_index < 8; ++child_index)
-				{
-					const glm::dvec3 child_center = center + glm::dvec3(
-						(child_index & 1) ? child_half_extent : -child_half_extent,
-						(child_index & 2) ? child_half_extent : -child_half_extent,
-						(child_index & 4) ? child_half_extent : -child_half_extent);
-					count += self(self, child_center, child_half_extent,
-						static_cast<uint8>(depth + 1));
-					if(count > maximum_target_nodes) return count;
-				}
-				return count;
-			};
-			return count_visible_target_nodes(count_visible_target_nodes,
-				glm::dvec3(0.0), PlanetTerrainTree::initial_root_half_extent, 0);
-		};
-		target_node_count = count_nodes();
+		target_node_count = 0;
+		countTargetNodesRecursive(glm::dvec3(0.0), initial_root_half_extent, 0,
+			camera_position, height, settings, detail_scale, render_window_minimum,
+			render_window_maximum, target_node_count);
 		while(target_node_count > maximum_target_nodes && detail_scale_adjustments < 32)
 		{
 			detail_scale *= 1.5;
 			detail_scale_adjustments++;
 			updateRenderWindow(camera_position, height, settings,
 				render_window_minimum, render_window_maximum);
-			target_node_count = count_nodes();
+			target_node_count = 0;
+			countTargetNodesRecursive(glm::dvec3(0.0), initial_root_half_extent, 0,
+				camera_position, height, settings, detail_scale, render_window_minimum,
+				render_window_maximum, target_node_count);
 		}
+	}
+
+	size_t PlanetTerrainTree::countTargetNodesRecursive(const glm::dvec3& center,
+		double half_extent, uint8 depth, const glm::dvec3& camera_position,
+		double height, const PlanetSettings& settings, double detail_scale,
+		const glm::dvec3& render_window_minimum,
+		const glm::dvec3& render_window_maximum, size_t& total) const
+	{
+		PlanetTerrainNode candidate;
+		candidate.center = center;
+		candidate.half_extent = half_extent;
+		if(!candidate.isInTerrainRenderRegion(render_window_minimum, render_window_maximum,
+			camera_position, height, settings)) return 0;
+		if(half_extent <= getTargetHalfExtent(camera_position, detail_scale, center)
+			|| depth >= maximum_depth)
+		{
+			if(++total > maximum_target_nodes) return maximum_target_nodes + 1;
+			return 1;
+		}
+
+		const double child_half_extent = half_extent * 0.5;
+		size_t count = 0;
+		for(uint8 child_index = 0; child_index < 8; ++child_index)
+		{
+			const glm::dvec3 child_center = center + glm::dvec3(
+				(child_index & 1) ? child_half_extent : -child_half_extent,
+				(child_index & 2) ? child_half_extent : -child_half_extent,
+				(child_index & 4) ? child_half_extent : -child_half_extent);
+			count += countTargetNodesRecursive(child_center, child_half_extent,
+				static_cast<uint8>(depth + 1), camera_position, height, settings,
+				detail_scale, render_window_minimum, render_window_maximum, total);
+			if(count > maximum_target_nodes) return count;
+		}
+		return count;
 	}
 
 	void PlanetTerrainTree::refine(const glm::dvec3& camera_position,
@@ -136,22 +174,29 @@ namespace danikk_space_engine
 		const glm::dvec3& render_window_minimum, const glm::dvec3& render_window_maximum)
 	{
 		DSE_WATCH();
-		const auto visit = [&](auto&& self, PlanetTerrainNodeId node_id, uint8 depth) -> void
-		{
-			if(node_id >= nodes.size()
-				|| depth >= PlanetTerrainTree::maximum_depth) return;
-			PlanetTerrainNode candidate;
-			candidate.center = nodes[node_id].center;
-			candidate.half_extent = nodes[node_id].half_extent;
-			if(!candidate.isInTerrainRenderRegion(render_window_minimum, render_window_maximum,
-				camera_position, height, settings)
-				|| candidate.half_extent <= PlanetTerrainTree::getTargetHalfExtent(camera_position,
-					detail_scale, candidate.center)) return;
-			if(!ensureChildren(node_id)) return;
-			for(uint8 child_index = 0; child_index < 8; ++child_index)
-				self(self, nodes[node_id].children[child_index],
-					static_cast<uint8>(depth + 1));
-		};
-		if(root_id < nodes.size()) visit(visit, root_id, 0);
+		if(root_id < nodes.size())
+			refineNode(root_id, 0, camera_position, height, settings, detail_scale,
+				render_window_minimum, render_window_maximum);
+	}
+
+	void PlanetTerrainTree::refineNode(PlanetTerrainNodeId node_id, uint8 depth,
+		const glm::dvec3& camera_position, double height,
+		const PlanetSettings& settings, double detail_scale,
+		const glm::dvec3& render_window_minimum,
+		const glm::dvec3& render_window_maximum)
+	{
+		if(node_id >= nodes.size() || depth >= maximum_depth) return;
+		PlanetTerrainNode candidate;
+		candidate.center = nodes[node_id].center;
+		candidate.half_extent = nodes[node_id].half_extent;
+		if(!candidate.isInTerrainRenderRegion(render_window_minimum, render_window_maximum,
+			camera_position, height, settings)
+			|| candidate.half_extent <= getTargetHalfExtent(camera_position,
+				detail_scale, candidate.center)) return;
+		if(!ensureChildren(node_id)) return;
+		for(uint8 child_index = 0; child_index < 8; ++child_index)
+			refineNode(nodes[node_id].children[child_index], static_cast<uint8>(depth + 1),
+				camera_position, height, settings, detail_scale,
+				render_window_minimum, render_window_maximum);
 	}
 }

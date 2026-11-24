@@ -58,6 +58,7 @@ namespace danikk_space_engine
 	{
 		window_covered = false;
 		distance_squared = std::numeric_limits<double>::infinity();
+		PlanetTerrainTree& tree = planet.terrain_tree;
 		const PlanetSettings& planet_settings = getPlanetSettings(planet.settings_id);
 		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
 			* (camera_world_position - planet.position);
@@ -69,20 +70,19 @@ namespace danikk_space_engine
 				anchor *= (camera_radius - planet.streaming_height) / camera_radius;
 		}
 
-		const double root_half_extent = PlanetTerrainTree::initial_root_half_extent;
+		const double root_half_extent = tree.initial_root_half_extent;
 		const double root_side = root_half_extent * 2.0;
-		const double target_half_extent = PlanetTerrainTree::getTargetHalfExtent(
+		const double target_half_extent = tree.getTargetHalfExtent(
 			camera_position, planet.streaming_detail_scale, anchor);
 		uint8 start_depth = 0;
 		double level_half_extent = root_half_extent;
-		while(start_depth < PlanetTerrainTree::maximum_depth
+		while(start_depth < tree.maximum_depth
 			&& level_half_extent > target_half_extent)
 		{
 			level_half_extent *= 0.5;
 			start_depth++;
 		}
 
-		PlanetTerrainTree& tree = planet.terrain_tree;
 		if(tree.root_id == PlanetTerrainTree::invalid_node && tree.createRoot()
 			== PlanetTerrainTree::invalid_node) return false;
 		for(int depth = static_cast<int>(start_depth); depth >= 0; --depth)
@@ -150,8 +150,7 @@ namespace danikk_space_engine
 				}
 				const PlanetTerrainNode& node = tree.nodes[node_id];
 
-				const bool surface_only = node.intersectsSurfaceBand(planet_settings.radius,
-					25000.0, 15000.0);
+				const bool surface_only = tree.isSurfaceOnly(node, planet_settings.radius);
 				const bool mesh_current = node.hasCurrentMesh(planet.terrain_revision,
 					settings.planet_mesh_generator, surface_only);
 				const bool job_current = node.generation_pending
@@ -185,9 +184,9 @@ namespace danikk_space_engine
 			job.planet_generation_id = planet.generation_id;
 			job.terrain_revision = planet.terrain_revision;
 			job.terrain_node_id = nearest_node_id;
+			job.terrain_node_depth = node.depth;
 			job.terrain_node_generation_id = node.generation_id;
-			job.surface_only = node.intersectsSurfaceBand(
-				planet_settings.radius, 25000.0, 15000.0);
+			job.surface_only = tree.isSurfaceOnly(node, planet_settings.radius);
 			job.planet_mesh_generator = settings.planet_mesh_generator;
 			job.node_width = node.half_extent * 2.0;
 			job.voxel_size = glm::max(2.0, job.node_width / 16.0);
@@ -215,7 +214,7 @@ namespace danikk_space_engine
 		const PlanetSettings& planet_settings = getPlanetSettings(planet->settings_id);
 		if(!node.isInTerrainRenderRegion(planet->render_window_minimum, planet->render_window_maximum,
 			planet->streaming_camera_position, planet->streaming_height, planet_settings)) return false;
-		const bool surface_only = node.intersectsSurfaceBand(planet_settings.radius, 25000.0, 15000.0);
+		const bool surface_only = planet->terrain_tree.isSurfaceOnly(node, planet_settings.radius);
 		return surface_only == job.surface_only
 			&& !node.hasCurrentMesh(planet->terrain_revision, settings.planet_mesh_generator, surface_only);
 	}

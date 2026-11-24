@@ -9,6 +9,17 @@ namespace danikk_space_engine
 {
 	struct PlanetSettings;
 
+	/** @brief Stable per-frame reference to one terrain mesh and its world transform. */
+	struct PlanetTerrainRenderItem
+	{
+		/** @brief Node ID used to resolve the mesh without retaining an invalidatable pointer. */
+		PlanetTerrainNodeId node_id = static_cast<PlanetTerrainNodeId>(-1);
+		/** @brief World-space origin of the node mesh. */
+		glm::dvec3 world_position = glm::dvec3(0.0);
+		/** @brief Rotation from the planet's local terrain frame into world space. */
+		glm::dquat world_rotation = glm::dquat(1.0, 0.0, 0.0, 0.0);
+	};
+
 	/** @brief One adaptive spatial cell in a planet's render/streaming octree. */
 	struct PlanetTerrainNode : public danikk_framework::OctreeNode<PlanetTerrainNodeId>
 	{
@@ -61,46 +72,79 @@ namespace danikk_space_engine
 	struct PlanetTerrainTree : public danikk_framework::Octree<PlanetTerrainNode, PlanetTerrainNodeId>
 	{
 		static constexpr PlanetTerrainNodeId invalid_node = static_cast<PlanetTerrainNodeId>(-1);
-		/** @brief Half the root side length; root width is exactly 2^24 metres. */
-		static constexpr double initial_root_half_extent = 8388608.0;
-		/** @brief Smallest render-node side length, matching the former 32 m chunks. */
-		static constexpr double minimum_node_width = 32.0;
-		/** @brief Number of halvings from a 2^24 m root to a 32 m leaf. */
-		static constexpr uint8 maximum_depth = 19;
+		/** @brief Exponent used to derive this planet's power-of-two root side length. */
+		uint32 root_side_exponent = 0;
+		/** @brief Half the per-planet root side length, including terrain height margin. */
+		double initial_root_half_extent = 0.0;
+		/** @brief Minimum render-node side length, derived from the 2^5 metre resolution. */
+		double minimum_node_width = 0.0;
+		/** @brief Number of subdivisions from the per-planet root to a minimum-width node. */
+		uint8 maximum_depth = 0;
 		static constexpr size_t maximum_node_count = 131072;
 		/** @brief Global target-node budget; unlike drawing, this is not capped per depth. */
 		static constexpr size_t maximum_target_nodes = 5120;
 		uint64 next_node_generation_id = 1;
+	private:
+		size_t countTargetNodesRecursive(const glm::dvec3& center, double half_extent,
+			uint8 depth, const glm::dvec3& camera_position, double height,
+			const PlanetSettings& settings, double detail_scale,
+			const glm::dvec3& render_window_minimum,
+			const glm::dvec3& render_window_maximum, size_t& total) const;
+		void refineNode(PlanetTerrainNodeId node_id, uint8 depth,
+			const glm::dvec3& camera_position, double height,
+			const PlanetSettings& settings, double detail_scale,
+			const glm::dvec3& render_window_minimum,
+			const glm::dvec3& render_window_maximum);
+	public:
 
-		/** @brief Creates the canonical root and assigns it a fresh generation ID. */
+		PlanetTerrainTree() = delete;
+		/** @brief Derives the root size, minimum node width, and depth from planet settings. */
+		explicit PlanetTerrainTree(const PlanetSettings& settings);
+
+		/**
+		 * @brief Creates the canonical root and assigns it a fresh generation ID.
+		 * @details Called by PlanetData::applyTerrainChangesToTree() and the mesh scheduler when the tree is empty.
+		 */
 		PlanetTerrainNodeId createRoot();
-		/** @brief Splits a leaf and assigns fresh generation IDs to its children. */
+		/**
+		 * @brief Splits a leaf and assigns fresh generation IDs to its children.
+		 * @details Called by refine() and mesh-job traversal to create the path to requested terrain cells.
+		 */
 		bool ensureChildren(PlanetTerrainNodeId parent_id);
-		/** @brief Computes the target node half extent at a camera distance. */
-		static double getTargetHalfExtent(const glm::dvec3& camera_position,
-			double detail_scale, const glm::dvec3& center);
-		/** @brief Computes the terrain-tree query window for a camera and planet height. */
-		static void updateRenderWindow(const glm::dvec3& camera_position, double height,
+		/**
+		 * @brief Computes the target node half extent at a camera distance.
+		 * @details Used by streaming refinement, render-list construction, and mesh scheduling to agree on LOD.
+		 */
+		double getTargetHalfExtent(const glm::dvec3& camera_position,
+			double detail_scale, const glm::dvec3& center) const;
+		/** @brief Selects a stable mesh mode from the node's position relative to the surface shell. */
+		bool isSurfaceOnly(const PlanetTerrainNode& node, double planet_radius) const;
+		/** @brief Tests membership in the fixed per-level render cube with its coarser-level center cutout. */
+		bool isInRenderCoverage(const PlanetTerrainNode& node,
+			const glm::dvec3& anchor, uint8 target_depth) const;
+		/**
+		 * @brief Computes the terrain-tree query window for a camera and planet height.
+		 * @details Called by calculateStreamingDetailScale() before it counts target nodes.
+		 */
+		void updateRenderWindow(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 			glm::dvec3& render_window_maximum);
-		/** @brief Computes streaming detail, render window, and visible-node budget diagnostics. */
-		static void calculateStreamingDetailScale(const glm::dvec3& camera_position, double height,
+		/**
+		 * @brief Computes streaming detail, render window, and visible-node budget diagnostics.
+		 * @details Called by PlanetData::updateTerrainStreaming() each frame before tree refinement.
+		 */
+		void calculateStreamingDetailScale(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, glm::dvec3& render_window_minimum,
 			glm::dvec3& render_window_maximum, double& detail_scale,
 			size_t& target_node_count, size_t& detail_scale_adjustments);
-		/** @brief Subdivides relevant leaves until they reach the requested detail scale. */
+		/**
+		 * @brief Subdivides relevant leaves until they reach the requested detail scale.
+		 * @details Called by PlanetData::updateTerrainStreaming() to ensure target nodes exist for rendering and jobs.
+		 */
 		void refine(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, double detail_scale,
 			const glm::dvec3& render_window_minimum,
 			const glm::dvec3& render_window_maximum);
-		/** @brief Selects visible target nodes and marks them active, nearest first per level. */
-		void selectRenderNodes(const glm::dvec3& camera_position, double height,
-			const PlanetSettings& planet_settings, double detail_scale,
-			const glm::dvec3& render_window_minimum,
-			const glm::dvec3& render_window_maximum,
-			DynamicArray<PlanetTerrainNodeId>& selected_node_ids);
-		/** @brief Applies target visibility and activates drawable ancestors as temporary fallbacks. */
-		void applyRenderSelection(const DynamicArray<PlanetTerrainNodeId>& selected_node_ids);
 	};
 
 	/** @brief Spherical terrain region whose cached meshes must be regenerated. */

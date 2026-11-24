@@ -258,18 +258,6 @@ namespace danikk_space_engine
 }
 namespace danikk_space_engine::mesh_generation_internal
 {
-	uint8 getPlanetTerrainNodeLevel(double node_width)
-	{
-		uint8 level = 0;
-		double width = PlanetTerrainTree::initial_root_half_extent * 2.0;
-		while(level < 63 && node_width < width)
-		{
-			width *= 0.5;
-			level++;
-		}
-		return level;
-	}
-
 	void generateMesh(World& world, MeshGenerationJob& job)
 	{
 		switch(job.source)
@@ -339,7 +327,7 @@ namespace danikk_space_engine
 			std::chrono::steady_clock::now() - generation_start_time).count());
 		if(job.source == MeshGenerationSource::planet_terrain_node)
 			world.getTelemetrySystem().mesh_generation_telemetry.recordPlanetMeshGeneration(
-				mesh_generation_internal::getPlanetTerrainNodeLevel(job.node_width),
+				job.terrain_node_depth,
 				generation_succeeded ? job.triangle_point_indices.size() / 3 : 0,
 				generation_nanoseconds);
 

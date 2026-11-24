@@ -43,6 +43,8 @@ namespace danikk_space_engine
 		uint64 planet_generation_id = 0;
 		uint64 terrain_revision = 0;
 		PlanetTerrainNodeId terrain_node_id = static_cast<PlanetTerrainNodeId>(-1);
+		/** @brief Octree depth used for per-level mesh-generation telemetry. */
+		uint8 terrain_node_depth = 0;
 		uint64 terrain_node_generation_id = 0;
 		bool surface_only = false;
 		MeshGenerationSource source = MeshGenerationSource::build_parts;

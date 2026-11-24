@@ -196,6 +196,10 @@ namespace danikk_space_engine
 	/** @brief Terrain, streaming, and render state owned by one planet. */
 	struct PlanetData
 	{
+		/** @brief Constructs planet-owned terrain storage using this planet's geometric settings. */
+		PlanetData(PlanetSettingsId settings_id, const PlanetSettings& settings)
+			: settings_id(settings_id), terrain_tree(settings) {}
+
 		/** @brief Stable identifier assigned by PlanetSystem. */
 		PlanetId id = static_cast<PlanetId>(-1);
 		/** @brief WorldBody whose local frame anchors entities to this planet. */
@@ -218,6 +222,8 @@ namespace danikk_space_engine
 		PlanetTerrainEdits terrain_edits;
 		/** @brief Adaptive octree containing this planet's render nodes and cached meshes. */
 		PlanetTerrainTree terrain_tree;
+		/** @brief Final terrain meshes selected for rendering, with their world transforms. */
+		DynamicArray<PlanetTerrainRenderItem> terrain_render_items;
 		/** @brief Edited regions awaiting propagation into the render tree. */
 		DynamicArray<PlanetTerrainDirtyRegion> pending_terrain_dirty_regions;
 		/** @brief Latest camera position expressed in the planet's local frame. */
@@ -233,15 +239,37 @@ namespace danikk_space_engine
 		/** @brief Whether current camera data has activated terrain streaming for this planet. */
 		bool terrain_streaming_active = false;
 
-		/** @brief Updates edits, adaptive terrain streaming, mesh selection, and diagnostics. */
+		/**
+		 * @brief Updates edits, adaptive terrain streaming, mesh selection, and diagnostics.
+		 * @details Called by PlanetSystem::updatePlanet() with the camera's planet-local position and height.
+		 */
 		void updateTerrainStreaming(const glm::dvec3& camera_position, double height,
 			const PlanetSettings& settings, MeshGenerationTelemetry& telemetry);
-		/** @brief Applies dirty terrain regions and enforces the adaptive tree node limit. */
+		/**
+		 * @brief Builds the final non-overlapping terrain render list for this planet.
+		 * @details Called from updateTerrainStreaming() after refinement; PlanetSystem consumes the list while rendering.
+		 */
+		void buildTerrainRenderList(const PlanetSettings& settings);
+		/**
+		 * @brief Gets the target octree depth at this planet's current streaming anchor.
+		 * @details Called by buildTerrainRenderList() to enforce the current-level-plus-five render limit.
+		 */
+		uint8 getCurrentTerrainDepth() const;
+		/**
+		 * @brief Applies dirty terrain regions and enforces the adaptive tree node limit.
+		 * @details Called at the start of updateTerrainStreaming() before target nodes are refined.
+		 */
 		void applyTerrainChangesToTree(MeshGenerationTelemetry& telemetry);
-		/** @brief Records streaming diagnostics collected from this planet's terrain tree. */
+		/**
+		 * @brief Records streaming diagnostics collected from this planet's terrain tree.
+		 * @details Called by updateTerrainStreaming() after the render list and target budget are updated.
+		 */
 		void recordDiagnostics(MeshGenerationTelemetry& telemetry, size_t target_node_count,
 			size_t detail_scale_adjustments, double detail_scale) const;
-		/** @brief Destroys cached terrain meshes and clears this planet's tree. */
+		/**
+		 * @brief Destroys cached terrain meshes and clears this planet's tree.
+		 * @details Called by PlanetSystem when the planet is removed or the system shuts down.
+		 */
 		void destroyTerrainTree(MeshGenerationTelemetry& telemetry, MeshDeletionReason reason);
 
 	};

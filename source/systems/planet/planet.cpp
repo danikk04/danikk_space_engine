@@ -65,13 +65,11 @@ namespace danikk_space_engine
 	PlanetData& PlanetSystem::createPlanet(PlanetSettingsId settings_id,
 		const glm::dvec3& position, const glm::dquat& rotation)
 	{
-		getPlanetSettings(settings_id);
-		PlanetData planet;
+		PlanetData planet(settings_id, getPlanetSettings(settings_id));
 		planet.id = 0;
 		while(findPlanet(planet.id) != nullptr) ++planet.id;
 		planet.position = position;
 		planet.rotation = rotation;
-		planet.settings_id = settings_id;
 		planet.generation_id = next_generation_id++;
 		if(next_generation_id == 0) next_generation_id = 1;
 		planets.pushMove(planet);
@@ -95,7 +93,7 @@ namespace danikk_space_engine
 				MeshDeletionReason::planet_removed);
 			for(size_t shift = index + 1; shift < planets.size(); ++shift)
 				planets[shift - 1] = static_cast<PlanetData&&>(planets[shift]);
-			planets.resize(planets.size() - 1);
+			planets.pop();
 			return;
 		}
 	}

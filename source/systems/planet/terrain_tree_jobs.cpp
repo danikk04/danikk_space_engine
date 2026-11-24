@@ -3,35 +3,63 @@
 
 namespace danikk_space_engine
 {
-	void PlanetTerrainTree::selectRenderNodes(
-		const glm::dvec3& camera_position, double height, const PlanetSettings& planet_settings,
-		double detail_scale, const glm::dvec3& render_window_minimum,
-		const glm::dvec3& render_window_maximum,
-		DynamicArray<PlanetTerrainNodeId>& selected_node_ids)
+	uint8 PlanetData::getCurrentTerrainDepth() const
+	{
+		glm::dvec3 anchor = streaming_camera_position;
+		if(streaming_height >= 0.0)
+		{
+			const double camera_radius = glm::length(streaming_camera_position);
+			if(camera_radius > 1e-9)
+				anchor *= (camera_radius - streaming_height) / camera_radius;
+		}
+
+		const double target_half_extent = terrain_tree.getTargetHalfExtent(
+			streaming_camera_position, streaming_detail_scale, anchor);
+		uint8 depth = 0;
+		double level_half_extent = terrain_tree.initial_root_half_extent;
+		while(depth < terrain_tree.maximum_depth && level_half_extent > target_half_extent)
+		{
+			level_half_extent *= 0.5;
+			depth++;
+		}
+		return depth;
+	}
+
+	void PlanetData::buildTerrainRenderList(const PlanetSettings& settings)
 	{
 		DSE_WATCH();
-		for(PlanetTerrainNode& node : nodes) node.render_active = false;
-		selected_node_ids.clear();
-		const auto collect = [&](auto&& self, PlanetTerrainNodeId node_id) -> void
+		PlanetTerrainTree& tree = terrain_tree;
+		terrain_render_items.clear();
+		for(PlanetTerrainNode& node : tree.nodes) node.render_active = false;
+		if(tree.root_id >= tree.nodes.size()) return;
+
+		const uint8 current_depth = getCurrentTerrainDepth();
+		glm::dvec3 anchor = streaming_camera_position;
+		if(streaming_height >= 0.0)
 		{
-			const PlanetTerrainNode& node = nodes[node_id];
-			if(node.half_extent > getTargetHalfExtent(camera_position, detail_scale, node.center))
-			{
-				if(!node.hasChildren()) return;
-				for(uint8 child_index = 0; child_index < 8; ++child_index)
-				{
-					const PlanetTerrainNodeId child_id = node.children[child_index];
-					if(child_id != PlanetTerrainTree::invalid_node && nodes[child_id].isInTerrainRenderRegion(
-						render_window_minimum, render_window_maximum, camera_position, height,
-						planet_settings))
-						self(self, child_id);
-				}
-				return;
-			}
-			selected_node_ids.push(node_id);
-			nodes[node_id].render_active = true;
-		};
-		if(root_id >= nodes.size()) return;
-		collect(collect, root_id);
+			const double camera_radius = glm::length(streaming_camera_position);
+			if(camera_radius > 1e-9)
+				anchor *= (camera_radius - streaming_height) / camera_radius;
+		}
+
+		// Build render coverage from the fixed depth window alone. Mesh readiness
+		// only decides whether a selected cell currently has drawable geometry;
+		// it never promotes a coarser parent to fill a missing fine cell.
+		for(PlanetTerrainNodeId node_id = 0; node_id < tree.nodes.size(); ++node_id)
+		{
+			PlanetTerrainNode& node = tree.nodes[node_id];
+			if(!tree.isInRenderCoverage(node, anchor, current_depth)) continue;
+			if(!node.isInTerrainRenderRegion(render_window_minimum, render_window_maximum,
+				streaming_camera_position, streaming_height, settings)) continue;
+
+			const bool expected_surface_only = tree.isSurfaceOnly(node, settings.radius);
+			if(node.mesh_surface_only != expected_surface_only) node.mesh_generated = false;
+			if(node.mesh.mesh == nullptr || node.mesh.material_ranges.size() == 0
+				|| node.mesh_surface_only != expected_surface_only) continue;
+
+			node.render_active = true;
+			terrain_render_items.push(PlanetTerrainRenderItem{
+				node_id, position + rotation * node.mesh_position, rotation});
+		}
 	}
 }

@@ -2,8 +2,24 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/world.h>
 
+#include <cmath>
+
 namespace danikk_space_engine
 {
+	PlanetTerrainTree::PlanetTerrainTree(const PlanetSettings& settings)
+	{
+		constexpr uint32 minimum_node_width_exponent = 5;
+		constexpr double terrain_surface_margin = 15000.0;
+		const double required_root_side = glm::max(
+			std::ldexp(1.0, static_cast<int>(minimum_node_width_exponent)),
+			2.0 * (settings.radius + terrain_surface_margin));
+		root_side_exponent = static_cast<uint32>(std::ceil(std::log2(required_root_side)));
+		root_side_exponent = glm::max(root_side_exponent, minimum_node_width_exponent);
+		initial_root_half_extent = std::ldexp(1.0, static_cast<int>(root_side_exponent) - 1);
+		minimum_node_width = std::ldexp(1.0, static_cast<int>(minimum_node_width_exponent));
+		maximum_depth = static_cast<uint8>(root_side_exponent - minimum_node_width_exponent);
+	}
+
 	bool PlanetTerrainNode::intersectsBounds(const glm::dvec3& minimum,
 		const glm::dvec3& maximum) const
 	{
@@ -135,10 +151,8 @@ namespace danikk_space_engine
 		double detail_scale = 0.0;
 		size_t target_node_count = 0;
 		size_t detail_scale_adjustments = 0;
-		DynamicArray<PlanetTerrainNodeId> selected_node_ids;
-
 		applyTerrainChangesToTree(telemetry);
-		PlanetTerrainTree::calculateStreamingDetailScale(camera_position, height,
+		terrain_tree.calculateStreamingDetailScale(camera_position, height,
 			planet_settings, render_window_minimum, render_window_maximum, detail_scale,
 			target_node_count, detail_scale_adjustments);
 		streaming_camera_position = camera_position;
@@ -147,9 +161,7 @@ namespace danikk_space_engine
 		terrain_streaming_active = true;
 		terrain_tree.refine(camera_position, height, planet_settings,
 			detail_scale, render_window_minimum, render_window_maximum);
-		terrain_tree.selectRenderNodes(camera_position, height, planet_settings, detail_scale,
-			render_window_minimum, render_window_maximum, selected_node_ids);
-		terrain_tree.applyRenderSelection(selected_node_ids);
+		buildTerrainRenderList(planet_settings);
 		recordDiagnostics(telemetry, target_node_count, detail_scale_adjustments, detail_scale);
 	}
 }
