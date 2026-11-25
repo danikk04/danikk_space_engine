@@ -8,8 +8,15 @@
 
 namespace danikk_space_engine
 {
+	/** @brief Identifies which camera projection range is active for the current render pass. */
+	enum class CameraProjectionMode : uint8
+	{
+		near_clip,
+		far_clip
+	};
+
 	/**
-	 * @brief Owns the active camera's body-local position, orientation, movement, and projection.
+	 * @brief Owns the active camera's body-local position, orientation, and projection.
 	 *
 	 * The camera is world-level state attached directly to a WorldBody through a body-local position.
 	 */
@@ -21,6 +28,11 @@ namespace danikk_space_engine
 		WorldBodyId body_id = static_cast<WorldBodyId>(-1);
 		/** @brief Camera position in the owning body's local coordinate frame. */
 		glm::dvec3 body_local_position = glm::dvec3(0.0);
+		/** @brief Near and far planes selected for the next projection upload. */
+		float projection_near_clip_distance = 0.1f;
+		float projection_far_clip_distance = 10000.0f;
+		/** @brief Projection pass label associated with the currently selected clip planes. */
+		CameraProjectionMode projection_mode = CameraProjectionMode::near_clip;
 
 	public:
 		/** @brief Clears the camera binding and logs subsystem initialization. */
@@ -44,12 +56,22 @@ namespace danikk_space_engine
 		void bind(WorldBodyId body_id, const glm::dvec3& body_local_position);
 		/** @brief Clears the camera binding. */
 		void unbind();
+		/**
+		 * @brief Selects a named projection pass and its clipping planes for subsequent applyProjection() calls.
+		 * @param mode Labels the near or far render pass.
+		 * @param near_clip_distance Distance to the pass's near clipping plane.
+		 * @param far_clip_distance Distance to the pass's far clipping plane.
+		 */
+		void setProjectionMode(CameraProjectionMode mode, float near_clip_distance,
+			float far_clip_distance);
 		/** @brief Returns whether the bound WorldBody is still active. */
 		bool isActive() const;
 		/** @brief Returns the bound WorldBody ID, or the invalid ID when unbound. */
 		WorldBodyId getWorldBodyId() const { return body_id; }
 		/** @brief Returns the camera's position in its WorldBody's local frame. */
 		const glm::dvec3& getBodyLocalPosition() const { return body_local_position; }
+		/** @brief Applies a displacement in the owning body's local coordinate frame. */
+		void moveBodyLocal(const glm::dvec3& displacement);
 		/** @brief Returns camera forward in the body-local frame. */
 		vec3 getFront() const;
 		/** @brief Returns camera up in the body-local frame. */
@@ -58,10 +80,8 @@ namespace danikk_space_engine
 		vec3 getRight() const;
 		/** @brief Returns the camera position in double-precision world coordinates. */
 		glm::dvec3 getWorldPosition() const;
-		/** @brief Processes camera input and moves its body-local position for one simulation tick. */
-		void tick();
-		/** @brief Validates projection settings and publishes the active perspective matrix. */
-		void frame() const;
+		/** @brief Validates projection settings and uploads the active perspective matrix to the current shader. */
+		void applyProjection() const;
 
 		/** @brief Binds the camera system to its owning World. */
 		explicit CameraSystem(World& world) : world(world) {}

@@ -41,9 +41,8 @@ namespace danikk_space_engine
 		/** @brief Evicts cached meshes beyond the per-depth cache capacity. */
 		void evictCachedMeshes(PlanetRenderData& render_data,
 			const glm::dvec3& camera_position);
-		/** @brief Draws active terrain meshes with the supplied camera matrices. */
-		void drawTerrainMeshes(const glm::dmat4& view, const glm::dmat4& projection,
-			const glm::dvec3& camera_position);
+		/** @brief Draws the active terrain meshes with the current shader matrices. */
+		void drawTerrainMeshes(const glm::dvec3& camera_position);
 
 	public:
 		/** @brief Binds this renderer to its owning world. */

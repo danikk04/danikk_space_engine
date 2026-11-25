@@ -138,7 +138,6 @@ namespace danikk_space_engine
 		 */
 		DSE_WATCH();
 		getComponentSystem().tickPointComponents();
-		getCameraSystem().tick();
 		getControllerSystem().tick();
 		getComponentSystem().flushDeferredPointDestruction();
 		getHumanSystem().tick();

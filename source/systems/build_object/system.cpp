@@ -101,7 +101,7 @@ namespace danikk_space_engine
 		const CameraSystem& camera = world.getCameraSystem();
 		const glm::dvec3 camera_position = camera.getWorldPosition();
 		static_asset_collection.base3d_shader.use();
-		camera.frame();
+		camera.applyProjection();
 		setViewMatrix(glm::lookAt(vec3(0.0f), camera.getFront(), camera.getUp()));
 		for(BuildObjectId object_id : getUsedBuildObjectIds())
 		{

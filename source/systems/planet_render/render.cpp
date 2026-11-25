@@ -3,22 +3,14 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/assets/collection.h>
-#include <danikk_space_engine/config.h>
 #include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/planet/system.h>
-#include <danikk_space_engine/systems/world_body/system.h>
-#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
 {
-	void PlanetRenderSystem::drawTerrainMeshes(const glm::dmat4& view,
-		const glm::dmat4& projection, const glm::dvec3& camera_position)
+	void PlanetRenderSystem::drawTerrainMeshes(const glm::dvec3& camera_position)
 	{
-		static_asset_collection.planet_terrain_shader.use();
-		setViewMatrix(mat4(view));
-		setProjectionMatrix(mat4(projection));
-
 		for(const PlanetRenderData& planet : planet_render_data)
 		{
 			for(const PlanetTerrainRenderItem& item : planet.terrain_render_items)
@@ -41,65 +33,53 @@ namespace danikk_space_engine
 	void PlanetRenderSystem::renderPlanetTerrainMeshes()
 	{
 		DSE_WATCH();
-		const CameraSystem& camera = world.getCameraSystem();
-		static_asset_collection.base3d_shader.use();
-		camera.frame();
+		CameraSystem& camera = world.getCameraSystem();
+		PlanetSystem& planet_system = world.getPlanetSystem();
 		if(!camera.isActive())
 		{
+			static_asset_collection.base3d_shader.use();
 			setDepthRange(0.0f, 1.0f);
 			return;
 		}
 
-		const glm::dvec3 camera_position = camera.getWorldPosition();
-		const glm::dmat4 view = glm::lookAt(glm::dvec3(0.0),
-			glm::dvec3(camera.getFront()), glm::dvec3(camera.getUp()));
-		const glm::dmat4 standard_projection = glm::perspective(glm::radians(
-			static_cast<double>(camera.vertical_fov_degrees)),
-			static_cast<double>(screen_ratio_gz),
-			static_cast<double>(camera.near_clip_distance),
-			static_cast<double>(camera.far_clip_distance));
+		camera.setProjectionMode(CameraProjectionMode::near_clip, camera.near_clip_distance, camera.far_clip_distance);
 
-		double far_render_distance = camera.far_clip_distance;
-		double closest_planet_surface_distance = std::numeric_limits<double>::max();
-		for(const PlanetData& planet : world.getPlanetSystem().getPlanets())
-		{
-			const PlanetSettings& settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
-			const WorldBody& body = world.getWorldBodySystem().getWorldBody(planet.world_body_id);
-			const glm::dvec3 local_camera = glm::conjugate(body.rotation)
-				* (camera_position - body.position);
-			const double surface_height = world.getPlanetSystem().getPlanetHeightAboveSurface(
-				planet.id, local_camera);
-			closest_planet_surface_distance = glm::min(
-				closest_planet_surface_distance, std::abs(surface_height));
-			far_render_distance = glm::max(far_render_distance,
-				glm::length(body.position - camera_position) + settings.radius);
-		}
+		const glm::dvec3 camera_position = camera.getWorldPosition();
+		const glm::dmat4 view = glm::lookAt(glm::dvec3(0.0), glm::dvec3(camera.getFront()), glm::dvec3(camera.getUp()));
+
+		double far_render_distance;
+		double closest_planet_surface_distance;
+		planet_system.updateRenderDistances(camera_position, camera.far_clip_distance, far_render_distance, closest_planet_surface_distance);
+		static_asset_collection.planet_terrain_shader.use();
+		setViewMatrix(mat4(view));
 
 		if(far_render_distance > camera.far_clip_distance * 1.05)
 		{
 			float near_clip = camera.far_clip_distance * 0.95f;
 			if(closest_planet_surface_distance < std::numeric_limits<double>::max())
-				near_clip = glm::min(near_clip, static_cast<float>(glm::max(
-					static_cast<double>(camera.near_clip_distance), closest_planet_surface_distance * 0.5)));
-			const float far_clip = static_cast<float>(glm::min(far_render_distance * 1.02,
-				static_cast<double>(std::numeric_limits<float>::max() / 2.0f)));
-			const glm::dmat4 far_projection = glm::perspective(glm::radians(
-				static_cast<double>(camera.vertical_fov_degrees)),
-				static_cast<double>(screen_ratio_gz), static_cast<double>(near_clip),
-				static_cast<double>(far_clip));
+			{
+				near_clip = glm::min(near_clip, static_cast<float>(glm::max(static_cast<double>(camera.near_clip_distance), closest_planet_surface_distance * 0.5)));
+			}
+			const float far_clip = static_cast<float>(glm::min(far_render_distance * 1.02, static_cast<double>(std::numeric_limits<float>::max() / 2.0f)));
+			camera.setProjectionMode(CameraProjectionMode::far_clip, near_clip, far_clip);
+			camera.applyProjection();
 			setDepthRange(0.5f, 1.0f);
-			drawTerrainMeshes(view, far_projection, camera_position);
+			drawTerrainMeshes(camera_position);
+			camera.setProjectionMode(CameraProjectionMode::near_clip, camera.near_clip_distance, camera.far_clip_distance);
+			camera.applyProjection();
 			setDepthRange(0.0f, 0.5f);
-			drawTerrainMeshes(view, standard_projection, camera_position);
+			drawTerrainMeshes(camera_position);
 		}
 		else
 		{
+			camera.applyProjection();
 			setDepthRange(0.0f, 1.0f);
-			drawTerrainMeshes(view, standard_projection, camera_position);
+			drawTerrainMeshes(camera_position);
 		}
 
 		static_asset_collection.base3d_shader.use();
+		camera.setProjectionMode(CameraProjectionMode::near_clip, camera.near_clip_distance, camera.far_clip_distance);
+		camera.applyProjection();
 		setViewMatrix(mat4(view));
-		setProjectionMatrix(mat4(standard_projection));
 	}
 }

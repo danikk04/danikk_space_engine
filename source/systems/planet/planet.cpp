@@ -56,6 +56,21 @@ namespace danikk_space_engine
 		return planet_settings[id];
 	}
 
+	void PlanetSystem::updateRenderDistances(const glm::dvec3& camera_position, double camera_far_clip_distance, double& far_render_distance, double& closest_planet_surface_distance) const
+	{
+		far_render_distance = camera_far_clip_distance;
+		closest_planet_surface_distance = std::numeric_limits<double>::max();
+		for(const PlanetData& planet : planets)
+		{
+			const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(planet.world_body_id);
+			const glm::dvec3 local_camera = glm::conjugate(body.rotation) * (camera_position - body.position);
+			const double surface_height = getPlanetHeightAboveSurface(planet.id, local_camera);
+			closest_planet_surface_distance = glm::min(closest_planet_surface_distance, std::abs(surface_height));
+			far_render_distance = glm::max(far_render_distance, glm::length(body.position - camera_position) + settings.radius);
+		}
+	}
+
 	PlanetData& PlanetSystem::createPlanet(PlanetSettingsId settings_id,
 		WorldBodyId world_body_id)
 	{

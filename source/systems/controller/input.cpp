@@ -9,6 +9,8 @@
 #include <danikk_framework/log.h>
 
 #include <danikk_space_engine/systems/raycast/raycast.h>
+#include <danikk_space_engine/systems/world_body/system.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -38,6 +40,7 @@ namespace danikk_space_engine
 		input.left_mouse_down = input.left_mouse_state == button_states::press
 			|| input.left_mouse_state == button_states::hold;
 		input.mouse_scroll_delta = getMouseScrollDelta();
+		input.cursor_delta = getCursorDelta() * getMouseSensivity();
 		input.alt_pressed = left_alt_state == button_states::press
 			|| left_alt_state == button_states::hold
 			|| right_alt_state == button_states::press
@@ -147,9 +150,81 @@ namespace danikk_space_engine
 	void ControllerSystem::handleCameraInput(const InputState& input)
 	{
 		DSE_PROFILE_CONTROLLER()
-		if(input.control_pressed && input.mouse_scroll_delta != 0.0f)
+		CameraSystem& camera = world.getCameraSystem();
+		if(!camera.isActive()) return;
+		const bool has_controller = controls();
+		if(has_controller && input.control_pressed && input.mouse_scroll_delta != 0.0f)
 			camera_movement_speed = glm::clamp(
 				camera_movement_speed * std::pow(1.25f, input.mouse_scroll_delta), 0.01f, 1000000.0f);
+
+		updateCameraSurfaceFrame();
+		const ToolCameraHandler camera_handler = has_controller ? getActiveTool().camera : nullptr;
+		const bool drag_rotation_mode = camera_handler != nullptr
+			&& camera_handler(*this, input.left_mouse_down, input.alt_pressed);
+		if(!drag_rotation_mode)
+		{
+			const float roll_cos = cos(camera.rotation.z);
+			const float roll_sin = sin(camera.rotation.z);
+			camera.rotation.x += input.cursor_delta.x * roll_cos + input.cursor_delta.y * roll_sin;
+			camera.rotation.y += -input.cursor_delta.x * roll_sin + input.cursor_delta.y * roll_cos;
+			camera.rotation.y = glm::clamp(camera.rotation.y,
+				-pi_half + 0.0001f, pi_half - 0.0001f);
+		}
+
+		const float frame_delay = getTargetFrameDelay();
+		const float roll_delta = 1.5f * frame_delay;
+		const int q_state = getKeyboardState(keyboard_buttons::q);
+		if(q_state == button_states::press || q_state == button_states::hold)
+			camera.rotation.z -= roll_delta;
+		const int e_state = getKeyboardState(keyboard_buttons::e);
+		if(e_state == button_states::press || e_state == button_states::hold)
+			camera.rotation.z += roll_delta;
+
+		const float speed = (has_controller ? camera_movement_speed : 1.0f) * frame_delay;
+		vec3 direction(0.0f);
+		if(getKeyboardState(keyboard_buttons::w)) direction += camera.getFront();
+		if(getKeyboardState(keyboard_buttons::s)) direction -= camera.getFront();
+		if(getKeyboardState(keyboard_buttons::a)) direction -= camera.getRight();
+		if(getKeyboardState(keyboard_buttons::d)) direction += camera.getRight();
+		camera.moveBodyLocal(glm::dvec3(direction * speed));
+		updateCameraSurfaceFrame();
+	}
+
+	/** @copydoc ControllerSystem::updateCameraSurfaceFrame */
+	void ControllerSystem::updateCameraSurfaceFrame()
+	{
+		CameraSystem& camera = world.getCameraSystem();
+		if(!world.getWorldBodySystem().isWorldBodyActive(camera.getWorldBodyId())) return;
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(camera.getWorldBodyId());
+		const glm::dvec3 radial = camera.getWorldPosition() - body.position;
+		const double radial_length = glm::length(radial);
+		if(radial_length <= 0.000001) return;
+
+		const vec3 new_up = vec3(radial / radial_length);
+		const vec3 old_up = glm::normalize(camera.surface_up);
+		const vec3 transport_axis = glm::cross(old_up, new_up);
+		const float sine = glm::length(transport_axis);
+		const float cosine = glm::clamp(glm::dot(old_up, new_up), -1.0f, 1.0f);
+		if(sine > 0.000001f)
+		{
+			const float angle = atan2(sine, cosine);
+			const mat4 transport = glm::rotate(mat4(1.0f), angle, transport_axis / sine);
+			camera.yaw_reference_forward = vec3(transport * vec4(camera.yaw_reference_forward, 0.0f));
+		}
+		else if(cosine < 0.0f) camera.yaw_reference_forward = -camera.yaw_reference_forward;
+
+		camera.surface_up = new_up;
+		camera.yaw_reference_forward -= camera.surface_up
+			* glm::dot(camera.yaw_reference_forward, camera.surface_up);
+		const float forward_length = glm::length(camera.yaw_reference_forward);
+		if(forward_length <= 0.000001f)
+		{
+			const vec3 reference_axis = glm::abs(camera.surface_up.z) < 0.9f
+				? vec3(0.0f, 0.0f, 1.0f) : vec3(1.0f, 0.0f, 0.0f);
+			camera.yaw_reference_forward = glm::normalize(
+				reference_axis - camera.surface_up * glm::dot(reference_axis, camera.surface_up));
+		}
+		else camera.yaw_reference_forward /= forward_length;
 	}
 
 	void ControllerSystem::handleWorldInteraction(const InputState& input)
@@ -168,7 +243,7 @@ namespace danikk_space_engine
 		if(active_tool.tick != nullptr)
 			active_tool.tick(world, *this, hit, mode == PlayerMode::god && input.left_mouse_down,
 				input.left_mouse_state, tool_mouse_scroll_delta, input.alt_pressed,
-				getCursorDelta() * getMouseSensivity());
+				input.cursor_delta);
 		else
 		{
 			tickDragTool(world, *this, hit, false, input.left_mouse_state,
@@ -197,11 +272,14 @@ namespace danikk_space_engine
 	void ControllerSystem::tick()
 	{
 		DSE_WATCH();
-		if(!controls()) return;
-		if(tool_catalog_open) return;
+		const bool has_controller = controls();
+		if(!world.getCameraSystem().isActive()) return;
+		if(has_controller && tool_catalog_open) return;
+		InputState input = readInputState();
+		handleCameraInput(input);
+		if(!has_controller) return;
 		validateSelectedUnits();
 		handleModeInput();
-		InputState input = readInputState();
 		handleBuildPartInput(input);
 		handleHotbarInput(input);
 		handleCameraInput(input);

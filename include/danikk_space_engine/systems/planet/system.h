@@ -72,6 +72,8 @@ namespace danikk_space_engine
 		 * @brief Returns all registered planets as read-only data.
 		 */
 		const DynamicArray<PlanetData>& getPlanets() const { return planets; }
+		/** @brief Initializes and calculates the farthest planet extent and nearest surface distance from a camera position. */
+		void updateRenderDistances(const glm::dvec3& camera_position, double camera_far_clip_distance, double& far_render_distance, double& closest_planet_surface_distance) const;
 
 		/**
 		 * @brief Applies and persists a spherical terrain edit on a registered planet.

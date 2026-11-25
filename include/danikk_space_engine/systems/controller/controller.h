@@ -39,6 +39,7 @@ namespace danikk_space_engine
 			bool left_mouse_down = false;
 			bool adjusting_build_part_size = false;
 			float mouse_scroll_delta = 0.0f;
+			vec2 cursor_delta = vec2(0.0f);
 		};
 
 		/** @brief Owning World whose input and camera this system controls. */
@@ -57,8 +58,10 @@ namespace danikk_space_engine
 		void handleBuildPartInput(InputState& input);
 		/** @brief Selects the hotbar command matching a pressed number key. */
 		void handleHotbarInput(const InputState& input);
-		/** @brief Adjusts camera movement speed from Ctrl plus the mouse wheel. */
+		/** @brief Applies camera rotation, roll, movement, and speed controls from sampled input. */
 		void handleCameraInput(const InputState& input);
+		/** @brief Keeps camera radial up and tangent heading aligned with its owning WorldBody. */
+		void updateCameraSurfaceFrame();
 		/** @brief Performs raycast selection, drag handling, and active tool execution. */
 		void handleWorldInteraction(const InputState& input);
 
