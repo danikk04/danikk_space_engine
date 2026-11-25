@@ -7,6 +7,8 @@
 #include <danikk_space_engine/config.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/planet_render/system.h>
+#include <danikk_space_engine/systems/world_body/system.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/world.h>
 
 #include <danikk_space_engine/systems/save/system.h>
@@ -55,13 +57,16 @@ namespace danikk_space_engine
 	}
 
 	PlanetData& PlanetSystem::createPlanet(PlanetSettingsId settings_id,
-		const glm::dvec3& position, const glm::dquat& rotation)
+		WorldBodyId world_body_id)
 	{
+		if(!world.getWorldBodySystem().isWorldBodyActive(world_body_id))
+			danikk_engine::formatFatalError("Cannot attach a planet to inactive WorldBody %", world_body_id);
+		if(findPlanetByWorldBodyId(world_body_id) != nullptr)
+			danikk_engine::formatFatalError("WorldBody % already owns a planet", world_body_id);
 		PlanetData planet(settings_id);
 		planet.id = 0;
 		while(findPlanet(planet.id) != nullptr) ++planet.id;
-		planet.position = position;
-		planet.rotation = rotation;
+		planet.world_body_id = world_body_id;
 		planets.pushMove(planet);
 		world.getSaveSystem().loadPlanetTerrainEdits(planet.id);
 		return planets[planets.size() - 1];
@@ -154,8 +159,9 @@ namespace danikk_space_engine
 		{
 			const PlanetSettings& settings = getPlanetSettings(planet.settings_id);
 			if(settings.atmosphere_height <= 0.0) continue;
-			const glm::dvec3 planet_position = glm::conjugate(planet.rotation)
-				* (world_position - planet.position);
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(planet.world_body_id);
+			const glm::dvec3 planet_position = glm::conjugate(body.rotation)
+				* (world_position - body.position);
 			const double surface_height = getPlanetHeightAboveSurface(planet.id, planet_position);
 			const double surface_distance = std::abs(surface_height);
 			if(surface_distance >= nearest_surface_distance) continue;
@@ -193,7 +199,8 @@ namespace danikk_space_engine
 				danikk_framework::formatLogWarning("Planet terrain edit rejected: missing planet=%", planet_id);
 			return false;
 		}
-		const glm::dvec3 center = glm::conjugate(planet->rotation) * (position - planet->position);
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(planet->world_body_id);
+		const glm::dvec3 center = glm::conjugate(body.rotation) * (position - body.position);
 		if(planet->terrain_edits.append(PlanetTerrainEdit{center, radius, material_id})
 			== static_cast<PlanetTerrainEditId>(-1))
 		{

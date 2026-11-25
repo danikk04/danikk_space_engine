@@ -12,7 +12,6 @@ namespace danikk_space_engine
 {
 	namespace
 	{
-		/** @brief Repeatedly destroys the last active ID until the owning list is empty. */
 		/** @brief Clears each supplied pool while retaining its allocated capacity. */
 		template<typename... pool_t>
 		void clearPools(pool_t&... pools) { (pools.clear(), ...); }
@@ -58,6 +57,16 @@ namespace danikk_space_engine
 		if(body.point_ids.size() > 0)
 			danikk_engine::formatFatalError("World body % still owns points during destruction", id);
 		world_bodies.free(id);
+	}
+
+	/** @copydoc WorldBodySystem::destroyAllWorldBodies */
+	void WorldBodySystem::destroyAllWorldBodies()
+	{
+		while(world_bodies.usedIds().size() > 0)
+		{
+			const DynamicArray<WorldBodyId>& body_ids = world_bodies.usedIds();
+			destroyWorldBody(body_ids[body_ids.size() - 1]);
+		}
 	}
 
 	/** @copydoc WorldBodySystem::clear */

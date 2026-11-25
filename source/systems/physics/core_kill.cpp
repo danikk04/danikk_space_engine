@@ -62,7 +62,8 @@ namespace danikk_space_engine
 		DynamicArray<PlanetCoreTarget> planets;
 		const DynamicArray<WorldBodyId> world_body_ids(world.getWorldBodySystem().getUsedWorldBodyIds());
 		for(const PlanetData& planet : world.getPlanetSystem().getPlanets())
-			planets.push(PlanetCoreTarget{planet.position});
+			planets.push(PlanetCoreTarget{
+				world.getWorldBodySystem().getWorldBody(planet.world_body_id).position});
 		if(planets.size() == 0) return;
 
 		DynamicArray<WorldBodyId> bodies_to_destroy;

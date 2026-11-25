@@ -188,7 +188,7 @@ namespace danikk_space_engine
 		}
 	};
 
-	/** @brief Persistent identity, transform, settings reference, and terrain edits for one planet. */
+	/** @brief Persistent identity, body reference, settings, and terrain edits for one planet. */
 	struct PlanetData
 	{
 		/** @brief Constructs canonical planet data with a reference to immutable settings. */
@@ -196,12 +196,8 @@ namespace danikk_space_engine
 
 		/** @brief Stable identifier assigned by PlanetSystem. */
 		PlanetId id = static_cast<PlanetId>(-1);
-		/** @brief WorldBody whose local frame anchors entities to this planet. */
+		/** @brief WorldBody that owns this planet's authoritative position and rotation. */
 		WorldBodyId world_body_id = static_cast<WorldBodyId>(-1);
-		/** @brief Planet center in world coordinates. */
-		glm::dvec3 position = glm::dvec3(0.0);
-		/** @brief Planet orientation from its local frame into world orientation. */
-		glm::dquat rotation = glm::dquat(1.0, 0.0, 0.0, 0.0);
 		/** @brief Index into PlanetSystem's immutable settings catalog. */
 		PlanetSettingsId settings_id = planet_settings_ids::earth;
 		/** @brief Current terrain-edit revision. Incremented whenever an edit changes. */

@@ -28,6 +28,8 @@ namespace danikk_space_engine
 		BuildObject& getBuildObject(BuildObjectId id);
 		const BuildObject& getBuildObject(BuildObjectId id) const;
 		const DynamicArray<BuildObjectId>& getUsedBuildObjectIds() const;
+		/** @brief Draws each resident combined mesh when its owning WorldBody is within 10 km. */
+		void renderMeshes() const;
 		void release();
 	};
 }

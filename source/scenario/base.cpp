@@ -94,11 +94,7 @@ namespace danikk_space_engine
 	 */
 	void startBaseScenario(World& world)
 	{
-		while(world.getWorldBodySystem().getUsedWorldBodyIds().size() > 0)
-		{
-			const DynamicArray<WorldBodyId>& body_ids = world.getWorldBodySystem().getUsedWorldBodyIds();
-			world.getWorldBodySystem().destroyWorldBody(body_ids[body_ids.size() - 1]);
-		}
+		world.getWorldBodySystem().destroyAllWorldBodies();
 		world.getPointData().clear();
 		world.getWorldBodySystem().clear();
 		world.getFactionSystem().create(faction_definition_ids::celestial_body);
@@ -110,11 +106,8 @@ namespace danikk_space_engine
 		const WorldBodyId planet_frame_id = world.getWorldBodySystem().createWorldBody();
 		world.getWorldBodySystem().getWorldBody(planet_frame_id).faction_id = base_faction_ids::celestial_body;
 		const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet_settings_ids::earth);
-		PlanetData& planet = world.getPlanetSystem().createPlanet(planet_settings_ids::earth);
-		WorldBody& planet_frame = world.getWorldBodySystem().getWorldBody(planet_frame_id);
-		planet.world_body_id = planet_frame_id;
-		planet_frame.position = planet.position;
-		planet_frame.rotation = planet.rotation;
+		PlanetData& planet = world.getPlanetSystem().createPlanet(
+			planet_settings_ids::earth, planet_frame_id);
 		constexpr double camera_altitude = 10.0;
 		const glm::dvec3 camera_direction(0.0, 0.0, 1.0);
 		glm::dvec3 camera_body_local_position = camera_direction

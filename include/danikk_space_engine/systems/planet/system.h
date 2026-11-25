@@ -25,11 +25,9 @@ namespace danikk_space_engine
 		void shutdown();
 
 		/**
-		 * @brief Registers a planet and loads its saved terrain edits.
+		 * @brief Registers a planet on an existing WorldBody and loads its saved terrain edits.
 		 */
-		PlanetData& createPlanet(PlanetSettingsId settings_id,
-			const glm::dvec3& position = glm::dvec3(0.0),
-			const glm::dquat& rotation = glm::dquat(1.0, 0.0, 0.0, 0.0));
+		PlanetData& createPlanet(PlanetSettingsId settings_id, WorldBodyId world_body_id);
 		/**
 		 * @brief Removes a registered planet and asks PlanetRenderSystem to discard its cached runtime.
 		 */

@@ -2,6 +2,8 @@
 #include <danikk_framework/log.h>
 
 #include <danikk_space_engine/systems/planet/system.h>
+#include <danikk_space_engine/systems/world_body/system.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
@@ -55,13 +57,14 @@ namespace danikk_space_engine
 			const PlanetSettings& settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
 			if(settings.surface_gravity <= 0.0 || settings.radius <= 0.0) continue;
 
-				const glm::dvec3 toward_planet = planet.position - world_position;
-				const double distance = glm::length(toward_planet);
-				if(distance <= 0.000001) continue;
-				const double distance_ratio = settings.radius / distance;
-				const double magnitude = distance > settings.radius
-					? settings.surface_gravity * distance_ratio * distance_ratio
-					: settings.surface_gravity * distance_ratio;
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(planet.world_body_id);
+			const glm::dvec3 toward_planet = body.position - world_position;
+			const double distance = glm::length(toward_planet);
+			if(distance <= 0.000001) continue;
+			const double distance_ratio = settings.radius / distance;
+			const double magnitude = distance > settings.radius
+				? settings.surface_gravity * distance_ratio * distance_ratio
+				: settings.surface_gravity * distance_ratio;
 			gravity += toward_planet / distance * magnitude;
 		}
 		return gravity;

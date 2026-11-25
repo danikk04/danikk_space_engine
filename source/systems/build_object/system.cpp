@@ -2,10 +2,13 @@
 
 #include <danikk_framework/log.h>
 #include <danikk_engine/danikk_engine.h>
+#include <danikk_space_engine/assets/collection.h>
 #include <danikk_space_engine/world.h>
+#include <danikk_space_engine/systems/camera/camera.h>
 #include <danikk_space_engine/systems/world_body/system.h>
 #include <danikk_space_engine/systems/build_part/system.h>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -90,6 +93,34 @@ namespace danikk_space_engine
 	const DynamicArray<BuildObjectId>& BuildObjectSystem::getUsedBuildObjectIds() const
 	{
 		return build_objects.usedIds();
+	}
+
+	void BuildObjectSystem::renderMeshes() const
+	{
+		if(!world.getCameraSystem().isActive()) return;
+		const CameraSystem& camera = world.getCameraSystem();
+		const glm::dvec3 camera_position = camera.getWorldPosition();
+		static_asset_collection.base3d_shader.use();
+		camera.frame();
+		setViewMatrix(glm::lookAt(vec3(0.0f), camera.getFront(), camera.getUp()));
+		for(BuildObjectId object_id : getUsedBuildObjectIds())
+		{
+			const BuildObject& object = getBuildObject(object_id);
+			const WorldBodyId body_id = object.world_body_id;
+			if(!world.getWorldBodySystem().isWorldBodyActive(body_id)) continue;
+			const WorldBody& body = world.getWorldBodySystem().getWorldBody(body_id);
+			if(glm::length(body.position - camera_position) > 10000.0) continue;
+			if(object.detail_mesh.mesh == nullptr) continue;
+
+			const glm::dvec3 relative_position = body.position
+				+ body.rotation * object.detail_mesh_position - camera_position;
+			mat4 rotation(1.0f);
+			rotation[0] = vec4(vec3(body.rotation * glm::dvec3(1.0, 0.0, 0.0)), 0.0f);
+			rotation[1] = vec4(vec3(body.rotation * glm::dvec3(0.0, 1.0, 0.0)), 0.0f);
+			rotation[2] = vec4(vec3(body.rotation * glm::dvec3(0.0, 0.0, 1.0)), 0.0f);
+			drawMeshRenderData(object.detail_mesh,
+				glm::translate(mat4(1.0f), vec3(relative_position)) * rotation);
+		}
 	}
 
 	void BuildObjectSystem::release()

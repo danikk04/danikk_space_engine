@@ -30,6 +30,8 @@ namespace danikk_space_engine
 		void setPointBodyLocalPosition(PointId point_id, const glm::dvec3& body_local_position);
 		/** @brief Destroys a body's humans, points, planet, mesh, and resource. */
 		void destroyWorldBody(WorldBodyId id);
+		/** @brief Destroys every active body together with its owned and attached data. */
+		void destroyAllWorldBodies();
 		/** @brief Checks whether a WorldBody ID is active. */
 		bool isWorldBodyActive(WorldBodyId id) const;
 		/** @brief Returns active WorldBody IDs; invalidated by pool mutations. */

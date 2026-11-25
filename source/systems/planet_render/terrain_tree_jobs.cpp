@@ -1,6 +1,7 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/planet_render/data.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -26,7 +27,7 @@ namespace danikk_space_engine
 		return depth;
 	}
 
-	void PlanetRenderData::buildTerrainRenderList(const PlanetData& planet,
+	void PlanetRenderData::buildTerrainRenderList(const WorldBody& body,
 		const PlanetSettings& settings)
 	{
 		DSE_WATCH();
@@ -61,8 +62,8 @@ namespace danikk_space_engine
 
 			node.render_active = true;
 			terrain_render_items.push(PlanetTerrainRenderItem{
-				node_id, planet.position + planet.rotation * node.mesh_position,
-				planet.rotation});
+				node_id, body.position + body.rotation * node.mesh_position,
+				body.rotation});
 		}
 	}
 }

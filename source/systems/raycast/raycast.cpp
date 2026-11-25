@@ -48,50 +48,7 @@ namespace danikk_space_engine
 	{
 		DSE_WATCH();
 		const auto& body_ids = world.getWorldBodySystem().getUsedWorldBodyIds();
-		RaycastHit result = castBodies(body_ids.begin(), body_ids.size(), origin, direction, max_distance);
-		const double direction_length = glm::length(direction);
-		if(direction_length <= 1e-12 || max_distance < 0.0) return result;
-		const glm::dvec3 ray_direction = glm::dvec3(direction) / direction_length;
-		float nearest_distance = result.hit ? result.distance : max_distance;
-		for(const PlanetData& planet : world.getPlanetSystem().getPlanets())
-		{
-			const bool has_proxy = world.getWorldBodySystem().isWorldBodyActive(planet.world_body_id);
-			if(has_proxy) continue;
-			const PlanetSettings& settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
-			double broadphase_radius = settings.radius + 11000.0;
-			for(PlanetTerrainEditId edit_id : planet.terrain_edits.ids)
-			{
-				if(!planet.terrain_edits.pool->isActive(edit_id)) continue;
-				broadphase_radius = glm::max(broadphase_radius,
-					(*planet.terrain_edits.pool)[edit_id].getMaximumRadiusFromOrigin(1.0));
-			}
-			double interval_start = 0.0;
-			double interval_end = 0.0;
-			if(!raySphereInterval(planet.position - origin, broadphase_radius,
-				ray_direction, nearest_distance, interval_start, interval_end)) continue;
-			const glm::dquat inverse_rotation = glm::conjugate(planet.rotation);
-			const glm::dvec3 local_direction = inverse_rotation * ray_direction;
-			const glm::dvec3 local_origin = inverse_rotation
-				* (origin + ray_direction * interval_start - planet.position);
-			double field_distance = 0.0;
-			glm::dvec3 field_normal;
-			if(!raycastPlanetScalarField(planet.id, local_origin, local_direction,
-				interval_end - interval_start, PlanetTerrainMode::cave_field_with_edits,
-				field_distance, field_normal)) continue;
-			const double hit_distance = interval_start + field_distance;
-			if(hit_distance >= nearest_distance) continue;
-			nearest_distance = static_cast<float>(hit_distance);
-			result = RaycastHit{};
-			result.hit = true;
-			result.hit_terrain = true;
-			result.distance = nearest_distance;
-			result.position = origin + ray_direction * hit_distance;
-			result.normal = vec3(planet.rotation * field_normal);
-			result.planet_id = planet.id;
-			if(world.getWorldBodySystem().isWorldBodyActive(planet.world_body_id))
-				result.body_id = planet.world_body_id;
-		}
-		return result;
+		return castBodies(body_ids.begin(), body_ids.size(), origin, direction, max_distance);
 	}
 
 	RaycastHit RaycastSystem::castBody(WorldBodyId body_id, const glm::dvec3& origin,
@@ -201,14 +158,13 @@ namespace danikk_space_engine
 			const WorldBodyId body_id = body_ids[body_index];
 			const WorldBody& body = world_body.getWorldBody(body_id);
 			const PlanetData* planet = planets.findPlanetByWorldBodyId(body_id);
-			const bool is_planet = planet != nullptr;
-			const glm::dquat body_rotation = is_planet ? planet->rotation : body.rotation;
-			const glm::dvec3 body_position = is_planet ? planet->position : body.position;
+			const glm::dquat body_rotation = body.rotation;
+			const glm::dvec3 body_position = body.position;
 			const glm::dquat inverse_rotation = glm::conjugate(body_rotation);
 			const glm::dvec3 local_origin = inverse_rotation * (origin - body_position);
 			const vec3 local_direction = vec3(inverse_rotation * glm::dvec3(normalized_direction));
 
-			if(is_planet)
+			if(planet != nullptr)
 			{
 				const PlanetSettings& planet_settings = planets.getPlanetSettings(planet->settings_id);
 				// Bound the full procedural height range and any additive terrain edits.
@@ -278,7 +234,7 @@ namespace danikk_space_engine
 						* static_cast<double>(intersection.distance);
 					result.normal = vec3(body_rotation * glm::dvec3(intersection.normal));
 					result.body_id = body_id;
-					result.planet_id = is_planet ? planet->id : static_cast<PlanetId>(-1);
+					result.planet_id = planet != nullptr ? planet->id : static_cast<PlanetId>(-1);
 				}
 			}
 		}

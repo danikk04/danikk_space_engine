@@ -3,7 +3,6 @@
 #include <danikk_engine/danikk_engine.h>
 
 #include <danikk_space_engine/assets/collection.h>
-#include <danikk_space_engine/config.h>
 #include <danikk_space_engine/effects/unit_activity_labels.h>
 #include <danikk_space_engine/effects/unit_order_indicators.h>
 #include <danikk_space_engine/effects/unit_selection.h>
@@ -16,8 +15,6 @@
 #include <danikk_space_engine/systems/unit/unit.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/world_system_container.h>
-
-#include <limits>
 
 namespace danikk_space_engine
 {
@@ -74,17 +71,6 @@ namespace danikk_space_engine
 	HumanSystem& World::getHumanSystem() { return system_container->humans; }
 	const HumanSystem& World::getHumanSystem() const { return system_container->humans; }
 
-	void World::syncPlanetWorldBodyFrames()
-	{
-		for(const PlanetData& planet : getPlanetSystem().getPlanets())
-		{
-			if(!getWorldBodySystem().isWorldBodyActive(planet.world_body_id)) continue;
-			WorldBody& body = getWorldBodySystem().getWorldBody(planet.world_body_id);
-			body.position = planet.position;
-			body.rotation = planet.rotation;
-		}
-	}
-
 	/**
 	 * @brief Starts the shared mesh generator, invalidates older results, resets queues, and creates the base scenario.
 	 * Advances the world token while skipping zero, clears the submitted and local
@@ -97,11 +83,7 @@ namespace danikk_space_engine
 		getPlanetSystem().init();
 		getBuildObjectSystem().init();
 		getBuildPartSystem().init();
-		while(getWorldBodySystem().getUsedWorldBodyIds().size() > 0)
-		{
-			const DynamicArray<WorldBodyId>& body_ids = getWorldBodySystem().getUsedWorldBodyIds();
-			getWorldBodySystem().destroyWorldBody(body_ids[body_ids.size() - 1]);
-		}
+		getWorldBodySystem().destroyAllWorldBodies();
 		getMeshGenerationSystem().init();
 		getComponentSystem().init();
 		getUnitSystem().init();
@@ -130,11 +112,7 @@ namespace danikk_space_engine
 		getPhysicsSystem().shutdown();
 		getRaycastSystem().shutdown();
 		getSaveSystem().shutdown();
-		while(getWorldBodySystem().getUsedWorldBodyIds().size() > 0)
-		{
-			const DynamicArray<WorldBodyId>& body_ids = getWorldBodySystem().getUsedWorldBodyIds();
-			getWorldBodySystem().destroyWorldBody(body_ids[body_ids.size() - 1]);
-		}
+		getWorldBodySystem().destroyAllWorldBodies();
 		getPointData().release();
 		getWorldBodySystem().release();
 		getBuildObjectSystem().release();
@@ -159,7 +137,6 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		syncPlanetWorldBodyFrames();
 		getComponentSystem().tickPointComponents();
 		getCameraSystem().tick();
 		getControllerSystem().tick();
@@ -183,17 +160,12 @@ namespace danikk_space_engine
 		 * @brief Measures the duration of the enclosing profiler scope.
 		 */
 		DSE_WATCH();
-		syncPlanetWorldBodyFrames();
 		setClearColor(getCameraSystem().isActive()
 			? getPlanetSystem().getAtmosphereBackgroundColor(getCameraSystem().getWorldPosition()) : glm::vec3(0.0f));
 		getPlanetRenderSystem().update();
 		getMeshGenerationSystem().frame();
-		static_asset_collection.base3d_shader.use();
-		getCameraSystem().frame();
-		const vec3 camera_front = getCameraSystem().getFront();
-		const mat4 view = glm::lookAt(vec3(0.0f), camera_front, getCameraSystem().getUp());
-		setViewMatrix(view);
-		renderWorldMeshes();
+		getPlanetRenderSystem().renderPlanetTerrainMeshes();
+		getBuildObjectSystem().renderMeshes();
 		// Draw dynamic point components after the world meshes so transparent overlays
 		// do not allow later terrain draws to pass through the base mesh depth.
 		getComponentSystem().renderPointComponents();
@@ -205,94 +177,4 @@ namespace danikk_space_engine
 		setDepthRange(0.0f, 1.0f);
 	}
 
-	void World::renderWorldMeshes()
-	{
-		DSE_WATCH();
-		const glm::dvec3 camera_position = getCameraSystem().getWorldPosition();
-		double far_render_distance = getCameraSystem().far_clip_distance;
-		double closest_planet_surface_distance = std::numeric_limits<double>::max();
-		for(const PlanetData& planet : getPlanetSystem().getPlanets())
-		{
-			const PlanetSettings& settings = getPlanetSystem().getPlanetSettings(planet.settings_id);
-			const glm::dvec3 local_camera = glm::conjugate(planet.rotation) * (camera_position - planet.position);
-			const double surface_height = getPlanetSystem().getPlanetHeightAboveSurface(planet.id, local_camera);
-			closest_planet_surface_distance = glm::min(closest_planet_surface_distance, std::abs(surface_height));
-			far_render_distance = glm::max(far_render_distance,
-				glm::length(planet.position - camera_position) + settings.radius);
-		}
-		for(WorldBodyId id : getWorldBodySystem().getUsedWorldBodyIds())
-		{
-			const WorldBody& body = getWorldBodySystem().getWorldBody(id);
-			const BuildObjectId object_id = getBuildObjectSystem().findBuildObjectId(id);
-			if(object_id == static_cast<BuildObjectId>(-1)) continue;
-			const BuildObject& object = getBuildObjectSystem().getBuildObject(object_id);
-			if(!object.detail_mesh_bounds_valid) continue;
-			const glm::dvec3 center = body.position + body.rotation
-				* (object.detail_mesh_position + glm::dvec3(object.detail_mesh_bounds_center));
-			far_render_distance = glm::max(far_render_distance,
-				glm::length(center - camera_position) + object.detail_mesh_bounds_radius);
-		}
-
-		const glm::dmat4 view = glm::lookAt(glm::dvec3(0.0),
-			glm::dvec3(getCameraSystem().getFront()), glm::dvec3(getCameraSystem().getUp()));
-		const glm::dmat4 standard_projection = glm::perspective(glm::radians(
-			static_cast<double>(getCameraSystem().vertical_fov_degrees)),
-			static_cast<double>(screen_ratio_gz),
-			static_cast<double>(getCameraSystem().near_clip_distance),
-			static_cast<double>(getCameraSystem().far_clip_distance));
-		const auto draw_world_geometry = [this, &view](const glm::dmat4& projection)
-		{
-			static_asset_collection.base3d_shader.use();
-			setViewMatrix(mat4(view));
-			setProjectionMatrix(mat4(projection));
-			for(WorldBodyId id : getWorldBodySystem().getUsedWorldBodyIds())
-			{
-				const WorldBody& body = getWorldBodySystem().getWorldBody(id);
-				const BuildObjectId object_id = getBuildObjectSystem().findBuildObjectId(id);
-				if(object_id == static_cast<BuildObjectId>(-1)) continue;
-				const BuildObject& object = getBuildObjectSystem().getBuildObject(object_id);
-				if(object.detail_mesh.mesh == nullptr) continue;
-				const glm::dvec3 relative_position = body.position
-					+ body.rotation * object.detail_mesh_position - getCameraSystem().getWorldPosition();
-				mat4 rotation(1.0f);
-				rotation[0] = vec4(vec3(body.rotation * glm::dvec3(1.0, 0.0, 0.0)), 0.0f);
-				rotation[1] = vec4(vec3(body.rotation * glm::dvec3(0.0, 1.0, 0.0)), 0.0f);
-				rotation[2] = vec4(vec3(body.rotation * glm::dvec3(0.0, 0.0, 1.0)), 0.0f);
-				drawMeshRenderData(object.detail_mesh,
-					glm::translate(mat4(1.0f), vec3(relative_position)) * rotation);
-			}
-			static_asset_collection.planet_terrain_shader.use();
-			setViewMatrix(mat4(view));
-			setProjectionMatrix(mat4(projection));
-			getPlanetRenderSystem().renderPlanetTerrainMeshes();
-			static_asset_collection.base3d_shader.use();
-			setViewMatrix(mat4(view));
-			setProjectionMatrix(mat4(projection));
-		};
-
-		if(far_render_distance > getCameraSystem().far_clip_distance * 1.05)
-		{
-			float near_clip = getCameraSystem().far_clip_distance * 0.95f;
-			if(closest_planet_surface_distance < std::numeric_limits<double>::max())
-				near_clip = glm::min(near_clip, static_cast<float>(glm::max(
-					static_cast<double>(getCameraSystem().near_clip_distance), closest_planet_surface_distance * 0.5)));
-			const float far_clip = static_cast<float>(glm::min(far_render_distance * 1.02,
-				static_cast<double>(std::numeric_limits<float>::max() / 2.0f)));
-			const glm::dmat4 far_projection = glm::perspective(glm::radians(
-				static_cast<double>(getCameraSystem().vertical_fov_degrees)),
-				static_cast<double>(screen_ratio_gz), static_cast<double>(near_clip),
-				static_cast<double>(far_clip));
-			setProjectionMatrix(mat4(far_projection));
-			setDepthRange(0.5f, 1.0f);
-			draw_world_geometry(far_projection);
-			getCameraSystem().frame();
-			setDepthRange(0.0f, 0.5f);
-			draw_world_geometry(standard_projection);
-		}
-		else
-		{
-			setDepthRange(0.0f, 1.0f);
-			draw_world_geometry(standard_projection);
-		}
-	}
 }

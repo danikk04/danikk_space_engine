@@ -132,8 +132,9 @@ namespace danikk_engine_game
 			bool nearest_planet_height_available = false;
 			for(const PlanetData& planet : world.getPlanetSystem().getPlanets())
 			{
-				const glm::dvec3 planet_local_camera_position = glm::conjugate(planet.rotation)
-					* (camera_position - planet.position);
+				const WorldBody& body = world.getWorldBodySystem().getWorldBody(planet.world_body_id);
+				const glm::dvec3 planet_local_camera_position = glm::conjugate(body.rotation)
+					* (camera_position - body.position);
 				const double height = world.getPlanetSystem().getPlanetHeightAboveSurface(
 					planet.id, planet_local_camera_position);
 				const double distance = std::abs(height);

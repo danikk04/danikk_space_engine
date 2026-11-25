@@ -41,6 +41,9 @@ namespace danikk_space_engine
 		/** @brief Evicts cached meshes beyond the per-depth cache capacity. */
 		void evictCachedMeshes(PlanetRenderData& render_data,
 			const glm::dvec3& camera_position);
+		/** @brief Draws active terrain meshes with the supplied camera matrices. */
+		void drawTerrainMeshes(const glm::dmat4& view, const glm::dmat4& projection,
+			const glm::dvec3& camera_position);
 
 	public:
 		/** @brief Binds this renderer to its owning world. */
@@ -61,7 +64,7 @@ namespace danikk_space_engine
 		void setMeshGenerationJobPending(const MeshGenerationJob& job, bool pending);
 		/** @brief Installs a completed CPU mesh into the matching active terrain runtime. */
 		void acceptGeneratedTerrainNodeMesh(const MeshGenerationJob& job);
-		/** @brief Draws the selected terrain meshes for currently active planet runtimes. */
+		/** @brief Draws active planet terrain, using separate far and near depth ranges when needed. */
 		void renderPlanetTerrainMeshes();
 	};
 }

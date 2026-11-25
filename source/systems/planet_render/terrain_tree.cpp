@@ -1,6 +1,7 @@
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/planet_render/data.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/world.h>
 
 #include <cmath>
@@ -146,7 +147,7 @@ namespace danikk_space_engine
 		tree.createRoot();
 	}
 
-	void PlanetRenderData::updateTerrainStreaming(const PlanetData& planet,
+	void PlanetRenderData::updateTerrainStreaming(const PlanetData& planet, const WorldBody& body,
 		const glm::dvec3& camera_position, double height,
 		const PlanetSettings& planet_settings, MeshGenerationTelemetry& telemetry)
 	{
@@ -164,7 +165,7 @@ namespace danikk_space_engine
 		terrain_streaming_active = true;
 		terrain_tree.refine(camera_position, height, planet_settings,
 			detail_scale, render_window_minimum, render_window_maximum);
-		buildTerrainRenderList(planet, planet_settings);
+		buildTerrainRenderList(body, planet_settings);
 		recordDiagnostics(telemetry, target_node_count, detail_scale_adjustments, detail_scale);
 	}
 }

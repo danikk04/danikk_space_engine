@@ -8,6 +8,8 @@
 #include <danikk_space_engine/systems/planet/system.h>
 #include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/systems/telemetry/telemetry.h>
+#include <danikk_space_engine/systems/world_body/system.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 #include <danikk_space_engine/world.h>
 
 namespace danikk_space_engine
@@ -38,15 +40,16 @@ namespace danikk_space_engine
 		double vertical_fov_degrees, double& surface_height) const
 	{
 		const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
-		const glm::dvec3 local_camera_position = glm::conjugate(planet.rotation)
-			* (camera_position - planet.position);
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(planet.world_body_id);
+		const glm::dvec3 local_camera_position = glm::conjugate(body.rotation)
+			* (camera_position - body.position);
 		surface_height = world.getPlanetSystem().getPlanetHeightAboveSurface(
 			planet.id, local_camera_position);
 		const double nearby_activation_distance = planet_settings.atmosphere_height
 			+ world.getCameraSystem().far_clip_distance;
 		if(std::abs(surface_height) <= nearby_activation_distance) return true;
 
-		const glm::dvec3 to_planet = planet.position - camera_position;
+		const glm::dvec3 to_planet = body.position - camera_position;
 		const double center_distance = glm::length(to_planet);
 		if(center_distance <= planet_settings.radius) return true;
 		const double angular_radius = std::asin(glm::clamp(
@@ -80,10 +83,11 @@ namespace danikk_space_engine
 	void PlanetRenderSystem::updatePlanet(const PlanetData& planet,
 		PlanetRenderData& render_data, double surface_height)
 	{
-		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
-			* (world.getCameraSystem().getWorldPosition() - planet.position);
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(planet.world_body_id);
+		const glm::dvec3 camera_position = glm::conjugate(body.rotation)
+			* (world.getCameraSystem().getWorldPosition() - body.position);
 		const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
-		render_data.updateTerrainStreaming(planet, camera_position, surface_height,
+		render_data.updateTerrainStreaming(planet, body, camera_position, surface_height,
 			planet_settings, world.getTelemetrySystem().mesh_generation_telemetry);
 		render_data.active_this_frame = true;
 		evictCachedMeshes(render_data, camera_position);

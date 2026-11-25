@@ -140,8 +140,7 @@ namespace danikk_space_engine
 		scene.getFactionSystem().create(faction_definition_ids::pirates);
 
 		const WorldBodyId body_id = scene.getWorldBodySystem().createWorldBody();
-		PlanetData& planet = scene.getPlanetSystem().createPlanet(planet_settings_ids::earth);
-		planet.world_body_id = body_id;
+		PlanetData& planet = scene.getPlanetSystem().createPlanet(planet_settings_ids::earth, body_id);
 		DiagnosticNpc npcs[npc_count]{};
 		createNpcFixture(scene, body_id, planet, npcs);
 

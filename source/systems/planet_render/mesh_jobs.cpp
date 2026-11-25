@@ -6,6 +6,8 @@
 #include <danikk_space_engine/systems/planet_render/system.h>
 #include <danikk_space_engine/world.h>
 #include <danikk_space_engine/systems/camera/camera.h>
+#include <danikk_space_engine/systems/world_body/system.h>
+#include <danikk_space_engine/systems/world_body/world_body.h>
 
 namespace danikk_space_engine
 {
@@ -63,8 +65,9 @@ namespace danikk_space_engine
 		distance_squared = std::numeric_limits<double>::infinity();
 		PlanetTerrainTree& tree = render_data.terrain_tree;
 		const PlanetSettings& planet_settings = world.getPlanetSystem().getPlanetSettings(planet.settings_id);
-		const glm::dvec3 camera_position = glm::conjugate(planet.rotation)
-			* (camera_world_position - planet.position);
+		const WorldBody& body = world.getWorldBodySystem().getWorldBody(planet.world_body_id);
+		const glm::dvec3 camera_position = glm::conjugate(body.rotation)
+			* (camera_world_position - body.position);
 		glm::dvec3 anchor = camera_position;
 		if(render_data.streaming_height >= 0.0)
 		{
@@ -164,7 +167,7 @@ namespace danikk_space_engine
 				if(mesh_current || job_current) continue;
 
 				level_has_uncovered_cell = true;
-				const glm::dvec3 node_world_position = planet.position + planet.rotation * node.center;
+				const glm::dvec3 node_world_position = body.position + body.rotation * node.center;
 				const double center_distance = glm::length(node_world_position - camera_world_position);
 				const double distance_to_node = glm::max(0.0,
 					center_distance - node.half_extent * 1.7320508075688772);

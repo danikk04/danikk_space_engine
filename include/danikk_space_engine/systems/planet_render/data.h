@@ -6,6 +6,7 @@
 
 namespace danikk_space_engine
 {
+	class WorldBody;
 	class MeshGenerationTelemetry;
 	enum class MeshDeletionReason : uint8;
 
@@ -44,10 +45,11 @@ namespace danikk_space_engine
 			uint64 runtime_generation_id);
 
 		/** @brief Updates the tree, target coverage, render list, and diagnostics for this frame. */
-		void updateTerrainStreaming(const PlanetData& planet, const glm::dvec3& camera_position,
+		void updateTerrainStreaming(const PlanetData& planet, const WorldBody& body,
+			const glm::dvec3& camera_position,
 			double height, const PlanetSettings& settings, MeshGenerationTelemetry& telemetry);
-		/** @brief Builds the final render list from this runtime's tree and the planet transform. */
-		void buildTerrainRenderList(const PlanetData& planet, const PlanetSettings& settings);
+		/** @brief Builds the final render list using the owning body's world transform. */
+		void buildTerrainRenderList(const WorldBody& body, const PlanetSettings& settings);
 		/** @brief Computes the target octree depth at this runtime's camera anchor. */
 		uint8 getCurrentTerrainDepth() const;
 		/** @brief Applies pending edits and enforces the adaptive tree node limit. */
